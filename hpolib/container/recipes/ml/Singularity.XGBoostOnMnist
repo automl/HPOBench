@@ -10,16 +10,12 @@ VERSION v0.0.1
     apt install build-essential git -y
 
     pip install numpy==1.18.1 cython==0.29.14
-    # pip install numpy==1.17.4 configparser==3.8.1 cython==0.29.14 \
-    #   Pyro4==4.77 ConfigSpace==0.4.11 xgboost==0.90 openml==0.10.2 \
-    #   pynisher==0.5.0 json-tricks==3.13.4 # \
-    #  # git+https://github.com/PhMueller/HPOlib3
 
-    # cd /home \
-    #   && git clone https://github.com/PhMueller/HPOlib3 \
-    #   && cd HPOlib3 \
-    #   && pip install .[singularity,xgboost] \
-    #   && cd /
+    cd /home \
+        && git clone https://github.com/automl/HPOlib3 \
+        && cd HPOlib3 \
+        && pip install .[singularity,xgboost] \
+        && cd /
 
     mkdir /home/HPOlib3
     chmod -R 777 /home/HPOlib3
