@@ -33,7 +33,8 @@ class HPOlibConfig:
                          'data_dir': Path("~/.hpolib/").expanduser(),
                          'socket_dir': Path("~/.cache/hpolib/").expanduser(),
                          'image_dir': Path("/tmp/hpolib-" + str(os.getuid()) + "/"),
-                         'image_source': None,
+                         # 'image_source': 'shub://PhMueller/HPOlib3',
+                         'image_source': 'shub://PhMueller/TestRepo',
                          'use_global_data': True,
                          'pyro_connect_max_wait': 60,
                          'singularity_use_instances': True}

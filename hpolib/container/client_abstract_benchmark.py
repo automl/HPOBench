@@ -79,7 +79,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # By default use named singularity instances.
         # There exist a config option to disable this behaviour
         if self.config.singularity_use_instances:
-            cmd = f"singularity instance start --bind /var/lib/,/home/philipp/Dokumente/Code/HPOlib3:/home/HPOlib3 {gpuOpt}{iOptions} {self.socketId}"
+            cmd = f"singularity instance start --bind /var/lib/ {gpuOpt}{iOptions} {self.socketId}"
             self.config.logger.debug(cmd)
             subprocess.run(cmd, shell=True)
 

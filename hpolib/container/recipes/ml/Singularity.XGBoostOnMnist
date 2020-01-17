@@ -12,13 +12,12 @@ VERSION v0.0.1
     pip install numpy==1.18.1 cython==0.29.14
 
     cd /home \
-        && git clone https://github.com/PhMueller/HPOlib3 \
+        # && git clone https://github.com/automl/HPOlib3 \
+        && git clone https://github.com/PhMueller/TestRepo.git \
+        && mv TestRepo HPOlib3 \
         && cd HPOlib3 \
         && pip install .[singularity,xgboost] \
         && cd /
-
-    mkdir /home/HPOlib3
-    chmod -R 777 /home/HPOlib3
 
     mkdir /var/lib/hpolib/
     chmod -R 777 /var/lib/hpolib/

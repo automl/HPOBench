@@ -8,6 +8,7 @@ from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostOnMnist as B
 myrng = np.abs(10)
 myrng = np.random.RandomState(myrng)
 
+# imgName must be the exact same as the suffix in the recipe name (Singuarity.XGBoostOnMnist)
 b = Benchmark(rng=myrng, imgName='XGBoostOnMnist')
 print(b.get_meta_information())
 
