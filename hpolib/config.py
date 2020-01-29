@@ -1,9 +1,9 @@
 import ast
 import configparser
 import logging
+import os
 from io import StringIO
 from pathlib import Path
-import os
 from typing import Union, Any
 
 
@@ -39,11 +39,10 @@ class HPOlibConfig:
         self.use_global_data = None
 
         self.defaults = {'verbosity': 0,
-                         'data_dir': self.config_base_dir,  # Path('~/.hpolib/').expanduser(),
-                         'socket_dir': self.cache_dir,  # Path('~/.cache/hpolib/').expanduser(),
-                         # Path('/tmp/hpolib-' + str(os.getuid()) + '/'),
+                         'data_dir': self.config_base_dir,
+                         'socket_dir': self.cache_dir,
                          'image_dir': self.cache_dir / f'hpolib3-{os.getuid()}',
-                         'image_source': 'shub://automl/HPOlib3',  # 'shub://PhMueller/HPOlib3',
+                         'image_source': 'shub://automl/HPOlib3',
                          'use_global_data': True,
                          'pyro_connect_max_wait': 60}
 

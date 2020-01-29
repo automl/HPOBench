@@ -237,12 +237,3 @@ class XGBoostOnMnist(XGBoostBenchmark):
     def get_data(self):
         dm = MNISTData()
         return dm.load()
-
-
-"""
-class XGBoostOnMNIST2(XGBoostBenchmark):
-    # This will currently fail, because the task consists of more than a
-    # single fold
-    def __init__(self, n_threads=1, rng=None):
-        super().__init__(task_id=3573, n_threads=n_threads, rng=rng)
-"""

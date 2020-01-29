@@ -18,7 +18,6 @@ for i in range(1000):
     rval = b.objective_function(configuration, n_estimators=5, subsample=0.1)
     loss = rval['function_value']
     print(f'[{i+1}|1000]Loss {loss:.4f}')
-
     values.append(loss)
 
 print(f'Done, took totally {time()-start:.2f}')

@@ -17,18 +17,20 @@ The name of the container (`benchmark_name`) is defined either in its belonging 
 
 import abc
 import json
-import numpy
+import logging
 import os
 import random
 import string
 import subprocess
 import time
-import Pyro4
-from ConfigSpace.read_and_write import json as csjson
-import hpolib.config
 from pathlib import Path
 from typing import Optional
-import logging
+
+import Pyro4
+import numpy
+from ConfigSpace.read_and_write import json as csjson
+
+import hpolib.config
 
 
 class AbstractBenchmarkClient(metaclass=abc.ABCMeta):

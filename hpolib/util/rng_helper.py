@@ -1,5 +1,6 @@
 """ Helper functions to easily obtain randomState """
 from typing import Union
+
 import numpy as np
 
 

@@ -7,16 +7,17 @@ BenchmarkServer defines the server side for the communication between the contai
 It starts the Pyro4 server and awaits commands from the client. Make sure that all payloads are json-serializable.
 """
 
-import enum
-import numpy as np
-import os
 import argparse
+import enum
 import json
-
-import Pyro4
 import logging
+import os
+
 import ConfigSpace as CS
+import Pyro4
+import numpy as np
 from ConfigSpace.read_and_write import json as csjson
+
 from hpolib.config import HPOlibConfig
 
 
