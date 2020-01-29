@@ -11,12 +11,8 @@ To reduce download traffic, firstly, it checks if the image is already downloade
 The container source as well the path, where it should be stored, are defined in the
 ~/.hpolibrc - file.
 
-The name of the container (`bName`) is defined either in its belonging container-benchmark definition.
+The name of the container (`benchmark_name`) is defined either in its belonging container-benchmark definition.
 (hpolib/container/<type>/<name> or via `ingName`.
-
-
-@author: Stefan Staeglich, Philipp Mueller
-@maintainer: Philipp Mueller (muelleph@informatik.uni-freiburg.de)
 """
 
 import abc
@@ -24,7 +20,6 @@ import json
 import numpy
 import os
 import random
-import signal
 import string
 import subprocess
 import time
@@ -32,68 +27,92 @@ import Pyro4
 from ConfigSpace.read_and_write import json as csjson
 import hpolib.config
 from pathlib import Path
+from typing import Optional
+import logging
 
 
 class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
-    def _setup(self, gpu=False, imgName=None, **kwargs):
-        # Create unique ID
-        self.socketId = self._id_generator()
-        self.config = hpolib.config._config
+    """ Base Class for the containerized benchmarks.
 
-        # Default image name is benchmark name. imgName can be specified to point to another container.
-        imgName = imgName or self.bName
-        self.config.logger.debug(f'Image {imgName} in {self.config.image_dir} from {self.config.image_source}')
+    Attributes
+    ----------
+    logger : logging.Logger
+
+    """
+    def __init__(self):
+        self.logger = logging.getLogger("BenchmarkClient")
+        self.socketId = self._id_generator()
+
+    def _setup(self, gpu: bool = False, img_name: Optional[str] = None, img_source: Optional[str] = None, **kwargs):
+        """ Initialization of the benchmark using container.
+
+        This setup function downloads the container from a defined source. The source is defined either in the .hpolibrc
+        or in the its benchmark definition (hpolib/container/benchmarks/..). If a image is already in the local
+        available, the local image is used.
+        Then, the container is started and a connection between the container and the client is established.
+
+        Parameters
+        ----------
+        gpu : bool
+            If True, the container has access to the local Cuda-drivers. (Not tested)
+        img_name : Optional[str]
+            name of the image. E.g. XGBoostOnMnist. The local container has to have the same name.
+        img_source : Optional[str]
+            Path to the image. Either local path or link to singularity hub, etc
+        """
+        # Create unique ID
+        self.config = hpolib.config.config_file
+
+        # Default image name is benchmark name. img_name can be specified to point to another container.
+        img_name = img_name or self.benchmark_name
+
+        # Same for the image's source.
+        img_source = img_source or self.config.image_source
+        self.logger.debug(f'Image {img_name} in {self.config.image_dir} from {img_source}')
 
         img_dir = Path(self.config.image_dir)
 
         # Pull the image from the singularity hub if the image is hosted online. If the image is stored locally (e.g.
         # for development) do not pull it.
-        if self.config.image_source is not None \
-                and any((s in self.config.image_source for s in ['shub', 'library', 'docker', 'oras', 'http'])):
+        if img_source is not None \
+                and any((s in img_source for s in ['shub', 'library', 'docker', 'oras', 'http'])):
 
-            if not (img_dir / imgName).exists():
-                self.config.logger.debug('Going to pull the image from an online source.')
+            if not (img_dir / img_name).exists():
+                self.logger.debug('Going to pull the image from an online source.')
 
                 img_dir.mkdir(parents=True, exist_ok=True)
-                cmd = f"singularity pull --dir {self.config.image_dir} --name {imgName} " \
-                      f"{self.config.image_source}:{imgName.lower()}"
-                self.config.logger.debug(cmd)
+                cmd = f"singularity pull --dir {self.config.image_dir} --name {img_name} " \
+                      f"{img_source}:{img_name.lower()}"
+                self.logger.debug(cmd)
                 subprocess.run(cmd, shell=True)
             else:
-                self.config.logger.debug('Skipping downloading the image. It is already downloaded.')
+                self.logger.debug('Skipping downloading the image. It is already downloaded.')
         else:
-            self.config.logger.debug('Looking on the local filesystem for the image file, since image source was '
-                                     'either \'None\' or not a known address. '
-                                     f'Image Source: {self.config.image_source}')
+            self.logger.debug('Looking on the local filesystem for the image file, since image source was '
+                              'either \'None\' or not a known address. '
+                              f'Image Source: {img_source}')
 
             # Make sure that the image can be found locally.
-            assert (img_dir / imgName).exists(), f'Local image not found in {img_dir / imgName}'
-            self.config.logger.debug('Image found on the local file system.')
+            assert (img_dir / img_name).exists(), f'Local image not found in {img_dir / img_name}'
+            self.logger.debug('Image found on the local file system.')
 
-        iOptions = str(img_dir / imgName)
-        sOptions = self.bName + " " + self.socketId
+        iOptions = str(img_dir / img_name)
+        sOptions = f'{self.benchmark_name} {self.socketId}'
 
         # Option for enabling GPU support
-        gpuOpt = "--nv " if gpu else ""
+        gpuOpt = '--nv ' if gpu else ''
 
-        # By default use named singularity instances.
-        # There exist a config option to disable this behaviour
-        if self.config.singularity_use_instances:
-            cmd = f"singularity instance start --bind /var/lib/ {gpuOpt}{iOptions} {self.socketId}"
-            self.config.logger.debug(cmd)
-            subprocess.run(cmd, shell=True)
+        cmd = f'singularity instance start --bind /var/lib/ {gpuOpt}{iOptions} {self.socketId}'
+        self.logger.debug(cmd)
+        subprocess.run(cmd, shell=True)
 
-            cmd = f"singularity run {gpuOpt}instance://{self.socketId} {sOptions}"
-            self.config.logger.debug(cmd)
-            subprocess.Popen(cmd, shell=True)
-        else:
-            self.sProcess = subprocess.Popen(f"singularity run "
-                                             f"{gpuOpt}{iOptions} {sOptions}",
-                                             shell=True)
+        cmd = f'singularity run {gpuOpt}instance://{self.socketId} {sOptions}'
+        self.logger.debug(cmd)
+        subprocess.Popen(cmd, shell=True)
 
         Pyro4.config.REQUIRE_EXPOSE = False
         # Generate Pyro 4 URI for connecting to client
-        self.uri = f"PYRO:{self.socketId}.unixsock@./u:{self.config.socket_dir}/{self.socketId}_unix.sock"
+        self.uri = f'PYRO:{self.socketId}.unixsock@./u:{self.config.socket_dir}/{self.socketId}_unix.sock'
         self.b = Pyro4.Proxy(self.uri)
 
         # Handle rng and other optional benchmark arguments
@@ -105,23 +124,23 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
         # Try to connect to server calling benchmark constructor via RPC.
         # There exist a time limit
-        self.config.logger.debug("Check connection to container and init benchmark")
+        self.logger.debug('Check connection to container and init benchmark')
         wait = 0
         while True:
             try:
                 self.b.initBenchmark(kwargsStr)
-            except Pyro4.errors.CommunicationError:
-                self.config.logger.debug("Still waiting")
+            except Pyro4.core.errors.CommunicationError:
+                self.logger.debug('Still waiting')
                 time.sleep(5)
                 wait += 5
                 if wait < self.config.pyro_connect_max_wait:
                     continue
                 else:
-                    self.config.logger.debug("Waiting time exceeded. To high it up, "
-                                             "adjust config option pyro_connect_max_wait.")
+                    self.logger.debug('Waiting time exceeded. To high it up, adjust config '
+                                      'option pyro_connect_max_wait.')
                     raise
             break
-        self.config.logger.debug("Connected to container")
+        self.logger.debug('Connected to container')
 
     def objective_function(self, x, **kwargs):
         # Create the arguments as Str
@@ -163,7 +182,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
     def __call__(self, configuration, **kwargs):
         """ Provides interface to use, e.g., SciPy optimizers """
-        return(self.objective_function(configuration, **kwargs)['function_value'])
+        return self.objective_function(configuration, **kwargs)['function_value']
 
     def _id_generator(self, size=6, chars=string.ascii_uppercase + string.digits):
         return ''.join(random.choice(chars) for _ in range(size))
@@ -171,9 +190,5 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
     def __del__(self):
         Pyro4.config.COMMTIMEOUT = 1
         self.b.shutdown()
-        if self.config.singularity_use_instances:
-            subprocess.run("singularity instance stop %s" % (self.socketId), shell=True)
-        else:
-            os.killpg(os.getpgid(self.sProcess.pid), signal.SIGTERM)
-            self.sProcess.terminate()
-        os.remove(self.config.socket_dir + self.socketId + "_unix.sock")
+        subprocess.run(f'singularity instance stop {self.socketID}', shell=True)
+        os.remove(self.config.socket_dir + self.socketId + '_unix.sock')

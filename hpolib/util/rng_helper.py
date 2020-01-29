@@ -6,11 +6,12 @@ import numpy as np
 def get_rng(rng: Union[int, np.random.RandomState, None] = None,
             self_rng: Union[int, np.random.RandomState, None] = None) -> np.random.RandomState:
     """
-    Helper function to obtain RandomState.
-    Returns RandomState created from 'rng'
-    If 'rng' then return 'RandomState' created from rng
-    if rng is None returns self_rng
-    if self_rng and rng is None return random RandomState
+    Helper function to obtain RandomState from int or create a new one.
+
+    Sometimes a default random state (self_rng) is already available, but a new random state is desired.
+    In this case rng is not None and not already a random state (int or None) -> a new random state is created.
+    If rng is already a randomState, it is just returned.
+    Same if rng is None, but the default rng is given.
 
     Parameters
     ----------
@@ -23,32 +24,29 @@ def get_rng(rng: Union[int, np.random.RandomState, None] = None,
     """
 
     if rng is not None:
-        return create_rng(rng)
+        return _cast_int_to_random_state(rng)
     elif rng is None and self_rng is not None:
-        return create_rng(self_rng)
+        return _cast_int_to_random_state(self_rng)
     else:
         return np.random.RandomState()
 
 
-def create_rng(rng: Union[int, np.random.RandomState, None]) -> np.random.RandomState:
+def _cast_int_to_random_state(rng: Union[int, np.random.RandomState]) -> np.random.RandomState:
     """
-    Helper function to crate 'rng' from np.random.RandomState or int
+    Helper function to cast 'rng' from int to np.random.RandomState if necessary.
 
     Parameters
     ----------
-    rng: int, np.random.RandomState, None
+    rng: int, np.random.RandomState
 
     Returns
     -------
     np.random.RandomState
     """
-    if rng is None:
-        return np.random.RandomState()
-    elif type(rng) == np.random.RandomState:
+    if type(rng) == np.random.RandomState:
         return rng
     elif int(rng) == rng:
-        # As seed is sometimes -1 (e.g. if SMAC optimizes a deterministic function
-        rng = np.abs(rng)
-        return np.random.RandomState(rng)
+        # As seed is sometimes -1 (e.g. if SMAC optimizes a deterministic function) -> use abs()
+        return np.random.RandomState(np.abs(rng))
     else:
         raise ValueError(f"{rng} is neither a number nor a RandomState. Initializing RandomState failed")

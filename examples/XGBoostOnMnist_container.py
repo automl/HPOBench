@@ -1,12 +1,13 @@
 import logging
-logging.basicConfig(level=logging.DEBUG)
 import time
 import numpy as np
 
 from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostOnMnist as Benchmark
 
-myrng = np.abs(10)
-myrng = np.random.RandomState(myrng)
+logger = logging.getLogger()
+logger.setLevel(level=logging.DEBUG)
+
+myrng = np.random.RandomState(10)
 
 # imgName must be the exact same as the suffix in the recipe name (Singuarity.XGBoostOnMnist)
 b = Benchmark(rng=myrng, imgName='XGBoostOnMnist')
@@ -24,4 +25,4 @@ for i in range(1000):
 
     values.append(loss)
 
-print("Done, took totally %.2f s" % ((time.time() - start)))
+print("Done, took totally %.2f s" % (time.time() - start))

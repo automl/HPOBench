@@ -12,8 +12,9 @@ from hpolib.abstract_benchmark import AbstractBenchmark
 from hpolib.util.data_manager import MNISTData
 from hpolib.util.openml_data_manager import OpenMLHoldoutDataManager
 
+__version__ = '0.0.1'
 
-class XGBoostBaseBenchmark(AbstractBenchmark):
+class XGBoostBenchmark(AbstractBenchmark):
 
     def __init__(self, task_id: Union[int, None] = None, n_threads: int = 1,
                  rng: Union[np.random.RandomState, int, None] = None):
@@ -26,21 +27,38 @@ class XGBoostBaseBenchmark(AbstractBenchmark):
         rng : np.random.RandomState, int, None
         """
 
-        super(XGBoostBaseBenchmark, self).__init__(rng=rng)
+        super(XGBoostBenchmark, self).__init__(rng=rng)
         self.n_threads = n_threads
         self.task_id = task_id
 
         self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test = self.get_data()
 
-    def get_data(self):
+        self.train_idx = self.rng.choice(a=np.arange(len(self.X_train)), size=len(self.X_train), replace=False)
+        self.valid_idx = self.rng.choice(a=np.arange(len(self.X_valid)), size=len(self.X_valid), replace=False)
+
+    def get_data(self) -> Tuple[np.array, np.array, np.array, np.array, np.array, np.array]:
         """ Loads the data given a task or another source. """
-        raise NotImplementedError()
+
+        assert self.task_id is not None, NotImplementedError('No taskid given. Please either specify a'
+                                                             'taskid or overwrite the get_data method.')
+
+        dm = OpenMLHoldoutDataManager(openml_task_id=self.task_id, rng=self.rng)
+        try:
+            X_train, y_train, X_val, y_val, X_test, y_test = dm.load()
+        except ValueError as e:
+            raise e  # Currently, only holdout-data-sets are supported
+
+        return X_train, y_train, X_val, y_val, X_test, y_test
 
     @AbstractBenchmark._check_configuration
     # @AbstractBenchmark._configuration_as_array
     def objective_function(self, config: dict, n_estimators: int, subsample: float, **kwargs) -> dict:
         """
         Trains a XGBoost model given a hyperparameter configuration and evaluates the model on the validation set.
+
+        To prevent overfitting on a single seed, it is possible to pass a parameter `rng`
+        as 'int' or 'np.random.RandomState' to this function. If this parameter is not given, the default random state
+        is used.
 
         Parameters
         ----------
@@ -58,23 +76,26 @@ class XGBoostBaseBenchmark(AbstractBenchmark):
             function_value : validation loss
             cost : time to train and evaluate the model
             train_loss : trainings loss
+            subsample : fraction which was used to subsample the training data
+
         """
-        rng = kwargs.get("rng", None)
+        assert 0 < subsample <= 1, ValueError(f'Parameter \'subsample\' must be in range (0, 1] but was {subsample}')
+
+        rng = kwargs.get('rng', None)
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
         start = time.time()
 
-        model = self._get_pipeline(n_estimators=n_estimators,
-                                   subsample=subsample,
-                                   **config)
+        model = self._get_pipeline(n_estimators=n_estimators, **config)
 
-        model.fit(X=self.X_train, y=self.y_train)
-        train_loss = XGBoostBaseBenchmark._test_xgb(model=model, X=self.X_train, y=self.y_train)
-        val_loss = XGBoostBaseBenchmark._test_xgb(model=model, X=self.X_valid, y=self.y_valid)
+        train_idx = self.train_idx[:int(len(self.train_idx) * subsample)]
+
+        model.fit(X=self.X_train[train_idx], y=self.y_train[train_idx])
+
+        train_loss = XGBoostBenchmark._eval_xgb(model=model, X=self.X_train[train_idx], y=self.y_train[train_idx])
+        val_loss = XGBoostBenchmark._eval_xgb(model=model, X=self.X_valid, y=self.y_valid)
         cost = time.time() - start
 
-        return {'function_value': val_loss,
-                'cost': cost,
-                'train_loss': train_loss}
+        return {'function_value': val_loss, 'cost': cost, 'train_loss': train_loss, 'subsample': subsample}
 
     @AbstractBenchmark._check_configuration
     # @AbstractBenchmark._configuration_as_array
@@ -82,6 +103,10 @@ class XGBoostBaseBenchmark(AbstractBenchmark):
         """
         Trains a XGBoost model with a given configuration on both the train and validation data set and
         evaluates the model on the test data set.
+
+        To prevent overfitting on a single seed, it is possible to pass a parameter `rng`
+        as 'int' or 'np.random.RandomState' to this function. If this parameter is not given, the default random state
+        is used.
 
         Parameters
         ----------
@@ -98,23 +123,26 @@ class XGBoostBaseBenchmark(AbstractBenchmark):
         dict -
             function_value : test loss
             cost : time to train and evaluate the model
+            subsample : fraction which was used to subsample the training data
         """
-        rng = kwargs.get("rng", None)
+        assert 0 < subsample <= 1, ValueError(f'Parameter \'subsample\' must be in range (0, 1] but was {subsample}')
+
+        rng = kwargs.get('rng', None)
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         start = time.time()
-        model = self._get_pipeline(n_estimators=n_estimators,
-                                   subsample=subsample,
-                                   **config)
+        model = self._get_pipeline(n_estimators=n_estimators, **config)
 
-        model.fit(X=np.concatenate((self.X_train, self.X_valid)),
-                  y=np.concatenate((self.y_train, self.y_valid)))
+        train_idx = self.train_idx[:int(len(self.train_idx) * subsample)]
+        valid_idx = self.valid_idx[:int(len(self.valid_idx) * subsample)]
 
-        test_loss = XGBoostBaseBenchmark._test_xgb(model=model, X=self.X_test, y=self.y_test)
+        model.fit(X=np.concatenate((self.X_train[train_idx], self.X_valid[valid_idx])),
+                  y=np.concatenate((self.y_train[train_idx], self.y_valid[valid_idx])))
+
+        test_loss = XGBoostBenchmark._eval_xgb(model=model, X=self.X_test, y=self.y_test)
         cost = time.time() - start
 
-        return {'function_value': test_loss,
-                "cost": cost}
+        return {'function_value': test_loss, 'cost': cost, 'subsample': subsample}
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -149,14 +177,12 @@ class XGBoostBaseBenchmark(AbstractBenchmark):
         """ Returns the meta information for the benchmark """
         from ConfigSpace.read_and_write.json import write as cs_to_json
         return {'name': 'XGBoost',
-                'configuration space': cs_to_json(XGBoostBaseBenchmark.get_configuration_space()),
-                'num_function_evals': 50,
-                'requires': ["xgboost", ],
-                'references': ["None"]
+                'configuration space': cs_to_json(XGBoostBenchmark.get_configuration_space()),
+                'references': ['None']
                 }
 
     def _get_pipeline(self, eta: float, min_child_weight: int, colsample_bytree: float, colsample_bylevel: float,
-                      reg_lambda: int, reg_alpha: int, n_estimators: int, subsample: float) -> pipeline.Pipeline:
+                      reg_lambda: int, reg_alpha: int, n_estimators: int) -> pipeline.Pipeline:
         """ Create the scikit-learn (training-)pipeline """
         clf = pipeline.Pipeline([  # No normalizing as it should not make a difference
                                    # ('preproc', preprocessing.StandardScaler()),
@@ -169,45 +195,24 @@ class XGBoostBaseBenchmark(AbstractBenchmark):
                                                            n_estimators=n_estimators,
                                                            objective='binary:logistic',
                                                            n_jobs=self.n_threads,
-                                                           subsample=subsample,
                                                            random_state=self.rng.randint(1, 100000)))
                                 ])
         return clf
 
     @staticmethod
-    def _test_xgb(X: np.array, y: np.array, model: Union[xgb.XGBModel, pipeline.Pipeline]) -> float:
+    def _eval_xgb(X: np.array, y: np.array, model: Union[xgb.XGBModel, pipeline.Pipeline]) -> float:
         """ Helper-function for evaluating the XGBoost model. """
         y_pred = model.predict(X)
         acc = accuracy_score(y_pred=y_pred, y_true=y)
         return 1 - acc
 
 
-class XGBoostOpenML(XGBoostBaseBenchmark):
-
-    def __init__(self, task_id: int, n_threads: int = 1,
-                 rng: Union[int, np.random.RandomState, None] = None):
-        super().__init__(task_id=task_id, n_threads=n_threads, rng=rng)
-
-    def get_data(self) -> Tuple[np.array, np.array, np.array, np.array, np.array, np.array]:
-
-        assert self.task_id is not None, NotImplementedError("No taskid given. Please either specify a"
-                                                             "taskid or overwrite the get_data method.")
-
-        dm = OpenMLHoldoutDataManager(openml_task_id=self.task_id, rng=self.rng)
-        try:
-            X_train, y_train, X_val, y_val, X_test, y_test = dm.load()
-        except ValueError as e:
-            raise e  # Currently, only holdout-data-sets are supported
-
-        return X_train, y_train, X_val, y_val, X_test, y_test
-
-
-class XGBoostOnHiggs(XGBoostOpenML):
+class XGBoostOnHiggs(XGBoostBenchmark):
 
     def __init__(self, n_threads: int = 1, rng: Union[int, None] = None):
         super().__init__(task_id=75101, n_threads=n_threads, rng=rng)
 
-    def _get_pipeline(self, eta: float, subsample: float, colsample_bytree: float, colsample_bylevel: float,
+    def _get_pipeline(self, eta: float, colsample_bytree: float, colsample_bylevel: float,
                       n_estimators: int, reg_lambda: int = 1, reg_alpha: int = 0,
                       min_child_weight: int = 1) -> pipeline.Pipeline:
 
@@ -218,7 +223,6 @@ class XGBoostOnHiggs(XGBoostOpenML):
                                                            n_estimators=n_estimators,
                                                            objective='binary:logistic',
                                                            n_jobs=self.n_threads,
-                                                           subsample=subsample,
                                                            colsample_bytree=colsample_bytree,
                                                            colsample_bylevel=colsample_bylevel,
                                                            random_state=self.rng.randint(1, 100000)))
@@ -226,7 +230,7 @@ class XGBoostOnHiggs(XGBoostOpenML):
         return clf
 
 
-class XGBoostOnMnist(XGBoostBaseBenchmark):
+class XGBoostOnMnist(XGBoostBenchmark):
     def __init__(self, n_threads: int = 1, rng: Union[int, np.random.RandomState, None] = None):
         super().__init__(task_id=None, n_threads=n_threads, rng=rng)
 
@@ -236,7 +240,7 @@ class XGBoostOnMnist(XGBoostBaseBenchmark):
 
 
 """
-class XGBoostOnMNIST2(XGBoostOpenML):
+class XGBoostOnMNIST2(XGBoostBenchmark):
     # This will currently fail, because the task consists of more than a
     # single fold
     def __init__(self, n_threads=1, rng=None):

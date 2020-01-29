@@ -1,5 +1,5 @@
-scipy==1.4.1
-scikit-learn==0.22
+scipy>=1.4.1
+scikit-learn>=0.22
 numpy>=1.18.1
 ConfigSpace>=0.4.12
-openml==0.10.2
+openml>=0.10.2

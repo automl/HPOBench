@@ -4,6 +4,7 @@ import logging
 from io import StringIO
 from pathlib import Path
 import os
+from typing import Union, Any
 
 
 class HPOlibConfig:
@@ -18,10 +19,18 @@ class HPOlibConfig:
         config_file: str
             Path to config file
         """
+        self.logger = logging.getLogger('HPOlibConfig')
 
-        self.logger = logging.getLogger("HPOlibConfig")
-        self.config_file = Path("~/.hpolibrc")
-        self.global_data_dir = Path("/var/lib/hpolib/")
+        # According to https://github.com/openml/openml-python/issues/884, try to set default directories.
+        self.config_base_dir = Path(os.environ.get('XDG_CONFIG_HOME', '~/.config/hpolib3')).expanduser()
+        self.config_file = self.config_base_dir / '.hpolibrc'
+        self.cache_dir = Path(os.environ.get('XDG_CACHE_HOME', '~/.cache/hpolib3')).expanduser()
+
+        # I've set this to this default value, since for creating a container, we have to bind the data directory into
+        # the container. And to avoid issues, it would be better to use a static value here. Also, in singularity
+        # container there isn't a user. So the XDG's recommendation for the default data directory with ~ is not safe.
+        self.global_data_dir = Path('/var/lib/hpolib3/')
+        # self.global_data_dir = Path(os.environ.get('XDG_DATA_HOME', '~/.local/share/hpolib3'))
 
         self.config = None
         self.data_dir = None
@@ -30,18 +39,17 @@ class HPOlibConfig:
         self.use_global_data = None
 
         self.defaults = {'verbosity': 0,
-                         'data_dir': Path("~/.hpolib/").expanduser(),
-                         'socket_dir': Path("~/.cache/hpolib/").expanduser(),
-                         'image_dir': Path("/tmp/hpolib-" + str(os.getuid()) + "/"),
-                         # 'image_source': 'shub://PhMueller/HPOlib3',
-                         'image_source': 'shub://PhMueller/TestRepo',
+                         'data_dir': self.config_base_dir,  # Path('~/.hpolib/').expanduser(),
+                         'socket_dir': self.cache_dir,  # Path('~/.cache/hpolib/').expanduser(),
+                         # Path('/tmp/hpolib-' + str(os.getuid()) + '/'),
+                         'image_dir': self.cache_dir / f'hpolib3-{os.getuid()}',
+                         'image_source': 'shub://automl/HPOlib3',  # 'shub://PhMueller/HPOlib3',
                          'use_global_data': True,
-                         'pyro_connect_max_wait': 60,
-                         'singularity_use_instances': True}
+                         'pyro_connect_max_wait': 60}
 
         self._setup(self.config_file)
 
-    def _setup(self, config_file):
+    def _setup(self, config_file: Union[Path, str]):
         """ Sets up config. Reads the config file and parses it.
 
         Parameters:
@@ -55,7 +63,7 @@ class HPOlibConfig:
         config_file = Path(config_file).expanduser().absolute()
 
         if config_file != self.config_file:
-            self.logger.debug(f"Change config file from {self.config_file} to {config_file}")
+            self.logger.debug(f'Change config file from {self.config_file} to {config_file}')
             self.config_file = config_file
 
         # Create an empty config file if there was none so far
@@ -66,17 +74,19 @@ class HPOlibConfig:
         self.__parse_config()
 
         # Check whether data_dir exists, if not create
-        self.__check_data_dir(self.data_dir)
-        self.__check_data_dir(self.socket_dir)
-        self.__check_data_dir(self.image_dir)
+        self.__check_dir(self.data_dir)
+        self.__check_dir(self.socket_dir)
+        self.__check_dir(self.image_dir)
+        self.__check_dir(self.cache_dir)
 
     def __create_config_file(self):
         """ Create the configuration file. """
         try:
-            self.logger.debug(f"Create a new config file here: {self.config_file}")
-            fh = self.config_file.open("w", encoding='utf-8')
+            self.logger.debug(f'Create a new config file here: {self.config_file}')
+            self.__check_dir(self.config_file.parent)
+            fh = self.config_file.open('w', encoding='utf-8')
             for k in self.defaults:
-                fh.write(f"{k}={self.defaults[k]}\n")
+                fh.write(f'{k}={self.defaults[k]}\n')
             fh.close()
         except (IOError, OSError):
             raise
@@ -87,7 +97,7 @@ class HPOlibConfig:
 
         # Cheat the ConfigParser module by adding a fake section header
         config_file_ = StringIO()
-        config_file_.write("[FAKE_SECTION]\n")
+        config_file_.write('[FAKE_SECTION]\n')
         with self.config_file.open('r', encoding='utf-8') as fh:
             for line in fh:
                 config_file_.write(line)
@@ -104,29 +114,26 @@ class HPOlibConfig:
         if type(self.use_global_data) is str:
             self.use_global_data = ast.literal_eval(self.use_global_data)
         self.pyro_connect_max_wait = int(self.__get_config_option('pyro_connect_max_wait'))
-        self.singularity_use_instances = self.__get_config_option('singularity_use_instances')
-        if type(self.singularity_use_instances) is str:
-            self.singularity_use_instances = ast.literal_eval(self.singularity_use_instances)
 
         # Use global data dir if exist
         if self.global_data_dir.is_dir() and self.use_global_data:
             self.data_dir = self.global_data_dir
 
-    def __get_config_option(self, o):
+    def __get_config_option(self, o: str) -> Any:
         """ Try to get config option from configuration file. If the option is not configured, use default """
         try:
             return self.config.get('FAKE_SECTION', o)
         except configparser.NoOptionError:
             return self.defaults[o]
 
-    def __check_data_dir(self, path):
+    def __check_dir(self, path: Path):
         """ Check whether dir exists and if not create it"""
         try:
             Path(path).mkdir(exist_ok=True)
         except (IOError, OSError) as e:
-            self.logger.debug(f"Could not create directory here: {self.data_dir}")
+            self.logger.debug(f'Could not create directory here: {self.data_dir}')
             raise e
 
 
-_config = HPOlibConfig()
-__all__ = ['_config']
+config_file = HPOlibConfig()
+__all__ = ['config_file', 'HPOlibConfig']

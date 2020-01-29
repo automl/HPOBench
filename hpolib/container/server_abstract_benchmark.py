@@ -5,19 +5,16 @@
 
 BenchmarkServer defines the server side for the communication between the container (benchmark) and the client.
 It starts the Pyro4 server and awaits commands from the client. Make sure that all payloads are json-serializable.
-
-@author: Stefan Staeglich, Philipp Mueller
-@maintainer: Philipp Mueller (muelleph@informatik.uni-freiburg.de)
 """
 
 import enum
 import numpy as np
 import os
-import sys
+import argparse
 import json
 
 import Pyro4
-
+import logging
 import ConfigSpace as CS
 from ConfigSpace.read_and_write import json as csjson
 from hpolib.config import HPOlibConfig
@@ -38,7 +35,8 @@ class BenchmarkServer:
     def __init__(self, socketId):
         self.pyroRunning = True
         config = HPOlibConfig()
-        self.logger = config.logger
+        self.logger = logging.getLogger('BenchmarkServer')
+        self.b = None
 
         self.socketId = socketId
         socketPath = config.socket_dir / (self.socketId + "_unix.sock")
@@ -52,7 +50,6 @@ class BenchmarkServer:
         self.daemon.requestLoop(loopCondition=lambda: self.pyroRunning)
 
     def initBenchmark(self, kwargsStr):
-        self.logger.debug('initBenchmark!!')
         try:
             if kwargsStr != "{}":
                 kwargs = json.loads(kwargsStr)
@@ -61,9 +58,7 @@ class BenchmarkServer:
                     rnd1 = [np.uint32(number) for number in rnd1]
                     kwargs['rng'] = np.random.set_state((rnd0, rnd1, rnd2, rnd3, rnd4))
                     self.logger.debug('rng works!!')
-                self.logger.debug('try loading Benchmark!!')
                 self.b = Benchmark(**kwargs)
-                self.logger.debug('loading Benchmark finished!!')
             else:
                 self.b = Benchmark()
         except Exception as e:
@@ -120,13 +115,18 @@ class BenchmarkServer:
 if __name__ == "__main__":
     Pyro4.config.REQUIRE_EXPOSE = False
 
-    if len(sys.argv) != 4:
-        print("Usage: server.py <importBase> <benchmark> <socketId>")
-        sys.exit()
-    importBase = sys.argv[1]
-    benchmark = sys.argv[2]
-    socketId = sys.argv[3]
+    parser = argparse.ArgumentParser(prog='server_abstract_benchmark.py',
+                                     description='HPOlib3 Container Server',
+                                     usage='%(prog)s <importBase> <benchmark> <socketId>')
+    parser.add_argument('importBase', type=str,
+                        help='Relative path to benchmark file in hpolib/benchmarks, e.g. ml.xgboost_benchmark')
+    parser.add_argument('benchmark', type=str,
+                        help='Classname of the benchmark, e.g. XGBoostOnMnist')
+    parser.add_argument('socketId', type=str,
+                        help='SocketId for pyro-server')
 
-    exec(f"from hpolib.benchmarks.{importBase} import {benchmark} as Benchmark")
-
-    bp = BenchmarkServer(socketId)
+    args = parser.parse_args()
+    # module = importlib.import_module(f'hpolib.benchmarks.{importBase}')
+    # Benchmark = getattr(module, benchmark)
+    exec(f"from hpolib.benchmarks.{args.importBase} import {args.benchmark} as Benchmark")
+    bp = BenchmarkServer(args.socketId)

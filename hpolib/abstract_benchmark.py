@@ -15,18 +15,19 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         """
         Interface for benchmarks.
 
-        A benchmark contains of two building blocks, the target function and
-        the configuration space. Furthermore it can contain additional
-        benchmark-specific information such as the location and the function
-        value of the global optima. New benchmarks should be derived from
-        this base class or one of its child classes.
+        A benchmark consists of two building blocks, the target function and the configuration space. Furthermore it can
+        contain additional benchmark-specific information such as the location and the function value of the global
+        optima.
+        New benchmarks should be derived from this base class or one of its child classes.
 
         Parameters
         ----------
         rng: int, np.random.RandomState
+            The default random state for the benchmark. If type is int, a np.random.RandomState with seed `rng` is
+            created.
         """
 
-        self.rng = rng_helper.create_rng(rng)
+        self.rng = rng_helper.get_rng(rng=rng)
         self.configuration_space = self.get_configuration_space()
 
     @abc.abstractmethod
@@ -40,6 +41,14 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         key being `function_value`, the objective function value for the
         configuration which was passed. By convention, all benchmarks are
         minimization problems.
+
+        Note
+        ----
+        It might be useful to pass a "seed" parameter to the function call to bypass the default "seed" generator. Only
+        using the default random state (`self.rng`) could lead to an overfitting towards the `self.rng`'s seed.
+
+        For an example, how to pass a random state to the objective function see
+        :py:func:`~hpolib.benchmarks.ml.xgboost_benchmark.XGBoostBaseBenchmark.objective_function`.
 
         Parameters
         ----------

@@ -19,8 +19,8 @@ VERSION v0.0.1
         && pip install .[singularity,xgboost] \
         && cd /
 
-    mkdir /var/lib/hpolib/
-    chmod -R 777 /var/lib/hpolib/
+    mkdir /var/lib/hpolib3/
+    chmod -R 777 /var/lib/hpolib3/
 
 %runscript
     python -s /home/HPOlib3/hpolib/container/server_abstract_benchmark.py ml.xgboost_benchmark $@

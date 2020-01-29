@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
-
-'''
-@author: Stefan Staeglich
-'''
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
 import sys
-import time
+import importlib
+from time import time
 
 from hpolib.config import HPOlibConfig
 
@@ -16,8 +14,10 @@ if __name__ == "__main__":
     importBase = sys.argv[1]
     benchmark = sys.argv[2]
 
-    exec("from hpolib.benchmarks.%s import %s as Benchmark" % (importBase, benchmark))
+    module = importlib.import_module(f'hpolib.benchmarks.{importBase}')
+    Benchmark = getattr(module, benchmark)
+    # exec("from hpolib.benchmarks.%s import %s as Benchmark" % (importBase, benchmark))
     config = HPOlibConfig()
-    start = time.time()
+    start = time()
     b = Benchmark()
-    print("Data download done, took totally %.2f s" % ((time.time() - start)))
+    print(f"Data download done, took totally {time()-start:.2f} s")

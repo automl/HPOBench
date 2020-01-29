@@ -1,22 +1,16 @@
 import logging
-logging.basicConfig(level=logging.DEBUG)
-
 from time import time
-from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostOnMnist as Benchmark
-from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostOpenML as Benchmark2
-from hpolib.util.openml_data_manager import OpenMLCrossvalidationDataManager
 
-dm = OpenMLCrossvalidationDataManager(openml_task_id=167141)
-dm.load()
-# b = Benchmark2(task_id=167141)
-print('Test')
+from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostOnMnist as Benchmark
+
+logger = logging.getLogger()
+logger.setLevel(level=logging.DEBUG)
 
 b = Benchmark()
 print(b.get_meta_information())
 start = time()
 
 values = []
-
 cs = b.get_configuration_space()
 
 for i in range(1000):
