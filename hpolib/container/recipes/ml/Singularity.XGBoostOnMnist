@@ -12,7 +12,6 @@ VERSION v0.0.1
     pip install numpy==1.18.1 cython==0.29.14
 
     cd /home \
-        # && git clone https://github.com/automl/HPOlib3 \
         && git clone https://github.com/PhMueller/TestRepo.git \
         && mv TestRepo HPOlib3 \
         && cd HPOlib3 \

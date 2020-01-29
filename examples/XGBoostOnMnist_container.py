@@ -9,8 +9,8 @@ logger.setLevel(level=logging.DEBUG)
 
 myrng = np.random.RandomState(10)
 
-# imgName must be the exact same as the suffix in the recipe name (Singuarity.XGBoostOnMnist)
-b = Benchmark(rng=myrng, imgName='XGBoostOnMnist')
+# img_name must be the exact same as the suffix in the recipe name (Singuarity.XGBoostOnMnist)
+b = Benchmark(rng=myrng, img_name='XGBoostOnMnist', img_source='shub://PhMueller/Test')
 print(b.get_meta_information())
 
 start = time.time()

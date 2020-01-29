@@ -11,8 +11,8 @@ class XGBoostOnMnist(AbstractBenchmarkClient):
 
         # benchmark_name must be the exact same as the suffix in the recipe name (Singuarity.XGBoostOnMnist)
         super(XGBoostOnMnist, self).__init__()
-        self.benchmark_name = 'XGBoostOnMnist'
-        kwargs['img_source'] = kwargs.get('img_source', 'shub://PhMueller/Test')
+        self.benchmark_name = kwargs.get('img_name', 'XGBoostOnMnist')
+        kwargs['img_source'] = kwargs.get('img_source', 'shub://PhMueller/TestRepo')
 
         self._setup(**kwargs)
 
