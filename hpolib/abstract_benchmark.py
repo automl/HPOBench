@@ -15,16 +15,18 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         """
         Interface for benchmarks.
 
-        A benchmark consists of two building blocks, the target function and the configuration space. Furthermore it can
-        contain additional benchmark-specific information such as the location and the function value of the global
-        optima.
-        New benchmarks should be derived from this base class or one of its child classes.
+        A benchmark consists of two building blocks, the target function and
+        the configuration space. Furthermore it can contain additional
+        benchmark-specific information such as the location and the function
+        value of the global optima.
+        New benchmarks should be derived from this base class or one of its
+        child classes.
 
         Parameters
         ----------
         rng: int, np.random.RandomState
-            The default random state for the benchmark. If type is int, a np.random.RandomState with seed `rng` is
-            created.
+            The default random state for the benchmark. If type is int, a
+            np.random.RandomState with seed `rng` is created.
         """
 
         self.rng = rng_helper.get_rng(rng=rng)
@@ -44,10 +46,13 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
         Note
         ----
-        It might be useful to pass a "seed" parameter to the function call to bypass the default "seed" generator. Only
-        using the default random state (`self.rng`) could lead to an overfitting towards the `self.rng`'s seed.
+        It might be useful to pass a "seed" parameter to the function call to
+        bypass the default "seed" generator. Only using the default random
+        state (`self.rng`) could lead to an overfitting towards the
+        `self.rng`'s seed.
 
-        For an example, how to pass a random state to the objective function see
+        For an example, how to pass a random state to the objective function
+        see
         :py:func:`~hpolib.benchmarks.ml.xgboost_benchmark.XGBoostBaseBenchmark.objective_function`.
 
         Parameters
@@ -62,7 +67,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def objective_function_test(self, configuration: dict, *args, **kwargs) -> dict:
+    def objective_function_test(self, configuration: dict,
+                                *args, **kwargs) -> dict:
         """
         If there is a different objective function for offline testing, e.g
         testing a machine learning on a hold extra test set instead
@@ -92,11 +98,14 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         def wrapper(self, configuration, **kwargs):
             if not isinstance(configuration, ConfigSpace.Configuration):
                 try:
-                    squirtle = {k: configuration[i] for (i, k) in enumerate(self.configuration_space)}
-                    wartortle = ConfigSpace.Configuration(self.configuration_space, squirtle)
+                    squirtle = {k: configuration[i] for (i, k)
+                                in enumerate(self.configuration_space)}
+                    wartortle = ConfigSpace.Configuration(
+                        self.configuration_space, squirtle)
                 except Exception as e:
-                    raise Exception('Error during the conversion of the provided '
-                                    'into a ConfigSpace.Configuration object') from e
+                    raise Exception('Error during the conversion of the '
+                                    'provided into a ConfigSpace.Configuration'
+                                    ' object') from e
             else:
                 wartortle = configuration
             self.configuration_space.check_configuration(wartortle)
@@ -106,17 +115,20 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
     @staticmethod
     def _configuration_as_array(foo, data_type=np.float):
         """
-        Decorator to allow the first input argument to 'objective_function' to be an array.
+        Decorator to allow the first input argument to 'objective_function' to
+        be an array.
 
-        For all continuous benchmarks it is often required that the input to the benchmark
-        can be a (NumPy) array. By adding this to the objective function, both inputs types,
-        ConfigSpace.Configuration and array, are possible.
+        For all continuous benchmarks it is often required that the input to
+        the benchmark can be a (NumPy) array. By adding this to the objective
+        function, both inputs types, ConfigSpace.Configuration and array,
+        are possible.
 
         Can be combined with the _check_configuration decorator.
         """
         def wrapper(self, configuration, **kwargs):
             if isinstance(configuration, ConfigSpace.Configuration):
-                blastoise = np.array([configuration[k] for k in configuration], dtype=data_type)
+                blastoise = np.array([configuration[k] for k in configuration],
+                                     dtype=data_type)
             else:
                 blastoise = configuration
             return foo(self, blastoise, **kwargs)
@@ -124,11 +136,12 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
     def __call__(self, configuration: dict, **kwargs) -> float:
         """ Provides interface to use, e.g., SciPy optimizers """
-        return self.objective_function(configuration, **kwargs)['function_value']
+        return self.objective_function(configuration,
+                                       **kwargs)['function_value']
 
     def test(self, n_runs: int = 5, *args, **kwargs) -> Tuple[list, list]:
         """
-        Draws some random configuration and call objective_fucntion(_test).
+        Draws some random configuration and call objective_function(_test).
 
         Parameters
         ----------
@@ -144,8 +157,10 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
         for _ in range(n_runs):
             configuration = self.configuration_space.sample_configuration()
-            train_rvals.append(self.objective_function(configuration, *args, **kwargs))
-            test_rvals.append(self.objective_function_test(configuration, *args, **kwargs))
+            train_rvals.append(
+                self.objective_function(configuration, *args, **kwargs))
+            test_rvals.append(
+                self.objective_function_test(configuration, *args, **kwargs))
 
         return train_rvals, test_rvals
 

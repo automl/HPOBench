@@ -1,10 +1,12 @@
 """ DataManager organizing the data for the benchmarks.
 
-DataManager organizing the download of the data. Each data set should have an own DataManger.
-The load function of a DataManger downloads the data from a given online source and splits the data
-train, test and optional validation splits.
+DataManager organizing the download of the data. Each data set should have an
+own DataManger. The load function of a DataManger downloads the data from a
+given online source and splits the data train, test and optional validation
+splits.
 
-For OpenML data sets (defined by task id or similar) please use the hpolib.util.openml_data_manager.
+For OpenML data sets (defined by task id or similar) please use the
+hpolib.util.openml_data_manager.
 """
 
 import abc
@@ -36,7 +38,8 @@ class DataManager(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def load(self):
-        """ Loads data from data directory as defined in config_file.data_directory
+        """ Loads data from data directory as defined in
+        config_file.data_directory
         """
         raise NotImplementedError()
 
@@ -99,7 +102,7 @@ class CrossvalidationDataManager(DataManager):
 
 
 class MNISTData(HoldoutDataManager):
-    """ Class implementing the HoldoutDataManger, managing the MNIST data set. """
+    """Class implementing the HoldoutDataManger, managing the MNIST data set"""
 
     def __init__(self):
         super(MNISTData, self).__init__()
@@ -109,11 +112,12 @@ class MNISTData(HoldoutDataManager):
 
         self.create_save_directory(self._save_to)
 
-    def load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray,
+                            np.ndarray, np.ndarray, np.ndarray]:
         """
-        Loads MNIST from data directory as defined in config_file.data_directory.
-        Downloads data if necessary. Code is copied and modified from the
-        Lasagne tutorial.
+        Loads MNIST from data directory as defined in
+        config_file.data_directory. Downloads data if necessary. Code is copied
+         and modified from the Lasagne tutorial.
 
         Returns
         -------
@@ -124,9 +128,11 @@ class MNISTData(HoldoutDataManager):
         X_test : np.ndarray
         y_test : np.ndarray
         """
-        X_train = self.__load_data(filename='train-images-idx3-ubyte.gz', images=True)
+        X_train = self.__load_data(filename='train-images-idx3-ubyte.gz',
+                                   images=True)
         y_train = self.__load_data(filename='train-labels-idx1-ubyte.gz')
-        X_test = self.__load_data(filename='t10k-images-idx3-ubyte.gz', images=True)
+        X_test = self.__load_data(filename='t10k-images-idx3-ubyte.gz',
+                                  images=True)
         y_test = self.__load_data(filename='t10k-labels-idx1-ubyte.gz')
 
         # Split data in training and validation
@@ -165,7 +171,8 @@ class MNISTData(HoldoutDataManager):
         # 1) If necessary download data
         save_fl = self._save_to / filename
         if not save_fl.exists():
-            self.logger.debug(f"Downloading {self._url_source + filename} to {save_fl}")
+            self.logger.debug(f"Downloading {self._url_source + filename} "
+                              f"to {save_fl}")
             urlretrieve(self._url_source + filename, str(save_fl))
         else:
             self.logger.debug(f"Load data {save_fl}")
@@ -193,8 +200,8 @@ class MNISTDataCrossvalidation(MNISTData, CrossvalidationDataManager):
 
     def load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
-        Loads MNIST from data directory as defined in config_file.data_directory.
-        Downloads data if necessary.
+        Loads MNIST from data directory as defined in
+        config_file.data_directory. Downloads data if necessary.
 
         Returns
         -------
@@ -204,7 +211,8 @@ class MNISTDataCrossvalidation(MNISTData, CrossvalidationDataManager):
         y_test : np.ndarray
 
         """
-        X_train, y_train, X_val, y_val, X_test, y_test = super(MNISTDataCrossvalidation, self).load()
+        X_train, y_train, X_val, y_val, X_test, y_test = \
+            super(MNISTDataCrossvalidation, self).load()
 
         X_train = np.concatenate([X_train, X_val], axis=0)
         y_train = np.concatenate([y_train, y_val], axis=0)
@@ -218,15 +226,17 @@ class CIFAR10Data(DataManager):
     def __init__(self):
         super(CIFAR10Data, self).__init__()
 
-        self._url_source = 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
+        self._url_source = 'https://www.cs.toronto.edu/~kriz/' \
+                           'cifar-10-python.tar.gz'
         self._save_to = hpolib.config_file.data_dir / "cifar10"
 
         self.create_save_directory(self._save_to)
 
-    def load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray,
+                            np.ndarray, np.ndarray, np.ndarray]:
         """
-        Loads CIFAR10 from data directory as defined in config_file.data_directory.
-        Downloads data if necessary.
+        Loads CIFAR10 from data directory as defined in
+        config_file.data_directory. Downloads data if necessary.
 
         Returns
         -------
@@ -280,7 +290,8 @@ class CIFAR10Data(DataManager):
 
     def __load_data(self, filename: str) -> Path:
         """
-        Loads data in binary format as available under 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'.
+        Loads data in binary format as available under
+        'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'.
 
         Parameters
         ----------
@@ -295,7 +306,8 @@ class CIFAR10Data(DataManager):
         save_fl = self._save_to / 'cifar-10-batches-py' / filename
         if not save_fl.exists():
             self.logger.debug(f'Downloading {self._url_source} to {save_fl}')
-            urlretrieve(self._url_source, self._save_to / "cifar-10-python.tar.gz")
+            urlretrieve(self._url_source,
+                        self._save_to / "cifar-10-python.tar.gz")
             tar = tarfile.open(self._save_to / "cifar-10-python.tar.gz")
             tar.extractall(self._save_to)
 
@@ -329,10 +341,11 @@ class SVHNData(DataManager):
 
         self.create_save_directory(self._save_to)
 
-    def load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray,
+                            np.ndarray, np.ndarray, np.ndarray]:
         """
-        Loads SVHN from data directory as defined in config_file.data_directory.
-        Downloads data if necessary.
+        Loads SVHN from data directory as defined in
+        config_file.data_directory. Downloads data if necessary.
 
         Returns
         -------
@@ -343,7 +356,8 @@ class SVHNData(DataManager):
         X_test : np.ndarray
         y_test : np.ndarray
         """
-        X, y, X_test, y_test = self.__load_data("train_32x32.mat", "test_32x32.mat")
+        X, y, X_test, y_test = self.__load_data("train_32x32.mat",
+                                                "test_32x32.mat")
 
         # Change the label encoding from [1, ... 10] to [0, ..., 9]
         # TODO
@@ -368,12 +382,15 @@ class SVHNData(DataManager):
             X -= X.mean(axis=1)[:, np.newaxis]
             X = X.reshape(data_shape)
 
-        return X_train, y_train[:, 0], X_valid, y_valid[:, 0], X_test, y_test[:, 0]
+        return X_train, y_train[:, 0], X_valid, y_valid[:, 0], \
+            X_test, y_test[:, 0]
 
     def __load_data(self, filename_train: str,
-                    filename_test: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+                    filename_test: str) -> Tuple[np.ndarray, np.ndarray,
+                                                 np.ndarray, np.ndarray]:
         """
-        Loads data in binary format as available under 'http://ufldl.stanford.edu/housenumbers/'.
+        Loads data in binary format as available under
+        'http://ufldl.stanford.edu/housenumbers/'.
 
         Parameters
         ----------
@@ -384,13 +401,15 @@ class SVHNData(DataManager):
 
         Returns
         -------
-        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+        Tuple[np.ndarray, np.ndarray, np.ndarray,
+              np.ndarray, np.ndarray, np.ndarray]
         """
 
         def __load_x_y(file_name):
             save_fl = self._save_to / file_name
             if not save_fl.exists():
-                self.logger.debug(f"Downloading {self._url_source + file_name} to {save_fl}")
+                self.logger.debug(f"Downloading {self._url_source + file_name}"
+                                  f" to {save_fl}")
                 urlretrieve(self._url_source + file_name, save_fl)
             else:
                 self.logger.debug(f"Load data {save_fl}")

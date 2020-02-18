@@ -3,8 +3,10 @@
 
 """ Defines the server-side for using benchmarks with containers
 
-BenchmarkServer defines the server side for the communication between the container (benchmark) and the client.
-It starts the Pyro4 server and awaits commands from the client. Make sure that all payloads are json-serializable.
+BenchmarkServer defines the server side for the communication between the
+container (benchmark) and the client.
+It starts the Pyro4 server and awaits commands from the client. Make sure
+that all payloads are json-serializable.
 """
 
 import argparse
@@ -57,7 +59,8 @@ class BenchmarkServer:
                 if 'rng' in kwargs and type(kwargs['rng']) == list:
                     (rnd0, rnd1, rnd2, rnd3, rnd4) = kwargs['rng']
                     rnd1 = [np.uint32(number) for number in rnd1]
-                    kwargs['rng'] = np.random.set_state((rnd0, rnd1, rnd2, rnd3, rnd4))
+                    kwargs['rng'] = np.random.set_state((rnd0, rnd1, rnd2,
+                                                         rnd3, rnd4))
                     self.logger.debug('rng works!!')
                 self.b = Benchmark(**kwargs)
             else:
@@ -79,7 +82,8 @@ class BenchmarkServer:
         cDict = json.loads(cString)
         cs = csjson.read(csString)
         configuration = CS.Configuration(cs, cDict)
-        result = self.b.objective_function(configuration, **json.loads(kwargsStr))
+        result = self.b.objective_function(configuration,
+                                           **json.loads(kwargsStr))
         # Handle SMAC status
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
@@ -93,7 +97,8 @@ class BenchmarkServer:
         cDict = json.loads(cString)
         cs = csjson.read(csString)
         configuration = CS.Configuration(cs, cDict)
-        result = self.b.objective_function_test(configuration, **json.loads(kwargsStr))
+        result = self.b.objective_function_test(configuration,
+                                                **json.loads(kwargsStr))
         # Handle SMAC runhistory
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
@@ -116,11 +121,13 @@ class BenchmarkServer:
 if __name__ == "__main__":
     Pyro4.config.REQUIRE_EXPOSE = False
 
-    parser = argparse.ArgumentParser(prog='server_abstract_benchmark.py',
-                                     description='HPOlib3 Container Server',
-                                     usage='%(prog)s <importBase> <benchmark> <socketId>')
+    parser = argparse.ArgumentParser(
+        prog='server_abstract_benchmark.py',
+        description='HPOlib3 Container Server',
+        usage='%(prog)s <importBase> <benchmark> <socketId>')
     parser.add_argument('importBase', type=str,
-                        help='Relative path to benchmark file in hpolib/benchmarks, e.g. ml.xgboost_benchmark')
+                        help='Relative path to benchmark file in '
+                             'hpolib/benchmarks, e.g. ml.xgboost_benchmark')
     parser.add_argument('benchmark', type=str,
                         help='Classname of the benchmark, e.g. XGBoostOnMnist')
     parser.add_argument('socketId', type=str,
@@ -129,5 +136,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # module = importlib.import_module(f'hpolib.benchmarks.{importBase}')
     # Benchmark = getattr(module, benchmark)
-    exec(f"from hpolib.benchmarks.{args.importBase} import {args.benchmark} as Benchmark")
+    exec(f"from hpolib.benchmarks.{args.importBase} import "
+         f"{args.benchmark} as Benchmark")
     bp = BenchmarkServer(args.socketId)

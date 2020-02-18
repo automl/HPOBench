@@ -3,16 +3,17 @@
 
 """ Defines the client-side for using benchmarks with containers
 
-AbstractBenchmarkClient defines the client side for the communication between 
-the containers and the client. 
+AbstractBenchmarkClient defines the client side for the communication between
+the containers and the client.
 It is used to download (if not already) and start containers in the background.
 
-To reduce download traffic, firstly, it checks if the image is already downloaded.
-The container source as well the path, where it should be stored, are defined in the
-~/.hpolibrc - file.
+To reduce download traffic, firstly, it checks if the image is already
+downloaded. The container source as well the path, where it should be stored,
+are defined in the ~/.hpolibrc - file.
 
-The name of the container (`benchmark_name`) is defined either in its belonging container-benchmark definition.
-(hpolib/container/<type>/<name> or via `ingName`.
+The name of the container (`benchmark_name`) is defined either in its belonging
+container-benchmark definition. (hpolib/container/<type>/<name> or via
+`ingName`.
 """
 
 import abc
@@ -45,57 +46,70 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         self.logger = logging.getLogger("BenchmarkClient")
         self.socketId = self._id_generator()
 
-    def _setup(self, gpu: bool = False, img_name: Optional[str] = None, img_source: Optional[str] = None, **kwargs):
+    def _setup(self, gpu: bool = False, img_name: Optional[str] = None,
+               img_source: Optional[str] = None, **kwargs):
         """ Initialization of the benchmark using container.
 
-        This setup function downloads the container from a defined source. The source is defined either in the .hpolibrc
-        or in the its benchmark definition (hpolib/container/benchmarks/..). If a image is already in the local
-        available, the local image is used.
-        Then, the container is started and a connection between the container and the client is established.
+        This setup function downloads the container from a defined source.
+        The source is defined either in the .hpolibrc or in the its benchmark
+        definition (hpolib/container/benchmarks/..). If a image is already in
+        the local available, the local image is used. Then, the container is
+        started and a connection between the container and the client is
+        established.
 
         Parameters
         ----------
         gpu : bool
-            If True, the container has access to the local Cuda-drivers. (Not tested)
+            If True, the container has access to the local cuda-drivers.
+            (Not tested)
         img_name : Optional[str]
-            name of the image. E.g. XGBoostOnMnist. The local container has to have the same name.
+            name of the image. E.g. XGBoostOnMnist. The local container has to
+            have the same name.
         img_source : Optional[str]
-            Path to the image. Either local path or link to singularity hub, etc
+            Path to the image. Either local path or link to singularity hub,...
         """
         # Create unique ID
         self.config = hpolib.config.config_file
 
-        # Default image name is benchmark name. img_name can be specified to point to another container.
+        # Default image name is benchmark name. img_name can be specified to
+        # point to another container.
         img_name = img_name or self.benchmark_name
 
         # Same for the image's source.
         img_source = img_source or self.config.image_source
-        self.logger.debug(f'Image {img_name} in {self.config.image_dir} from {img_source}')
+        self.logger.debug(f'Image {img_name} in {self.config.image_dir} '
+                          f'from {img_source}')
 
         img_dir = Path(self.config.image_dir)
 
-        # Pull the image from the singularity hub if the image is hosted online. If the image is stored locally (e.g.
-        # for development) do not pull it.
+        # Pull the image from the singularity hub if the image is hosted
+        # online. If the image is stored locally (e.g.for development) do
+        # not pull it.
         if img_source is not None \
-                and any((s in img_source for s in ['shub', 'library', 'docker', 'oras', 'http'])):
+                and any((s in img_source for s in ['shub', 'library', 'docker',
+                                                   'oras', 'http'])):
 
             if not (img_dir / img_name).exists():
-                self.logger.debug('Going to pull the image from an online source.')
+                self.logger.debug('Going to pull the image from an online '
+                                  'source.')
 
                 img_dir.mkdir(parents=True, exist_ok=True)
-                cmd = f"singularity pull --dir {self.config.image_dir} --name {img_name} " \
-                      f"{img_source}:{img_name.lower()}"
+                cmd = f"singularity pull --dir {self.config.image_dir} " \
+                      f"--name {img_name} {img_source}:{img_name.lower()}"
                 self.logger.debug(cmd)
                 subprocess.run(cmd, shell=True)
             else:
-                self.logger.debug('Skipping downloading the image. It is already downloaded.')
+                self.logger.debug('Skipping downloading the image. It is '
+                                  'already downloaded.')
         else:
-            self.logger.debug('Looking on the local filesystem for the image file, since image source was '
-                              'either \'None\' or not a known address. '
-                              f'Image Source: {img_source}')
+            self.logger.debug('Looking on the local filesystem for the image '
+                              'file, since image source was either \'None\' '
+                              'or not a known address. Image Source: '
+                              f'{img_source}')
 
             # Make sure that the image can be found locally.
-            assert (img_dir / img_name).exists(), f'Local image not found in {img_dir / img_name}'
+            assert (img_dir / img_name).exists(), f'Local image not found ' \
+                                                  f'in {img_dir / img_name}'
             self.logger.debug('Image found on the local file system.')
 
         iOptions = str(img_dir / img_name)
@@ -104,7 +118,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # Option for enabling GPU support
         gpuOpt = '--nv ' if gpu else ''
 
-        cmd = f'singularity instance start --bind /var/lib/ {gpuOpt}{iOptions} {self.socketId}'
+        cmd = f'singularity instance start --bind /var/lib/ {gpuOpt}' \
+              f'{iOptions} {self.socketId}'
         self.logger.debug(cmd)
         subprocess.run(cmd, shell=True)
 
@@ -114,7 +129,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
         Pyro4.config.REQUIRE_EXPOSE = False
         # Generate Pyro 4 URI for connecting to client
-        self.uri = f'PYRO:{self.socketId}.unixsock@./u:{self.config.socket_dir}/{self.socketId}_unix.sock'
+        self.uri = f'PYRO:{self.socketId}.unixsock@./u:' \
+                   f'{self.config.socket_dir}/{self.socketId}_unix.sock'
         self.b = Pyro4.Proxy(self.uri)
 
         # Handle rng and other optional benchmark arguments
@@ -138,8 +154,9 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                 if wait < self.config.pyro_connect_max_wait:
                     continue
                 else:
-                    self.logger.debug('Waiting time exceeded. To high it up, adjust config '
-                                      'option pyro_connect_max_wait.')
+                    self.logger.debug('Waiting time exceeded. To high it up, '
+                                      'adjust config option '
+                                      'pyro_connect_max_wait.')
                     raise
             break
         self.logger.debug('Connected to container')
@@ -148,26 +165,30 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # Create the arguments as Str
         if type(x) is list:
             xString = json.dumps(x, indent=None)
-            jsonStr = self.b.objective_function_list(xString, json.dumps(kwargs))
+            jsonStr = self.b.objective_function_list(xString,
+                                                     json.dumps(kwargs))
             return json.loads(jsonStr)
         else:
             # Create the arguments as Str
             cString = json.dumps(x.get_dictionary(), indent=None)
             csString = csjson.write(x.configuration_space, indent=None)
-            jsonStr = self.b.objective_function(cString, csString, json.dumps(kwargs))
+            jsonStr = self.b.objective_function(cString, csString,
+                                                json.dumps(kwargs))
             return json.loads(jsonStr)
 
     def objective_function_test(self, x, **kwargs):
         # Create the arguments as Str
         if type(x) is list:
             xString = json.dumps(x, indent=None)
-            jsonStr = self.b.objective_function_test_list(xString, json.dumps(kwargs))
+            jsonStr = self.b.objective_function_test_list(xString,
+                                                          json.dumps(kwargs))
             return json.loads(jsonStr)
         else:
             # Create the arguments as Str
             cString = json.dumps(x.get_dictionary(), indent=None)
             csString = csjson.write(x.configuration_space, indent=None)
-            jsonStr = self.b.objective_function_test(cString, csString, json.dumps(kwargs))
+            jsonStr = self.b.objective_function_test(cString, csString,
+                                                     json.dumps(kwargs))
             return json.loads(jsonStr)
 
     def test(self, *args, **kwargs):
@@ -184,13 +205,16 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
     def __call__(self, configuration, **kwargs):
         """ Provides interface to use, e.g., SciPy optimizers """
-        return self.objective_function(configuration, **kwargs)['function_value']
+        return self.objective_function(configuration,
+                                       **kwargs)['function_value']
 
-    def _id_generator(self, size=6, chars=string.ascii_uppercase + string.digits):
+    def _id_generator(self, size=6,
+                      chars=string.ascii_uppercase + string.digits):
         return ''.join(random.choice(chars) for _ in range(size))
 
     def __del__(self):
         Pyro4.config.COMMTIMEOUT = 1
         self.b.shutdown()
-        subprocess.run(f'singularity instance stop {self.socketID}', shell=True)
+        subprocess.run(f'singularity instance stop {self.socketID}',
+                       shell=True)
         os.remove(self.config.socket_dir + self.socketId + '_unix.sock')

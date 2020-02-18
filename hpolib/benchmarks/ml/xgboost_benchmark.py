@@ -31,17 +31,23 @@ class XGBoostBenchmark(AbstractBenchmark):
         self.n_threads = n_threads
         self.task_id = task_id
 
-        self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test = self.get_data()
+        self.X_train, self.y_train, self.X_valid, self.y_valid, \
+            self.X_test, self.y_test = self.get_data()
 
-        self.train_idx = self.rng.choice(a=np.arange(len(self.X_train)), size=len(self.X_train), replace=False)
+        self.train_idx = self.rng.choice(a=np.arange(len(self.X_train)),
+                                         size=len(self.X_train),
+                                         replace=False)
 
-    def get_data(self) -> Tuple[np.array, np.array, np.array, np.array, np.array, np.array]:
+    def get_data(self) -> Tuple[np.array, np.array, np.array,
+                                np.array, np.array, np.array]:
         """ Loads the data given a task or another source. """
 
-        assert self.task_id is not None, NotImplementedError('No taskid given. Please either specify a'
-                                                             'taskid or overwrite the get_data method.')
+        assert self.task_id is not None, \
+            NotImplementedError('No taskid given. Please either specify a'
+                                'taskid or overwrite the get_data method.')
 
-        dm = OpenMLHoldoutDataManager(openml_task_id=self.task_id, rng=self.rng)
+        dm = OpenMLHoldoutDataManager(openml_task_id=self.task_id,
+                                      rng=self.rng)
         try:
             X_train, y_train, X_val, y_val, X_test, y_test = dm.load()
         except ValueError as e:
@@ -55,13 +61,15 @@ class XGBoostBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._check_configuration
     # @AbstractBenchmark._configuration_as_array
-    def objective_function(self, config: dict, n_estimators: int, subsample: float, **kwargs) -> dict:
+    def objective_function(self, config: dict, n_estimators: int,
+                           subsample: float, **kwargs) -> dict:
         """
-        Trains a XGBoost model given a hyperparameter configuration and evaluates the model on the validation set.
+        Trains a XGBoost model given a hyperparameter configuration and
+        evaluates the model on the validation set.
 
-        To prevent overfitting on a single seed, it is possible to pass a parameter `rng`
-        as 'int' or 'np.random.RandomState' to this function. If this parameter is not given, the default random state
-        is used.
+        To prevent overfitting on a single seed, it is possible to pass a
+        parameter `rng` as 'int' or 'np.random.RandomState' to this function.
+        If this parameter is not given, the default random state is used.
 
         Parameters
         ----------
@@ -82,7 +90,9 @@ class XGBoostBenchmark(AbstractBenchmark):
             subsample : fraction which was used to subsample the training data
 
         """
-        assert 0 < subsample <= 1, ValueError(f'Parameter \'subsample\' must be in range (0, 1] but was {subsample}')
+        assert 0 < subsample <= 1, \
+            ValueError(f'Parameter \'subsample\' must be in range (0, 1] '
+                       f'but was {subsample}')
 
         rng = kwargs.get('rng', None)
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
@@ -94,22 +104,30 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         model.fit(X=self.X_train[train_idx], y=self.y_train[train_idx])
 
-        train_loss = XGBoostBenchmark._eval_xgb(model=model, X=self.X_train[train_idx], y=self.y_train[train_idx])
-        val_loss = XGBoostBenchmark._eval_xgb(model=model, X=self.X_valid, y=self.y_valid)
+        train_loss = XGBoostBenchmark._eval_xgb(model=model,
+                                                X=self.X_train[train_idx],
+                                                y=self.y_train[train_idx])
+        val_loss = XGBoostBenchmark._eval_xgb(model=model,
+                                              X=self.X_valid,
+                                              y=self.y_valid)
         cost = time.time() - start
 
-        return {'function_value': val_loss, 'cost': cost, 'train_loss': train_loss, 'subsample': subsample}
+        return {'function_value': val_loss,
+                'cost': cost,
+                'train_loss': train_loss,
+                'subsample': subsample}
 
     @AbstractBenchmark._check_configuration
     # @AbstractBenchmark._configuration_as_array
-    def objective_function_test(self, config: dict, n_estimators: int, **kwargs) -> dict:
+    def objective_function_test(self, config: dict, n_estimators: int,
+                                **kwargs) -> dict:
         """
-        Trains a XGBoost model with a given configuration on both the train and validation data set and
-        evaluates the model on the test data set.
+        Trains a XGBoost model with a given configuration on both the train
+        and validation data set and evaluates the model on the test data set.
 
-        To prevent overfitting on a single seed, it is possible to pass a parameter `rng`
-        as 'int' or 'np.random.RandomState' to this function. If this parameter is not given, the default random state
-        is used.
+        To prevent overfitting on a single seed, it is possible to pass a
+        parameter `rng` as 'int' or 'np.random.RandomState' to this function.
+        If this parameter is not given, the default random state is used.
 
         Parameters
         ----------
@@ -134,15 +152,18 @@ class XGBoostBenchmark(AbstractBenchmark):
         model.fit(X=np.concatenate((self.X_train, self.X_valid)),
                   y=np.concatenate((self.y_train, self.y_valid)))
 
-        test_loss = XGBoostBenchmark._eval_xgb(model=model, X=self.X_test, y=self.y_test)
+        test_loss = XGBoostBenchmark._eval_xgb(model=model, X=self.X_test,
+                                               y=self.y_test)
         cost = time.time() - start
 
         return {'function_value': test_loss, 'cost': cost}
 
     @staticmethod
-    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    def get_configuration_space(seed: Union[int, None] = None
+                                ) -> CS.ConfigurationSpace:
         """
-        Creates a ConfigSpace.ConfigurationSpace containing all parameters for the XGBoost Model
+        Creates a ConfigSpace.ConfigurationSpace containing all parameters for
+        the XGBoost Model
 
         Parameters
         ----------
@@ -157,12 +178,18 @@ class XGBoostBenchmark(AbstractBenchmark):
         cs = CS.ConfigurationSpace(seed=seed)
 
         cs.add_hyperparameters([
-            CS.UniformFloatHyperparameter('eta', lower=1e-3, upper=1, log=True),
-            CS.UniformFloatHyperparameter('min_child_weight', lower=1e-10, upper=7., log=True),
-            CS.UniformFloatHyperparameter('colsample_bytree', lower=0., upper=1.),
-            CS.UniformFloatHyperparameter('colsample_bylevel', lower=0., upper=1.),
-            CS.UniformFloatHyperparameter('reg_lambda', lower=2e-10, upper=2e10, log=True),
-            CS.UniformFloatHyperparameter('reg_alpha', lower=2e-10, upper=2e10, log=True)
+            CS.UniformFloatHyperparameter('eta',
+                                          lower=1e-3, upper=1, log=True),
+            CS.UniformFloatHyperparameter('min_child_weight',
+                                          lower=1e-10, upper=7., log=True),
+            CS.UniformFloatHyperparameter('colsample_bytree',
+                                          lower=0., upper=1.),
+            CS.UniformFloatHyperparameter('colsample_bylevel',
+                                          lower=0., upper=1.),
+            CS.UniformFloatHyperparameter('reg_lambda',
+                                          lower=2e-10, upper=2e10, log=True),
+            CS.UniformFloatHyperparameter('reg_alpha',
+                                          lower=2e-10, upper=2e10, log=True)
         ])
 
         return cs
@@ -174,28 +201,34 @@ class XGBoostBenchmark(AbstractBenchmark):
                 'references': ['None'],
                 }
 
-    def _get_pipeline(self, eta: float, min_child_weight: int, colsample_bytree: float, colsample_bylevel: float,
-                      reg_lambda: int, reg_alpha: int, n_estimators: int) -> pipeline.Pipeline:
+    def _get_pipeline(self, eta: float, min_child_weight: int,
+                      colsample_bytree: float, colsample_bylevel: float,
+                      reg_lambda: int, reg_alpha: int,
+                      n_estimators: int) -> pipeline.Pipeline:
         """ Create the scikit-learn (training-)pipeline """
-        clf = pipeline.Pipeline([('preprocess_impute', preprocessing.Imputer(missing_values='NaN', strategy='mean',
-                                                                             axis=0)),
-                                 # No normalizing as it should not make a difference
-                                 # ('preprocess_standard_scale', preprocessing.StandardScaler()),
-                                 ('xgb', xgb.XGBClassifier(learning_rate=eta,
-                                                           min_child_weight=min_child_weight,
-                                                           colsample_bytree=colsample_bytree,
-                                                           colsample_bylevel=colsample_bylevel,
-                                                           reg_alpha=reg_alpha,
-                                                           reg_lambda=reg_lambda,
-                                                           n_estimators=n_estimators,
-                                                           objective='binary:logistic',
-                                                           n_jobs=self.n_threads,
-                                                           random_state=self.rng.randint(1, 100000)))
-                                 ])
+        clf = pipeline.Pipeline(
+            [('preprocess_impute',
+              preprocessing.Imputer(
+                  missing_values='NaN', strategy='mean', axis=0)),
+             # No normalizing as it should not make a difference
+             # ('preprocess_standard_scale', preprocessing.StandardScaler()),
+             ('xgb', xgb.XGBClassifier(
+                 learning_rate=eta,
+                 min_child_weight=min_child_weight,
+                 colsample_bytree=colsample_bytree,
+                 colsample_bylevel=colsample_bylevel,
+                 reg_alpha=reg_alpha,
+                 reg_lambda=reg_lambda,
+                 n_estimators=n_estimators,
+                 objective='binary:logistic',
+                 n_jobs=self.n_threads,
+                 random_state=self.rng.randint(1, 100000)))
+             ])
         return clf
 
     @staticmethod
-    def _eval_xgb(X: np.array, y: np.array, model: Union[xgb.XGBModel, pipeline.Pipeline]) -> float:
+    def _eval_xgb(X: np.array, y: np.array,
+                  model: Union[xgb.XGBModel, pipeline.Pipeline]) -> float:
         """ Helper-function for evaluating the XGBoost model. """
         y_pred = model.predict(X)
         acc = accuracy_score(y_pred=y_pred, y_true=y)

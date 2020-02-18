@@ -4,7 +4,8 @@ import pkg_resources
 from distutils.version import LooseVersion
 
 RE_PATTERN = re.compile(
-    r'^(?P<name>[\w\-]+)((?P<operation>==|>=|>)(?P<version>(\d+)?(\.[a-zA-Z0-9]+)?(\.\d+)?))?$')
+    r'^(?P<name>[\w\-]+)((?P<operation>==|>=|>)'
+    r'(?P<version>(\d+)?(\.[a-zA-Z0-9]+)?(\.\d+)?))?$')
 
 """Generic code to verify package versions (a.k.a. dependencies).
 
@@ -12,7 +13,8 @@ Written by Anatolii Domashnev (@ayaro) for auto-sklearn. Licensed under a BSD
 3-clause license.
 
 See the following link for the original PR:
-https://github.com/Ayaro/auto-sklearn/commit/f59c6e9751061ec0e68a402507c83f6c10ae5bbd
+https://github.com/Ayaro/auto-sklearn/commit/
+f59c6e9751061ec0e68a402507c83f6c10ae5bbd
 """
 
 
@@ -73,7 +75,8 @@ class MissingPackageError(Exception):
 
 
 class IncorrectPackageVersionError(Exception):
-    error_message = '\'{name} {installed_version}\' version mismatch ({operation}{required_version})'
+    error_message = '\'{name} {installed_version}\' version mismatch ' \
+                    '({operation}{required_version})'
 
     def __init__(self, package_name, installed_version, operation,
                  required_version):
@@ -81,8 +84,9 @@ class IncorrectPackageVersionError(Exception):
         self.installed_version = installed_version
         self.operation = operation
         self.required_version = required_version
-        message = self.error_message.format(name=package_name,
-                                            installed_version=installed_version,
-                                            operation=operation,
-                                            required_version=required_version)
+        message = self.error_message.format(
+            name=package_name,
+            installed_version=installed_version,
+            operation=operation,
+            required_version=required_version)
         super(IncorrectPackageVersionError, self).__init__(message)
