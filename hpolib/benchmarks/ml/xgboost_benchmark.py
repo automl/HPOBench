@@ -9,7 +9,6 @@ from sklearn.metrics import accuracy_score
 
 import hpolib.util.rng_helper as rng_helper
 from hpolib.abstract_benchmark import AbstractBenchmark
-from hpolib.util.data_manager import MNISTData
 from hpolib.util.openml_data_manager import OpenMLHoldoutDataManager
 
 __version__ = '0.0.1'
@@ -49,6 +48,10 @@ class XGBoostBenchmark(AbstractBenchmark):
             raise e  # Currently, only holdout-data-sets are supported
 
         return X_train, y_train, X_val, y_val, X_test, y_test
+
+    def shuffle_data(self, rng=None):
+        random_state = rng_helper.get_rng(rng, self.rng)
+        random_state.shuffle(self.train_idx)
 
     @AbstractBenchmark._check_configuration
     # @AbstractBenchmark._configuration_as_array
@@ -174,21 +177,21 @@ class XGBoostBenchmark(AbstractBenchmark):
     def _get_pipeline(self, eta: float, min_child_weight: int, colsample_bytree: float, colsample_bylevel: float,
                       reg_lambda: int, reg_alpha: int, n_estimators: int) -> pipeline.Pipeline:
         """ Create the scikit-learn (training-)pipeline """
-        clf = pipeline.Pipeline(
-            [('preprocess_impute', preprocessing.Imputer(missing_values='NaN', strategy='mean', axis=0)),
-             # No normalizing as it should not make a difference
-             # ('preprocess_standard_scale', preprocessing.StandardScaler()),
-             ('xgb', xgb.XGBClassifier(learning_rate=eta,
-                                       min_child_weight=min_child_weight,
-                                       colsample_bytree=colsample_bytree,
-                                       colsample_bylevel=colsample_bylevel,
-                                       reg_alpha=reg_alpha,
-                                       reg_lambda=reg_lambda,
-                                       n_estimators=n_estimators,
-                                       objective='binary:logistic',
-                                       n_jobs=self.n_threads,
-                                       random_state=self.rng.randint(1, 100000)))
-                                ])
+        clf = pipeline.Pipeline([('preprocess_impute', preprocessing.Imputer(missing_values='NaN', strategy='mean',
+                                                                             axis=0)),
+                                 # No normalizing as it should not make a difference
+                                 # ('preprocess_standard_scale', preprocessing.StandardScaler()),
+                                 ('xgb', xgb.XGBClassifier(learning_rate=eta,
+                                                           min_child_weight=min_child_weight,
+                                                           colsample_bytree=colsample_bytree,
+                                                           colsample_bylevel=colsample_bylevel,
+                                                           reg_alpha=reg_alpha,
+                                                           reg_lambda=reg_lambda,
+                                                           n_estimators=n_estimators,
+                                                           objective='binary:logistic',
+                                                           n_jobs=self.n_threads,
+                                                           random_state=self.rng.randint(1, 100000)))
+                                 ])
         return clf
 
     @staticmethod
@@ -197,12 +200,3 @@ class XGBoostBenchmark(AbstractBenchmark):
         y_pred = model.predict(X)
         acc = accuracy_score(y_pred=y_pred, y_true=y)
         return 1 - acc
-
-
-class XGBoostOnMnist(XGBoostBenchmark):
-    def __init__(self, n_threads: int = 1, rng: Union[int, np.random.RandomState, None] = None):
-        super().__init__(task_id=None, n_threads=n_threads, rng=rng)
-
-    def get_data(self):
-        dm = MNISTData()
-        return dm.load()

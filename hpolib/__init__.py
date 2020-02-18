@@ -1,5 +1,4 @@
-__authors__ = ["Katharina Eggensperger", "Matthias Feurer", "Aaron Klein",
-               "Stefan Falkner", "Stefan Staeglich", "Philipp Mueller"]
+__authors__ = ["Test Author"]
 __contact__ = "automl.org"
 
 from hpolib.__version__ import __version__
