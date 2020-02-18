@@ -14,6 +14,7 @@ from hpolib.util.openml_data_manager import OpenMLHoldoutDataManager
 
 __version__ = '0.0.1'
 
+
 class XGBoostBenchmark(AbstractBenchmark):
 
     def __init__(self, task_id: Union[int, None] = None, n_threads: int = 1,
@@ -34,7 +35,6 @@ class XGBoostBenchmark(AbstractBenchmark):
         self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test = self.get_data()
 
         self.train_idx = self.rng.choice(a=np.arange(len(self.X_train)), size=len(self.X_train), replace=False)
-        self.valid_idx = self.rng.choice(a=np.arange(len(self.X_valid)), size=len(self.X_valid), replace=False)
 
     def get_data(self) -> Tuple[np.array, np.array, np.array, np.array, np.array, np.array]:
         """ Loads the data given a task or another source. """
@@ -99,7 +99,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._check_configuration
     # @AbstractBenchmark._configuration_as_array
-    def objective_function_test(self, config: dict, n_estimators: int, subsample: float, **kwargs) -> dict:
+    def objective_function_test(self, config: dict, n_estimators: int, **kwargs) -> dict:
         """
         Trains a XGBoost model with a given configuration on both the train and validation data set and
         evaluates the model on the test data set.
@@ -114,8 +114,6 @@ class XGBoostBenchmark(AbstractBenchmark):
             Configuration for the XGBoost Model
         n_estimators : int
             Number of trees to fit.
-        subsample : float
-            Subsample ratio of the training instance.
         kwargs
 
         Returns
@@ -123,26 +121,20 @@ class XGBoostBenchmark(AbstractBenchmark):
         dict -
             function_value : test loss
             cost : time to train and evaluate the model
-            subsample : fraction which was used to subsample the training data
         """
-        assert 0 < subsample <= 1, ValueError(f'Parameter \'subsample\' must be in range (0, 1] but was {subsample}')
-
         rng = kwargs.get('rng', None)
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         start = time.time()
         model = self._get_pipeline(n_estimators=n_estimators, **config)
 
-        train_idx = self.train_idx[:int(len(self.train_idx) * subsample)]
-        valid_idx = self.valid_idx[:int(len(self.valid_idx) * subsample)]
-
-        model.fit(X=np.concatenate((self.X_train[train_idx], self.X_valid[valid_idx])),
-                  y=np.concatenate((self.y_train[train_idx], self.y_valid[valid_idx])))
+        model.fit(X=np.concatenate((self.X_train, self.X_valid)),
+                  y=np.concatenate((self.y_train, self.y_valid)))
 
         test_loss = XGBoostBenchmark._eval_xgb(model=model, X=self.X_test, y=self.y_test)
         cost = time.time() - start
 
-        return {'function_value': test_loss, 'cost': cost, 'subsample': subsample}
+        return {'function_value': test_loss, 'cost': cost}
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -175,27 +167,27 @@ class XGBoostBenchmark(AbstractBenchmark):
     @staticmethod
     def get_meta_information() -> dict:
         """ Returns the meta information for the benchmark """
-        from ConfigSpace.read_and_write.json import write as cs_to_json
         return {'name': 'XGBoost',
-                'configuration space': cs_to_json(XGBoostBenchmark.get_configuration_space()),
-                'references': ['None']
+                'references': ['None'],
                 }
 
     def _get_pipeline(self, eta: float, min_child_weight: int, colsample_bytree: float, colsample_bylevel: float,
                       reg_lambda: int, reg_alpha: int, n_estimators: int) -> pipeline.Pipeline:
         """ Create the scikit-learn (training-)pipeline """
-        clf = pipeline.Pipeline([  # No normalizing as it should not make a difference
-                                   # ('preproc', preprocessing.StandardScaler()),
-                                 ('xgb', xgb.XGBClassifier(learning_rate=eta,
-                                                           min_child_weight=min_child_weight,
-                                                           colsample_bytree=colsample_bytree,
-                                                           colsample_bylevel=colsample_bylevel,
-                                                           reg_alpha=reg_alpha,
-                                                           reg_lambda=reg_lambda,
-                                                           n_estimators=n_estimators,
-                                                           objective='binary:logistic',
-                                                           n_jobs=self.n_threads,
-                                                           random_state=self.rng.randint(1, 100000)))
+        clf = pipeline.Pipeline(
+            [('preprocess_impute', preprocessing.Imputer(missing_values='NaN', strategy='mean', axis=0)),
+             # No normalizing as it should not make a difference
+             # ('preprocess_standard_scale', preprocessing.StandardScaler()),
+             ('xgb', xgb.XGBClassifier(learning_rate=eta,
+                                       min_child_weight=min_child_weight,
+                                       colsample_bytree=colsample_bytree,
+                                       colsample_bylevel=colsample_bylevel,
+                                       reg_alpha=reg_alpha,
+                                       reg_lambda=reg_lambda,
+                                       n_estimators=n_estimators,
+                                       objective='binary:logistic',
+                                       n_jobs=self.n_threads,
+                                       random_state=self.rng.randint(1, 100000)))
                                 ])
         return clf
 
@@ -205,29 +197,6 @@ class XGBoostBenchmark(AbstractBenchmark):
         y_pred = model.predict(X)
         acc = accuracy_score(y_pred=y_pred, y_true=y)
         return 1 - acc
-
-
-class XGBoostOnHiggs(XGBoostBenchmark):
-
-    def __init__(self, n_threads: int = 1, rng: Union[int, None] = None):
-        super().__init__(task_id=75101, n_threads=n_threads, rng=rng)
-
-    def _get_pipeline(self, eta: float, colsample_bytree: float, colsample_bylevel: float,
-                      n_estimators: int, reg_lambda: int = 1, reg_alpha: int = 0,
-                      min_child_weight: int = 1) -> pipeline.Pipeline:
-
-        clf = pipeline.Pipeline([('preproc1', preprocessing.Imputer(missing_values='NaN', strategy='mean', axis=0)),
-                                 # No normalizing as it should not make a difference
-                                 # ('preproc2', preprocessing.StandardScaler()),
-                                 ('xgb', xgb.XGBClassifier(learning_rate=eta,
-                                                           n_estimators=n_estimators,
-                                                           objective='binary:logistic',
-                                                           n_jobs=self.n_threads,
-                                                           colsample_bytree=colsample_bytree,
-                                                           colsample_bylevel=colsample_bylevel,
-                                                           random_state=self.rng.randint(1, 100000)))
-                                 ])
-        return clf
 
 
 class XGBoostOnMnist(XGBoostBenchmark):
