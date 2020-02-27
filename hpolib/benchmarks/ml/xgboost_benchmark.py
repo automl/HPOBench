@@ -177,12 +177,12 @@ class XGBoostBenchmark(AbstractBenchmark):
         cs = CS.ConfigurationSpace(seed=seed)
 
         cs.add_hyperparameters([
-            CS.UniformFloatHyperparameter('eta', lower=1e-3, upper=1, log=True),
-            CS.UniformFloatHyperparameter('min_child_weight', lower=1e-10, upper=7., log=True),
-            CS.UniformFloatHyperparameter('colsample_bytree', lower=0., upper=1.),
-            CS.UniformFloatHyperparameter('colsample_bylevel', lower=0., upper=1.),
-            CS.UniformFloatHyperparameter('reg_lambda', lower=2e-10, upper=2e10, log=True),
-            CS.UniformFloatHyperparameter('reg_alpha', lower=2e-10, upper=2e10, log=True)
+            CS.UniformFloatHyperparameter('eta', lower=1e-5, upper=1, default_value=0.3, log=True),
+            CS.UniformFloatHyperparameter('min_child_weight', lower=0.05, upper=10., default_value=1., log=True),
+            CS.UniformFloatHyperparameter('colsample_bytree', lower=0.05, upper=1., default_value=1.),
+            CS.UniformFloatHyperparameter('colsample_bylevel', lower=0.05, upper=1., default_value=1.),
+            CS.UniformFloatHyperparameter('reg_lambda', lower=1e-5, upper=2, default_value=1, log=True),
+            CS.UniformFloatHyperparameter('reg_alpha', lower=1e-5, upper=2, default_value=1e-5, log=True)
         ])
 
         return cs
