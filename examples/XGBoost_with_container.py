@@ -13,7 +13,6 @@ myrng = np.random.RandomState(10)
 # (Singuarity.XGBoostBenchmark --> XGBoostBenchmark)
 b = Benchmark(rng=myrng,
               container_name='XGBoostBenchmark',
-              container_source='/home/philipp/.cache/hpolib3/hpolib3-1000',
               task_id=167149)
 print(b.get_meta_information())
 
