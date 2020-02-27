@@ -211,4 +211,4 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         Pyro4.config.COMMTIMEOUT = 1
         self.benchmark.shutdown()
         subprocess.run(f'singularity instance stop {self.socket_id}', shell=True)
-        os.remove(self.config.socket_dir + self.socket_id + '_unix.sock')
+        os.remove(str(self.config.socket_dir / f'{self.socket_id}_unix.sock'))
