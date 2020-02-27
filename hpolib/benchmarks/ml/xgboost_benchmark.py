@@ -1,11 +1,13 @@
 import time
-from typing import Union, Tuple
+from typing import Union, Tuple, Dict, List
 
 import ConfigSpace as CS
 import numpy as np
 import xgboost as xgb
-from sklearn import preprocessing, pipeline
+from sklearn import pipeline
+from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import make_scorer
 
 import hpolib.util.rng_helper as rng_helper
 from hpolib.abstract_benchmark import AbstractBenchmark
@@ -30,16 +32,21 @@ class XGBoostBenchmark(AbstractBenchmark):
         super(XGBoostBenchmark, self).__init__(rng=rng)
         self.n_threads = n_threads
         self.task_id = task_id
+        self.accuracy_scorer = make_scorer(accuracy_score)
 
-        self.X_train, self.y_train, self.X_valid, self.y_valid, \
-            self.X_test, self.y_test = self.get_data()
+        self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test, self.variable_types = \
+            self.get_data()
+
+        categories = [np.unique(self.X_train[:, i])
+                      if self.variable_types[i] == 'categorical' else []
+                      for i in range(self.X_train.shape[1])]
 
         self.train_idx = self.rng.choice(a=np.arange(len(self.X_train)),
                                          size=len(self.X_train),
                                          replace=False)
 
-    def get_data(self) -> Tuple[np.array, np.array, np.array,
-                                np.array, np.array, np.array]:
+    def get_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray,
+                                np.ndarray, np.ndarray, np.ndarray, List]:
         """ Loads the data given a task or another source. """
 
         assert self.task_id is not None, \
@@ -48,21 +55,18 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         dm = OpenMLHoldoutDataManager(openml_task_id=self.task_id,
                                       rng=self.rng)
-        try:
-            X_train, y_train, X_val, y_val, X_test, y_test = dm.load()
-        except ValueError as e:
-            raise e  # Currently, only holdout-data-sets are supported
+        X_train, y_train, X_val, y_val, X_test, y_test = dm.load()
 
-        return X_train, y_train, X_val, y_val, X_test, y_test
+        return X_train, y_train, X_val, y_val, X_test, y_test, dm.variable_types
 
     def shuffle_data(self, rng=None):
+        """ Reshuffle the training data. """
         random_state = rng_helper.get_rng(rng, self.rng)
         random_state.shuffle(self.train_idx)
 
     @AbstractBenchmark._check_configuration
-    # @AbstractBenchmark._configuration_as_array
-    def objective_function(self, config: dict, n_estimators: int,
-                           subsample: float, **kwargs) -> dict:
+    def objective_function(self, config: Dict, n_estimators: int,
+                           subsample: float, **kwargs) -> Dict:
         """
         Trains a XGBoost model given a hyperparameter configuration and
         evaluates the model on the validation set.
@@ -73,7 +77,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         Parameters
         ----------
-        config : dict
+        config : Dict
             Configuration for the XGBoost model
         n_estimators : int
             Number of trees to fit.
@@ -83,7 +87,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         Returns
         -------
-        dict -
+        Dict -
             function_value : validation loss
             cost : time to train and evaluate the model
             train_loss : trainings loss
@@ -104,12 +108,12 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         model.fit(X=self.X_train[train_idx], y=self.y_train[train_idx])
 
-        train_loss = XGBoostBenchmark._eval_xgb(model=model,
-                                                X=self.X_train[train_idx],
-                                                y=self.y_train[train_idx])
-        val_loss = XGBoostBenchmark._eval_xgb(model=model,
-                                              X=self.X_valid,
-                                              y=self.y_valid)
+        train_loss = 1 - self.accuracy_scorer(model,
+                                              self.X_train[train_idx],
+                                              self.y_train[train_idx])
+        val_loss = 1 - self.accuracy_scorer(model,
+                                            self.X_valid,
+                                            self.y_valid)
         cost = time.time() - start
 
         return {'function_value': val_loss,
@@ -119,8 +123,8 @@ class XGBoostBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._check_configuration
     # @AbstractBenchmark._configuration_as_array
-    def objective_function_test(self, config: dict, n_estimators: int,
-                                **kwargs) -> dict:
+    def objective_function_test(self, config: Dict, n_estimators: int,
+                                **kwargs) -> Dict:
         """
         Trains a XGBoost model with a given configuration on both the train
         and validation data set and evaluates the model on the test data set.
@@ -131,7 +135,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         Parameters
         ----------
-        config : dict
+        config : Dict
             Configuration for the XGBoost Model
         n_estimators : int
             Number of trees to fit.
@@ -139,7 +143,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         Returns
         -------
-        dict -
+        Dict -
             function_value : test loss
             cost : time to train and evaluate the model
         """
@@ -152,8 +156,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         model.fit(X=np.concatenate((self.X_train, self.X_valid)),
                   y=np.concatenate((self.y_train, self.y_valid)))
 
-        test_loss = XGBoostBenchmark._eval_xgb(model=model, X=self.X_test,
-                                               y=self.y_test)
+        test_loss = 1 - self.accuracy_scorer(model, self.X_test, self.y_test)
         cost = time.time() - start
 
         return {'function_value': test_loss, 'cost': cost}
@@ -195,7 +198,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         return cs
 
     @staticmethod
-    def get_meta_information() -> dict:
+    def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
         return {'name': 'XGBoost',
                 'references': ['None'],
@@ -206,12 +209,14 @@ class XGBoostBenchmark(AbstractBenchmark):
                       reg_lambda: int, reg_alpha: int,
                       n_estimators: int) -> pipeline.Pipeline:
         """ Create the scikit-learn (training-)pipeline """
+        num_class = len(np.unique(self.y_train))
+        objective = 'binary:logistic' if num_class <= 2 else 'multi:softmax'
+        # in case of binary classification num_class has to be 1
+        num_class = 1 if num_class == 2 else num_class
+
         clf = pipeline.Pipeline(
             [('preprocess_impute',
-              preprocessing.Imputer(
-                  missing_values='NaN', strategy='mean', axis=0)),
-             # No normalizing as it should not make a difference
-             # ('preprocess_standard_scale', preprocessing.StandardScaler()),
+              SimpleImputer(missing_values=np.nan, strategy='mean')),
              ('xgb', xgb.XGBClassifier(
                  learning_rate=eta,
                  min_child_weight=min_child_weight,
@@ -220,16 +225,10 @@ class XGBoostBenchmark(AbstractBenchmark):
                  reg_alpha=reg_alpha,
                  reg_lambda=reg_lambda,
                  n_estimators=n_estimators,
-                 objective='binary:logistic',
+                 objective=objective,
                  n_jobs=self.n_threads,
-                 random_state=self.rng.randint(1, 100000)))
+                 random_state=self.rng.randint(1, 100000),
+                 num_class=num_class,
+             ))
              ])
         return clf
-
-    @staticmethod
-    def _eval_xgb(X: np.array, y: np.array,
-                  model: Union[xgb.XGBModel, pipeline.Pipeline]) -> float:
-        """ Helper-function for evaluating the XGBoost model. """
-        y_pred = model.predict(X)
-        acc = accuracy_score(y_pred=y_pred, y_true=y)
-        return 1 - acc

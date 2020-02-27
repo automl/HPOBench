@@ -7,7 +7,7 @@ AbstractBenchmarkClient defines the client side for the communication between
 the containers and the client.
 It is used to download (if not already) and start containers in the background.
 
-To reduce download traffic, firstly, it checks if the image is already
+To reduce download traffic, firstly, it checks if the container is already
 downloaded. The container source as well the path, where it should be stored,
 are defined in the ~/.hpolibrc - file.
 
@@ -20,18 +20,20 @@ import abc
 import json
 import logging
 import os
-import random
-import string
 import subprocess
 import time
 from pathlib import Path
 from typing import Optional
+from uuid import uuid1
 
 import Pyro4
 import numpy
 from ConfigSpace.read_and_write import json as csjson
+from ConfigSpace import Configuration
 
 import hpolib.config
+
+logger = logging.getLogger("BenchmarkClient")
 
 
 class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
@@ -39,182 +41,172 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
     Attributes
     ----------
-    logger : logging.Logger
+    socket_id : str
 
     """
     def __init__(self):
-        self.logger = logging.getLogger("BenchmarkClient")
-        self.socketId = self._id_generator()
+        self.socket_id = self._id_generator()
 
-    def _setup(self, gpu: bool = False, img_name: Optional[str] = None,
-               img_source: Optional[str] = None, **kwargs):
+    def _setup(self, gpu: bool = False, container_name: Optional[str] = None,
+               container_source: Optional[str] = None, **kwargs):
         """ Initialization of the benchmark using container.
 
         This setup function downloads the container from a defined source.
         The source is defined either in the .hpolibrc or in the its benchmark
-        definition (hpolib/container/benchmarks/..). If a image is already in
-        the local available, the local image is used. Then, the container is
-        started and a connection between the container and the client is
-        established.
+        definition (hpolib/container/benchmarks/<type>/<name>).
+        If an container is already locally available, the local container is
+        used. Then, the container is started and a connection between the
+        container and the client is established.
 
         Parameters
         ----------
         gpu : bool
             If True, the container has access to the local cuda-drivers.
             (Not tested)
-        img_name : Optional[str]
-            name of the image. E.g. XGBoostOnMnist. The local container has to
-            have the same name.
-        img_source : Optional[str]
-            Path to the image. Either local path or link to singularity hub,...
+        container_name : Optional[str]
+            name of the container. E.g. XGBoostBenchmark. The local container has
+            to have the same name.
+        container_source : Optional[str]
+            Path to the container. Either local path or url to a hosting
+            platform, e.g. singularity hub.
         """
         # Create unique ID
         self.config = hpolib.config.config_file
 
-        # Default image name is benchmark name. img_name can be specified to
-        # point to another container.
-        img_name = img_name or self.benchmark_name
+        # Default container name is benchmark name. container_name can be
+        # specified to point to another container.
+        container_name = container_name or self.benchmark_name
 
-        # Same for the image's source.
-        img_source = img_source or self.config.image_source
-        self.logger.debug(f'Image {img_name} in {self.config.image_dir} '
-                          f'from {img_source}')
+        # Same for the container's source.
+        container_source = container_source or self.config.container_source
+        logger.debug(f'Image {container_name} in {self.config.container_dir} from {container_source}')
 
-        img_dir = Path(self.config.image_dir)
+        container_dir = Path(self.config.container_dir)
 
-        # Pull the image from the singularity hub if the image is hosted
-        # online. If the image is stored locally (e.g.for development) do
-        # not pull it.
-        if img_source is not None \
-                and any((s in img_source for s in ['shub', 'library', 'docker',
-                                                   'oras', 'http'])):
+        # Pull the container from the singularity hub if the container is
+        # hosted online. If the container is stored locally
+        # (e.g.for development) do not pull it.
+        if container_source is not None \
+                and any((s in container_source for s in ['shub', 'library', 'docker', 'oras', 'http'])):
 
-            if not (img_dir / img_name).exists():
-                self.logger.debug('Going to pull the image from an online '
-                                  'source.')
+            if not (container_dir / container_name).exists():
+                logger.debug('Going to pull the container from an online source.')
 
-                img_dir.mkdir(parents=True, exist_ok=True)
-                cmd = f"singularity pull --dir {self.config.image_dir} " \
-                      f"--name {img_name} {img_source}:{img_name.lower()}"
-                self.logger.debug(cmd)
+                container_dir.mkdir(parents=True, exist_ok=True)
+                cmd = f"singularity pull --dir {self.config.container_dir} " \
+                      f"--name {container_name} {container_source}:{container_name.lower()}"
+                logger.debug(cmd)
                 subprocess.run(cmd, shell=True)
             else:
-                self.logger.debug('Skipping downloading the image. It is '
-                                  'already downloaded.')
+                logger.debug('Skipping downloading the container. It is already downloaded.')
         else:
-            self.logger.debug('Looking on the local filesystem for the image '
-                              'file, since image source was either \'None\' '
-                              'or not a known address. Image Source: '
-                              f'{img_source}')
+            logger.debug('Looking on the local filesystem for the container file, since container source was '
+                         'either \'None\' or not a known address. Image Source: {container_source}')
 
-            # Make sure that the image can be found locally.
-            assert (img_dir / img_name).exists(), f'Local image not found ' \
-                                                  f'in {img_dir / img_name}'
-            self.logger.debug('Image found on the local file system.')
+            # Make sure that the container can be found locally.
+            assert (container_dir / container_name).exists(), f'Local container not found in ' \
+                                                              f'{container_dir / container_name}'
+            logger.debug('Image found on the local file system.')
 
-        iOptions = str(img_dir / img_name)
-        sOptions = f'{self.benchmark_name} {self.socketId}'
+        container_options = str(container_dir / container_name)
+        socket_options = f'{container_name} {self.socket_id}'
 
         # Option for enabling GPU support
-        gpuOpt = '--nv ' if gpu else ''
+        gpu_opt = '--nv ' if gpu else ''
+        bind_options = f'--bind /var/lib/,{self.config.global_data_dir}:/var/lib/,{self.config.data_dir}:/var/lib/ '
 
-        cmd = f'singularity instance start --bind /var/lib/ {gpuOpt}' \
-              f'{iOptions} {self.socketId}'
-        self.logger.debug(cmd)
+        cmd = f'singularity instance start {bind_options}{gpu_opt}{container_options} {self.socket_id}'
+        logger.debug(cmd)
         subprocess.run(cmd, shell=True)
 
-        cmd = f'singularity run {gpuOpt}instance://{self.socketId} {sOptions}'
-        self.logger.debug(cmd)
+        cmd = f'singularity run {gpu_opt}instance://{self.socket_id} {socket_options}'
+        logger.debug(cmd)
         subprocess.Popen(cmd, shell=True)
 
         Pyro4.config.REQUIRE_EXPOSE = False
         # Generate Pyro 4 URI for connecting to client
-        self.uri = f'PYRO:{self.socketId}.unixsock@./u:' \
-                   f'{self.config.socket_dir}/{self.socketId}_unix.sock'
-        self.b = Pyro4.Proxy(self.uri)
+        self.uri = f'PYRO:{self.socket_id}.unixsock@./u:' \
+                   f'{self.config.socket_dir}/{self.socket_id}_unix.sock'
+        self.benchmark = Pyro4.Proxy(self.uri)
 
         # Handle rng and other optional benchmark arguments
-        if 'rng' in kwargs and type(kwargs['rng']) == numpy.random.RandomState:
+        if 'rng' in kwargs \
+                and isinstance(kwargs['rng'], numpy.random.RandomState):
             (rnd0, rnd1, rnd2, rnd3, rnd4) = kwargs['rng'].get_state()
             rnd1 = [int(number) for number in rnd1]
             kwargs['rng'] = (rnd0, rnd1, rnd2, rnd3, rnd4)
-        kwargsStr = json.dumps(kwargs)
+        kwargs_str = json.dumps(kwargs)
 
         # Try to connect to server calling benchmark constructor via RPC.
         # There exist a time limit
-        self.logger.debug('Check connection to container and init benchmark')
+        logger.debug('Check connection to container and init benchmark')
         wait = 0
         while True:
             try:
-                self.b.initBenchmark(kwargsStr)
+                self.benchmark.init_benchmark(kwargs_str)
             except Pyro4.core.errors.CommunicationError:
-                self.logger.debug('Still waiting')
+                logger.debug('Still waiting')
                 time.sleep(5)
                 wait += 5
                 if wait < self.config.pyro_connect_max_wait:
                     continue
                 else:
-                    self.logger.debug('Waiting time exceeded. To high it up, '
-                                      'adjust config option '
-                                      'pyro_connect_max_wait.')
+                    logger.debug('Waiting time exceeded. To increase, adjust config option pyro_connect_max_wait.')
                     raise
             break
-        self.logger.debug('Connected to container')
+        logger.debug('Connected to container')
 
     def objective_function(self, x, **kwargs):
         # Create the arguments as Str
-        if type(x) is list:
-            xString = json.dumps(x, indent=None)
-            jsonStr = self.b.objective_function_list(xString,
-                                                     json.dumps(kwargs))
-            return json.loads(jsonStr)
-        else:
+        if isinstance(x, list):
+            x_str = json.dumps(x, indent=None)
+            json_str = self.benchmark.objective_function_list(x_str, json.dumps(kwargs))
+            return json.loads(json_str)
+        elif isinstance(x, Configuration):
             # Create the arguments as Str
-            cString = json.dumps(x.get_dictionary(), indent=None)
-            csString = csjson.write(x.configuration_space, indent=None)
-            jsonStr = self.b.objective_function(cString, csString,
-                                                json.dumps(kwargs))
-            return json.loads(jsonStr)
+            c_str = json.dumps(x.get_dictionary(), indent=None)
+            cs_str = csjson.write(x.configuration_space, indent=None)
+            json_str = self.benchmark.objective_function(c_str, cs_str, json.dumps(kwargs))
+            return json.loads(json_str)
+        else:
+            raise ValueError(f'Type of config not understood: {type(x)}')
 
     def objective_function_test(self, x, **kwargs):
         # Create the arguments as Str
-        if type(x) is list:
-            xString = json.dumps(x, indent=None)
-            jsonStr = self.b.objective_function_test_list(xString,
-                                                          json.dumps(kwargs))
-            return json.loads(jsonStr)
-        else:
+        if isinstance(x, list):
+            x_str = json.dumps(x, indent=None)
+            json_str = self.benchmark.objective_function_test_list(x_str, json.dumps(kwargs))
+            return json.loads(json_str)
+        elif isinstance(x, Configuration):
             # Create the arguments as Str
-            cString = json.dumps(x.get_dictionary(), indent=None)
-            csString = csjson.write(x.configuration_space, indent=None)
-            jsonStr = self.b.objective_function_test(cString, csString,
-                                                     json.dumps(kwargs))
-            return json.loads(jsonStr)
+            c_str = json.dumps(x.get_dictionary(), indent=None)
+            cs_str = csjson.write(x.configuration_space, indent=None)
+            json_str = self.benchmark.objective_function_test(c_str, cs_str, json.dumps(kwargs))
+            return json.loads(json_str)
+        else:
+            raise ValueError(f'Type of config not understood: {type(x)}')
 
     def test(self, *args, **kwargs):
-        result = self.b.test(json.dumps(args), json.dumps(kwargs))
+        result = self.benchmark.test(json.dumps(args), json.dumps(kwargs))
         return json.loads(result)
 
     def get_configuration_space(self):
-        jsonStr = self.b.get_configuration_space()
-        return csjson.read(jsonStr)
+        json_str = self.benchmark.get_configuration_space()
+        return csjson.read(json_str)
 
     def get_meta_information(self):
-        jsonStr = self.b.get_meta_information()
-        return json.loads(jsonStr)
+        json_str = self.benchmark.get_meta_information()
+        return json.loads(json_str)
 
     def __call__(self, configuration, **kwargs):
         """ Provides interface to use, e.g., SciPy optimizers """
-        return self.objective_function(configuration,
-                                       **kwargs)['function_value']
+        return self.objective_function(configuration, **kwargs)['function_value']
 
-    def _id_generator(self, size=6,
-                      chars=string.ascii_uppercase + string.digits):
-        return ''.join(random.choice(chars) for _ in range(size))
+    def _id_generator(self):
+        return str(uuid1())
 
     def __del__(self):
         Pyro4.config.COMMTIMEOUT = 1
-        self.b.shutdown()
-        subprocess.run(f'singularity instance stop {self.socketID}',
-                       shell=True)
-        os.remove(self.config.socket_dir + self.socketId + '_unix.sock')
+        self.benchmark.shutdown()
+        subprocess.run(f'singularity instance stop {self.socket_id}', shell=True)
+        os.remove(self.config.socket_dir + self.socket_id + '_unix.sock')

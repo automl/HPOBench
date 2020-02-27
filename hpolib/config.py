@@ -30,28 +30,23 @@ class HPOlibConfig:
         self.cache_dir = Path(os.environ.get('XDG_CACHE_HOME',
                                              '~/.cache/hpolib3')).expanduser()
 
-        # I've set this to this default value, since for creating a container,
-        # we have to bind the data directory into the container. And to avoid
-        # issues, it would be better to use a static value here. Also, in
-        # singularity container there isn't a user.
-        # So the XDG's recommendation for the default data directory with ~
-        # is not safe.
-        self.global_data_dir = Path('/var/lib/hpolib3/')
-        # self.global_data_dir = Path(os.environ.get('XDG_DATA_HOME',
-        #                             '~/.local/share/hpolib3'))
+        # self.global_data_dir = Path('/var/lib/hpolib3/')
+        self.global_data_dir = \
+            Path(os.environ.get('XDG_DATA_HOME',
+                                '~/.local/share/hpolib3')).expanduser()
 
         self.config = None
         self.data_dir = None
         self.socket_dir = None
-        self.image_source = None
+        self.container_source = None
         self.use_global_data = None
 
         self.defaults = \
             {'verbosity': 0,
              'data_dir': self.config_base_dir,
              'socket_dir': self.cache_dir,
-             'image_dir': self.cache_dir / f'hpolib3-{os.getuid()}',
-             'image_source': 'shub://automl/HPOlib3',
+             'container_dir': self.cache_dir / f'hpolib3-{os.getuid()}',
+             'container_source': 'shub://automl/HPOlib3',
              'use_global_data': True,
              'pyro_connect_max_wait': 60}
 
@@ -82,10 +77,10 @@ class HPOlibConfig:
         # Parse config and store input in self.config
         self.__parse_config()
 
-        # Check whether data_dir exists, if not create
+        # Check whether data_dir exists, if not create it
         self.__check_dir(self.data_dir)
         self.__check_dir(self.socket_dir)
-        self.__check_dir(self.image_dir)
+        self.__check_dir(self.container_dir)
         self.__check_dir(self.cache_dir)
 
     def __create_config_file(self):
@@ -118,8 +113,8 @@ class HPOlibConfig:
         # Store configuration
         self.data_dir = Path(self.__get_config_option('data_dir'))
         self.socket_dir = Path(self.__get_config_option('socket_dir'))
-        self.image_dir = Path(self.__get_config_option('image_dir'))
-        self.image_source = self.__get_config_option('image_source')
+        self.container_dir = Path(self.__get_config_option('container_dir'))
+        self.container_source = self.__get_config_option('container_source')
         self.use_global_data = self.__get_config_option('use_global_data')
         if type(self.use_global_data) is str:
             self.use_global_data = ast.literal_eval(self.use_global_data)

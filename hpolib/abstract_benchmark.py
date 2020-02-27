@@ -1,7 +1,7 @@
 """ Base-class of all benchmarks """
 
 import abc
-from typing import Tuple, Union
+from typing import Tuple, Union, Dict, List
 
 import ConfigSpace
 import numpy as np
@@ -24,16 +24,17 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
         Parameters
         ----------
-        rng: int, np.random.RandomState
+        rng: int, np.random.RandomState, None
             The default random state for the benchmark. If type is int, a
-            np.random.RandomState with seed `rng` is created.
+            np.random.RandomState with seed `rng` is created. If type is None,
+            create a new random state.
         """
 
         self.rng = rng_helper.get_rng(rng=rng)
         self.configuration_space = self.get_configuration_space()
 
     @abc.abstractmethod
-    def objective_function(self, configuration: dict, *args, **kwargs) -> dict:
+    def objective_function(self, configuration: Dict, *args, **kwargs) -> dict:
         """
         Objective function.
 
@@ -46,7 +47,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
         Note
         ----
-        It might be useful to pass a "seed" parameter to the function call to
+        It might be useful to pass a "seed" argument to the function call to
         bypass the default "seed" generator. Only using the default random
         state (`self.rng`) could lead to an overfitting towards the
         `self.rng`'s seed.
@@ -57,18 +58,17 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
         Parameters
         ----------
-        configuration : dict-like
+        configuration : Dict
 
         Returns
         -------
-        dict
+        Dict
             Must contain at least the key `function_value`.
         """
         pass
 
     @abc.abstractmethod
-    def objective_function_test(self, configuration: dict,
-                                *args, **kwargs) -> dict:
+    def objective_function_test(self, configuration: Dict, *args, **kwargs) -> Dict:
         """
         If there is a different objective function for offline testing, e.g
         testing a machine learning on a hold extra test set instead
@@ -76,11 +76,11 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
         Parameters
         ----------
-        configuration : dict-like
+        configuration : Dict
 
         Returns
         -------
-        dict
+        Dict
             Must contain at least the key `function_value`.
         """
         pass
@@ -98,17 +98,14 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         def wrapper(self, configuration, **kwargs):
             if not isinstance(configuration, ConfigSpace.Configuration):
                 try:
-                    squirtle = {k: configuration[i] for (i, k)
-                                in enumerate(self.configuration_space)}
-                    wartortle = ConfigSpace.Configuration(
-                        self.configuration_space, squirtle)
+                    config_dict = {k: configuration[i] for (i, k) in enumerate(self.configuration_space)}
+                    config = ConfigSpace.Configuration(self.configuration_space, config_dict)
                 except Exception as e:
-                    raise Exception('Error during the conversion of the '
-                                    'provided into a ConfigSpace.Configuration'
+                    raise Exception('Error during the conversion of the provided into a ConfigSpace.Configuration'
                                     ' object') from e
             else:
-                wartortle = configuration
-            self.configuration_space.check_configuration(wartortle)
+                config = configuration
+            self.configuration_space.check_configuration(config)
             return foo(self, configuration, **kwargs)
         return wrapper
 
@@ -127,19 +124,17 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         """
         def wrapper(self, configuration, **kwargs):
             if isinstance(configuration, ConfigSpace.Configuration):
-                blastoise = np.array([configuration[k] for k in configuration],
-                                     dtype=data_type)
+                config_array = np.array([configuration[k] for k in configuration], dtype=data_type)
             else:
-                blastoise = configuration
-            return foo(self, blastoise, **kwargs)
+                config_array = configuration
+            return foo(self, config_array, **kwargs)
         return wrapper
 
-    def __call__(self, configuration: dict, **kwargs) -> float:
+    def __call__(self, configuration: Dict, **kwargs) -> float:
         """ Provides interface to use, e.g., SciPy optimizers """
-        return self.objective_function(configuration,
-                                       **kwargs)['function_value']
+        return self.objective_function(configuration, **kwargs)['function_value']
 
-    def test(self, n_runs: int = 5, *args, **kwargs) -> Tuple[list, list]:
+    def test(self, n_runs: int = 5, *args, **kwargs) -> Tuple[List, List]:
         """
         Draws some random configuration and call objective_function(_test).
 
@@ -150,17 +145,15 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
         Returns
         -------
-        Tuple[list, list]
+        Tuple[List, List]
         """
         train_rvals = []
         test_rvals = []
 
         for _ in range(n_runs):
             configuration = self.configuration_space.sample_configuration()
-            train_rvals.append(
-                self.objective_function(configuration, *args, **kwargs))
-            test_rvals.append(
-                self.objective_function_test(configuration, *args, **kwargs))
+            train_rvals.append(self.objective_function(configuration, *args, **kwargs))
+            test_rvals.append(self.objective_function_test(configuration, *args, **kwargs))
 
         return train_rvals, test_rvals
 
@@ -178,12 +171,12 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def get_meta_information() -> dict:
+    def get_meta_information() -> Dict:
         """ Provides some meta information about the benchmark.
 
         Returns
         -------
-        dict
+        Dict
             some human-readable information
 
         """

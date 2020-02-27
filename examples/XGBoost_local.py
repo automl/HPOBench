@@ -1,12 +1,12 @@
 import logging
 from time import time
 
-from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostOnMnist as Benchmark
+from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
 
 logger = logging.getLogger()
 logger.setLevel(level=logging.DEBUG)
 
-b = Benchmark()
+b = Benchmark(task_id=167149)
 print(b.get_meta_information())
 start = time()
 

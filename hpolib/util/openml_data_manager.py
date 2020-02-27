@@ -13,7 +13,7 @@ from typing import Tuple, Union
 
 import numpy as np
 import openml
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedShuffleSplit
 
 import hpolib
 from hpolib.util.data_manager import HoldoutDataManager, \
@@ -23,7 +23,7 @@ from hpolib.util.rng_helper import get_rng
 
 def get_openml100_taskids():
     """
-    Return taskids for the OpenML100 datasets
+    Return task ids for the OpenML100 data ets
     See also here: https://www.openml.org/s/14
     Reference: https://arxiv.org/abs/1708.03731
     """
@@ -44,7 +44,7 @@ def get_openml100_taskids():
 
 def get_openmlcc18_taskids():
     """
-    Return taskids for the OpenML-CC18 datasets
+    Return task ids for the OpenML-CC18 data sets
     See also here: https://www.openml.org/s/99
     TODO: ADD reference
     """
@@ -61,7 +61,7 @@ def get_openmlcc18_taskids():
 
 
 def _load_data(task_id):
-    """ Helperfunction to load the data from the OpenML website. """
+    """ Helper-function to load the data from the OpenML website. """
     task = openml.tasks.get_task(task_id)
 
     try:
@@ -75,7 +75,6 @@ def _load_data(task_id):
     try:
         # This should throw an ValueError!
         task.get_train_test_split_indices(fold=1, repeat=0)
-
         raise AssertionError(f'Task {task_id} has more than one fold. This '
                              f'benchmark can only work with a single fold.')
     except ValueError:
@@ -94,9 +93,7 @@ def _load_data(task_id):
     # saved in the arff file describing the attributes/features
     dataset = task.get_dataset()
     _, _, categorical_indicator, _ = dataset.get_data(target=task.target_name)
-
-    variable_types = ['categorical' if ci else 'numerical'
-                      for ci in categorical_indicator]
+    variable_types = ['categorical' if ci else 'numerical' for ci in categorical_indicator]
 
     return X_train, y_train, X_test, y_test, variable_types, dataset.name
 
@@ -123,7 +120,6 @@ class OpenMLHoldoutDataManager(HoldoutDataManager):
 
     def __init__(self, openml_task_id: int,
                  rng: Union[int, np.random.RandomState, None] = None):
-
         super(OpenMLHoldoutDataManager, self).__init__()
 
         self._save_to = hpolib.config_file.data_dir / 'OpenML'
@@ -131,6 +127,7 @@ class OpenMLHoldoutDataManager(HoldoutDataManager):
         self.rng = get_rng(rng=rng)
         self.name = None
         self.variable_types = None
+        self.stratified_split = StratifiedShuffleSplit(n_splits=2, test_size=0.33, random_state=self.rng)
 
         self.create_save_directory(self._save_to)
 
@@ -153,14 +150,11 @@ class OpenMLHoldoutDataManager(HoldoutDataManager):
         y_test: np.ndarray
         """
 
-        X_train, y_train, X_test, y_test, variable_types, name = \
-            _load_data(self.task_id)
+        X_train, y_train, X_test, y_test, variable_types, name = _load_data(self.task_id)
 
-        X_train, X_valid, y_train, y_valid = \
-            train_test_split(X_train,
-                             y_train,
-                             test_size=0.33,
-                             random_state=self.rng)
+        train_idx, valid_idx = list(self.stratified_split.split(X_train, y_train))[0]
+        X_train, y_train, X_valid, y_valid = X_train[train_idx], y_train[train_idx], \
+            X_train[valid_idx], y_train[valid_idx]
 
         self.X_train = X_train
         self.y_train = y_train
@@ -171,8 +165,7 @@ class OpenMLHoldoutDataManager(HoldoutDataManager):
         self.variable_types = variable_types
         self.name = name
 
-        return self.X_train, self.y_train, self.X_val, \
-            self.y_val, self.X_test, self.y_test
+        return self.X_train, self.y_train, self.X_val, self.y_val, self.X_test, self.y_test
 
 
 class OpenMLCrossvalidationDataManager(CrossvalidationDataManager):

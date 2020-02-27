@@ -48,7 +48,7 @@ def _cast_int_to_random_state(
     -------
     np.random.RandomState
     """
-    if type(rng) == np.random.RandomState:
+    if isinstance(rng, np.random.RandomState):
         return rng
     elif int(rng) == rng:
         # As seed is sometimes -1 (e.g. if SMAC optimizes a deterministic

@@ -360,7 +360,6 @@ class SVHNData(DataManager):
                                                 "test_32x32.mat")
 
         # Change the label encoding from [1, ... 10] to [0, ..., 9]
-        # TODO
         y = y - 1
         y_test = y_test - 1
 

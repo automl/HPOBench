@@ -35,80 +35,73 @@ class BenchmarkEncoder(json.JSONEncoder):
 @Pyro4.expose
 @Pyro4.behavior(instance_mode="single")
 class BenchmarkServer:
-    def __init__(self, socketId):
+    def __init__(self, socket_id):
         self.pyroRunning = True
         config = HPOlibConfig()
         self.logger = logging.getLogger('BenchmarkServer')
-        self.b = None
+        self.benchmark = None
 
-        self.socketId = socketId
-        socketPath = config.socket_dir / (self.socketId + "_unix.sock")
-        if socketPath.exists():
-            os.remove(socketPath)
-        self.daemon = Pyro4.Daemon(unixsocket=str(socketPath))
+        self.socket_id = socket_id
+        socket_path = config.socket_dir / (self.socket_id + "_unix.sock")
+        if socket_path.exists():
+            os.remove(socket_path)
+        self.daemon = Pyro4.Daemon(unixsocket=str(socket_path))
 
-        uri = self.daemon.register(self, self.socketId + ".unixsock")
+        _ = self.daemon.register(self, self.socket_id + ".unixsock")
 
         # start the event loop of the server to wait for calls
         self.daemon.requestLoop(loopCondition=lambda: self.pyroRunning)
 
-    def initBenchmark(self, kwargsStr):
+    def init_benchmark(self, kwargs_str):
         try:
-            if kwargsStr != "{}":
-                kwargs = json.loads(kwargsStr)
+            if kwargs_str != "{}":
+                kwargs = json.loads(kwargs_str)
                 if 'rng' in kwargs and type(kwargs['rng']) == list:
                     (rnd0, rnd1, rnd2, rnd3, rnd4) = kwargs['rng']
                     rnd1 = [np.uint32(number) for number in rnd1]
-                    kwargs['rng'] = np.random.set_state((rnd0, rnd1, rnd2,
-                                                         rnd3, rnd4))
+                    kwargs['rng'] = np.random.set_state((rnd0, rnd1, rnd2, rnd3, rnd4))
                     self.logger.debug('rng works!!')
-                self.b = Benchmark(**kwargs)
+                self.benchmark = Benchmark(**kwargs)
             else:
-                self.b = Benchmark()
+                self.benchmark = Benchmark()
         except Exception as e:
             print(e)
             self.logger.error(e)
 
     def get_configuration_space(self):
-        result = self.b.get_configuration_space()
+        result = self.benchmark.get_configuration_space()
         return csjson.write(result, indent=None)
 
-    def objective_function_list(self, xString, kwargsStr):
-        x = json.loads(xString)
-        result = self.b.objective_function(x, **json.loads(kwargsStr))
+    def objective_function_list(self, x_str, kwargs_str):
+        x = json.loads(x_str)
+        result = self.benchmark.objective_function(x, **json.loads(kwargs_str))
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
-    def objective_function(self, cString, csString, kwargsStr):
-        cDict = json.loads(cString)
-        cs = csjson.read(csString)
-        configuration = CS.Configuration(cs, cDict)
-        result = self.b.objective_function(configuration,
-                                           **json.loads(kwargsStr))
-        # Handle SMAC status
+    def objective_function(self, c_str, cs_str, kwargs_str):
+        c_dict = json.loads(c_str)
+        cs = csjson.read(cs_str)
+        configuration = CS.Configuration(cs, c_dict)
+        result = self.benchmark.objective_function(configuration, **json.loads(kwargs_str))
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
-    def objective_function_test_list(self, xString, kwargsStr):
-        x = json.loads(xString)
-        result = self.b.objective_function_test(x, **json.loads(kwargsStr))
-        # Handle SMAC runhistory
+    def objective_function_test_list(self, x_str, kwargs_str):
+        x = json.loads(x_str)
+        result = self.benchmark.objective_function_test(x, **json.loads(kwargs_str))
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
-    def objective_function_test(self, cString, csString, kwargsStr):
-        cDict = json.loads(cString)
-        cs = csjson.read(csString)
-        configuration = CS.Configuration(cs, cDict)
-        result = self.b.objective_function_test(configuration,
-                                                **json.loads(kwargsStr))
-        # Handle SMAC runhistory
+    def objective_function_test(self, c_str, cs_str, kwargs_str):
+        c_dict = json.loads(c_str)
+        cs = csjson.read(cs_str)
+        configuration = CS.Configuration(cs, c_dict)
+        result = self.benchmark.objective_function_test(configuration, **json.loads(kwargs_str))
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
-    def test(self, argsStr, kwargsStr):
-        result = self.b.test(*json.loads(argsStr), **json.loads(kwargsStr))
-        # Handle SMAC runhistory
+    def test(self, args_str, kwargs_str):
+        result = self.benchmark.test(*json.loads(args_str), **json.loads(kwargs_str))
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
     def get_meta_information(self):
-        return json.dumps(self.b.get_meta_information(), indent=None)
+        return json.dumps(self.benchmark.get_meta_information(), indent=None)
 
     @Pyro4.oneway   # in case call returns much later than daemon.shutdown
     def shutdown(self):
@@ -121,21 +114,17 @@ class BenchmarkServer:
 if __name__ == "__main__":
     Pyro4.config.REQUIRE_EXPOSE = False
 
-    parser = argparse.ArgumentParser(
-        prog='server_abstract_benchmark.py',
-        description='HPOlib3 Container Server',
-        usage='%(prog)s <importBase> <benchmark> <socketId>')
+    parser = argparse.ArgumentParser(prog='server_abstract_benchmark.py',
+                                     description='HPOlib3 Container Server',
+                                     usage='%(prog)s <importBase> <benchmark> <socket_id>')
     parser.add_argument('importBase', type=str,
-                        help='Relative path to benchmark file in '
-                             'hpolib/benchmarks, e.g. ml.xgboost_benchmark')
+                        help='Relative path to benchmark file in hpolib/benchmarks, e.g. ml.xgboost_benchmark')
     parser.add_argument('benchmark', type=str,
-                        help='Classname of the benchmark, e.g. XGBoostOnMnist')
-    parser.add_argument('socketId', type=str,
-                        help='SocketId for pyro-server')
+                        help='Classname of the benchmark, e.g. XGBoostBenchmark')
+    parser.add_argument('socket_id', type=str,
+                        help='socket_id for pyro-server')
 
     args = parser.parse_args()
-    # module = importlib.import_module(f'hpolib.benchmarks.{importBase}')
-    # Benchmark = getattr(module, benchmark)
-    exec(f"from hpolib.benchmarks.{args.importBase} import "
-         f"{args.benchmark} as Benchmark")
-    bp = BenchmarkServer(args.socketId)
+
+    exec(f"from hpolib.benchmarks.{args.importBase} import {args.benchmark} as Benchmark")
+    bp = BenchmarkServer(args.socket_id)

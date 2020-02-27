@@ -1,4 +1,3 @@
-__authors__ = ["Test Author"]
 __contact__ = "automl.org"
 
 from hpolib.__version__ import __version__
