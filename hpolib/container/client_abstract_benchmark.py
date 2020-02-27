@@ -64,8 +64,9 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             If True, the container has access to the local cuda-drivers.
             (Not tested)
         container_name : Optional[str]
-            name of the container. E.g. XGBoostBenchmark. The local container has
-            to have the same name.
+            name of the container. E.g. XGBoostBenchmark. The local container has to have the same name. It could be
+            useful to have multiple container for the same benchmark, if a tool like auto-sklearn is updated to a newer
+            version, and you want to compare its performance across its versions.
         container_source : Optional[str]
             Path to the container. Either local path or url to a hosting
             platform, e.g. singularity hub.
@@ -104,6 +105,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                          'either \'None\' or not a known address. Image Source: {container_source}')
 
             # Make sure that the container can be found locally.
+            container_dir = Path(container_source)
             assert (container_dir / container_name).exists(), f'Local container not found in ' \
                                                               f'{container_dir / container_name}'
             logger.debug('Image found on the local file system.')

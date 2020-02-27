@@ -21,19 +21,11 @@ class HPOlibConfig:
         """
         self.logger = logging.getLogger('HPOlibConfig')
 
-        # According to https://github.com/openml/openml-python/issues/884,
-        # try to set default directories.
-        self.config_base_dir = \
-            Path(os.environ.get('XDG_CONFIG_HOME',
-                                '~/.config/hpolib3')).expanduser()
+        # According to https://github.com/openml/openml-python/issues/884, try to set default directories.
+        self.config_base_dir = Path(os.environ.get('XDG_CONFIG_HOME', '~/.config/hpolib3')).expanduser()
         self.config_file = self.config_base_dir / '.hpolibrc'
-        self.cache_dir = Path(os.environ.get('XDG_CACHE_HOME',
-                                             '~/.cache/hpolib3')).expanduser()
-
-        # self.global_data_dir = Path('/var/lib/hpolib3/')
-        self.global_data_dir = \
-            Path(os.environ.get('XDG_DATA_HOME',
-                                '~/.local/share/hpolib3')).expanduser()
+        self.cache_dir = Path(os.environ.get('XDG_CACHE_HOME', '~/.cache/hpolib3')).expanduser()
+        self.global_data_dir = Path(os.environ.get('XDG_DATA_HOME', '~/.local/share/hpolib3')).expanduser()
 
         self.config = None
         self.data_dir = None
@@ -41,14 +33,13 @@ class HPOlibConfig:
         self.container_source = None
         self.use_global_data = None
 
-        self.defaults = \
-            {'verbosity': 0,
-             'data_dir': self.config_base_dir,
-             'socket_dir': self.cache_dir,
-             'container_dir': self.cache_dir / f'hpolib3-{os.getuid()}',
-             'container_source': 'shub://automl/HPOlib3',
-             'use_global_data': True,
-             'pyro_connect_max_wait': 60}
+        self.defaults = {'verbosity': 0,
+                         'data_dir': self.config_base_dir,
+                         'socket_dir': self.cache_dir,
+                         'container_dir': self.cache_dir / f'hpolib3-{os.getuid()}',
+                         'container_source': 'shub://automl/HPOlib3',
+                         'use_global_data': True,
+                         'pyro_connect_max_wait': 60}
 
         self._setup(self.config_file)
 
@@ -66,8 +57,7 @@ class HPOlibConfig:
         config_file = Path(config_file).expanduser().absolute()
 
         if config_file != self.config_file:
-            self.logger.debug(f'Change config file from {self.config_file} '
-                              f'to {config_file}')
+            self.logger.debug(f'Change config file from {self.config_file} to {config_file}')
             self.config_file = config_file
 
         # Create an empty config file if there was none so far
@@ -79,6 +69,7 @@ class HPOlibConfig:
 
         # Check whether data_dir exists, if not create it
         self.__check_dir(self.data_dir)
+        self.__check_dir(self.global_data_dir)
         self.__check_dir(self.socket_dir)
         self.__check_dir(self.container_dir)
         self.__check_dir(self.cache_dir)
@@ -86,8 +77,7 @@ class HPOlibConfig:
     def __create_config_file(self):
         """ Create the configuration file. """
         try:
-            self.logger.debug(f'Create a new config file here: '
-                              f'{self.config_file}')
+            self.logger.debug(f'Create a new config file here: {self.config_file}')
             self.__check_dir(self.config_file.parent)
             fh = self.config_file.open('w', encoding='utf-8')
             for k in self.defaults:
@@ -118,8 +108,7 @@ class HPOlibConfig:
         self.use_global_data = self.__get_config_option('use_global_data')
         if type(self.use_global_data) is str:
             self.use_global_data = ast.literal_eval(self.use_global_data)
-        self.pyro_connect_max_wait = \
-            int(self.__get_config_option('pyro_connect_max_wait'))
+        self.pyro_connect_max_wait = int(self.__get_config_option('pyro_connect_max_wait'))
 
         # Use global data dir if exist
         if self.global_data_dir.is_dir() and self.use_global_data:
@@ -138,8 +127,7 @@ class HPOlibConfig:
         try:
             Path(path).mkdir(exist_ok=True)
         except (IOError, OSError) as e:
-            self.logger.debug(f'Could not create directory here: '
-                              f'{self.data_dir}')
+            self.logger.debug(f'Could not create directory here: {self.data_dir}')
             raise e
 
 

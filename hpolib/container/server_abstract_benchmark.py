@@ -22,6 +22,8 @@ from ConfigSpace.read_and_write import json as csjson
 
 from hpolib.config import HPOlibConfig
 
+logger = logging.getLogger('BenchmarkServer')
+
 
 class BenchmarkEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -38,7 +40,6 @@ class BenchmarkServer:
     def __init__(self, socket_id):
         self.pyroRunning = True
         config = HPOlibConfig()
-        self.logger = logging.getLogger('BenchmarkServer')
         self.benchmark = None
 
         self.socket_id = socket_id
@@ -60,13 +61,13 @@ class BenchmarkServer:
                     (rnd0, rnd1, rnd2, rnd3, rnd4) = kwargs['rng']
                     rnd1 = [np.uint32(number) for number in rnd1]
                     kwargs['rng'] = np.random.set_state((rnd0, rnd1, rnd2, rnd3, rnd4))
-                    self.logger.debug('rng works!!')
+                    logger.debug('rng works!!')
                 self.benchmark = Benchmark(**kwargs)
             else:
                 self.benchmark = Benchmark()
         except Exception as e:
             print(e)
-            self.logger.error(e)
+            logger.error(e)
 
     def get_configuration_space(self):
         result = self.benchmark.get_configuration_space()
@@ -105,7 +106,7 @@ class BenchmarkServer:
 
     @Pyro4.oneway   # in case call returns much later than daemon.shutdown
     def shutdown(self):
-        self.logger.debug('shutting down...')
+        logger.debug('shutting down...')
         Pyro4.config.COMMTIMEOUT = 0.5
         self.pyroRunning = False
         self.daemon.shutdown()
