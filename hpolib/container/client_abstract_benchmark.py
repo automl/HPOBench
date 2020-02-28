@@ -13,7 +13,7 @@ are defined in the ~/.hpolibrc - file.
 
 The name of the container (`benchmark_name`) is defined either in its belonging
 container-benchmark definition. (hpolib/container/<type>/<name> or via
-`ingName`.
+`container_name`.
 """
 
 import abc
@@ -74,8 +74,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # Create unique ID
         self.config = hpolib.config.config_file
 
-        # Default container name is benchmark name. container_name can be
-        # specified to point to another container.
+        # Default container name is benchmark name. container_name can be specified to point to another container.
         container_name = container_name or self.benchmark_name
 
         # Same for the container's source.
@@ -84,9 +83,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
         container_dir = Path(self.config.container_dir)
 
-        # Pull the container from the singularity hub if the container is
-        # hosted online. If the container is stored locally
-        # (e.g.for development) do not pull it.
+        # Pull the container from the singularity hub if the container is hosted online. If the container is stored
+        # locally (e.g.for development) do not pull it.
         if container_source is not None \
                 and any((s in container_source for s in ['shub', 'library', 'docker', 'oras', 'http'])):
 
@@ -132,15 +130,13 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         self.benchmark = Pyro4.Proxy(self.uri)
 
         # Handle rng and other optional benchmark arguments
-        if 'rng' in kwargs \
-                and isinstance(kwargs['rng'], numpy.random.RandomState):
+        if 'rng' in kwargs and isinstance(kwargs['rng'], numpy.random.RandomState):
             (rnd0, rnd1, rnd2, rnd3, rnd4) = kwargs['rng'].get_state()
             rnd1 = [int(number) for number in rnd1]
             kwargs['rng'] = (rnd0, rnd1, rnd2, rnd3, rnd4)
         kwargs_str = json.dumps(kwargs)
 
-        # Try to connect to server calling benchmark constructor via RPC.
-        # There exist a time limit
+        # Try to connect to server calling benchmark constructor via RPC. There exists a time limit
         logger.debug('Check connection to container and init benchmark')
         wait = 0
         while True:
@@ -159,13 +155,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         logger.debug('Connected to container')
 
     def objective_function(self, x, **kwargs):
-        # Create the arguments as Str
         if isinstance(x, list):
             x_str = json.dumps(x, indent=None)
             json_str = self.benchmark.objective_function_list(x_str, json.dumps(kwargs))
             return json.loads(json_str)
         elif isinstance(x, Configuration):
-            # Create the arguments as Str
             c_str = json.dumps(x.get_dictionary(), indent=None)
             cs_str = csjson.write(x.configuration_space, indent=None)
             json_str = self.benchmark.objective_function(c_str, cs_str, json.dumps(kwargs))
@@ -174,13 +168,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             raise ValueError(f'Type of config not understood: {type(x)}')
 
     def objective_function_test(self, x, **kwargs):
-        # Create the arguments as Str
         if isinstance(x, list):
             x_str = json.dumps(x, indent=None)
             json_str = self.benchmark.objective_function_test_list(x_str, json.dumps(kwargs))
             return json.loads(json_str)
         elif isinstance(x, Configuration):
-            # Create the arguments as Str
             c_str = json.dumps(x.get_dictionary(), indent=None)
             cs_str = csjson.write(x.configuration_space, indent=None)
             json_str = self.benchmark.objective_function_test(c_str, cs_str, json.dumps(kwargs))
@@ -204,11 +196,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         """ Provides interface to use, e.g., SciPy optimizers """
         return self.objective_function(configuration, **kwargs)['function_value']
 
-    def _id_generator(self):
-        return str(uuid1())
-
     def __del__(self):
         Pyro4.config.COMMTIMEOUT = 1
         self.benchmark.shutdown()
         subprocess.run(f'singularity instance stop {self.socket_id}', shell=True)
         os.remove(str(self.config.socket_dir / f'{self.socket_id}_unix.sock'))
+
+    def _id_generator(self):
+        return str(uuid1())

@@ -72,7 +72,8 @@ class XGBoostBenchmark(AbstractBenchmark):
         random_state.shuffle(self.train_idx)
 
     @AbstractBenchmark._check_configuration
-    def objective_function(self, config: Dict, n_estimators: int, subsample: float, **kwargs) -> Dict:
+    def objective_function(self, config: Dict, n_estimators: int, subsample: float,
+                           shuffle: bool = False, **kwargs) -> Dict:
         """
         Trains a XGBoost model given a hyperparameter configuration and
         evaluates the model on the validation set.
@@ -89,6 +90,9 @@ class XGBoostBenchmark(AbstractBenchmark):
             Number of trees to fit.
         subsample : float
             Subsample ratio of the training instance.
+        shuffle : bool
+            If `True`, shuffle the training idx. If no parameter `rng` is given, use the class random state.
+            Defaults to `False`.
         kwargs
 
         Returns
@@ -104,6 +108,10 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         rng = kwargs.get('rng', None)
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
+
+        if shuffle:
+            self.shuffle_data(self.rng)
+
         start = time.time()
 
         train_idx = self.train_idx[:int(len(self.train_idx) * subsample)]

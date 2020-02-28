@@ -60,7 +60,7 @@ def get_openmlcc18_taskids():
     ]
 
 
-def _load_data(task_id):
+def _load_data(task_id: int):
     """ Helper-function to load the data from the OpenML website. """
     task = openml.tasks.get_task(task_id)
 
@@ -118,8 +118,7 @@ class OpenMLHoldoutDataManager(HoldoutDataManager):
         defines the random state
     """
 
-    def __init__(self, openml_task_id: int,
-                 rng: Union[int, np.random.RandomState, None] = None):
+    def __init__(self, openml_task_id: int, rng: Union[int, np.random.RandomState, None] = None):
         super(OpenMLHoldoutDataManager, self).__init__()
 
         self._save_to = hpolib.config_file.data_dir / 'OpenML'
@@ -188,8 +187,7 @@ class OpenMLCrossvalidationDataManager(CrossvalidationDataManager):
         defines the random state
     """
 
-    def __init__(self, openml_task_id: int,
-                 rng: Union[int, np.random.RandomState, None] = None):
+    def __init__(self, openml_task_id: int, rng: Union[int, np.random.RandomState, None] = None):
         super(OpenMLCrossvalidationDataManager, self).__init__()
 
         self._save_to = hpolib.config_file.data_dir / 'OpenML'

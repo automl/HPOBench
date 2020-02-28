@@ -10,14 +10,14 @@ from typing import Union, Any
 class HPOlibConfig:
 
     def __init__(self):
-        """ Holds configuration for HPOlib. When initialized reads (or creates)
-         the config file and data directory accordingly.
+        """ Class holding the configuration for the HPOlib. When initialized, it reads (or creates)
+        the config file and data directory accordingly.
 
-         Parameters:
-         -----------
+        Parameters:
+        -----------
 
-        config_file: str
-            Path to config file
+        config_file : str
+           Path to config file
         """
         self.logger = logging.getLogger('HPOlibConfig')
 

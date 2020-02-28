@@ -42,19 +42,19 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         function will be called by one of the evaluate functions. For
         flexibility you have to return a dictionary with the only mandatory
         key being `function_value`, the objective function value for the
-        configuration which was passed. By convention, all benchmarks are
+        `configuration` which was passed. By convention, all benchmarks are
         minimization problems.
 
         Note
         ----
-        It might be useful to pass a "seed" argument to the function call to
+        It might be useful to pass a `seed` argument to the function call to
         bypass the default "seed" generator. Only using the default random
         state (`self.rng`) could lead to an overfitting towards the
         `self.rng`'s seed.
 
         For an example, how to pass a random state to the objective function
         see
-        :py:func:`~hpolib.benchmarks.ml.xgboost_benchmark.XGBoostBaseBenchmark.objective_function`.
+        :py:func:`~hpolib.benchmarks.ml.xgboost_benchmark.XGBoostBenchmark.objective_function`.
 
         Parameters
         ----------
@@ -88,7 +88,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
     @staticmethod
     def _check_configuration(foo):
         """
-        Decorator to enable checking the input configuration
+        Decorator to enable checking the input configuration.
 
         Uses the check_configuration of the ConfigSpace class to ensure
         that all specified values are valid, and no conditionals are violated
