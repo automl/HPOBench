@@ -13,7 +13,7 @@ from typing import Tuple, Union
 
 import numpy as np
 import openml
-from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import train_test_split
 
 import hpolib
 from hpolib.util.data_manager import HoldoutDataManager, \
@@ -126,7 +126,6 @@ class OpenMLHoldoutDataManager(HoldoutDataManager):
         self.rng = get_rng(rng=rng)
         self.name = None
         self.variable_types = None
-        self.stratified_split = StratifiedShuffleSplit(n_splits=2, test_size=0.33, random_state=self.rng)
 
         self.create_save_directory(self._save_to)
 
@@ -149,20 +148,13 @@ class OpenMLHoldoutDataManager(HoldoutDataManager):
         y_test: np.ndarray
         """
 
-        X_train, y_train, X_test, y_test, variable_types, name = _load_data(self.task_id)
+        self.X_train, self.y_train, self.X_test, self.y_test, self.variable_types, self.name = _load_data(self.task_id)
 
-        train_idx, valid_idx = list(self.stratified_split.split(X_train, y_train))[0]
-        X_train, y_train, X_valid, y_valid = X_train[train_idx], y_train[train_idx], \
-            X_train[valid_idx], y_train[valid_idx]
-
-        self.X_train = X_train
-        self.y_train = y_train
-        self.X_val = X_valid
-        self.y_val = y_valid
-        self.X_test = X_test
-        self.y_test = y_test
-        self.variable_types = variable_types
-        self.name = name
+        self.X_train, self.X_valid, self.y_train, self.y_valid = train_test_split(self.X_train,
+                                                                                  self.y_train,
+                                                                                  test_size=0.33,
+                                                                                  stratify=self.y_train,
+                                                                                  random_state=self.rng)
 
         return self.X_train, self.y_train, self.X_val, self.y_val, self.X_test, self.y_test
 

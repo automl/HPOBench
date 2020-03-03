@@ -137,7 +137,7 @@ class XGBoostBenchmark(AbstractBenchmark):
                 'subsample': subsample}
 
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, config: Dict, n_estimators: int, **kwargs) -> Dict:
+    def objective_function_test(self, config: Dict, n_estimators: int = 100, **kwargs) -> Dict:
         """
         Trains a XGBoost model with a given configuration on both the train
         and validation data set and evaluates the model on the test data set.
