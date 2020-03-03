@@ -10,10 +10,10 @@ def get_rng(rng: Union[int, np.random.RandomState, None] = None,
     Helper function to obtain RandomState from int or create a new one.
 
     Sometimes a default random state (self_rng) is already available, but a
-    new random state is desired. In this case `rng` is not None and not already
+    new random state is desired. In this case ``rng`` is not None and not already
     a random state (int or None) -> a new random state is created.
-    If `rng` is already a randomState, it is just returned.
-    Same if `rng` is None, but the default rng is given.
+    If ``rng`` is already a randomState, it is just returned.
+    Same if ``rng`` is None, but the default rng is given.
 
     Parameters
     ----------
@@ -35,7 +35,7 @@ def get_rng(rng: Union[int, np.random.RandomState, None] = None,
 
 def _cast_int_to_random_state(rng: Union[int, np.random.RandomState]) -> np.random.RandomState:
     """
-    Helper function to cast `rng` from int to np.random.RandomState if necessary.
+    Helper function to cast ``rng`` from int to np.random.RandomState if necessary.
 
     Parameters
     ----------

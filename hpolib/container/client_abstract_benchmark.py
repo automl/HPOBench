@@ -11,9 +11,9 @@ To reduce download traffic, firstly, it checks if the container is already
 downloaded. The container source as well the path, where it should be stored,
 are defined in the ~/.hpolibrc - file.
 
-The name of the container (`benchmark_name`) is defined either in its belonging
+The name of the container (``benchmark_name``) is defined either in its belonging
 container-benchmark definition. (hpolib/container/<type>/<name> or via
-`container_name`.
+``container_name``.
 """
 
 import abc

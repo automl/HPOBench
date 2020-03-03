@@ -40,13 +40,21 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         self.categorical_data = np.array([var_type == 'categorical' for var_type in variable_types])
 
+        # XGB needs sorted data. Data should be (Categorical + numerical) not mixed.
+        categorical_idx = np.argwhere(self.categorical_data)
+        continuous_idx = np.argwhere(~self.categorical_data)
+        sorting = np.concatenate([categorical_idx, continuous_idx]).squeeze()
+        self.X_train = self.X_train[:, sorting]
+        self.X_valid = self.X_valid[:, sorting]
+        self.X_test = self.X_test[:, sorting]
+
         # Determine all possible values per categorical feature
         complete_data = np.concatenate([self.X_train, self.X_valid, self.X_test], axis=0)
         self.categories = [np.unique(complete_data[:, i])
                            for i in range(self.X_train.shape[1]) if self.categorical_data[i]]
 
         # Determine the number of categories in the labels.
-        # In case of binary classification `self.num_class` has to be 1 for xgboost.
+        # In case of binary classification ``self.num_class`` has to be 1 for xgboost.
         self.num_class = len(np.unique(np.concatenate([self.y_train, self.y_test, self.y_valid])))
         self.num_class = 1 if self.num_class == 2 else self.num_class
 
@@ -79,7 +87,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         evaluates the model on the validation set.
 
         To prevent overfitting on a single seed, it is possible to pass a
-        parameter `rng` as 'int' or 'np.random.RandomState' to this function.
+        parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
         If this parameter is not given, the default random state is used.
 
         Parameters
@@ -91,8 +99,8 @@ class XGBoostBenchmark(AbstractBenchmark):
         subsample : float
             Subsample ratio of the training instance.
         shuffle : bool
-            If `True`, shuffle the training idx. If no parameter `rng` is given, use the class random state.
-            Defaults to `False`.
+            If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
+            Defaults to ``False``.
         kwargs
 
         Returns
@@ -135,7 +143,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         and validation data set and evaluates the model on the test data set.
 
         To prevent overfitting on a single seed, it is possible to pass a
-        parameter `rng` as 'int' or 'np.random.RandomState' to this function.
+        parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
         If this parameter is not given, the default random state is used.
 
         Parameters
