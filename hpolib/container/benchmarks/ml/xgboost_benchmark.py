@@ -8,7 +8,7 @@ from hpolib.container.client_abstract_benchmark import AbstractBenchmarkClient
 
 class XGBoostBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        # ``benchmark_name`` must be the exact same as the suffix in the recipe name (Singuarity.XGBoostBenchmark)
         super(XGBoostBenchmark, self).__init__()
-        self.benchmark_name = kwargs.get('container_name', 'XGBoostBenchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'xgboost_benchmark')
         self._setup(**kwargs)

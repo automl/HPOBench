@@ -30,6 +30,7 @@ class HPOlibConfig:
         self.config = None
         self.data_dir = None
         self.socket_dir = None
+        self.container_dir = None
         self.container_source = None
         self.use_global_data = None
 
@@ -37,7 +38,9 @@ class HPOlibConfig:
                          'data_dir': self.config_base_dir,
                          'socket_dir': self.cache_dir,
                          'container_dir': self.cache_dir / f'hpolib3-{os.getuid()}',
-                         'container_source': 'shub://automl/HPOlib3',
+                         # Find all hosted container on:
+                         # https://cloud.sylabs.io/library/keggensperger/automl
+                         'container_source': 'library://keggensperger/automl',
                          'use_global_data': True,
                          'pyro_connect_max_wait': 60}
 

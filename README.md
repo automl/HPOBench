@@ -24,12 +24,12 @@ to set the following path:\
 ```export PATH=/usr/local/kislurm/singularity-3.5/bin/:$PATH```
 
 #### Notes: 
-- The usage of different task ids is shown in the example XGBoostOnCC_local
+- The usage of different task ids is shown in the example 'XGBoost_with_container.py'
 - To use a local image, (without downloading it from the sylabs-library), add the parameter 
-`container-source=<path-to-directory-in-which-the-image-is` in the Benchmark initialization.
+`container-source=<path-to-directory-in-which-the-image-is>` in the Benchmark initialization.
 E.g. (see XGBoost_with_container.py) \
 ```
-b = Benchmark(rng=my_rng, container_name='XGBoostBenchmark', 
+b = Benchmark(rng=my_rng, container_name='xgboost_benchmark', 
               container_source=<PATH>, task_id=task_id)
 ```
 - Singularity will throw an exception 'Invalid Image format' if you use a singularity version < 3.
