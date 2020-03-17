@@ -44,9 +44,15 @@ class XGBoostBenchmark(AbstractBenchmark):
         categorical_idx = np.argwhere(self.categorical_data)
         continuous_idx = np.argwhere(~self.categorical_data)
         sorting = np.concatenate([categorical_idx, continuous_idx]).squeeze()
+        self.categorical_data = self.categorical_data[sorting]
         self.X_train = self.X_train[:, sorting]
         self.X_valid = self.X_valid[:, sorting]
         self.X_test = self.X_test[:, sorting]
+
+        mean_imputer = SimpleImputer(strategy='mean')
+        self.X_train = mean_imputer.fit_transform(self.X_train)
+        self.X_valid = mean_imputer.transform(self.X_valid)
+        self.X_test = mean_imputer.transform(self.X_test)
 
         # Determine all possible values per categorical feature
         complete_data = np.concatenate([self.X_train, self.X_valid, self.X_test], axis=0)
@@ -216,9 +222,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         objective = 'binary:logistic' if self.num_class <= 2 else 'multi:softmax'
 
         clf = pipeline.Pipeline(
-            [('preprocess_impute',
-              SimpleImputer(missing_values=np.nan, strategy='mean')),
-             ('preprocess_one_hot',
+            [('preprocess_one_hot',
               ColumnTransformer([
                  ("categorical", OneHotEncoder(categories=self.categories, sparse=False), self.categorical_data),
                  ("continuous", "passthrough", ~self.categorical_data)])),

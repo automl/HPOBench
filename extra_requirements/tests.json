@@ -1,0 +1,4 @@
+{
+  "py": ["pycodestyle", "flake8"],
+  "pytest": ["pytest","pytest-cov"]
+}

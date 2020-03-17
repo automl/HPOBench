@@ -62,9 +62,9 @@ class BenchmarkServer:
                     rnd1 = [np.uint32(number) for number in rnd1]
                     kwargs['rng'] = np.random.set_state((rnd0, rnd1, rnd2, rnd3, rnd4))
                     logger.debug('rng works!!')
-                self.benchmark = Benchmark(**kwargs)
+                self.benchmark = Benchmark(**kwargs)  # noqa: F821
             else:
-                self.benchmark = Benchmark()
+                self.benchmark = Benchmark()  # noqa: F821
         except Exception as e:
             print(e)
             logger.error(e)

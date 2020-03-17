@@ -156,7 +156,7 @@ class OpenMLHoldoutDataManager(HoldoutDataManager):
                                                                                   stratify=self.y_train,
                                                                                   random_state=self.rng)
 
-        return self.X_train, self.y_train, self.X_val, self.y_val, self.X_test, self.y_test
+        return self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test
 
 
 class OpenMLCrossvalidationDataManager(CrossvalidationDataManager):

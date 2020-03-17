@@ -8,12 +8,11 @@ the containers and the client.
 It is used to download (if not already) and start containers in the background.
 
 To reduce download traffic, firstly, it checks if the container is already
-downloaded. The container source as well the path, where it should be stored,
+downloaded. The container source as well as the path, where it should be stored,
 are defined in the ~/.hpolibrc - file.
 
-The name of the container (``benchmark_name``) is defined either in its belonging
-container-benchmark definition. (hpolib/container/<type>/<name> or via
-``container_name``.
+The name of the container (``container_name``) is defined either in its belonging
+container-benchmark definition. (hpolib/container/<type>/<name> or via ``container_name``.
 """
 
 import abc
@@ -47,41 +46,43 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
     def __init__(self):
         self.socket_id = self._id_generator()
 
-    def _setup(self, gpu: bool = False, container_name: Optional[str] = None,
-               container_source: Optional[str] = None, **kwargs):
+    def _setup(self, benchmark_name: str, container_source: Optional[str] = None, container_name: Optional[str] = None,
+               gpu: bool = False, **kwargs):
         """ Initialization of the benchmark using container.
 
-        This setup function downloads the container from a defined source.
-        The source is defined either in the .hpolibrc or in the its benchmark
-        definition (hpolib/container/benchmarks/<type>/<name>).
-        If an container is already locally available, the local container is
-        used. Then, the container is started and a connection between the
-        container and the client is established.
+        This setup function downloads the container from a defined source. The source is defined either in the
+        .hpolibrc or in the its benchmark definition (hpolib/container/benchmarks/<type>/<name>). If an container
+        is already locally available, the local container is used. Then, the container is started and a connection
+        between the container and the client is established.
 
         Parameters
         ----------
-        gpu : bool
-            If True, the container has access to the local cuda-drivers.
-            (Not tested)
-        container_name : Optional[str]
-            name of the container. E.g. XGBoostBenchmark. The local container has to have the same name. It could be
-            useful to have multiple container for the same benchmark, if a tool like auto-sklearn is updated to a newer
-            version, and you want to compare its performance across its versions.
+        benchmark_name: str
+            Class name of the benchmark to use. For example XGBoostBenchmark. This value is defined in the benchmark
+            definition (hpolib/container/benchmarks/<type>/<name>
         container_source : Optional[str]
             Path to the container. Either local path or url to a hosting
             platform, e.g. singularity hub.
+        container_name : Optional[str]
+            name of the container. E.g. xgboost_benchmark. Specifying different container could be
+            useful to have multiple container for the same benchmark, if a tool like auto-sklearn is updated to a newer
+            version, and you want to compare its performance across its versions.
+        gpu : bool
+            If True, the container has access to the local cuda-drivers.
+            (Not tested)
         """
         # Create unique ID
         self.config = hpolib.config.config_file
 
         # Default container name is benchmark name. container_name can be specified to point to another container.
-        container_name = container_name or self.benchmark_name
+        container_name = container_name or benchmark_name
 
         # Same for the container's source.
         container_source = container_source or self.config.container_source
-        logger.debug(f'Image {container_name} in {self.config.container_dir} from {container_source}')
-
         container_dir = Path(self.config.container_dir)
+
+        logger.debug(f'Use benchmark {benchmark_name} from container {container_source}/{container_name}. \n'
+                     f'And container directory {self.config.container_dir}')
 
         # Pull the container from the singularity hub if the container is hosted online. If the container is stored
         # locally (e.g.for development) do not pull it.
@@ -93,7 +94,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
                 container_dir.mkdir(parents=True, exist_ok=True)
                 cmd = f"singularity pull --dir {self.config.container_dir} " \
-                      f"--name {container_name} {container_source}:{container_name.lower()}"
+                      f"--name {container_name} {container_source}/{container_name.lower()}"
                 logger.debug(cmd)
                 subprocess.run(cmd, shell=True)
             else:
@@ -108,18 +109,15 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                                                               f'{container_dir / container_name}'
             logger.debug('Image found on the local file system.')
 
-        container_options = str(container_dir / container_name)
-        socket_options = f'{container_name} {self.socket_id}'
-
-        # Option for enabling GPU support
-        gpu_opt = '--nv ' if gpu else ''
         bind_options = f'--bind /var/lib/,{self.config.global_data_dir}:/var/lib/,{self.config.data_dir}:/var/lib/ '
+        gpu_opt = '--nv ' if gpu else ''  # Option for enabling GPU support
+        container_options = f'{container_dir / container_name}'
 
         cmd = f'singularity instance start {bind_options}{gpu_opt}{container_options} {self.socket_id}'
         logger.debug(cmd)
         subprocess.run(cmd, shell=True)
 
-        cmd = f'singularity run {gpu_opt}instance://{self.socket_id} {socket_options}'
+        cmd = f'singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
         logger.debug(cmd)
         subprocess.Popen(cmd, shell=True)
 
