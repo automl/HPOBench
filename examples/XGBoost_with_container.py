@@ -49,8 +49,8 @@ def run_benchmark(task_id):
     cs = b.get_configuration_space()
     configuration = cs.get_default_configuration()
 
-    n_estimators = [2, 4, 8, 16, 32, 64]
-    subsample_ratios = [0.1, 0.2, 0.4, 0.8, 1]
+    n_estimators = [8, 64]
+    subsample_ratios = [0.4, 1]
 
     result_per_data_set = []
     num_configs = 10
@@ -84,7 +84,7 @@ def run_benchmark(task_id):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='HPOlib CC Datasets', description='HPOlib3', usage='%(prog)s <task_id>')
-    parser.add_argument('--array_id', type=int, help='Defines which data set to use. Values from 0 to 71')
+    parser.add_argument('--array_id', default=0, type=int, help='Defines which data set to use. Values from 0 to 71')
 
     args = parser.parse_args()
     task_ids = get_openmlcc18_taskids()

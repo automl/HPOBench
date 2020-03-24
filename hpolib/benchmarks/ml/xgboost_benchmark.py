@@ -49,6 +49,9 @@ class XGBoostBenchmark(AbstractBenchmark):
         self.X_valid = self.X_valid[:, sorting]
         self.X_test = self.X_test[:, sorting]
 
+        nan_columns = np.all(np.isnan(self.X_train), axis=0)
+        self.categorical_data = self.categorical_data[~nan_columns]
+
         mean_imputer = SimpleImputer(strategy='mean')
         self.X_train = mean_imputer.fit_transform(self.X_train)
         self.X_valid = mean_imputer.transform(self.X_valid)
