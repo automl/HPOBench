@@ -12,7 +12,7 @@ except ImportError:
     skip_container_test = True
 
 
-def test_whitebox_without_container():
+def test_whitebox_without_container_xgb():
     from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
     b = Benchmark(task_id=167199, rng=0)
     cs = b.get_configuration_space(seed=0)
@@ -35,6 +35,30 @@ def test_whitebox_without_container():
     assert np.isclose(valid_loss, 0.3873, atol=0.001)
     assert np.isclose(test_loss, 0.38181, atol=0.001)
 
+
+def test_whitebox_without_container_cartpole_1():
+    from hpolib.benchmarks.rl.cartpole import CartpoleFull
+    rng = np.random.RandomState(0)
+    cartpole_full = CartpoleFull(max_budget=1, rng=rng)
+    cs = cartpole_full.get_configuration_space()
+    config = cs.get_default_configuration()
+    res = cartpole_full.objective_function(config, budget=1)['function_value']
+    # Note: Currently, it is not possible to make the gym deterministic.
+    #       Therefore, just test that no exception is raised.
+    # assert np.isclose(res, 1102.0)
+
+
+def test_whitebox_without_container_cartpole_2():
+    from hpolib.benchmarks.rl.cartpole import CartpoleReduced
+    rng = np.random.RandomState(0)
+
+    cartpole_reduced = CartpoleReduced(max_budget=1, rng=rng)
+    cs = cartpole_reduced.get_configuration_space()
+    config = cs.get_default_configuration()
+    res = cartpole_reduced.objective_function(config, budget=1)['function_value']
+    # Note: Currently, it is not possible to make the gym deterministic.
+    #       Therefore, just test that no exception is raised.
+    # assert np.isclose(res, 612.0)
 
 @pytest.mark.skipif(skip_container_test, reason="Requires singularity and flask")
 def test_whitebox_with_container():

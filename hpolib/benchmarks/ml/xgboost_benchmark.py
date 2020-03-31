@@ -89,7 +89,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         random_state.shuffle(self.train_idx)
 
     @AbstractBenchmark._check_configuration
-    def objective_function(self, config: Dict, n_estimators: int, subsample: float,
+    def objective_function(self, config: Dict, n_estimators: int = 128, subsample: float = 1,
                            shuffle: bool = False, **kwargs) -> Dict:
         """
         Trains a XGBoost model given a hyperparameter configuration and
@@ -146,7 +146,7 @@ class XGBoostBenchmark(AbstractBenchmark):
                 'subsample': subsample}
 
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, config: Dict, n_estimators: int = 100, **kwargs) -> Dict:
+    def objective_function_test(self, config: Dict, n_estimators: int = 128, **kwargs) -> Dict:
         """
         Trains a XGBoost model with a given configuration on both the train
         and validation data set and evaluates the model on the test data set.
