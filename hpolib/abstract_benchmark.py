@@ -109,9 +109,12 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
                 except Exception as e:
                     raise Exception('Error during the conversion of the provided configuration '
                                     'into a ConfigSpace.Configuration object') from e
-
-            else:
+            elif isinstance(configuration, ConfigSpace.Configuration):
                 config = configuration
+            else:
+                raise TypeError(f'Configuration has to be from type np.ndarray, dict, or ConfigSpace.Configuration but '
+                                f'was {type(configuration)}')
+
             self.configuration_space.check_configuration(config)
             return foo(self, configuration, **kwargs)
         return wrapper

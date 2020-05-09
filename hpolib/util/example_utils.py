@@ -13,8 +13,8 @@ def get_travis_settings(type: str) -> Dict:
         raise ValueError(f'Unknown type {type}. Must be one of [smac, bohb]')
 
 
-def set_env_variables():
-    """ Helper function: Sets all variables with are responsible for using multiple threads to 1.
+def set_env_variables_to_use_only_one_core():
+    """ Helper function: Sets all variables which are responsible for using multiple threads to 1.
     This is necessary/useful, if you are computing on a cluster."""
     os.environ['OMP_NUM_THREADS'] = '1'
     os.environ['OPENBLAS_NUM_THREADS'] = '1'

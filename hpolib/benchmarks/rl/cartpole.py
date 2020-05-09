@@ -15,7 +15,7 @@ from hpolib.util import rng_helper
 
 class CartpoleBase(AbstractBenchmark):
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, defaults: Optional[Dict] = None,
-                 max_episodes: Optional[int] = 3000, max_budget: Optional[int] = 9):
+                 max_episodes: Optional[int] = 3000):
         """
         Parameters
         ----------
@@ -25,8 +25,6 @@ class CartpoleBase(AbstractBenchmark):
             default configuration used for the PPO agent
         max_episodes : Optional[int]
             limit of the length of a episode for the cartpole runner
-        max_budget : Optional[int]
-            number of repetitions for the cartpole runner
         """
 
         super(CartpoleBase, self).__init__()
@@ -36,7 +34,7 @@ class CartpoleBase(AbstractBenchmark):
         np.random.seed(0)
         self.env = OpenAIGym('CartPole-v0', visualize=False)
         self.avg_n_episodes = 20
-        self.max_budget = max_budget
+        self.max_budget = 9  # number of repetitions for the cartpole runner
         self.max_episodes = max_episodes
 
         self.defaults = {"n_units_1": 64,
@@ -61,11 +59,38 @@ class CartpoleBase(AbstractBenchmark):
             self.defaults.update(defaults)
 
     @staticmethod
-    def get_configuration_space() -> CS.ConfigurationSpace:
+    def get_configuration_space(seed=0) -> CS.ConfigurationSpace:
+        """ Returns the ConfigSpace.ConfigurationSpace of the benchmark. """
         raise NotImplementedError()
 
     @AbstractBenchmark._check_configuration
     def objective_function(self, config: Dict, budget: int = None, **kwargs) -> Dict:
+        """
+        Trains a Tensorforce RL agent on the cartpole experiment. This benchmark was used in the experiments for the
+        BOHB-paper (see references). A more detailed explanations can be found there.
+
+        The budget describes how often the agent is trained on the experiment.
+        It returns the average number of the length of episodes.
+
+        Parameters
+        ----------
+        config : ConfigSpace.Configuation
+        budget : Optional[int]
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value : average episode length
+            cost : time to run all agents
+            max_episodes : the maximum length of an episode
+            budget : number of agents used
+            all_runs : the episode length of all runs of all agents
+        """
+        self.rng = rng_helper.get_rng(rng=kwargs.get('rng', None), self_rng=self.rng)
+        tf.random.set_random_seed(self.rng.randint(1, 100000))
+        np.random.seed(self.rng.randint(1, 100000))
+
         # fill in missing entries with default values for 'incomplete/reduced' configspaces
         c = self.defaults
         c.update(config)
@@ -79,8 +104,6 @@ class CartpoleBase(AbstractBenchmark):
                         {'type': 'dense', 'size': config["n_units_2"], 'activation': config['activation_2']}]
 
         converged_episodes = []
-        tf.random.set_random_seed(0)
-        np.random.seed(0)
 
         for i in range(budget):
             agent = PPOAgent(states=self.env.states,

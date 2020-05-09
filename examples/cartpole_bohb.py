@@ -16,14 +16,14 @@ logging.basicConfig(level=logging.DEBUG)
 
 from hpolib.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
 from hpolib.util.rng_helper import get_rng
-from hpolib.util.example_utils import get_travis_settings, set_env_variables
+from hpolib.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
 import hpbandster.core.nameserver as hpns
 import hpbandster.core.result as hpres
 from hpbandster.optimizers import BOHB
 from hpbandster.core.worker import Worker
 
 logger = logging.getLogger('BOHB on cartpole')
-set_env_variables()
+set_env_variables_to_use_only_one_core()
 
 
 class CustomWorker(Worker):
