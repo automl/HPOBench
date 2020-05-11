@@ -34,7 +34,6 @@ class CartpoleBase(AbstractBenchmark):
         np.random.seed(0)
         self.env = OpenAIGym('CartPole-v0', visualize=False)
         self.avg_n_episodes = 20
-        self.max_budget = 9  # number of repetitions for the cartpole runner
         self.max_episodes = max_episodes
 
         self.defaults = {"n_units_1": 64,
@@ -64,7 +63,7 @@ class CartpoleBase(AbstractBenchmark):
         raise NotImplementedError()
 
     @AbstractBenchmark._check_configuration
-    def objective_function(self, config: Dict, budget: int = None, **kwargs) -> Dict:
+    def objective_function(self, config: Dict, budget: Optional[int] = 9, **kwargs) -> Dict:
         """
         Trains a Tensorforce RL agent on the cartpole experiment. This benchmark was used in the experiments for the
         BOHB-paper (see references). A more detailed explanations can be found there.
@@ -74,7 +73,7 @@ class CartpoleBase(AbstractBenchmark):
 
         Parameters
         ----------
-        config : ConfigSpace.Configuation
+        config : ConfigSpace.Configuration
         budget : Optional[int]
         kwargs
 
@@ -97,8 +96,6 @@ class CartpoleBase(AbstractBenchmark):
         config = c
 
         start_time = time.time()
-
-        budget = budget or self.max_budget
 
         network_spec = [{'type': 'dense', 'size': config["n_units_1"], 'activation': config['activation_1']},
                         {'type': 'dense', 'size': config["n_units_2"], 'activation': config['activation_2']}]
@@ -141,8 +138,8 @@ class CartpoleBase(AbstractBenchmark):
                 'all_runs': converged_episodes}
 
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, config: Dict, **kwargs) -> Dict:
-        return self.objective_function(config, budget=self.max_budget, **kwargs)
+    def objective_function_test(self, config: Dict, budget: Optional[int] = 9, **kwargs) -> Dict:
+        return self.objective_function(config, budget=budget, **kwargs)
 
     @staticmethod
     def get_meta_information() -> Dict:
