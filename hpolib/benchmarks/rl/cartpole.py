@@ -147,7 +147,7 @@ class CartpoleBase(AbstractBenchmark):
     @staticmethod
     def get_meta_information() -> Dict:
         return {'name': 'Cartpole',
-                'references': [],
+                'references': ['http://proceedings.mlr.press/v80/falkner18a.html'],
                 'note': 'This benchmark is not deterministic, since the gym environment is not deterministic.'
                         ' Also, often the benchmark is already converged after 1000 episodes.'
                         ' Increasing the budget \"max_episodes\" may lead to the same results.'}

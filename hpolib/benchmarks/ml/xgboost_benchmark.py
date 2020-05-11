@@ -216,7 +216,7 @@ class XGBoostBenchmark(AbstractBenchmark):
     def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
         return {'name': 'XGBoost',
-                'references': ['http://proceedings.mlr.press/v80/falkner18a.html'],
+                'references': [],
                 }
 
     def _get_pipeline(self, eta: float, min_child_weight: int, colsample_bytree: float, colsample_bylevel: float,
