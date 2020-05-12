@@ -8,18 +8,18 @@ jobs:
     env: RUN_TESTS="true"
   - python: "3.7"
     env: RUN_TESTS="true"
-  - python: "3.8"
+  - python: "3.7"
     env:
       - RUN_TESTS="true"
       - USE_SINGULARITY="true"
-  - python: "3.8"
+  - python: "3.7"
     env: RUN_CODESTYLE="true"
-  - python: "3.8"
+  - python: "3.7"
     dist: bionic
     env:
       - RUN_EXAMPLES="true"
       - USE_SINGULARITY="true"
-  - python: "3.8"
+  - python: "3.7"
     dist: xenial
     env:
       - RUN_EXAMPLES="true"

@@ -96,15 +96,25 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Can be combined with the _configuration_as_array decorator.
         """
         def wrapper(self, configuration, **kwargs):
-            if not isinstance(configuration, ConfigSpace.Configuration):
+            if isinstance(configuration, np.ndarray):
                 try:
                     config_dict = {k: configuration[i] for (i, k) in enumerate(self.configuration_space)}
                     config = ConfigSpace.Configuration(self.configuration_space, config_dict)
                 except Exception as e:
-                    raise Exception('Error during the conversion of the provided into a ConfigSpace.Configuration'
-                                    ' object') from e
-            else:
+                    raise Exception('Error during the conversion of the provided configuration '
+                                    'into a ConfigSpace.Configuration object') from e
+            elif isinstance(configuration, dict):
+                try:
+                    config = ConfigSpace.Configuration(self.configuration_space, configuration)
+                except Exception as e:
+                    raise Exception('Error during the conversion of the provided configuration '
+                                    'into a ConfigSpace.Configuration object') from e
+            elif isinstance(configuration, ConfigSpace.Configuration):
                 config = configuration
+            else:
+                raise TypeError(f'Configuration has to be from type np.ndarray, dict, or ConfigSpace.Configuration but '
+                                f'was {type(configuration)}')
+
             self.configuration_space.check_configuration(config)
             return foo(self, configuration, **kwargs)
         return wrapper

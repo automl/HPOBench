@@ -89,7 +89,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         random_state.shuffle(self.train_idx)
 
     @AbstractBenchmark._check_configuration
-    def objective_function(self, config: Dict, n_estimators: int, subsample: float,
+    def objective_function(self, config: Dict, n_estimators: int = 128, subsample: float = 1,
                            shuffle: bool = False, **kwargs) -> Dict:
         """
         Trains a XGBoost model given a hyperparameter configuration and
@@ -146,7 +146,7 @@ class XGBoostBenchmark(AbstractBenchmark):
                 'subsample': subsample}
 
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, config: Dict, n_estimators: int = 100, **kwargs) -> Dict:
+    def objective_function_test(self, config: Dict, subsample: float = 1, n_estimators: int = 128, **kwargs) -> Dict:
         """
         Trains a XGBoost model with a given configuration on both the train
         and validation data set and evaluates the model on the test data set.
@@ -161,6 +161,8 @@ class XGBoostBenchmark(AbstractBenchmark):
             Configuration for the XGBoost Model
         n_estimators : int
             Number of trees to fit.
+        subsample: float
+            Fraction which was used to subsample the training data
         kwargs
 
         Returns
@@ -216,7 +218,7 @@ class XGBoostBenchmark(AbstractBenchmark):
     def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
         return {'name': 'XGBoost',
-                'references': ['None'],
+                'references': [],
                 }
 
     def _get_pipeline(self, eta: float, min_child_weight: int, colsample_bytree: float, colsample_bylevel: float,

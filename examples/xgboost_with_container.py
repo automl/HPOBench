@@ -1,4 +1,7 @@
 """
+Example with XGBoost (container)
+================================
+
 In this example, we show how to use a benchmark with a container. We provide container for some benchmarks.
 They are hosted on https://cloud.sylabs.io/library/keggensperger/automl.
 
@@ -9,7 +12,7 @@ To use the container-example, you have to have singulartiy (>3.5) installed. Fol
 https://sylabs.io/guides/3.1/user-guide/quick_start.html#quick-installation-steps
 
 Furthermore, make sure to install the right dependencies for the hpolib via:
-``pip3 install .[xgboost,singularity]``.
+``pip3 install .[xgboost_example,singularity]``.
 """
 
 
@@ -27,7 +30,7 @@ from hpolib.util.openml_data_manager import get_openmlcc18_taskids
 from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
 
 
-def run_benchmark(task_id):
+def run_benchmark(task_id: int, on_travis: bool = False):
     logger = logging.getLogger()
     logger.setLevel(level=logging.DEBUG)
 
@@ -49,11 +52,11 @@ def run_benchmark(task_id):
     cs = b.get_configuration_space()
     configuration = cs.get_default_configuration()
 
-    n_estimators = [8, 64]
-    subsample_ratios = [0.4, 1]
+    n_estimators = [8, 64] if not on_travis else [8]
+    subsample_ratios = [0.4, 1] if not on_travis else [0.4]
 
     result_per_data_set = []
-    num_configs = 10
+    num_configs = 10 if not on_travis else 2
     for i in range(num_configs):
         data_per_config = {estimator: {subsample: {} for subsample in subsample_ratios} for estimator in n_estimators}
         for estimator in n_estimators:
@@ -83,10 +86,15 @@ def run_benchmark(task_id):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog='HPOlib CC Datasets', description='HPOlib3', usage='%(prog)s <task_id>')
+    parser = argparse.ArgumentParser(prog='HPOlib CC Datasets', description='HPOlib3 on the CC18 data sets.',
+                                     usage='%(prog)s --array_id <task_id>')
+
     parser.add_argument('--array_id', default=0, type=int, help='Defines which data set to use. Values from 0 to 71')
+    parser.add_argument('--on_travis', action='store_true',
+                        help='Flag to speed up the run on the continuous integration tool \"travis\". This flag can be'
+                             'ignored by the user')
 
     args = parser.parse_args()
     task_ids = get_openmlcc18_taskids()
     if args.array_id < len(task_ids):
-        run_benchmark(task_ids[args.array_id])
+        run_benchmark(task_ids[args.array_id], on_travis=args.on_travis)
