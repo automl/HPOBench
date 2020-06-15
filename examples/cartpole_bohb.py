@@ -33,7 +33,7 @@ class CustomWorker(Worker):
         self.max_budget = max_budget
 
     def compute(self, config, budget, **kwargs):
-        b = Benchmark(rng=self.seed, max_budget=self.max_budget)
+        b = Benchmark(rng=self.seed)
         result_dict = b.objective_function(config, budget=int(budget))
         return {'loss': result_dict['function_value'],
                 'info': {'cost': result_dict['cost'],
