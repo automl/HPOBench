@@ -63,7 +63,7 @@ class CartpoleBase(AbstractBenchmark):
         raise NotImplementedError()
 
     @AbstractBenchmark._check_configuration
-    def objective_function(self, config: Dict, budget: Optional[int] = 9, **kwargs) -> Dict:
+    def objective_function(self, configuration: Dict, budget: Optional[int] = 9, **kwargs) -> Dict:
         """
         Trains a Tensorforce RL agent on the cartpole experiment. This benchmark was used in the experiments for the
         BOHB-paper (see references). A more detailed explanations can be found there.
@@ -73,7 +73,7 @@ class CartpoleBase(AbstractBenchmark):
 
         Parameters
         ----------
-        config : ConfigSpace.Configuration
+        configuration : ConfigSpace.Configuration
         budget : Optional[int]
         kwargs
 
@@ -92,13 +92,17 @@ class CartpoleBase(AbstractBenchmark):
 
         # fill in missing entries with default values for 'incomplete/reduced' configspaces
         c = self.defaults
-        c.update(config)
-        config = c
+        c.update(configuration)
+        configuration = c
 
         start_time = time.time()
 
-        network_spec = [{'type': 'dense', 'size': config["n_units_1"], 'activation': config['activation_1']},
-                        {'type': 'dense', 'size': config["n_units_2"], 'activation': config['activation_2']}]
+        network_spec = [{'type': 'dense',
+                         'size': configuration["n_units_1"],
+                         'activation': configuration['activation_1']},
+                        {'type': 'dense',
+                         'size': configuration["n_units_2"],
+                         'activation': configuration['activation_2']}]
 
         converged_episodes = []
 
@@ -106,19 +110,21 @@ class CartpoleBase(AbstractBenchmark):
             agent = PPOAgent(states=self.env.states,
                              actions=self.env.actions,
                              network=network_spec,
-                             update_mode={'unit': 'episodes', 'batch_size': config["batch_size"]},
-                             step_optimizer={'type': config["optimizer_type"],
-                                             'learning_rate': config["learning_rate"]},
-                             optimization_steps=config["optimization_steps"],
-                             discount=config["discount"],
-                             baseline_mode=config["baseline_mode"],
+                             update_mode={'unit': 'episodes', 'batch_size': configuration["batch_size"]},
+                             step_optimizer={'type': configuration["optimizer_type"],
+                                             'learning_rate': configuration["learning_rate"]},
+                             optimization_steps=configuration["optimization_steps"],
+                             discount=configuration["discount"],
+                             baseline_mode=configuration["baseline_mode"],
                              baseline={"type": "mlp",
-                                       "sizes": [config["baseline_n_units_1"], config["baseline_n_units_2"]]},
+                                       "sizes": [configuration["baseline_n_units_1"],
+                                                 configuration["baseline_n_units_2"]]},
                              baseline_optimizer={"type": "multi_step",
-                                                 "optimizer": {"type": config["baseline_optimizer_type"],
-                                                               "learning_rate": config["baseline_learning_rate"]},
-                                                 "num_steps": config["baseline_optimization_steps"]},
-                             likelihood_ratio_clipping=config["likelihood_ratio_clipping"]
+                                                 "optimizer": {"type": configuration["baseline_optimizer_type"],
+                                                               "learning_rate":
+                                                                   configuration["baseline_learning_rate"]},
+                                                 "num_steps": configuration["baseline_optimization_steps"]},
+                             likelihood_ratio_clipping=configuration["likelihood_ratio_clipping"]
                              )
 
             def episode_finished(r):

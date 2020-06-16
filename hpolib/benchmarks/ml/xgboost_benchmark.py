@@ -89,7 +89,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         random_state.shuffle(self.train_idx)
 
     @AbstractBenchmark._check_configuration
-    def objective_function(self, config: Dict, n_estimators: int = 128, subsample: float = 1,
+    def objective_function(self, configuration: Dict, n_estimators: int = 128, subsample: float = 1,
                            shuffle: bool = False, **kwargs) -> Dict:
         """
         Trains a XGBoost model given a hyperparameter configuration and
@@ -101,7 +101,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         Parameters
         ----------
-        config : Dict
+        configuration : Dict
             Configuration for the XGBoost model
         n_estimators : int
             Number of trees to fit.
@@ -133,7 +133,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         train_idx = self.train_idx[:int(len(self.train_idx) * subsample)]
 
-        model = self._get_pipeline(n_estimators=n_estimators, **config)
+        model = self._get_pipeline(n_estimators=n_estimators, **configuration)
         model.fit(X=self.X_train[train_idx], y=self.y_train[train_idx])
 
         train_loss = 1 - self.accuracy_scorer(model, self.X_train[train_idx], self.y_train[train_idx])
@@ -146,7 +146,7 @@ class XGBoostBenchmark(AbstractBenchmark):
                 'subsample': subsample}
 
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, config: Dict, subsample: float = 1, n_estimators: int = 128, **kwargs) -> Dict:
+    def objective_function_test(self, configuration: Dict, subsample: float = 1, n_estimators: int = 128, **kwargs) -> Dict:
         """
         Trains a XGBoost model with a given configuration on both the train
         and validation data set and evaluates the model on the test data set.
@@ -157,7 +157,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         Parameters
         ----------
-        config : Dict
+        configuration : Dict
             Configuration for the XGBoost Model
         n_estimators : int
             Number of trees to fit.
@@ -175,7 +175,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         start = time.time()
-        model = self._get_pipeline(n_estimators=n_estimators, **config)
+        model = self._get_pipeline(n_estimators=n_estimators, **configuration)
 
         model.fit(X=np.concatenate((self.X_train, self.X_valid)),
                   y=np.concatenate((self.y_train, self.y_valid)))

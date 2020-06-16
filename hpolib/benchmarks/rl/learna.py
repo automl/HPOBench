@@ -151,11 +151,13 @@ class BaseLearna(AbstractBenchmark):
 
         return config, network_config, agent_config, env_config
 
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Optional[float] = 8, **kwargs) -> Dict:
+    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Optional[int, float] = 600, **kwargs) \
+            -> Dict:
         raise NotImplementedError()
 
-    def objective_function_test(self, config: Dict, cutoff_agent_per_sequence: Optional[float] = 8, **kwargs) -> Dict:
-        return self.objective_function(config, cutoff_agent_per_sequence=cutoff_agent_per_sequence, **kwargs)
+    def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Optional[int, float] = 600,
+                                **kwargs) -> Dict:
+        return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence, **kwargs)
 
     @staticmethod
     def get_meta_information() -> Dict:
@@ -222,7 +224,7 @@ class Learna(BaseLearna):
     def __init__(self, data_path: Union[str, Path]):
         super(Learna, self).__init__(data_path)
 
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Optional[float] = 600, **kwargs) \
+    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Optional[int, float] = 600, **kwargs) \
             -> Dict:
         config, network_config, agent_config, env_config = self._setup(configuration)
 
@@ -248,7 +250,7 @@ class MetaLearna(BaseLearna):
         super(MetaLearna, self).__init__(data_path)
         self.config = hpolib.config.config_file
 
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Optional[float] = 600, **kwargs) \
+    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Optional[int, float] = 600, **kwargs) \
             -> Dict:
 
         config_as_str = _replace_multiple_char(str(configuration),
@@ -287,8 +289,8 @@ class MetaLearna(BaseLearna):
                 'train_info': train_info,
                 'validation_info': validation_info}
 
-    def _train(self, budget: int, tmp_dir: Path, network_config: NetworkConfig, agent_config: AgentConfig,
-               env_config: RnaDesignEnvironmentConfig) -> Dict:
+    def _train(self, budget: Union[int, float], tmp_dir: Path, network_config: NetworkConfig,
+               agent_config: AgentConfig, env_config: RnaDesignEnvironmentConfig) -> Dict:
         train_arguments = [self.train_sequences,
                            budget,  # timeout
                            self.num_cores,  # worker_count

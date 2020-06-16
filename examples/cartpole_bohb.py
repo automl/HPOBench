@@ -95,7 +95,8 @@ def run_experiment(out_path, on_travis):
                 f'with Performance: {inc_value:.2f}')
 
     benchmark = Benchmark()
-    incumbent_result = benchmark.objective_function(config=inc_cfg)
+    incumbent_result = benchmark.objective_function_test(configuration=inc_cfg,
+                                                         budget=9 if not on_travis else 3)
     print(incumbent_result)
 
 
