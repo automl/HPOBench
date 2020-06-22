@@ -21,3 +21,4 @@ def set_env_variables_to_use_only_one_core():
     os.environ['MKL_NUM_THREADS'] = '1'
     os.environ['VECLIB_MAXIMUM_THREADS'] = '1'
     os.environ['NUMEXPR_NUM_THREADS'] = '1'
+    os.environ['NUMEXPR_MAX_THREADS'] = '1'
