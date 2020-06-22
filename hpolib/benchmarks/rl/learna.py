@@ -151,13 +151,13 @@ class BaseLearna(AbstractBenchmark):
 
         return config, network_config, agent_config, env_config
 
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Optional[int, float] = 600, **kwargs) \
+    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600, **kwargs) \
             -> Dict:
         raise NotImplementedError()
 
-    def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Optional[int, float] = 600,
+    def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
                                 **kwargs) -> Dict:
-        return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence, **kwargs)
+        raise NotImplementedError()
 
     @staticmethod
     def get_meta_information() -> Dict:
@@ -224,7 +224,7 @@ class Learna(BaseLearna):
     def __init__(self, data_path: Union[str, Path]):
         super(Learna, self).__init__(data_path)
 
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Optional[int, float] = 600, **kwargs) \
+    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600, **kwargs) \
             -> Dict:
         config, network_config, agent_config, env_config = self._setup(configuration)
 
@@ -244,13 +244,17 @@ class Learna(BaseLearna):
                 'sum_of_first_distances': validation_info["sum_of_first_distances"],
                 'squence_infos': validation_info["squence_infos"]}
 
+    def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
+                                **kwargs) -> Dict:
+        return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence, **kwargs)
+
 
 class MetaLearna(BaseLearna):
     def __init__(self, data_path: Union[str, Path]):
         super(MetaLearna, self).__init__(data_path)
         self.config = hpolib.config.config_file
 
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Optional[int, float] = 600, **kwargs) \
+    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 3600, **kwargs)\
             -> Dict:
 
         config_as_str = _replace_multiple_char(str(configuration),
@@ -289,8 +293,28 @@ class MetaLearna(BaseLearna):
                 'train_info': train_info,
                 'validation_info': validation_info}
 
+    def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 3600,
+                                **kwargs) -> Dict:
+        return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence, **kwargs)
+
     def _train(self, budget: Union[int, float], tmp_dir: Path, network_config: NetworkConfig,
                agent_config: AgentConfig, env_config: RnaDesignEnvironmentConfig) -> Dict:
+        """
+
+
+        Parameters
+        ----------
+        budget : int, float
+            Time in seconds to train a RL agent
+        tmp_dir
+        network_config
+        agent_config
+        env_config
+
+        Returns
+        -------
+
+        """
         train_arguments = [self.train_sequences,
                            budget,  # timeout
                            self.num_cores,  # worker_count

@@ -51,6 +51,12 @@ def run_experiment(out_path, on_travis):
     if on_travis:
         settings.update(get_travis_settings('bohb'))
 
+    benchmark = Benchmark()
+    incumbent_result = benchmark.objective_function_test(
+        configuration=benchmark.get_configuration_space().get_default_configuration(),
+        budget=9 if not on_travis else 1
+    )
+
     settings.get('output_dir').mkdir(exist_ok=True)
 
     cs = Benchmark.get_configuration_space()
