@@ -40,8 +40,6 @@ from hpolib.abstract_benchmark import AbstractBenchmark
 from hpolib.util import rng_helper
 
 # Import the learna package
-# TODO: Make the learna package installable (?)
-learna_path = list(Path.home().parent.rglob('learna'))[0]
 
 from learna.data.parse_dot_brackets import parse_dot_brackets
 from learna.learna.agent import NetworkConfig, AgentConfig
@@ -151,10 +149,12 @@ class BaseLearna(AbstractBenchmark):
 
         return config, network_config, agent_config, env_config
 
+    @AbstractBenchmark._configuration_as_dict
     def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600, **kwargs) \
             -> Dict:
         raise NotImplementedError()
-
+    
+    @AbstractBenchmark._configuration_as_dict
     def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
                                 **kwargs) -> Dict:
         raise NotImplementedError()
@@ -190,42 +190,45 @@ class BaseLearna(AbstractBenchmark):
         return config_space
 
     @staticmethod
-    def _fill_config(config: Dict) -> Dict:
+    def _fill_config(configuration: Dict) -> Dict:
         """ Helper function to fill the configuration space with the missing parameters """
-        config["conv_size1"] = 1 + 2 * config["conv_radius1"]
-        if config["conv_radius1"] == 0:
-            config["conv_size1"] = 0
-        del config["conv_radius1"]
 
-        config["conv_size2"] = 1 + 2 * config["conv_radius2"]
-        if config["conv_radius2"] == 0:
-            config["conv_size2"] = 0
-        del config["conv_radius2"]
+        configuration["conv_size1"] = 1 + 2 * configuration["conv_radius1"]
+        if configuration["conv_radius1"] == 0:
+            configuration["conv_size1"] = 0
+        del configuration["conv_radius1"]
 
-        if config["conv_size1"] != 0:
-            min_state_radius = config["conv_size1"] + config["conv_size1"] - 1
+        configuration["conv_size2"] = 1 + 2 * configuration["conv_radius2"]
+        if configuration["conv_radius2"] == 0:
+            configuration["conv_size2"] = 0
+        del configuration["conv_radius2"]
+
+        if configuration["conv_size1"] != 0:
+            min_state_radius = configuration["conv_size1"] + configuration["conv_size1"] - 1
             max_state_radius = 32
-            config["state_radius"] = int(min_state_radius
-                                         + (max_state_radius - min_state_radius) * config["state_radius_relative"])
+            configuration["state_radius"] = int(min_state_radius
+                                         + (max_state_radius - min_state_radius) * configuration["state_radius_relative"])
         else:
-            min_state_radius = config["conv_size2"] + config["conv_size2"] - 1
+            min_state_radius = configuration["conv_size2"] + configuration["conv_size2"] - 1
             max_state_radius = 32
-            config["state_radius"] = int(min_state_radius
-                                         + (max_state_radius - min_state_radius) * config["state_radius_relative"])
-        del config["state_radius_relative"]
+            configuration["state_radius"] = int(min_state_radius
+                                         + (max_state_radius - min_state_radius) * configuration["state_radius_relative"])
+        del configuration["state_radius_relative"]
 
-        config["restart_timeout"] = None
+        configuration["restart_timeout"] = None
 
-        return config
+        return configuration
 
 
 class Learna(BaseLearna):
 
     def __init__(self, data_path: Union[str, Path]):
         super(Learna, self).__init__(data_path)
-
+    
+    @AbstractBenchmark._configuration_as_dict
     def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600, **kwargs) \
             -> Dict:
+
         config, network_config, agent_config, env_config = self._setup(configuration)
 
         start_time = time()
@@ -244,6 +247,7 @@ class Learna(BaseLearna):
                 'sum_of_first_distances': validation_info["sum_of_first_distances"],
                 'squence_infos': validation_info["squence_infos"]}
 
+    @AbstractBenchmark._configuration_as_dict
     def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
                                 **kwargs) -> Dict:
         return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence, **kwargs)
@@ -254,6 +258,7 @@ class MetaLearna(BaseLearna):
         super(MetaLearna, self).__init__(data_path)
         self.config = hpolib.config.config_file
 
+    @AbstractBenchmark._configuration_as_dict
     def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 3600, **kwargs)\
             -> Dict:
 
@@ -293,6 +298,7 @@ class MetaLearna(BaseLearna):
                 'train_info': train_info,
                 'validation_info': validation_info}
 
+    @AbstractBenchmark._configuration_as_dict
     def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 3600,
                                 **kwargs) -> Dict:
         return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence, **kwargs)

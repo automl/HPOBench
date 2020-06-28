@@ -140,6 +140,20 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
             return foo(self, config_array, **kwargs)
         return wrapper
 
+    @staticmethod
+    def _configuration_as_dict(foo):
+        """
+        Decorator to allow the first input argument to 'objective_function' to
+        be an dictionary.
+
+        Can be combined with the _check_configuration decorator.
+        """
+        def wrapper(self, configuration, **kwargs):
+            if isinstance(configuration, ConfigSpace.Configuration):
+                configuration = configuration.get_dictionary()
+            return foo(self, configuration, **kwargs)
+        return wrapper
+
     def __call__(self, configuration: Dict, **kwargs) -> float:
         """ Provides interface to use, e.g., SciPy optimizers """
         return self.objective_function(configuration, **kwargs)['function_value']
