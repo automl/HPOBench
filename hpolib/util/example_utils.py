@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import Dict
 
+from hpolib.benchmarks.rl.learna import BaseLearna
 
 def get_travis_settings(type: str) -> Dict:
     """ Helper function to reduce time consumption for test runs on travis.ci"""

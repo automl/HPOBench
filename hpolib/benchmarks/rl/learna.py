@@ -25,9 +25,9 @@ Prerequisites:
 
 5. Or use the containerized version. (Soon available)
 """
-
-import sys
 import multiprocessing
+import shutil
+import tempfile
 
 from pathlib import Path
 from typing import Dict, Optional, List, Union
@@ -38,8 +38,6 @@ import ConfigSpace as CS
 
 from hpolib.abstract_benchmark import AbstractBenchmark
 from hpolib.util import rng_helper
-
-# Import the learna package
 
 from learna.data.parse_dot_brackets import parse_dot_brackets
 from learna.learna.agent import NetworkConfig, AgentConfig
@@ -100,13 +98,13 @@ class BaseLearna(AbstractBenchmark):
         with multiprocessing.Pool(self.num_cores) as pool:
             evaluation_results = pool.starmap(design_rna, evaluation_arguments)
 
-        evaluation_sequence_infos = {}
+        # evaluation_sequence_infos = {}
         evaluation_sum_of_min_distances = 0
         evaluation_sum_of_first_distances = 0
         evaluation_num_solved = 0
 
         for r in evaluation_results:
-            sequence_id = r[0].target_id
+            # sequence_id = r[0].target_id
             r.sort(key=lambda e: e.time)
 
             times = np.array(list(map(lambda e: e.time, r)))
@@ -117,15 +115,16 @@ class BaseLearna(AbstractBenchmark):
 
             evaluation_num_solved += dists.min() == 0.0
 
-            evaluation_sequence_infos[sequence_id] = {"num_episodes": len(r),
-                                                      "mean_time_per_episode": float((times[1:] - times[:-1]).mean()),
-                                                      "min_distance": float(dists.min()),
-                                                      "last_distance": float(dists[-1])}
+            # evaluation_sequence_infos[sequence_id] = {"num_episodes": len(r),
+            #                                           "mean_time_per_episode": float((times[1:] - times[:-1]).mean()),
+            #                                           "min_distance": float(dists.min()),
+            #                                           "last_distance": float(dists[-1])}
 
         evaluation_info = {"num_solved": int(evaluation_num_solved),
                            "sum_of_min_distances": float(evaluation_sum_of_min_distances),
                            "sum_of_first_distances": float(evaluation_sum_of_first_distances),
-                           "squence_infos": evaluation_sequence_infos}
+                           # "sequence_infos": evaluation_sequence_infos
+                           }
 
         return evaluation_info
 
@@ -245,7 +244,7 @@ class Learna(BaseLearna):
                 'cost': cost,
                 'num_solved': validation_info["num_solved"],
                 'sum_of_first_distances': validation_info["sum_of_first_distances"],
-                'squence_infos': validation_info["squence_infos"]}
+                }
 
     @AbstractBenchmark._configuration_as_dict
     def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
@@ -262,14 +261,7 @@ class MetaLearna(BaseLearna):
     def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 3600, **kwargs)\
             -> Dict:
 
-        config_as_str = _replace_multiple_char(str(configuration),
-                                               [', ', ': ', '\'', '\"', '\n'],
-                                               ['-',  '-',  '',   '',   ''])
-        tmp_dir = self.config.cache_dir / config_as_str
-
-        import shutil
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-        tmp_dir.mkdir(exist_ok=True, parents=True)
+        tmp_dir = Path(tempfile.mkdtemp(dir=self.config.cache_dir))
 
         config, network_config, agent_config, env_config = self._setup(configuration)
         start_time = time()
@@ -291,8 +283,10 @@ class MetaLearna(BaseLearna):
 
             cost = time() - start_time
         except Exception as e:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
             raise e
 
+        shutil.rmtree(tmp_dir, ignore_errors=True)
         return {'function_value': validation_info["sum_of_min_distances"],
                 'cost': cost,
                 'train_info': train_info,
@@ -336,13 +330,13 @@ class MetaLearna(BaseLearna):
             train_results = pool.apply(learn_to_design_rna, train_arguments)
 
         train_results = self._process_train_results(train_results)
-        train_sequence_infos = {}
+        # train_sequence_infos = {}
         train_sum_of_min_distances = 0
         train_sum_of_last_distances = 0
         train_num_solved = 0
 
         for r in train_results.values():
-            sequence_id = r[0].target_id
+            # sequence_id = r[0].target_id
             r.sort(key=lambda e: e.time)
 
             dists = np.array(list(map(lambda e: e.normalized_hamming_distance, r)))
@@ -352,14 +346,16 @@ class MetaLearna(BaseLearna):
 
             train_num_solved += dists.min() == 0.0
 
-            train_sequence_infos[sequence_id] = {"num_episodes": len(r),
-                                                 "min_distance": float(dists.min()),
-                                                 "last_distance": float(dists[-1])}
+            # The train sequence info dict is too large
+            # train_sequence_infos[sequence_id] = {"num_episodes": len(r),
+            #                                      "min_distance": float(dists.min()),
+            #                                      "last_distance": float(dists[-1])}
 
         train_info = {"num_solved": int(train_num_solved),
                       "sum_of_min_distances": float(train_sum_of_min_distances),
                       "sum_of_last_distances": float(train_sum_of_last_distances),
-                      "squence_infos": train_sequence_infos}
+                      # "sequence_infos": train_sequence_infos
+                      }
 
         return train_info
 
