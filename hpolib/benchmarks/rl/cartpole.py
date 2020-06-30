@@ -12,6 +12,8 @@ from typing import Union, Optional, Dict
 from hpolib.abstract_benchmark import AbstractBenchmark
 from hpolib.util import rng_helper
 
+__version__ = '0.0.1'
+
 
 class CartpoleBase(AbstractBenchmark):
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, defaults: Optional[Dict] = None,

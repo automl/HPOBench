@@ -185,6 +185,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_configuration_space() -> ConfigSpace.ConfigurationSpace:
         """ Defines the configuration space for each benchmark.
+        TODO: A random seed for the configspace!
 
         Returns
         -------

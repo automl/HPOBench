@@ -47,17 +47,7 @@ from learna.learna.learn_to_design_rna import learn_to_design_rna
 
 import hpolib.config
 
-
-def _replace_multiple_char(str_to_modify: str, chars_to_replace: List, replace_by: Union[List, str]):
-    if isinstance(replace_by, str):
-        replace_by = [replace_by for i in range(len(chars_to_replace))]
-
-    if len(replace_by) == 1:
-        replace_by = [replace_by[0] for i in range(len(chars_to_replace))]
-
-    for old_char, new_char in zip(chars_to_replace, replace_by):
-        str_to_modify = str_to_modify.replace(old_char, new_char)
-    return str_to_modify
+__version__ = '0.0.1'
 
 
 class BaseLearna(AbstractBenchmark):
