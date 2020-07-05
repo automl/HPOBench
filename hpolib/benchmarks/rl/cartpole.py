@@ -60,12 +60,13 @@ class CartpoleBase(AbstractBenchmark):
             self.defaults.update(defaults)
 
     @staticmethod
-    def get_configuration_space(seed=0) -> CS.ConfigurationSpace:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """ Returns the ConfigSpace.ConfigurationSpace of the benchmark. """
         raise NotImplementedError()
 
     @AbstractBenchmark._check_configuration
-    def objective_function(self, configuration: Dict, budget: Optional[int] = 9, **kwargs) -> Dict:
+    def objective_function(self, configuration: Dict, budget: Optional[int] = 9,
+                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a Tensorforce RL agent on the cartpole experiment. This benchmark was used in the experiments for the
         BOHB-paper (see references). A more detailed explanations can be found there.
@@ -77,6 +78,10 @@ class CartpoleBase(AbstractBenchmark):
         ----------
         configuration : ConfigSpace.Configuration
         budget : Optional[int]
+        rng : np.random.RandomState, int, None
+            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
         kwargs
 
         Returns
@@ -88,7 +93,7 @@ class CartpoleBase(AbstractBenchmark):
             budget : number of agents used
             all_runs : the episode length of all runs of all agents
         """
-        self.rng = rng_helper.get_rng(rng=kwargs.get('rng', None), self_rng=self.rng)
+        self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
         tf.random.set_random_seed(self.rng.randint(1, 100000))
         np.random.seed(self.rng.randint(1, 100000))
 
@@ -146,8 +151,25 @@ class CartpoleBase(AbstractBenchmark):
                 'all_runs': converged_episodes}
 
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, config: Dict, budget: Optional[int] = 9, **kwargs) -> Dict:
-        return self.objective_function(config, budget=budget, **kwargs)
+    def objective_function_test(self, config: Dict, budget: Optional[int] = 9,
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        """
+        Validate a configuration on the cartpole benchmark. Use the full budget.
+        Parameters
+        ----------
+        configuration : ConfigSpace.Configuration
+        budget : Optional[int]
+        rng : np.random.RandomState, int, None
+            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict
+        """
+        return self.objective_function(config, budget=budget, rng=rng, **kwargs)
 
     @staticmethod
     def get_meta_information() -> Dict:
@@ -160,8 +182,10 @@ class CartpoleBase(AbstractBenchmark):
 
 class CartpoleFull(CartpoleBase):
     """Cartpole experiment on full configuration space"""
+
     @staticmethod
-    def get_configuration_space(seed=0) -> CS.configuration_space:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.configuration_space:
+        seed = seed if seed is not None else np.random.randint(1, 100000)
         cs = CS.ConfigurationSpace(seed=seed)
         cs.add_hyperparameters([
             CS.UniformIntegerHyperparameter("n_units_1", lower=8, default_value=64, upper=64, log=True),
@@ -193,8 +217,10 @@ class CartpoleFull(CartpoleBase):
 
 class CartpoleReduced(CartpoleBase):
     """Cartpole experiment on smaller configuration space"""
+
     @staticmethod
-    def get_configuration_space(seed=0) -> CS.configuration_space:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.configuration_space:
+        seed = seed if seed is not None else np.random.randint(1, 100000)
         cs = CS.ConfigurationSpace(seed=seed)
         cs.add_hyperparameters([
             CS.UniformIntegerHyperparameter("n_units_1", lower=8, default_value=64, upper=128, log=True),
