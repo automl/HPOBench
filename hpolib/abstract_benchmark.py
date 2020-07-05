@@ -34,7 +34,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         self.configuration_space = self.get_configuration_space()
 
     @abc.abstractmethod
-    def objective_function(self, configuration: Dict, *args, **kwargs) -> dict:
+    def objective_function(self, configuration: Dict, rng: Union[np.random.RandomState, int, None] = None,
+                           *args, **kwargs) -> dict:
         """
         Objective function.
 
@@ -45,20 +46,14 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         `configuration` which was passed. By convention, all benchmarks are
         minimization problems.
 
-        Note
-        ----
-        It might be useful to pass a `seed` argument to the function call to
-        bypass the default "seed" generator. Only using the default random
-        state (`self.rng`) could lead to an overfitting towards the
-        `self.rng`'s seed.
-
-        For an example, how to pass a random state to the objective function
-        see
-        :py:func:`~hpolib.benchmarks.ml.xgboost_benchmark.XGBoostBenchmark.objective_function`.
-
         Parameters
         ----------
         configuration : Dict
+        rng : np.random.RandomState, int, None
+            It might be useful to pass a `rng` argument to the function call to
+            bypass the default "seed" generator. Only using the default random
+            state (`self.rng`) could lead to an overfitting towards the
+            `self.rng`'s seed.
 
         Returns
         -------
@@ -68,7 +63,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def objective_function_test(self, configuration: Dict, *args, **kwargs) -> Dict:
+    def objective_function_test(self, configuration: Dict,  rng: Union[np.random.RandomState, int, None] = None,
+                                *args, **kwargs) -> Dict:
         """
         If there is a different objective function for offline testing, e.g
         testing a machine learning on a hold extra test set instead
@@ -77,6 +73,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Parameters
         ----------
         configuration : Dict
+        rng : np.random.RandomState, int, None
+            see :py:func:`~HPOlib3.abstract_benchmark.objective_function`
 
         Returns
         -------
@@ -143,8 +141,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
     @staticmethod
     def _configuration_as_dict(foo):
         """
-        Decorator to allow the first input argument to 'objective_function' to
-        be an dictionary.
+        Decorator to cast the ConfigSpace.configuration to a dictionary. This allows the first argument of
+        objective_function and objective_function_test to be a ConfigSpace.configuration.
 
         Can be combined with the _check_configuration decorator.
         """
@@ -183,9 +181,12 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def get_configuration_space() -> ConfigSpace.ConfigurationSpace:
+    def get_configuration_space(seed: Union[int, None] = None)  -> ConfigSpace.ConfigurationSpace:
         """ Defines the configuration space for each benchmark.
-        TODO: A random seed for the configspace!
+        Parameters
+        ----------
+        seed: int, None
+            Seed for the configuration space.
 
         Returns
         -------

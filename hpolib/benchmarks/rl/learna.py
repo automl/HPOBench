@@ -51,22 +51,30 @@ __version__ = '0.0.1'
 
 
 class BaseLearna(AbstractBenchmark):
-    def __init__(self, data_path: Union[str, Path]):
+    def __init__(self, data_path: Union[str, Path], rng: Union[np.random.RandomState, int, None] = None):
         """
         Benchmark for the RNA learning task using RL proposed by Runge, Stoll, Falkner and Hutter.
         For further insights, we refer to the paper, which is cited in the meta information of this benchmark.
 
         We set the time for each benchmark (Learna and MetaLearna) to 10 minutes per sequence.
         Thus, running each of the benchmarks may take two days.
+
+        Parameters
+        ----------
+        data_path : str, Path
+            Path to sequencing data, which is used in the experiments.
+            To get the data, see Instructions 'Get the data'
+        rng : np.random.RandomState, int, None
+            Random seed for the benchmarks
         """
-        super(BaseLearna, self).__init__()
+        super(BaseLearna, self).__init__(rng=rng)
         self.train_sequences = parse_dot_brackets(dataset="rfam_learn_train",
                                                   data_dir=data_path,
                                                   target_structure_ids=range(1, 65000))
 
         self.validation_sequences = parse_dot_brackets(dataset="rfam_learn_validation",
                                                        data_dir=data_path,
-                                                       target_structure_ids=range(1, 101))
+                                                       target_structure_ids = range(1, 10))
 
         self.num_cores = 1
 
@@ -139,13 +147,13 @@ class BaseLearna(AbstractBenchmark):
         return config, network_config, agent_config, env_config
 
     @AbstractBenchmark._configuration_as_dict
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600, **kwargs) \
-            -> Dict:
+    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
+                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         raise NotImplementedError()
     
     @AbstractBenchmark._configuration_as_dict
     def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
-                                **kwargs) -> Dict:
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         raise NotImplementedError()
 
     @staticmethod
@@ -157,7 +165,20 @@ class BaseLearna(AbstractBenchmark):
                 'note': ''}
 
     @staticmethod
-    def get_configuration_space(seed: int = 0) -> CS.ConfigurationSpace:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Get the configuration space for the Learna Benchmark.
+
+        Parameters
+        ----------
+        seed : int, None
+            Set the seed for the configuration space. Makes sampling from the configuration space deterministic.
+        Returns
+        -------
+        CS.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+
         config_space = CS.ConfigurationSpace(seed=seed)
         config_space.add_hyperparameters([
             CS.UniformFloatHyperparameter("learning_rate", lower=1e-5, upper=1e-3, log=True, default_value=5e-4),
@@ -211,12 +232,15 @@ class BaseLearna(AbstractBenchmark):
 
 class Learna(BaseLearna):
 
-    def __init__(self, data_path: Union[str, Path]):
-        super(Learna, self).__init__(data_path)
+    def __init__(self, data_path: Union[str, Path], rng: Union[np.random.RandomState, int, None] = None):
+        super(Learna, self).__init__(data_path=data_path, rng=rng)
     
     @AbstractBenchmark._configuration_as_dict
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600, **kwargs) \
-            -> Dict:
+    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
+                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        """ Start the learna experiment. Dont train a RL agent. Just optimize on the sequences. """
+
+        self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
 
         config, network_config, agent_config, env_config = self._setup(configuration)
 
@@ -238,8 +262,9 @@ class Learna(BaseLearna):
 
     @AbstractBenchmark._configuration_as_dict
     def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
-                                **kwargs) -> Dict:
-        return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence, **kwargs)
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence, rng=rng,
+                                       **kwargs)
 
 
 class MetaLearna(BaseLearna):
@@ -248,14 +273,14 @@ class MetaLearna(BaseLearna):
         self.config = hpolib.config.config_file
 
     @AbstractBenchmark._configuration_as_dict
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 3600, **kwargs)\
+    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 3600,
+                           rng: Union[np.random.RandomState, int, None] = None, **kwargs)\
             -> Dict:
-
+        self.rng = rng_helper.get_rng(rng, self.rng)
         tmp_dir = Path(tempfile.mkdtemp(dir=self.config.cache_dir))
 
         config, network_config, agent_config, env_config = self._setup(configuration)
         start_time = time()
-        cost = 10 ** 10
         try:
             train_info = self._train(budget=cutoff_agent_per_sequence,
                                      tmp_dir=tmp_dir,
@@ -272,11 +297,9 @@ class MetaLearna(BaseLearna):
                                              env_config=env_config)
 
             cost = time() - start_time
-        except Exception as e:
+        finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
-            raise e
 
-        shutil.rmtree(tmp_dir, ignore_errors=True)
         return {'function_value': validation_info["sum_of_min_distances"],
                 'cost': cost,
                 'train_info': train_info,
@@ -284,13 +307,14 @@ class MetaLearna(BaseLearna):
 
     @AbstractBenchmark._configuration_as_dict
     def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 3600,
-                                **kwargs) -> Dict:
-        return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence, **kwargs)
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence,
+                                       rng=rng, **kwargs)
 
     def _train(self, budget: Union[int, float], tmp_dir: Path, network_config: NetworkConfig,
                agent_config: AgentConfig, env_config: RnaDesignEnvironmentConfig) -> Dict:
         """
-
+        Trains a RL agent.
 
         Parameters
         ----------
@@ -351,6 +375,7 @@ class MetaLearna(BaseLearna):
 
     @staticmethod
     def _process_train_results(train_results: List) -> Dict:
+        """ Helper function to extract results into dictionary """
         results_by_sequence = {}
         for r in train_results:
             for s in r:

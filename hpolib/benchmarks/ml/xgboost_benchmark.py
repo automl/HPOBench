@@ -90,14 +90,10 @@ class XGBoostBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._check_configuration
     def objective_function(self, configuration: Dict, n_estimators: int = 128, subsample: float = 1,
-                           shuffle: bool = False, **kwargs) -> Dict:
+                           shuffle: bool = False, rng: Union[np.random.RandomState, int, None] = None,**kwargs) -> Dict:
         """
         Trains a XGBoost model given a hyperparameter configuration and
         evaluates the model on the validation set.
-
-        To prevent overfitting on a single seed, it is possible to pass a
-        parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
-        If this parameter is not given, the default random state is used.
 
         Parameters
         ----------
@@ -110,6 +106,12 @@ class XGBoostBenchmark(AbstractBenchmark):
         shuffle : bool
             If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
             Defaults to ``False``.
+        rng : np.random.RandomState, int, None,
+            Random seed for benchmark. By default the class level random seed.
+
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
         kwargs
 
         Returns
@@ -123,7 +125,6 @@ class XGBoostBenchmark(AbstractBenchmark):
         """
         assert 0 < subsample <= 1, ValueError(f'Parameter \'subsample\' must be in range (0, 1] but was {subsample}')
 
-        rng = kwargs.get('rng', None)
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         if shuffle:
@@ -146,14 +147,11 @@ class XGBoostBenchmark(AbstractBenchmark):
                 'subsample': subsample}
 
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, configuration: Dict, subsample: float = 1, n_estimators: int = 128, **kwargs) -> Dict:
+    def objective_function_test(self, configuration: Dict, subsample: float = 1, n_estimators: int = 128,
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a XGBoost model with a given configuration on both the train
         and validation data set and evaluates the model on the test data set.
-
-        To prevent overfitting on a single seed, it is possible to pass a
-        parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
-        If this parameter is not given, the default random state is used.
 
         Parameters
         ----------
@@ -163,6 +161,11 @@ class XGBoostBenchmark(AbstractBenchmark):
             Number of trees to fit.
         subsample: float
             Fraction which was used to subsample the training data
+        rng : np.random.RandomState, int, None,
+            Random seed for benchmark. By default the class level random seed.
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
         kwargs
 
         Returns
@@ -171,7 +174,6 @@ class XGBoostBenchmark(AbstractBenchmark):
             function_value : test loss
             cost : time to train and evaluate the model
         """
-        rng = kwargs.get('rng', None)
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         start = time.time()

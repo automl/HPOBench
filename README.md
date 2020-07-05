@@ -1,7 +1,7 @@
 # HPOlib3
 [![Build Status](https://travis-ci.org/automl/HPOlib3.svg?branch=master)](https://travis-ci.org/automl/HPOlib3) [![Build Status](https://travis-ci.org/automl/HPOlib3.svg?branch=development)](https://travis-ci.org/automl/HPOlib3)
 
-HPOlib3 is a benchmark suite for testing hyperparameter optimizer in a easy way. HPOlib3 offers benchmarks with 
+HPOlib3 is a benchmark suite for testing hyperparameter optimizer in an easy way. HPOlib3 offers benchmarks with 
 multi-fidelities.
 Since we are still under heavy development, there are currently only 2 benchmarks available. A benchmark on xgboost and one on 
 learning a reinforcement agent on cartpole. More benchmarks will follow soon. 
