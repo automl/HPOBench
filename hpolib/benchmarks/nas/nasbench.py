@@ -26,9 +26,9 @@ THOSE BENCHMARKS CONTAIN ONLY VALUES FOR THE EPOCHS 4, 12, 36 and 108. FOR ALL O
 """
 
 from pathlib import Path
-from typing import Union, Dict
+from typing import Union, Dict, Any
 
-import ConfigSpace
+import ConfigSpace as CS
 import numpy as np
 from tabular_benchmarks.nas_cifar10 import NASCifar10
 
@@ -64,7 +64,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         self.data_path = data_path
 
     @AbstractBenchmark._check_configuration
-    def objective_function(self, configuration: Union[ConfigSpace.Configuration, Dict],
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            budget: Union[int, None] = 108,
                            reset: bool = True,
                            rng: Union[np.random.RandomState, int, None] = None,
@@ -99,8 +99,8 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
 
         # Returns (valid_error_rate: 1, runtime: 0) if it is invalid. E.g. config not ok or budget not in 4 12 36 108
         valid_error_rate, runtime = self.benchmark.objective_function(config=configuration, budget=budget)
-        return {'function_value': valid_error_rate,
-                'cost': runtime,
+        return {'function_value': float(valid_error_rate),
+                'cost': float(runtime),
                 }
 
     @AbstractBenchmark._check_configuration
@@ -125,10 +125,10 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
 
         test_error, runtime = self.benchmark.objective_function(config=configuration, budget=108)
-        return {'function_value': test_error, 'cost': runtime}
+        return {'function_value': float(test_error), 'cost': float(runtime)}
 
     @staticmethod
-    def get_configuration_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
 
         raise NotImplementedError
 
@@ -142,6 +142,13 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
                                'https://github.com/automl/nas_benchmarks'],
                 }
 
+    @staticmethod
+    def _get_configuration_space(benchmark: Any, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        cs = benchmark.get_configuration_space()
+        cs.seed(seed)
+        return cs
+
 
 class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/'):
@@ -150,13 +157,9 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
         super(NASCifar10ABenchmark, self).__init__(benchmark=benchmark, data_path=data_path)
 
     @staticmethod
-    def get_configuration_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
-        get_configuration_space method from:
-        https://github.com/automl/nas_benchmarks/blob/master/tabular_benchmarks/nas_cifar10.py
-        (Aaron Klein).
-        Copied to pass a seed to the ConfigurationSpace object.
-
+        Return the configuration space for the NASCifar10A benchmark.
         Parameters
         ----------
         seed : int, None
@@ -164,25 +167,11 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
 
         Returns
         -------
-            ConfigSpace.ConfigurationSpace - Containing the benchmark's hyperparameter
+            CS.ConfigurationSpace - Containing the benchmark's hyperparameter
         """
 
-        # OLD
-        # from tabular_benchmarks.nas_cifar10 import NASCifar10A
-        # return NASCifar10A.get_configuration_space()
-
-        seed = seed if seed is not None else np.random.randint(1, 100000)
-        cs = ConfigSpace.ConfigurationSpace(seed=seed)
-
-        ops_choices = ['conv1x1-bn-relu', 'conv3x3-bn-relu', 'maxpool3x3']
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_0", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_1", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_2", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_3", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_4", ops_choices))
-        for i in range(VERTICES * (VERTICES - 1) // 2):
-            cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("edge_%d" % i, [0, 1]))
-        return cs
+        from tabular_benchmarks.nas_cifar10 import NASCifar10A
+        return NASCifar10BBenchmark._get_configuration_space(NASCifar10A, seed)
 
 
 class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
@@ -192,13 +181,9 @@ class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
         super(NASCifar10BBenchmark, self).__init__(benchmark=benchmark, data_path=data_path)
 
     @staticmethod
-    def get_configuration_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
-        get_configuration_space method from:
-        https://github.com/automl/nas_benchmarks/blob/master/tabular_benchmarks/nas_cifar10.py
-        (Aaron Klein).
-        Copied to pass a seed to the ConfigurationSpace object.
-
+        Return the configuration space for the NASCifar10B benchmark.
         Parameters
         ----------
         seed : int, None
@@ -206,25 +191,11 @@ class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
 
         Returns
         -------
-            ConfigSpace.ConfigurationSpace - Containing the benchmark's hyperparameter
+            CS.ConfigurationSpace - Containing the benchmark's hyperparameter
         """
 
-        # OLD
-        # from tabular_benchmarks.nas_cifar10 import NASCifar10B
-        # return NASCifar10B.get_configuration_space()
-        seed = seed if seed is not None else np.random.randint(1, 100000)
-        cs = ConfigSpace.ConfigurationSpace(seed=seed)
-
-        ops_choices = ['conv1x1-bn-relu', 'conv3x3-bn-relu', 'maxpool3x3']
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_0", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_1", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_2", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_3", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_4", ops_choices))
-        cat = [i for i in range((VERTICES * (VERTICES - 1)) // 2)]
-        for i in range(MAX_EDGES):
-            cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("edge_%d" % i, cat))
-        return cs
+        from tabular_benchmarks.nas_cifar10 import NASCifar10B
+        return NASCifar10BBenchmark._get_configuration_space(NASCifar10B, seed)
 
 
 class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
@@ -234,13 +205,9 @@ class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
         super(NASCifar10CBenchmark, self).__init__(benchmark=benchmark, data_path=data_path)
 
     @staticmethod
-    def get_configuration_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
-        get_configuration_space method from:
-        https://github.com/automl/nas_benchmarks/blob/master/tabular_benchmarks/nas_cifar10.py
-        (Aaron Klein).
-        Copied to pass a seed to the ConfigurationSpace object.
-
+        Return the configuration space for the NASCifar10C benchmark.
         Parameters
         ----------
         seed : int, None
@@ -248,24 +215,8 @@ class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
 
         Returns
         -------
-            ConfigSpace.ConfigurationSpace - Containing the benchmark's hyperparameter
+            CS.ConfigurationSpace - Containing the benchmark's hyperparameter
         """
 
-        # OLD:
-        # from tabular_benchmarks.nas_cifar10 import NASCifar10C
-        # return NASCifar10C.get_configuration_space()
-        seed = seed if seed is not None else np.random.randint(1, 100000)
-        cs = ConfigSpace.ConfigurationSpace(seed=seed)
-
-        ops_choices = ['conv1x1-bn-relu', 'conv3x3-bn-relu', 'maxpool3x3']
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_0", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_1", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_2", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_3", ops_choices))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("op_node_4", ops_choices))
-
-        cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("num_edges", 0, MAX_EDGES))
-
-        for i in range(VERTICES * (VERTICES - 1) // 2):
-            cs.add_hyperparameter(ConfigSpace.UniformFloatHyperparameter("edge_%d" % i, 0, 1))
-        return cs
+        from tabular_benchmarks.nas_cifar10 import NASCifar10C
+        return NASCifar10BBenchmark._get_configuration_space(NASCifar10C, seed)

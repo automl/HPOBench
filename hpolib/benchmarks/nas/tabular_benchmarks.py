@@ -15,7 +15,10 @@ tar xf fcnet_tabular_benchmarks.tar.gz
 2) Clone + Install
 ```
 pip install git+https://github.com/google-research/nasbench.git@master
-pip install git+https//github.com/automl/nas_benchmarks.git@master
+
+git clone https://github.com/automl/nas_benchmarks.git
+cd nas_benchmarks
+python setup.py install
 
 pip install --upgrade "tensorflow>=1.12.1,<=1.15"
 ```
@@ -87,21 +90,21 @@ class FCNetBaseBenchmark(AbstractBenchmark):
             raise ValueError(f'run index must be one of List or Int, but was {type(run_index)}')
 
         if reset:
-            self.benchmark.reset_tracker()
+            self.reset_tracker()
 
         valid_rmse_list, runtime_list = [], []
         for run_id in run_index:
             valid_rmse, runtime = self.benchmark.objective_function_deterministic(config=configuration,
                                                                                   budget=budget,
                                                                                   index=run_id)
-            valid_rmse_list.append(valid_rmse)
-            runtime_list.append(runtime)
+            valid_rmse_list.append(float(valid_rmse))
+            runtime_list.append(float(runtime))
 
         valid_rmse = sum(valid_rmse_list) / len(valid_rmse_list)
         runtime = sum(runtime_list) / len(runtime_list)
 
-        return {'function_value': valid_rmse,
-                'cost': runtime,
+        return {'function_value': float(valid_rmse),
+                'cost': float(runtime),
                 'info': {'valid_rmse_per_run': valid_rmse_list,
                          'runtime_per_run': runtime_list}
                 }
@@ -113,15 +116,12 @@ class FCNetBaseBenchmark(AbstractBenchmark):
 
         test_error, runtime = self.benchmark.objective_function_test(config=configuration)
 
-        return {'function_value': test_error, 'cost': runtime}
+        return {'function_value': float(test_error), 'cost': float(runtime)}
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
-        get_configuration_space method from:
-        https://github.com/automl/nas_benchmarks/blob/master/tabular_benchmarks/fcnet_benchmark.py
-        (Aaron Klein).
-        Copied to pass a seed to the ConfigurationSpace object.
+        Interface to the get_configuration_space function from the FCNet Benchmark.
 
         Parameters
         ----------
@@ -133,23 +133,15 @@ class FCNetBaseBenchmark(AbstractBenchmark):
             ConfigSpace.ConfigurationSpace - Containing the benchmark's hyperparameter
         """
 
-        # OLD:
-        # return FCNetBenchmark.get_configuration_space()
-
         seed = seed if seed is not None else np.random.randint(1, 100000)
-        cs = ConfigSpace.ConfigurationSpace(seed=seed)  # modification
-
-        cs.add_hyperparameter(ConfigSpace.OrdinalHyperparameter("n_units_1", [16, 32, 64, 128, 256, 512]))
-        cs.add_hyperparameter(ConfigSpace.OrdinalHyperparameter("n_units_2", [16, 32, 64, 128, 256, 512]))
-        cs.add_hyperparameter(ConfigSpace.OrdinalHyperparameter("dropout_1", [0.0, 0.3, 0.6]))
-        cs.add_hyperparameter(ConfigSpace.OrdinalHyperparameter("dropout_2", [0.0, 0.3, 0.6]))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("activation_fn_1", ["tanh", "relu"]))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("activation_fn_2", ["tanh", "relu"]))
-        cs.add_hyperparameter(
-            ConfigSpace.OrdinalHyperparameter("init_lr", [5 * 1e-4, 1e-3, 5 * 1e-3, 1e-2, 5 * 1e-2, 1e-1]))
-        cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("lr_schedule", ["cosine", "const"]))
-        cs.add_hyperparameter(ConfigSpace.OrdinalHyperparameter("batch_size", [8, 16, 32, 64]))
+        cs = FCNetBenchmark.get_configuration_space()
+        cs.seed(seed)
         return cs
+
+    def reset_tracker(self):
+        self.benchmark.X = []
+        self.benchmark.y = []
+        self.benchmark.c = []
 
     @staticmethod
     def get_meta_information() -> Dict:
