@@ -33,7 +33,7 @@ class CustomWorker(Worker):
         self.max_budget = max_budget
 
     def compute(self, config, budget, **kwargs):
-        b = Benchmark(rng=self.seed, max_budget=self.max_budget)
+        b = Benchmark(rng=self.seed)
         result_dict = b.objective_function(config, budget=int(budget))
         return {'loss': result_dict['function_value'],
                 'info': {'cost': result_dict['cost'],
@@ -50,6 +50,12 @@ def run_experiment(out_path, on_travis):
                 }
     if on_travis:
         settings.update(get_travis_settings('bohb'))
+
+    benchmark = Benchmark()
+    incumbent_result = benchmark.objective_function_test(
+        configuration=benchmark.get_configuration_space().get_default_configuration(),
+        budget=9 if not on_travis else 1
+    )
 
     settings.get('output_dir').mkdir(exist_ok=True)
 
@@ -95,7 +101,8 @@ def run_experiment(out_path, on_travis):
                 f'with Performance: {inc_value:.2f}')
 
     benchmark = Benchmark()
-    incumbent_result = benchmark.objective_function(config=inc_cfg)
+    incumbent_result = benchmark.objective_function_test(configuration=inc_cfg,
+                                                         budget=9 if not on_travis else 3)
     print(incumbent_result)
 
 

@@ -12,6 +12,8 @@ from typing import Union, Optional, Dict
 from hpolib.abstract_benchmark import AbstractBenchmark
 from hpolib.util import rng_helper
 
+__version__ = '0.0.1'
+
 
 class CartpoleBase(AbstractBenchmark):
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, defaults: Optional[Dict] = None,
@@ -58,12 +60,13 @@ class CartpoleBase(AbstractBenchmark):
             self.defaults.update(defaults)
 
     @staticmethod
-    def get_configuration_space(seed=0) -> CS.ConfigurationSpace:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """ Returns the ConfigSpace.ConfigurationSpace of the benchmark. """
         raise NotImplementedError()
 
     @AbstractBenchmark._check_configuration
-    def objective_function(self, config: Dict, budget: Optional[int] = 9, **kwargs) -> Dict:
+    def objective_function(self, configuration: Dict, budget: Optional[int] = 9,
+                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a Tensorforce RL agent on the cartpole experiment. This benchmark was used in the experiments for the
         BOHB-paper (see references). A more detailed explanations can be found there.
@@ -73,8 +76,12 @@ class CartpoleBase(AbstractBenchmark):
 
         Parameters
         ----------
-        config : ConfigSpace.Configuration
+        configuration : ConfigSpace.Configuration
         budget : Optional[int]
+        rng : np.random.RandomState, int, None
+            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
         kwargs
 
         Returns
@@ -86,19 +93,23 @@ class CartpoleBase(AbstractBenchmark):
             budget : number of agents used
             all_runs : the episode length of all runs of all agents
         """
-        self.rng = rng_helper.get_rng(rng=kwargs.get('rng', None), self_rng=self.rng)
+        self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
         tf.random.set_random_seed(self.rng.randint(1, 100000))
         np.random.seed(self.rng.randint(1, 100000))
 
         # fill in missing entries with default values for 'incomplete/reduced' configspaces
         c = self.defaults
-        c.update(config)
-        config = c
+        c.update(configuration)
+        configuration = c
 
         start_time = time.time()
 
-        network_spec = [{'type': 'dense', 'size': config["n_units_1"], 'activation': config['activation_1']},
-                        {'type': 'dense', 'size': config["n_units_2"], 'activation': config['activation_2']}]
+        network_spec = [{'type': 'dense',
+                         'size': configuration["n_units_1"],
+                         'activation': configuration['activation_1']},
+                        {'type': 'dense',
+                         'size': configuration["n_units_2"],
+                         'activation': configuration['activation_2']}]
 
         converged_episodes = []
 
@@ -106,19 +117,21 @@ class CartpoleBase(AbstractBenchmark):
             agent = PPOAgent(states=self.env.states,
                              actions=self.env.actions,
                              network=network_spec,
-                             update_mode={'unit': 'episodes', 'batch_size': config["batch_size"]},
-                             step_optimizer={'type': config["optimizer_type"],
-                                             'learning_rate': config["learning_rate"]},
-                             optimization_steps=config["optimization_steps"],
-                             discount=config["discount"],
-                             baseline_mode=config["baseline_mode"],
+                             update_mode={'unit': 'episodes', 'batch_size': configuration["batch_size"]},
+                             step_optimizer={'type': configuration["optimizer_type"],
+                                             'learning_rate': configuration["learning_rate"]},
+                             optimization_steps=configuration["optimization_steps"],
+                             discount=configuration["discount"],
+                             baseline_mode=configuration["baseline_mode"],
                              baseline={"type": "mlp",
-                                       "sizes": [config["baseline_n_units_1"], config["baseline_n_units_2"]]},
+                                       "sizes": [configuration["baseline_n_units_1"],
+                                                 configuration["baseline_n_units_2"]]},
                              baseline_optimizer={"type": "multi_step",
-                                                 "optimizer": {"type": config["baseline_optimizer_type"],
-                                                               "learning_rate": config["baseline_learning_rate"]},
-                                                 "num_steps": config["baseline_optimization_steps"]},
-                             likelihood_ratio_clipping=config["likelihood_ratio_clipping"]
+                                                 "optimizer": {"type": configuration["baseline_optimizer_type"],
+                                                               "learning_rate":
+                                                                   configuration["baseline_learning_rate"]},
+                                                 "num_steps": configuration["baseline_optimization_steps"]},
+                             likelihood_ratio_clipping=configuration["likelihood_ratio_clipping"]
                              )
 
             def episode_finished(r):
@@ -138,8 +151,25 @@ class CartpoleBase(AbstractBenchmark):
                 'all_runs': converged_episodes}
 
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, config: Dict, budget: Optional[int] = 9, **kwargs) -> Dict:
-        return self.objective_function(config, budget=budget, **kwargs)
+    def objective_function_test(self, config: Dict, budget: Optional[int] = 9,
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        """
+        Validate a configuration on the cartpole benchmark. Use the full budget.
+        Parameters
+        ----------
+        configuration : ConfigSpace.Configuration
+        budget : Optional[int]
+        rng : np.random.RandomState, int, None
+            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict
+        """
+        return self.objective_function(config, budget=budget, rng=rng, **kwargs)
 
     @staticmethod
     def get_meta_information() -> Dict:
@@ -152,8 +182,10 @@ class CartpoleBase(AbstractBenchmark):
 
 class CartpoleFull(CartpoleBase):
     """Cartpole experiment on full configuration space"""
+
     @staticmethod
-    def get_configuration_space(seed=0) -> CS.configuration_space:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.configuration_space:
+        seed = seed if seed is not None else np.random.randint(1, 100000)
         cs = CS.ConfigurationSpace(seed=seed)
         cs.add_hyperparameters([
             CS.UniformIntegerHyperparameter("n_units_1", lower=8, default_value=64, upper=64, log=True),
@@ -185,8 +217,10 @@ class CartpoleFull(CartpoleBase):
 
 class CartpoleReduced(CartpoleBase):
     """Cartpole experiment on smaller configuration space"""
+
     @staticmethod
-    def get_configuration_space(seed=0) -> CS.configuration_space:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.configuration_space:
+        seed = seed if seed is not None else np.random.randint(1, 100000)
         cs = CS.ConfigurationSpace(seed=seed)
         cs.add_hyperparameters([
             CS.UniformIntegerHyperparameter("n_units_1", lower=8, default_value=64, upper=128, log=True),
