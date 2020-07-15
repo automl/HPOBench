@@ -41,6 +41,29 @@ To run the XGBoost Example: \
 To run the Example: \
 ```python3 ./HPOlib3/examples/XGBoost_with_container.py```
 
+
+#### Available Experiments with container
+
+| Benchmark Name                                            | Container Name                             | Container Source                                             | Additional Info                                              |
+| :-------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| <font size="2em">XGBoostBenchmark</font>                  | <font size="2em">xgboost_benchmark</font>  | <font size="2em">library://phmueller/automl/xgboost_benchmark</font> | <font size="2em">Pass a openml task id to the dataset </font> |
+| <font size="2em">CartpoleFull</font>                      | <font size="2em">cartpole</font>           | <font size="2em">library://phmueller/automl/cartpole</font>  | <font size="2em">Not deterministic</font>                    |
+| <font size="2em">CartpoleReduced</font>                   | <font size="2em">cartpole</font>           | <font size="2em">library://phmueller/automl/cartpole</font>  | <font size="2em">Not deterministic</font>                    |
+| <font size="2em">Learna</font>                            | <font size="2em">learna_benchmark</font>   | <font size="2em">library://phmueller/automl/learna_benchmark</font> | <font size="2em">Not deterministic</font>                    |
+| <font size="2em">MetaLearna</font>                        | <font size="2em">learna_benchmark</font>   | <font size="2em">library://phmueller/automl/learna_benchmark</font> | <font size="2em">Not deterministic</font>                    |
+| <font size="2em">SliceLocalizationBenchmark</font>        | <font size="2em">tabular_benchmarks</font> | <font size="2em">library://phmueller/automl/tabular_benchmarks</font> | <font size="2em">Loading may take several minutes</font>     |
+| <font size="2em">ProteinStructureBenchmark</font>         | <font size="2em">tabular_benchmarks</font> | <font size="2em">library://phmueller/automl/tabular_benchmarks</font> | <font size="2em">Loading may take several minutes</font>     |
+| <font size="2em">NavalPropulsionBenchmark</font>          | <font size="2em">tabular_benchmarks</font> | <font size="2em">library://phmueller/automl/tabular_benchmarks</font> | <font size="2em">Loading may take several minutes</font>     |
+| <font size="2em">ParkinsonsTelemonitoringBenchmark</font> | <font size="2em">tabular_benchmarks</font> | <font size="2em">library://phmueller/automl/tabular_benchmarks</font> | <font size="2em">Loading may take several minutes</font>     |
+| <font size="2em">NASCifar10ABenchmark</font>              | <font size="2em">nasbench_101</font>       | <font size="2em">library://phmueller/automl/nasbench_101</font> | <font size="2em"> </font>                                    |
+| <font size="2em">NASCifar10BBenchmark</font>              | <font size="2em">nasbench_101</font>       | <font size="2em">library://phmueller/automl/nasbench_101</font> | <font size="2em"> </font>                                    |
+| <font size="2em">NASCifar10CBenchmark</font>              | <font size="2em">nasbench_101</font>       | <font size="2em">library://phmueller/automl/nasbench_101</font> | <font size="2em"> </font>                                    |
+| <font size="2em">Cifar10NasBench201Benchmark</font>       | <font size="2em">nasbench_201</font>       | <font size="2em">library://phmueller/automl/nasbench_201</font> | <font size="2em"> </font>                                    |
+| <font size="2em">Cifar10ValidNasBench201Benchmark</font>  | <font size="2em">nasbench_201</font>       | <font size="2em">library://phmueller/automl/nasbench_201</font> | <font size="2em"> </font>                                    |
+| <font size="2em">Cifar100NasBench201Benchmark</font>      | <font size="2em">nasbench_201</font>       | <font size="2em">library://phmueller/automl/nasbench_201</font> | <font size="2em"> </font>                                    |
+| <font size="2em">ImageNetNasBench201Benchmark</font>      | <font size="2em">nasbench_201</font>       | <font size="2em">library://phmueller/automl/nasbench_201</font> | <font size="2em"> </font>                                    |
+
+
 #### Use singularity on Cluster:
 For users from the university of freiburg with access to computational cluster: \\
 To use the the singularity version 3.5, first you have 
@@ -59,4 +82,3 @@ b = Benchmark(rng=my_rng, container_name='xgboost_benchmark',
 ```
 - Singularity will throw an exception 'Invalid Image format' if you use a singularity version < 3.
   This happens, if you haven't exported the path to singularity3.5 on kisbat3 (see above).
-

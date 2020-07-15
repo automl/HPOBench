@@ -5,19 +5,20 @@ SMAC on Cartpole with Hyperband
 This example shows the usage of an Hyperparameter Tuner, such as SMAC on the cartpole benchmark.
 We use SMAC with Hyperband.
 
-Please install the necessary dependencies via ``pip install .[cartpole_example]``
+Please install the necessary dependencies via ``pip install .[singularity]`` and singularity (v3.5).
+https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps
 """
 import logging
-import numpy as np
-
-from time import time
 from pathlib import Path
+from time import time
 
-from hpolib.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
-from hpolib.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
+import numpy as np
 from smac.facade.smac_hpo_facade import SMAC4HPO
 from smac.intensification.hyperband import Hyperband
 from smac.scenario.scenario import Scenario
+
+from hpolib.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
+from hpolib.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
 
 logger = logging.getLogger("HB on cartpole")
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +30,11 @@ def run_experiment(out_path: str, on_travis: bool = False):
     out_path = Path(out_path)
     out_path.mkdir(exist_ok=True)
 
-    cs = Benchmark.get_configuration_space()
+    benchmark = Benchmark(container_source='library://phmueller/automl',
+                          container_name='cartpole',
+                          rng=1)
+
+    cs = benchmark.get_configuration_space(seed=1)
 
     scenario_dict = {"run_obj": "quality",  # we optimize quality (alternative to runtime)
                      "wallclock-limit": 5 * 60 * 60,  # max duration to run the optimization (in seconds)
@@ -48,11 +53,17 @@ def run_experiment(out_path: str, on_travis: bool = False):
     scenario = Scenario(scenario_dict)
 
     # Number of Agents, which are trained to solve the cartpole experiment
-    max_budget = 5
+    max_budget = 5 if not on_travis else 2
 
     def optimization_function_wrapper(cfg, seed, instance, budget):
         """ Helper-function: simple wrapper to use the benchmark with smac"""
-        b = Benchmark(rng=seed)
+
+        # Now that we have already downloaded the conatiner,
+        # we only have to start a new instance. This is a fast operation.
+        b = Benchmark(container_source='library://phmueller/automl',
+                      container_name='cartpole',
+                      rng=seed)
+
         result_dict = b.objective_function(cfg, budget=int(budget))
         return result_dict['function_value']
 
@@ -63,13 +74,6 @@ def run_experiment(out_path: str, on_travis: bool = False):
                     intensifier_kwargs={'initial_budget': 1, 'max_budget': max_budget, 'eta': 3}
                     )
 
-    start_time = time()
-    # Example call of the function with default values. It returns: Status, Cost, Runtime, Additional Infos
-    def_value = smac.get_tae_runner().run(config=cs.get_default_configuration(), instance='1', budget=1, seed=0)[1]
-    print(f"Value for default configuration: {def_value:.4f}.\n"
-          f"Evaluation took {time() - start_time:.0f}s")
-
-    # Start optimization
     start_time = time()
     try:
         smac.optimize()

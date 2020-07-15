@@ -2,32 +2,37 @@
 Interface to Tabular Benchmarks for Hyperparameter Optimization and Neural Architecture Search
 
 https://github.com/automl/nas_benchmarks
+How to use this benchmark:
+--------------------------
 
-How to install:
----------------
+We recommend using the containerized version of this benchmark.
+If you want to use this benchmark locally (without running it via the corresponding container),
+you need to perform the following steps.
 
-1) Download data
+1. Download data
+================
 ```
 wget http://ml4aad.org/wp-content/uploads/2019/01/fcnet_tabular_benchmarks.tar.gz
 tar xf fcnet_tabular_benchmarks.tar.gz
 ```
 
-2) Clone + Install
+2. Clone and install
+====================
 ```
+cd /path/to/HPOlib3
+pip install .[tabular_benchmarks]
 pip install git+https://github.com/google-research/nasbench.git@master
 
 git clone https://github.com/automl/nas_benchmarks.git
 cd nas_benchmarks
 python setup.py install
-
-pip install --upgrade "tensorflow>=1.12.1,<=1.15"
 ```
+
 """
 
 from pathlib import Path
-from typing import Union, Dict, Tuple
+from typing import Union, Dict, Tuple, List
 
-import ConfigSpace
 import ConfigSpace as CS
 import numpy as np
 from tabular_benchmarks.fcnet_benchmark import FCNetBenchmark
@@ -41,17 +46,18 @@ __version__ = '0.0.1'
 class FCNetBaseBenchmark(AbstractBenchmark):
     def __init__(self, benchmark: FCNetBenchmark,
                  data_path: Union[Path, str, None] = "./fcnet_tabular_benchmarks/",
-                 rng: Union[np.random.RandomState, int, None] = None):
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
 
         super(FCNetBaseBenchmark, self).__init__(rng=rng)
         self.benchmark = benchmark
         self.data_path = data_path
 
+    @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function(self, configuration: Union[ConfigSpace.Configuration, Dict],
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            budget: Union[int, None] = 100,
-                           run_index: Union[int, Tuple, None] = (0, 1, 2, 3),
-                           reset: bool = True,
+                           run_index: Union[int, Tuple, List, None] = (0, 1, 2, 3),
+                           reset: Union[bool, None] = True,
                            rng: Union[np.random.RandomState, int, None] = None,
                            **kwargs) -> Dict:
         """
@@ -59,14 +65,14 @@ class FCNetBaseBenchmark(AbstractBenchmark):
 
         Parameters
         ----------
-        configuration : Dict
+        configuration : Dict, CS.Configuration
         budget : int, None
         run_index : int, Tuple, None
             The nas benchmark has for each configuration-budget-pair results from 4 different runs.
             If multiple `run_id`s are given, the benchmark returns the mean over the given runs.
             By default all runs are used. A specific run can be chosen by setting the `run_id` to a value from [0, 3].
-        reset : bool
-            Reset the internal memory of the benchmark. Should not have an effect.
+        reset : bool, None
+            Reset the internal memory of the benchmark. Should not have an effect. Defaults to True.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
@@ -75,22 +81,25 @@ class FCNetBaseBenchmark(AbstractBenchmark):
 
         Returns
         -------
-        Dict
+        Dict -
+            function_value : validation loss
+            cost : time to train and evaluate the model
+            info : Dict with valid_rmse_per_run, runtime_per_run
         """
         self.rng = rng_helper.get_rng(rng)
 
         if isinstance(run_index, int):
             assert 0 <= run_index <= 3, f'run_index must be in [0, 3], not {run_index}'
             run_index = (run_index, )
-        elif isinstance(run_index, tuple):
+        elif isinstance(run_index, tuple) or isinstance(run_index, list):
             assert len(run_index) != 0, 'run_index must not be empty'
             assert min(run_index) >= 0 and max(run_index) <= 3, \
                 f'all run_index values must be in [0, 3], but were {run_index}'
         else:
-            raise ValueError(f'run index must be one of List or Int, but was {type(run_index)}')
+            raise ValueError(f'run index must be one of List, Tuple or Int, but was {type(run_index)}')
 
         if reset:
-            self.reset_tracker()
+            self._reset_tracker()
 
         valid_rmse_list, runtime_list = [], []
         for run_id in run_index:
@@ -109,9 +118,28 @@ class FCNetBaseBenchmark(AbstractBenchmark):
                          'runtime_per_run': runtime_list}
                 }
 
+    @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, configuration: Dict, rng: Union[np.random.RandomState, int, None] = None,
+    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                rng: Union[np.random.RandomState, int, None] = None,
                                 **kwargs) -> Dict:
+        """
+
+        Parameters
+        ----------
+        configuration : Dict, CS.Configuration
+        rng : np.random.RandomState, int, None
+            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value : test loss
+            cost : time to train and evaluate the model
+        """
         self.rng = rng_helper.get_rng(rng)
 
         test_error, runtime = self.benchmark.objective_function_test(config=configuration)
@@ -130,7 +158,8 @@ class FCNetBaseBenchmark(AbstractBenchmark):
 
         Returns
         -------
-            ConfigSpace.ConfigurationSpace - Containing the benchmark's hyperparameter
+        CS.ConfigurationSpace -
+            Containing the benchmark's hyperparameter
         """
 
         seed = seed if seed is not None else np.random.randint(1, 100000)
@@ -138,7 +167,8 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         cs.seed(seed)
         return cs
 
-    def reset_tracker(self):
+    def _reset_tracker(self):
+        """ Helper function to reset the internal memory of the benchmark. """
         self.benchmark.X = []
         self.benchmark.y = []
         self.benchmark.c = []
@@ -156,31 +186,36 @@ class FCNetBaseBenchmark(AbstractBenchmark):
 
 class SliceLocalizationBenchmark(FCNetBaseBenchmark):
 
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/'):
+    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         from tabular_benchmarks import FCNetSliceLocalizationBenchmark
         benchmark = FCNetSliceLocalizationBenchmark(data_dir=str(data_path))
-        super(SliceLocalizationBenchmark, self).__init__(benchmark=benchmark, data_path=data_path)
+        super(SliceLocalizationBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
 
 
 class ProteinStructureBenchmark(FCNetBaseBenchmark):
 
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/'):
+    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         from tabular_benchmarks import FCNetProteinStructureBenchmark
         benchmark = FCNetProteinStructureBenchmark(data_dir=str(data_path))
-        super(ProteinStructureBenchmark, self).__init__(benchmark=benchmark, data_path=data_path)
+        super(ProteinStructureBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
 
 
 class NavalPropulsionBenchmark(FCNetBaseBenchmark):
 
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/'):
+    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         from tabular_benchmarks import FCNetNavalPropulsionBenchmark
         benchmark = FCNetNavalPropulsionBenchmark(data_dir=str(data_path))
-        super(NavalPropulsionBenchmark, self).__init__(benchmark=benchmark, data_path=data_path)
+        super(NavalPropulsionBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
 
 
 class ParkinsonsTelemonitoringBenchmark(FCNetBaseBenchmark):
 
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/'):
+    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         from tabular_benchmarks import FCNetParkinsonsTelemonitoringBenchmark
         benchmark = FCNetParkinsonsTelemonitoringBenchmark(data_dir=str(data_path))
-        super(ParkinsonsTelemonitoringBenchmark, self).__init__(benchmark=benchmark, data_path=data_path)
+        super(ParkinsonsTelemonitoringBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
+                                                                **kwargs)

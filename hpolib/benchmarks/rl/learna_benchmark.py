@@ -2,52 +2,74 @@
 How to use this benchmark:
 --------------------------
 
+We recommend using the containerized version of this benchmark.
+If you want to use this benchmark locally (without running it via the corresponding container),
+you need to perform the following steps.
+
 Prerequisites:
-- Conda environment in which the HPOlib is installed (pip install .)
+==============
+Conda environment in which the HPOlib is installed (pip install .). Activate your environment.
+```
+conda activate <Name_of_Conda_HPOlib_environment>
+```
 
 1. Clone from github:
-- Clone the learna tool via ```git clone https://github.com/automl/learna.git```
+=====================
+Clone the learna tool and install it to your Conda environment.
+```
+git clone --single-branch --branch development https://github.com/PhMueller/learna.git
+cd learna
+pip install .
+```
 
-2. Install into HPOlib3 conda environment.
-- ```conda env update --name <Name_of_Conda_HPOlib_environment> --file ./learna/environment.yml```
+2. Install requirements:
+========================
+Install the necessary requirements defined in the environment.yml, which is in the downloaded
+learna repository.
+```
+conda env update --name <Name_of_Conda_HPOlib_environment> --file ./environment.yml
+```
 
-3. Activate the Environment which includes HPOlib3
+3. Get the data:
+================
+Download the necessary files.
 
-4. Get the data
-- cd <path>/<to>/learna
-- python -m src.data.download_and_build_eterna ./src/data/secondaries_to_single_files.sh data/eterna data/eterna/interim/eterna.txt
-- @./src/data/download_and_build_rfam_taneda.sh
-- ./src/data/download_and_build_rfam_learn.sh && \
-   mv data/rfam_learn/test data/rfam_learn_test && \
-   mv data/rfam_learn/validation data/rfam_learn_validation && \
-   mv data/rfam_learn/train data/rfam_learn_train && \
-   rm -rf data/rfam_learn
+```
+cd <path>/<to>/learna_repository
 
-5. Or use the containerized version. (Soon available)
+python -m python -m learna.data.download_and_build_eterna ./learna/data/secondaries_to_single_files.sh data/eterna data/eterna/interim/eterna.txt  # noqa 501
+    && ./learna/data/download_and_build_rfam_taneda.sh \
+    && ./learna/data/download_and_build_rfam_learn.sh \
+    && mv data/rfam_learn/test data/rfam_learn_test \
+    && mv data/rfam_learn/validation data/rfam_learn_validation \
+    && mv data/rfam_learn/train data/rfam_learn_train \
+    && rm -rf data/rfam_learn \
+    && chmod -R 755 data/
+```
 """
+import logging
 import multiprocessing
 import shutil
 import tempfile
-
 from pathlib import Path
-from typing import Dict, Optional, List, Union
 from time import time
+from typing import Dict, List, Union
 
-import numpy as np
 import ConfigSpace as CS
-
-from hpolib.abstract_benchmark import AbstractBenchmark
-from hpolib.util import rng_helper
-
+import numpy as np
 from learna.data.parse_dot_brackets import parse_dot_brackets
 from learna.learna.agent import NetworkConfig, AgentConfig
-from learna.learna.environment import RnaDesignEnvironmentConfig
 from learna.learna.design_rna import design_rna
+from learna.learna.environment import RnaDesignEnvironmentConfig
 from learna.learna.learn_to_design_rna import learn_to_design_rna
 
 import hpolib.config
+from hpolib.abstract_benchmark import AbstractBenchmark
+from hpolib.util import rng_helper
 
 __version__ = '0.0.1'
+
+logger = logging.getLogger('LearnaBenchmark')
 
 
 class BaseLearna(AbstractBenchmark):
@@ -56,17 +78,19 @@ class BaseLearna(AbstractBenchmark):
         Benchmark for the RNA learning task using RL proposed by Runge, Stoll, Falkner and Hutter.
         For further insights, we refer to the paper, which is cited in the meta information of this benchmark.
 
-        We set the time for each benchmark (Learna and MetaLearna) to 10 minutes per sequence.
-        Thus, running each of the benchmarks may take two days.
+        Running each of the benchmarks takes up to two days.
 
         Parameters
         ----------
         data_path : str, Path
             Path to sequencing data, which is used in the experiments.
-            To get the data, see Instructions 'Get the data'
+            To get the data, see Instructions '3. Get the data'
         rng : np.random.RandomState, int, None
             Random seed for the benchmarks
         """
+
+        logger.warning('This Benchmark is not deterministic.')
+
         super(BaseLearna, self).__init__(rng=rng)
         self.train_sequences = parse_dot_brackets(dataset="rfam_learn_train",
                                                   data_dir=data_path,
@@ -74,7 +98,7 @@ class BaseLearna(AbstractBenchmark):
 
         self.validation_sequences = parse_dot_brackets(dataset="rfam_learn_validation",
                                                        data_dir=data_path,
-                                                       target_structure_ids = range(1, 10))
+                                                       target_structure_ids=range(1, 100))
 
         self.num_cores = 1
 
@@ -82,7 +106,7 @@ class BaseLearna(AbstractBenchmark):
                   restart_timeout: Union[int, float], stop_learning: bool,
                   network_config: NetworkConfig, agent_config: AgentConfig, env_config: RnaDesignEnvironmentConfig) -> \
             Dict:
-
+        """ Helper function to solve sequences. This procedure does not train a model. """
         evaluation_arguments = [[[validation_sequence],
                                  evaluation_timeout,  # timeout
                                  restore_path,
@@ -105,13 +129,13 @@ class BaseLearna(AbstractBenchmark):
             # sequence_id = r[0].target_id
             r.sort(key=lambda e: e.time)
 
-            times = np.array(list(map(lambda e: e.time, r)))
+            # times = np.array(list(map(lambda e: e.time, r)))
             dists = np.array(list(map(lambda e: e.normalized_hamming_distance, r)))
 
-            evaluation_sum_of_min_distances += dists.min()
+            evaluation_sum_of_min_distances += np.min(dists)
             evaluation_sum_of_first_distances += dists[0]
 
-            evaluation_num_solved += dists.min() == 0.0
+            evaluation_num_solved += np.min(dists) == 0.0
 
             # evaluation_sequence_infos[sequence_id] = {"num_episodes": len(r),
             #                                           "mean_time_per_episode": float((times[1:] - times[:-1]).mean()),
@@ -127,6 +151,7 @@ class BaseLearna(AbstractBenchmark):
         return evaluation_info
 
     def _setup(self, configuration):
+        """ Initialize the network, agent and environment. """
         config = self._fill_config(configuration)
 
         network_config = NetworkConfig(conv_sizes=[config["conv_size1"], config["conv_size2"]],
@@ -147,13 +172,19 @@ class BaseLearna(AbstractBenchmark):
         return config, network_config, agent_config, env_config
 
     @AbstractBenchmark._configuration_as_dict
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
+    @AbstractBenchmark._check_configuration
+    def objective_function(self, configuration: Union[Dict, CS.Configuration],
+                           cutoff_agent_per_sequence: Union[int, float, None] = 600,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        """ Interface for the obejctive function. """
         raise NotImplementedError()
-    
+
     @AbstractBenchmark._configuration_as_dict
-    def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
+    @AbstractBenchmark._check_configuration
+    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                cutoff_agent_per_sequence: Union[int, float, None] = 600,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        """ Interface for the test obejctive function. """
         raise NotImplementedError()
 
     @staticmethod
@@ -162,7 +193,8 @@ class BaseLearna(AbstractBenchmark):
                 'references': ['Frederic Runge and Danny Stoll and Stefan Falkner and Frank Hutter',
                                'Learning to Design {RNA} (ICLR) 2019',
                                'https://ml.informatik.uni-freiburg.de/papers/19-ICLR-Learning-Design-RNA.pdf'],
-                'note': ''}
+                'note': 'This benchmark is not deterministic, since tensorforce is not deterministic in this version.'
+                }
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -217,12 +249,14 @@ class BaseLearna(AbstractBenchmark):
             min_state_radius = configuration["conv_size1"] + configuration["conv_size1"] - 1
             max_state_radius = 32
             configuration["state_radius"] = int(min_state_radius
-                                         + (max_state_radius - min_state_radius) * configuration["state_radius_relative"])
+                                                + (max_state_radius - min_state_radius)
+                                                * configuration["state_radius_relative"])
         else:
             min_state_radius = configuration["conv_size2"] + configuration["conv_size2"] - 1
             max_state_radius = 32
             configuration["state_radius"] = int(min_state_radius
-                                         + (max_state_radius - min_state_radius) * configuration["state_radius_relative"])
+                                                + (max_state_radius - min_state_radius)
+                                                * configuration["state_radius_relative"])
         del configuration["state_radius_relative"]
 
         configuration["restart_timeout"] = None
@@ -234,11 +268,36 @@ class Learna(BaseLearna):
 
     def __init__(self, data_path: Union[str, Path], rng: Union[np.random.RandomState, int, None] = None):
         super(Learna, self).__init__(data_path=data_path, rng=rng)
-    
+
     @AbstractBenchmark._configuration_as_dict
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
+    @AbstractBenchmark._check_configuration
+    def objective_function(self, configuration: Union[Dict, CS.Configuration],
+                           cutoff_agent_per_sequence: Union[int, float, None] = 600,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-        """ Start the learna experiment. Dont train a RL agent. Just optimize on the sequences. """
+        """
+        Start the learna experiment. Dont train a RL agent. Just optimize on the sequences.
+
+        Parameters
+        ----------
+        configuration : Dict, CS.Configuration
+        cutoff_agent_per_sequence : int, float, None
+            Optimizing each sequence is stopped after a given time interval. Defaults to 600s.
+        rng : np.random.RandomState, int, None,
+            Random seed for benchmark. By default the class level random seed.
+
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value : sum of min distances
+            cost : time to train and evaluate the model
+            num_solved : int - number of soved sequences
+            sum_of_first_distances : metric describing quality of result
+        """
 
         self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
 
@@ -261,8 +320,34 @@ class Learna(BaseLearna):
                 }
 
     @AbstractBenchmark._configuration_as_dict
-    def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 600,
+    @AbstractBenchmark._check_configuration
+    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                cutoff_agent_per_sequence: Union[int, float, None] = 600,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        """
+        Validate the Learna experiment.
+
+        Parameters
+        ----------
+        configuration : Dict, CS.Configuration
+        cutoff_agent_per_sequence : int, float, None
+            Optimizing each sequence is stopped after a given time interval. Defaults to 600s.
+        rng : np.random.RandomState, int, None,
+            Random seed for benchmark. By default the class level random seed.
+
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value : sum of min distances
+            cost : time to train and evaluate the model
+            num_solved : int - number of soved sequences
+            sum_of_first_distances : metric describing quality of result
+        """
         return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence, rng=rng,
                                        **kwargs)
 
@@ -273,9 +358,35 @@ class MetaLearna(BaseLearna):
         self.config = hpolib.config.config_file
 
     @AbstractBenchmark._configuration_as_dict
-    def objective_function(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 3600,
-                           rng: Union[np.random.RandomState, int, None] = None, **kwargs)\
-            -> Dict:
+    @AbstractBenchmark._check_configuration
+    def objective_function(self, configuration: Union[Dict, CS.Configuration],
+                           cutoff_agent_per_sequence: Union[int, float, None] = 3600,
+                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        """
+        MetaLearna trains an RL agent for 1 hour on the given training set and then tries to solve the sequences.
+        MetaLearna has only a maximum solving time per sequence of 60 seconds.
+
+        Parameters
+        ----------
+        configuration : Dict, CS.Configuration
+        cutoff_agent_per_sequence : int, float, None
+            Timelimit for training the RL agent. Defaults to 3600s.
+        rng : np.random.RandomState, int, None,
+            Random seed for benchmark. By default the class level random seed.
+
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value : sum of min distances
+            cost : time to train and evaluate the model
+            num_solved : int - number of soved sequences
+            sum_of_first_distances : metric describing quality of result
+        """
         self.rng = rng_helper.get_rng(rng, self.rng)
         tmp_dir = Path(tempfile.mkdtemp(dir=self.config.cache_dir))
 
@@ -306,8 +417,34 @@ class MetaLearna(BaseLearna):
                 'validation_info': validation_info}
 
     @AbstractBenchmark._configuration_as_dict
-    def objective_function_test(self, configuration: Dict, cutoff_agent_per_sequence: Union[int, float, None] = 3600,
+    @AbstractBenchmark._check_configuration
+    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                cutoff_agent_per_sequence: Union[int, float, None] = 3600,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        """
+        Validate the MetaLearna experiment.
+
+        Parameters
+        ----------
+        configuration : Dict, CS.Configuration
+        cutoff_agent_per_sequence : int, float, None
+            Timelimit for training the RL agent. Defaults to 3600s.
+        rng : np.random.RandomState, int, None,
+            Random seed for benchmark. By default the class level random seed.
+
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value : sum of min distances
+            cost : time to train and evaluate the model
+            num_solved : int - number of soved sequences
+            sum_of_first_distances : metric describing quality of result
+        """
         return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence,
                                        rng=rng, **kwargs)
 
@@ -320,14 +457,17 @@ class MetaLearna(BaseLearna):
         ----------
         budget : int, float
             Time in seconds to train a RL agent
-        tmp_dir
-        network_config
-        agent_config
-        env_config
+        tmp_dir : Path
+        network_config : NetworkConfig
+        agent_config : AgentConfig
+        env_config : RnaDesignEnvironmentConfig
 
         Returns
         -------
-
+        Dict -
+            num_solved : int - number of soved sequences
+            sum_of_min_distances : metric describing quality of result
+            sum_of_first_distances : metric describing quality of result
         """
         train_arguments = [self.train_sequences,
                            budget,  # timeout
@@ -355,10 +495,10 @@ class MetaLearna(BaseLearna):
 
             dists = np.array(list(map(lambda e: e.normalized_hamming_distance, r)))
 
-            train_sum_of_min_distances += dists.min()
+            train_sum_of_min_distances += np.min(dists)
             train_sum_of_last_distances += dists[-1]
 
-            train_num_solved += dists.min() == 0.0
+            train_num_solved += np.min(dists) == 0.0
 
             # The train sequence info dict is too large
             # train_sequence_infos[sequence_id] = {"num_episodes": len(r),
@@ -379,7 +519,7 @@ class MetaLearna(BaseLearna):
         results_by_sequence = {}
         for r in train_results:
             for s in r:
-                if not s.target_id in results_by_sequence:
+                if s.target_id not in results_by_sequence:
                     results_by_sequence[s.target_id] = [s]
                 else:
                     results_by_sequence[s.target_id].append(s)

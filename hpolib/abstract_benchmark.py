@@ -93,7 +93,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
         Can be combined with the _configuration_as_array decorator.
         """
-        def wrapper(self, configuration, **kwargs):
+        def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict], **kwargs):
             if isinstance(configuration, np.ndarray):
                 try:
                     config_dict = {k: configuration[i] for (i, k) in enumerate(self.configuration_space)}
@@ -181,7 +181,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def get_configuration_space(seed: Union[int, None] = None)  -> ConfigSpace.ConfigurationSpace:
+    def get_configuration_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
         """ Defines the configuration space for each benchmark.
         Parameters
         ----------

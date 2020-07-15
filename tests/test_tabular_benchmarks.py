@@ -3,25 +3,21 @@ import pytest
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-from hpolib.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark, NavalPropulsionBenchmark, \
-    ParkinsonsTelemonitoringBenchmark, ProteinStructureBenchmark, FCNetBenchmark, FCNetBaseBenchmark
-
-try:
-    import Pyro4
-    skip_container_test = False
-except ImportError:
-    skip_container_test = True
+from hpolib.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark, NavalPropulsionBenchmark, \
+    ParkinsonsTelemonitoringBenchmark, ProteinStructureBenchmark
 
 
 def setup():
-    data_path = '/home/philipp/Dokumente/Code/TabularBenchmarks/fcnet_tabular_benchmarks'
-    default_config = FCNetBenchmark.get_configuration_space().get_default_configuration()
-    return data_path, default_config
+    container_source = 'library://phmueller/automl/'
+    benchmark = SliceLocalizationBenchmark(container_source=container_source)
+    default_config = benchmark.get_configuration_space(seed=1).get_default_configuration()
+
+    return container_source, default_config
 
 
 def test_tabular_benchmark_wrong_input():
-    data_path, default_config = setup()
-    benchmark = SliceLocalizationBenchmark(data_path=data_path)
+    container_source, default_config = setup()
+    benchmark = SliceLocalizationBenchmark(container_source=container_source, rng=1)
 
     with pytest.raises(AssertionError):
         benchmark.objective_function(configuration=default_config, budget=0)
@@ -30,22 +26,27 @@ def test_tabular_benchmark_wrong_input():
         benchmark.objective_function(configuration=default_config, budget=1, run_index=0.1)
 
     with pytest.raises(AssertionError):
-        benchmark.objective_function(configuration=default_config, budget=0, run_index=[4])
+        benchmark.objective_function(configuration=default_config, budget=1, run_index=[4])
 
     with pytest.raises(AssertionError):
-        benchmark.objective_function(configuration=default_config, budget=0, run_index=[])
+        benchmark.objective_function(configuration=default_config, budget=1, run_index=[])
 
     with pytest.raises(AssertionError):
-        benchmark.objective_function(configuration=default_config, budget=0, run_index=-1)
+        benchmark.objective_function(configuration=default_config, budget=1, run_index=-1)
 
     with pytest.raises(AssertionError):
-        benchmark.objective_function(configuration=default_config, budget=0, run_index=4)
+        benchmark.objective_function(configuration=default_config, budget=1, run_index=4)
+
+    with pytest.raises(AssertionError):
+        benchmark.objective_function(configuration=default_config, budget=101, run_index=3)
+
+    benchmark = None
 
 
 def test_slice_benchmark():
-    data_path, default_config = setup()
+    container_source, default_config = setup()
 
-    benchmark = SliceLocalizationBenchmark(data_path=data_path)
+    benchmark = SliceLocalizationBenchmark(container_source=container_source, rng=1)
     result = benchmark.objective_function(configuration=default_config, budget=1, run_index=[0, 1, 2, 3])
 
     mean = 0.01828
@@ -61,12 +62,13 @@ def test_slice_benchmark():
     runtimes = result['info']['runtime_per_run']
     calculated_runtime = sum(runtimes) / len(runtimes)
     assert calculated_runtime == pytest.approx(runtime, abs=0.0001)
+    benchmark = None
 
 
 def test_naval_benchmark():
-    data_path, default_config = setup()
+    container_source, default_config = setup()
 
-    benchmark = NavalPropulsionBenchmark(data_path=data_path)
+    benchmark = NavalPropulsionBenchmark(container_source=container_source)
     result = benchmark.objective_function(configuration=default_config, budget=1, run_index=[0, 1, 2, 3])
 
     mean = 0.8928
@@ -82,12 +84,13 @@ def test_naval_benchmark():
     runtimes = result['info']['runtime_per_run']
     calculated_runtime = sum(runtimes) / len(runtimes)
     assert calculated_runtime == pytest.approx(runtime, abs=0.0001)
+    benchmark = None
 
 
 def test_protein_benchmark():
-    data_path, default_config = setup()
+    container_source, default_config = setup()
 
-    benchmark = ProteinStructureBenchmark(data_path=data_path)
+    benchmark = ProteinStructureBenchmark(container_source=container_source, rng=1)
     result = benchmark.objective_function(configuration=default_config, budget=1, run_index=[0, 1, 2, 3])
 
     mean = 0.4474
@@ -103,12 +106,13 @@ def test_protein_benchmark():
     runtimes = result['info']['runtime_per_run']
     calculated_runtime = sum(runtimes) / len(runtimes)
     assert calculated_runtime == pytest.approx(runtime, abs=0.0001)
+    benchmark = None
 
 
 def test_parkinson_benchmark():
-    data_path, default_config = setup()
+    container_source, default_config = setup()
 
-    benchmark = ParkinsonsTelemonitoringBenchmark(data_path=data_path)
+    benchmark = ParkinsonsTelemonitoringBenchmark(container_source=container_source, rng=1)
     result = benchmark.objective_function(configuration=default_config, budget=1, run_index=[0, 1, 2, 3])
 
     mean = 0.7425
@@ -124,3 +128,4 @@ def test_parkinson_benchmark():
     runtimes = result['info']['runtime_per_run']
     calculated_runtime = sum(runtimes) / len(runtimes)
     assert calculated_runtime == pytest.approx(runtime, abs=0.0001)
+    benchmark = None

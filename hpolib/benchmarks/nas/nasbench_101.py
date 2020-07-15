@@ -3,26 +3,36 @@ Interface to NasBench101 for Hyperparameter Optimization and Neural Architecture
 
 https://github.com/automl/nas_benchmarks
 
-How to install:
----------------
+How to use this benchmark:
+--------------------------
 
-1) Download data
+We recommend using the containerized version of this benchmark.
+If you want to use this benchmark locally (without running it via the corresponding container),
+you need to perform the following steps.
+
+1. Download data
+================
 ```
 wget https://storage.googleapis.com/nasbench/nasbench_full.tfrecord
 ```
-Remark: it is important to select the full tfrecord to perform multi-fidelity optimization.
+Remark: it is important to select the full tf record and not the 'only_108' record to perform multi-fidelity
+optimization.
 
-2) Clone + Install
+2. Clone and install
+====================
 ```
+cd /path/to/HPOlib3
+pip install .[nasbench_101]
+
 pip install git+https://github.com/google-research/nasbench.git@master
 pip install git+https//github.com/automl/nas_benchmarks.git@master
-
-pip install --upgrade "tensorflow>=1.12.1,<=1.15"
+```
 
 Notes:
 ------
-THOSE BENCHMARKS CONTAIN ONLY VALUES FOR THE EPOCHS 4, 12, 36 and 108. FOR ALL OTHERS IT ALWAYS RETURN AN ACCURACY OF 0.
-```
+Benchmarks in NASBench101 only contain epochs 4, 12, 36 and 108.
+Querying another epoch, e.g. 5, raises an assertion.
+
 """
 
 from pathlib import Path
@@ -43,7 +53,7 @@ VERTICES = 7
 
 class NASCifar10BaseBenchmark(AbstractBenchmark):
     def __init__(self, benchmark: NASCifar10, data_path: Union[Path, str, None] = "./",
-                 rng: Union[np.random.RandomState, int, None] = None):
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         """
         Baseclass for the tabular benchmarks https://github.com/automl/nas_benchmarks/tree/master/tabular_benchmarks.
         Please install the benchmark first. Place the data under ``data_path``.
@@ -63,10 +73,11 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         self.benchmark = benchmark
         self.data_path = data_path
 
+    @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            budget: Union[int, None] = 108,
-                           reset: bool = True,
+                           reset: Union[bool, None] = True,
                            rng: Union[np.random.RandomState, int, None] = None,
                            **kwargs) -> Dict:
         """
@@ -74,23 +85,26 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
 
         Parameters
         ----------
-        configuration : Dict
+        configuration : Dict, CS.Configuration
         budget : int, None
             Query the tabular benchmark at the `budget`-th epoch. Defaults to the maximum budget (108).
-        reset : bool
-            Reset the internal memory of the benchmark. Should not have an effect.
+        reset : bool, None
+            Reset the internal memory of the benchmark. Should not have an effect. Default to True.
         rng : np.random.RandomState, int, None
-            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
+            Random seed to use in the benchmark.
+
+            To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
             If this parameter is not given, the default random state is used.
         kwargs
 
         Returns
         -------
-        Dict
+        Dict -
+            function_value : validation error
+            cost : runtime
         """
-        # TODO: Is a assertion too restrictive? If not valid, object_func already returns (1, 0).
-        # assert budget in [4, 12, 36, 108], f'This benchmark supports only budgets [4, 12, 36, 108], but was {budget}'
+        assert budget in [4, 12, 36, 108], f'This benchmark supports only budgets [4, 12, 36, 108], but was {budget}'
 
         if reset:
             self.benchmark.reset_tracker()
@@ -103,15 +117,19 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
                 'cost': float(runtime),
                 }
 
+    @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, configuration: Dict, rng: Union[np.random.RandomState, int, None] = None,
+    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                budget: Union[int, None] = 108,
+                                rng: Union[np.random.RandomState, int, None] = None,
                                 **kwargs) -> Dict:
         """
         Validate a configuration on the maximum available budget.
 
         Parameters
         ----------
-        configuration : Dict
+        configuration : Dict, CS.Configuration
+        budget : int, None
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
@@ -120,16 +138,17 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
 
         Returns
         -------
-        Dict
+        Dict -
+            function_value : test error
+            cost : runtime
         """
         self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
 
-        test_error, runtime = self.benchmark.objective_function(config=configuration, budget=108)
+        test_error, runtime = self.benchmark.objective_function(config=configuration, budget=budget)
         return {'function_value': float(test_error), 'cost': float(runtime)}
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-
         raise NotImplementedError
 
     @staticmethod
@@ -144,6 +163,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
 
     @staticmethod
     def _get_configuration_space(benchmark: Any, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """ Helper function to pass a seed to the configuration space """
         seed = seed if seed is not None else np.random.randint(1, 100000)
         cs = benchmark.get_configuration_space()
         cs.seed(seed)
@@ -151,10 +171,11 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
 
 
 class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/'):
+    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         from tabular_benchmarks.nas_cifar10 import NASCifar10A
         benchmark = NASCifar10A(data_dir=str(data_path), multi_fidelity=True)
-        super(NASCifar10ABenchmark, self).__init__(benchmark=benchmark, data_path=data_path)
+        super(NASCifar10ABenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -175,10 +196,11 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
 
 
 class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/'):
+    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         from tabular_benchmarks.nas_cifar10 import NASCifar10B
         benchmark = NASCifar10B(data_dir=str(data_path), multi_fidelity=True)
-        super(NASCifar10BBenchmark, self).__init__(benchmark=benchmark, data_path=data_path)
+        super(NASCifar10BBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -199,10 +221,11 @@ class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
 
 
 class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/'):
+    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         from tabular_benchmarks.nas_cifar10 import NASCifar10C
         benchmark = NASCifar10C(data_dir=str(data_path), multi_fidelity=True)
-        super(NASCifar10CBenchmark, self).__init__(benchmark=benchmark, data_path=data_path)
+        super(NASCifar10CBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:

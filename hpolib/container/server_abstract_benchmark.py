@@ -15,14 +15,18 @@ import json
 import logging
 import os
 
-import ConfigSpace as CS
 import Pyro4
 import numpy as np
 from ConfigSpace.read_and_write import json as csjson
 
 from hpolib.config import HPOlibConfig
 
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+
 logger = logging.getLogger('BenchmarkServer')
+logger.setLevel(level=logging.INFO)
+logger.addHandler(console)
 
 
 class BenchmarkEncoder(json.JSONEncoder):
@@ -68,32 +72,49 @@ class BenchmarkServer:
         except Exception as e:
             print(e)
             logger.error(e)
+        logger.info('Server: Connected Successfully')
 
-    def get_configuration_space(self):
-        result = self.benchmark.get_configuration_space()
+    def get_configuration_space(self, kwargs_str: str) -> str:
+        logger.debug(f'Server: get_config_space: kwargs_str: {kwargs_str}')
+        seed = None
+        if kwargs_str != "{}":
+            kwargs = json.loads(kwargs_str)
+            seed = kwargs.get('seed', None)
+
+        result = self.benchmark.get_configuration_space(seed=seed)
+        logger.debug(f'Server: Configspace: {result}')
         return csjson.write(result, indent=None)
 
-    def objective_function_list(self, x_str, kwargs_str):
-        x = json.loads(x_str)
-        result = self.benchmark.objective_function(x, **json.loads(kwargs_str))
-        return json.dumps(result, indent=None, cls=BenchmarkEncoder)
-
-    def objective_function(self, c_str, cs_str, kwargs_str):
-        c_dict = json.loads(c_str)
-        cs = csjson.read(cs_str)
-        configuration = CS.Configuration(cs, c_dict)
+    def objective_function_list(self, c_str: str, kwargs_str: str) -> str:
+        configuration = json.loads(c_str)
         result = self.benchmark.objective_function(configuration, **json.loads(kwargs_str))
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
-    def objective_function_test_list(self, x_str, kwargs_str):
-        x = json.loads(x_str)
-        result = self.benchmark.objective_function_test(x, **json.loads(kwargs_str))
+    def objective_function(self, c_str: str, kwargs_str: str) -> str:
+        logger.debug(f'Server: objective_function: c_str: {c_str} kwargs_str: {kwargs_str}')
+
+        configuration = json.loads(c_str)
+        kwargs = json.loads(kwargs_str)
+
+        rng = kwargs.get('rng', None)
+
+        if rng is not None:
+            del kwargs['rng']
+            result = self.benchmark.objective_function(configuration, rng=rng, **kwargs)
+        else:
+            result = self.benchmark.objective_function(configuration, **kwargs)
+
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
-    def objective_function_test(self, c_str, cs_str, kwargs_str):
-        c_dict = json.loads(c_str)
-        cs = csjson.read(cs_str)
-        configuration = CS.Configuration(cs, c_dict)
+    def objective_function_test_list(self, c_str, kwargs_str):
+        configuration = json.loads(c_str)
+        result = self.benchmark.objective_function_test(configuration, **json.loads(kwargs_str))
+        return json.dumps(result, indent=None, cls=BenchmarkEncoder)
+
+    def objective_function_test(self, c_str, kwargs_str):
+        logger.debug(f'Server: objective_function: c_str: {c_str} kwargs_str: {kwargs_str}')
+
+        configuration = json.loads(c_str)
         result = self.benchmark.objective_function_test(configuration, **json.loads(kwargs_str))
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
@@ -102,11 +123,12 @@ class BenchmarkServer:
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
     def get_meta_information(self):
+        logger.debug('Server: get_meta_info called')
         return json.dumps(self.benchmark.get_meta_information(), indent=None)
 
     @Pyro4.oneway   # in case call returns much later than daemon.shutdown
     def shutdown(self):
-        logger.debug('shutting down...')
+        logger.debug('Server: Shutting down...')
         Pyro4.config.COMMTIMEOUT = 0.5
         self.pyroRunning = False
         self.daemon.shutdown()
