@@ -19,8 +19,9 @@ import argparse
 import logging
 from time import time
 
-from hpolib.util.openml_data_manager import get_openmlcc18_taskids
 from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+from hpolib.util.openml_data_manager import get_openmlcc18_taskids
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -59,6 +60,7 @@ def run_experiment(on_travis: bool = False):
                     print(f'[{i+1}|{num_configs}] No Estimator: {n_estimator:3d} - '
                           f'Subsample Rate: {subsample:.1f} - Test {test_loss:.4f} '
                           f'- Valid {valid_loss:.4f} - Train {train_loss:.4f}')
+        b.__del__()
         print(f'Done, took totally {time()-start:.2f}')
 
 

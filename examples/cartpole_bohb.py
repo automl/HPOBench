@@ -11,15 +11,16 @@ https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-step
 """
 import logging
 import pickle
-
 from pathlib import Path
-from hpolib.util.rng_helper import get_rng
-from hpolib.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
+
 import hpbandster.core.nameserver as hpns
 import hpbandster.core.result as hpres
-from hpbandster.optimizers import BOHB
 from hpbandster.core.worker import Worker
+from hpbandster.optimizers import BOHB
+
 from hpolib.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
+from hpolib.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
+from hpolib.util.rng_helper import get_rng
 
 logger = logging.getLogger('BOHB on cartpole')
 set_env_variables_to_use_only_one_core()
@@ -97,10 +98,11 @@ def run_experiment(out_path, on_travis):
     logger.info(f'Inc Config:\n{inc_cfg}\n'
                 f'with Performance: {inc_value:.2f}')
 
-    benchmark = Benchmark()
-    incumbent_result = benchmark.objective_function_test(configuration=inc_cfg,
-                                                         budget=settings['max_budget'])
-    print(incumbent_result)
+    if not on_travis:
+        benchmark = Benchmark(container_source='library://phmueller/automl')
+        incumbent_result = benchmark.objective_function_test(configuration=inc_cfg,
+                                                             budget=settings['max_budget'])
+        print(incumbent_result)
 
 
 if __name__ == '__main__':

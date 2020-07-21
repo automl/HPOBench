@@ -18,7 +18,6 @@ container-benchmark definition. (hpolib/container/<type>/<name> or via ``contain
 import abc
 import json
 import logging
-import os
 import subprocess
 import time
 from pathlib import Path
@@ -132,14 +131,37 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
         cmd = f'singularity instance start {bind_options}{gpu_opt}{container_options} {self.socket_id}'
         logger.debug(cmd)
-        subprocess.run(cmd, shell=True)
+
+        MAX_TRIES = 5
+        for num_tries in range(MAX_TRIES):
+            p = subprocess.Popen(cmd.split(),
+                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output, err = p.communicate()
+            logger.debug(err)
+
+            # Give a little bit of time to make sure the instance does not disappears after testing if it is there.
+            time.sleep(1)
+
+            # Check if the instance is started. Starting a instance crashes sometimes without a warning.
+            # Therefore try this step multiple times unless it is really started
+            out = subprocess.getoutput('singularity instance list')
+            out = out.split()
+
+            if self.socket_id in out:
+                break
+            else:
+                logger.debug(f'Could not start instance: Try {num_tries + 1}|{MAX_TRIES}')
+                if num_tries + 1 == MAX_TRIES:
+                    raise SystemError('Could not start a instance of the benchmark.')
+
+            time.sleep(1)
 
         # Give each instance a little bit time to start
         time.sleep(1)
 
         cmd = f'singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
         logger.debug(cmd)
-        subprocess.Popen(cmd, shell=True)
+        subprocess.Popen(cmd.split())
 
         Pyro4.config.REQUIRE_EXPOSE = False
         # Generate Pyro 4 URI for connecting to client
@@ -220,6 +242,10 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             c_str = json.dumps(configuration.get_dictionary(), indent=None)
             json_str = self.benchmark.objective_function_test(c_str, json.dumps(kwargs))
             return json.loads(json_str)
+        elif isinstance(configuration, dict):
+            c_str = json.dumps(configuration, indent=None)
+            json_str = self.benchmark.objective_function_test(c_str, json.dumps(kwargs))
+            return json.loads(json_str)
         else:
             raise ValueError(f'Type of config not understood: {type(configuration)}')
 
@@ -258,10 +284,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         return self.objective_function(configuration, **kwargs)['function_value']
 
     def __del__(self):
-        Pyro4.config.COMMTIMEOUT = 1
         self.benchmark.shutdown()
-        subprocess.run(f'singularity instance stop {self.socket_id}', shell=True)
-        os.remove(str(self.config.socket_dir / f'{self.socket_id}_unix.sock'))
+        subprocess.run(f'singularity instance stop {self.socket_id}'.split())
+        if (self.config.socket_dir / f'{self.socket_id}_unix.sock').exists():
+            (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
+        # self.benchmark._pyroRelease()
 
     def _id_generator(self) -> str:
         """ Helper function: Creates unique socket ids for the benchmark server """

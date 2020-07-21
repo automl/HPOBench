@@ -43,7 +43,7 @@ def run_experiment(out_path: str, on_travis: bool = False):
                      "runcount-limit": 200,
                      "limit_resources": True,  # Uses pynisher to limit memory and runtime
                      "cutoff": 1800,  # runtime limit for target algorithm
-                     "memory_limit": 4000,  # adapt this to reasonable value for your hardware
+                     "memory_limit": 10000,  # adapt this to reasonable value for your hardware
                      "output_dir": str(out_path),
                      }
 
@@ -81,9 +81,10 @@ def run_experiment(out_path: str, on_travis: bool = False):
         incumbent = smac.solver.incumbent
     end_time = time()
 
-    inc_value = smac.get_tae_runner().run(config=incumbent, instance='1', budget=max_budget, seed=0)[1]
-    print(f"Value for optimized configuration: {inc_value:.4f}.\n"
-          f"Optimization took {end_time-start_time:.0f}s")
+    if not on_travis:
+        inc_value = smac.get_tae_runner().run(config=incumbent, instance='1', budget=max_budget, seed=0)[1]
+        print(f"Value for optimized configuration: {inc_value:.4f}.\n"
+              f"Optimization took {end_time-start_time:.0f}s")
 
 
 if __name__ == "__main__":
