@@ -1,18 +1,20 @@
+import logging
 import time
+from typing import Union, Optional, Dict
 
 import ConfigSpace as CS
 import numpy as np
 import tensorflow as tf
-
 from tensorforce.agents import PPOAgent
 from tensorforce.contrib.openai_gym import OpenAIGym
 from tensorforce.execution import Runner
-from typing import Union, Optional, Dict
 
 from hpolib.abstract_benchmark import AbstractBenchmark
 from hpolib.util import rng_helper
 
 __version__ = '0.0.1'
+
+logger = logging.getLogger('CartpoleBenchmark')
 
 
 class CartpoleBase(AbstractBenchmark):
@@ -23,12 +25,13 @@ class CartpoleBase(AbstractBenchmark):
         ----------
         rng : int,None,np.RandomState
             RandomState for the experiment
-        defaults : dict
+        defaults : dict, None
             default configuration used for the PPO agent
-        max_episodes : Optional[int]
-            limit of the length of a episode for the cartpole runner
+        max_episodes : int, None
+            limit of the length of a episode for the cartpole runner. Defaults to 3000
         """
 
+        logger.warning('This Benchmark is not deterministic.')
         super(CartpoleBase, self).__init__()
 
         self.rng = rng_helper.get_rng(rng=rng)
@@ -61,11 +64,12 @@ class CartpoleBase(AbstractBenchmark):
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        """ Returns the ConfigSpace.ConfigurationSpace of the benchmark. """
+        """ Returns the CS.ConfigurationSpace of the benchmark. """
         raise NotImplementedError()
 
+    @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function(self, configuration: Dict, budget: Optional[int] = 9,
+    def objective_function(self, configuration: Union[Dict, CS.Configuration], budget: Optional[int] = 9,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a Tensorforce RL agent on the cartpole experiment. This benchmark was used in the experiments for the
@@ -76,8 +80,9 @@ class CartpoleBase(AbstractBenchmark):
 
         Parameters
         ----------
-        configuration : ConfigSpace.Configuration
-        budget : Optional[int]
+        configuration : Dict, CS.Configuration
+        budget : int, None
+            Num Agents. Defaults to 9
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
@@ -151,14 +156,14 @@ class CartpoleBase(AbstractBenchmark):
                 'all_runs': converged_episodes}
 
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, config: Dict, budget: Optional[int] = 9,
+    def objective_function_test(self, config: Union[Dict, CS.Configuration], budget: Optional[int] = 9,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate a configuration on the cartpole benchmark. Use the full budget.
         Parameters
         ----------
-        configuration : ConfigSpace.Configuration
-        budget : Optional[int]
+        configuration : Dict, CS.Configuration
+        budget : int, None
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
@@ -167,7 +172,12 @@ class CartpoleBase(AbstractBenchmark):
 
         Returns
         -------
-        Dict
+        Dict -
+            function_value : average episode length
+            cost : time to run all agents
+            max_episodes : the maximum length of an episode
+            budget : number of agents used
+            all_runs : the episode length of all runs of all agents
         """
         return self.objective_function(config, budget=budget, rng=rng, **kwargs)
 
@@ -184,7 +194,19 @@ class CartpoleFull(CartpoleBase):
     """Cartpole experiment on full configuration space"""
 
     @staticmethod
-    def get_configuration_space(seed: Union[int, None] = None) -> CS.configuration_space:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Get the configuration space for this benchmark
+        Parameters
+        ----------
+        seed : int, None
+            Random seed for the configuration space.
+
+        Returns
+        -------
+        CS.ConfigurationSpace -
+            Containing the benchmark's hyperparameter
+        """
         seed = seed if seed is not None else np.random.randint(1, 100000)
         cs = CS.ConfigurationSpace(seed=seed)
         cs.add_hyperparameters([
@@ -210,6 +232,7 @@ class CartpoleFull(CartpoleBase):
 
     @staticmethod
     def get_meta_information() -> Dict:
+        """ Returns the meta information for the benchmark """
         meta_information = CartpoleBase.get_meta_information()
         meta_information['description'] = 'Cartpole with full configuration space'
         return meta_information
@@ -219,7 +242,19 @@ class CartpoleReduced(CartpoleBase):
     """Cartpole experiment on smaller configuration space"""
 
     @staticmethod
-    def get_configuration_space(seed: Union[int, None] = None) -> CS.configuration_space:
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Get the configuration space for this benchmark
+        Parameters
+        ----------
+        seed : int, None
+            Random seed for the configuration space.
+
+        Returns
+        -------
+        CS.ConfigurationSpace -
+            Containing the benchmark's hyperparameter
+        """
         seed = seed if seed is not None else np.random.randint(1, 100000)
         cs = CS.ConfigurationSpace(seed=seed)
         cs.add_hyperparameters([
@@ -235,6 +270,7 @@ class CartpoleReduced(CartpoleBase):
 
     @staticmethod
     def get_meta_information() -> Dict:
+        """ Returns the meta information for the benchmark """
         meta_information = CartpoleBase.get_meta_information()
         meta_information['description'] = 'Cartpole with reduced configuration space'
         return meta_information

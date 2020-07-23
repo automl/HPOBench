@@ -5,9 +5,9 @@ import ConfigSpace as CS
 import numpy as np
 import xgboost as xgb
 from sklearn import pipeline
+from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, make_scorer
-from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 
 import hpolib.util.rng_helper as rng_helper
@@ -88,16 +88,19 @@ class XGBoostBenchmark(AbstractBenchmark):
         random_state = rng_helper.get_rng(rng, self.rng)
         random_state.shuffle(self.train_idx)
 
+    @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function(self, configuration: Dict, n_estimators: int = 128, subsample: float = 1,
-                           shuffle: bool = False, rng: Union[np.random.RandomState, int, None] = None,**kwargs) -> Dict:
+    def objective_function(self, configuration: Union[Dict, CS.Configuration], n_estimators: int = 128,
+                           subsample: float = 1,
+                           shuffle: bool = False, rng: Union[np.random.RandomState, int, None] = None,
+                           **kwargs) -> Dict:
         """
         Trains a XGBoost model given a hyperparameter configuration and
         evaluates the model on the validation set.
 
         Parameters
         ----------
-        configuration : Dict
+        configuration : Dict, CS.Configuration
             Configuration for the XGBoost model
         n_estimators : int
             Number of trees to fit.
@@ -146,8 +149,10 @@ class XGBoostBenchmark(AbstractBenchmark):
                 'train_loss': train_loss,
                 'subsample': subsample}
 
+    @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, configuration: Dict, subsample: float = 1, n_estimators: int = 128,
+    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                subsample: float = 1, n_estimators: int = 128,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a XGBoost model with a given configuration on both the train
@@ -155,7 +160,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         Parameters
         ----------
-        configuration : Dict
+        configuration : Dict, CS.Configuration
             Configuration for the XGBoost Model
         n_estimators : int
             Number of trees to fit.

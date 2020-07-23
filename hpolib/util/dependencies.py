@@ -1,7 +1,7 @@
 import re
+from distutils.version import LooseVersion
 
 import pkg_resources
-from distutils.version import LooseVersion
 
 RE_PATTERN = re.compile(
     r'^(?P<name>[\w\-]+)((?P<operation>==|>=|>)'

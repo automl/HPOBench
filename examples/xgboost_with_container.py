@@ -1,17 +1,28 @@
 """
-Example with XGBoost (local)
-============================
-This example executes the xgboost benchmark locally with random configurations on the CC18 openml tasks.
+Example with XGBoost (container)
+================================
 
-To run this example please install the necessary dependencies via:
-``pip3 install .[xgboost_example]``
+In this example, we show how to use a benchmark with a container. We provide container for some benchmarks.
+They are hosted on https://cloud.sylabs.io/library/keggensperger/automl.
+
+Furthermore, we use different fidelities to train the xgboost model - the number of estimators as well as the fraction
+of training data points.
+
+To use the container-example, you have to have singulartiy (>3.5) installed. Follow the official installation guide on
+https://sylabs.io/guides/3.1/user-guide/quick_start.html#quick-installation-steps
+
+Furthermore, make sure to install the right dependencies for the hpolib via:
+``pip3 install .[xgboost_example,singularity]``.
 """
 
 import argparse
+import logging
 from time import time
 
-from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
 from hpolib.util.openml_data_manager import get_openmlcc18_taskids
+
+logging.basicConfig(level=logging.INFO)
 
 
 def run_experiment(on_travis: bool = False):
@@ -25,7 +36,10 @@ def run_experiment(on_travis: bool = False):
         if task_id == 167204:
             continue  # due to memory limits
 
-        b = Benchmark(task_id=task_id)
+        b = Benchmark(task_id=task_id,
+                      container_name='xgboost_benchmark',
+                      container_source='library://phmueller/automl')
+
         cs = b.get_configuration_space()
         start = time()
         num_configs = 1
@@ -35,7 +49,8 @@ def run_experiment(on_travis: bool = False):
             for n_estimator in [8, 64]:
                 for subsample in [0.4, 1]:
                     result_dict = b.objective_function(configuration.get_dictionary(),
-                                                       n_estimators=n_estimator, subsample=subsample)
+                                                       n_estimators=n_estimator,
+                                                       subsample=subsample)
                     valid_loss = result_dict['function_value']
                     train_loss = result_dict['train_loss']
 
@@ -45,6 +60,7 @@ def run_experiment(on_travis: bool = False):
                     print(f'[{i+1}|{num_configs}] No Estimator: {n_estimator:3d} - '
                           f'Subsample Rate: {subsample:.1f} - Test {test_loss:.4f} '
                           f'- Valid {valid_loss:.4f} - Train {train_loss:.4f}')
+        b.__del__()
         print(f'Done, took totally {time()-start:.2f}')
 
 

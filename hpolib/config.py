@@ -42,7 +42,7 @@ class HPOlibConfig:
                          # https://cloud.sylabs.io/library/keggensperger/automl
                          'container_source': 'library://keggensperger/automl',
                          'use_global_data': True,
-                         'pyro_connect_max_wait': 60}
+                         'pyro_connect_max_wait': 400}
 
         self._setup(self.config_file)
 
