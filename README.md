@@ -4,7 +4,7 @@ HPOlib3 is a library for hyperparameter optimization and black-box optimization 
 
 **Note:** Hpolib3 is under active construction. Stay tuned for more benchmarks. Information on how to contribution a new benchmark will follow shortly.
 
-# HPOlib3 in 4 lines of code
+## In 4 lines of code
 
 Evaluate a random configuration locally (requires all dependencies for XGB to be installed)
 
@@ -23,8 +23,7 @@ config = b.get_configuration_space(seed=1).sample_configuration()
 result_dict = b.objective_function_test(config, n_estimators=128, subsample=0.5)
 ```
 
-HPOlib3 is built such that it prevents the benchmark's behavior to change due to updates on required packages, we host for each benchmark a containerized version. 
-For this purpose, we rely on [Singularity (version 3.5)](https://sylabs.io/guides/3.5/user-guide/). To install singularity, 
+Containerized benchmarks do not rely on external dependencies and thus do not change. To do so, we rely on [Singularity (version 3.5)](https://sylabs.io/guides/3.5/user-guide/). To install singularity, 
 please follow the instructions in its [user-guide](https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps).   
 However, each benchmark can also be used without singularity, but the dependencies might conflict.
  
