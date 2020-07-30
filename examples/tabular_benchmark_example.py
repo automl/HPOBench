@@ -37,7 +37,7 @@ def run_experiment(on_travis=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog='Learna on RFAM')
+    parser = argparse.ArgumentParser(prog='TabularNad')
 
     parser.add_argument('--on_travis', action='store_true',
                         help='Flag to speed up the run on the continuous integration tool \"travis\". This flag can be'
