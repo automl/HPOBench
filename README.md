@@ -2,7 +2,7 @@
 
 HPOlib3 is a library for hyperparameter optimization and black-box optimization benchmark with a focus on reproducibility.
 
-**Note:** Hpolib3 is under active construction. Stay tuned for more benchmarks. Information on how to contribution a new benchmark will follow shortly.
+**Note:** Hpolib3 is under active construction. Stay tuned for more benchmarks. Information on how to contribute a new benchmark will follow shortly.
 
 ## In 4 lines of code
 
@@ -31,17 +31,17 @@ Further requirements are: the [ConfigSpace](https://github.com/automl/ConfigSpac
 *python-openml*. 
 
 ## Installation
-We explain in the docstrings of each benchmark, how to install the dependencies for each benchmark properly. \
-For the purpose of this documentation, we show exemplarily how to install everything for the xgboost benchmark. 
+
 Before we start, we recommend using a virtual environment.
  
 In general, we can install HPOLib3 and specify its extra requirements via \
 ``` pip install <path_to_hpolib3_repository>[extra requirements] ```\
 
 For the Xgboost benchmark we need the following command:
-``` pip install .[xgboost,singularity] ```
-This installs xgboost as well as the requirements for singularity in your python environment. 
-(Note: It doesn't install singularity. Please install it using the link above.) 
+``` pip install .[singularity] ```
+*Note:* This doesn't install singularity. Please install it using the link above. 
+*Note:* To run a benchmark locally all dependencies for this benchmarks need to be installed. To do so, please use `pip install .[<name>]` and check 
+the docstring of the benchmark you want to run locally. 
 
 ## Available Experiments with container
 
@@ -59,21 +59,10 @@ This installs xgboost as well as the requirements for singularity in your python
 | <font size="2em">NASCifar10ABenchmark</font>              | <font size="2em">nasbench_101</font>       | <font size="2em">library://phmueller/automl/nasbench_101</font> | <font size="2em"> </font>                                    |
 | <font size="2em">NASCifar10BBenchmark</font>              | <font size="2em">nasbench_101</font>       | <font size="2em">library://phmueller/automl/nasbench_101</font> | <font size="2em"> </font>                                    |
 | <font size="2em">NASCifar10CBenchmark</font>              | <font size="2em">nasbench_101</font>       | <font size="2em">library://phmueller/automl/nasbench_101</font> | <font size="2em"> </font>                                    |
-| <font size="2em">Cifar10NasBench201Benchmark</font>       | <font size="2em">nasbench_201</font>       | <font size="2em">library://phmueller/automl/nasbench_201</font> | <font size="2em"> </font>                                    |
-| <font size="2em">Cifar10ValidNasBench201Benchmark</font>  | <font size="2em">nasbench_201</font>       | <font size="2em">library://phmueller/automl/nasbench_201</font> | <font size="2em"> </font>                                    |
-| <font size="2em">Cifar100NasBench201Benchmark</font>      | <font size="2em">nasbench_201</font>       | <font size="2em">library://phmueller/automl/nasbench_201</font> | <font size="2em"> </font>                                    |
-| <font size="2em">ImageNetNasBench201Benchmark</font>      | <font size="2em">nasbench_201</font>       | <font size="2em">library://phmueller/automl/nasbench_201</font> | <font size="2em"> </font>                                    |
 
+## Further Notes
 
-## Use singularity on Cluster:
-For users from the university of freiburg with access to computational cluster: \\
-To use the the singularity version 3.5, first you have 
-to set the following path:\
-```export PATH=/usr/local/kislurm/singularity-3.5/bin/:$PATH```} \
-**Note:** This works currently only on 'kisbat3'. 
-
-## Notes: 
-- The usage of different task ids is shown in the example 'XGBoost_with_container.py'
+- The usage of different OpenML task ids is shown in the example 'XGBoost_with_container.py'
 - To use a local image, (without downloading it from the sylabs-library), add the parameter 
 `container-source=<path-to-directory-in-which-the-image-is>` in the Benchmark initialization.
 E.g. (see XGBoost_with_container.py) \
@@ -81,9 +70,10 @@ E.g. (see XGBoost_with_container.py) \
 b = Benchmark(rng=my_rng, container_name='xgboost_benchmark', 
               container_source=<PATH>, task_id=task_id)
 ```
-- Singularity will throw an exception 'Invalid Image format' if you use a singularity version < 3.
-  This happens, if you haven't exported the path to singularity3.5 on kisbat3 (see above).
-
+- For users of the Meta-Cluster in Freiburg, you have to set the following path:\
+```export PATH=/usr/local/kislurm/singularity-3.5/bin/:$PATH```} \
+- Singularity will throw an exception 'Invalid Image format' if you use a singularity version < 3
+  
 ## Status
 
 Status for Master Branch: 
