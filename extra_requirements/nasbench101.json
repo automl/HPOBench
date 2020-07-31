@@ -1,3 +1,3 @@
 {
-  "nasbench_101": ["torch>=1.2.0,<=1.5.1","torchvision>=0.4.0","tensorflow==1.15.0"]
+  "nasbench101": ["torch>=1.2.0,<=1.5.1","torchvision>=0.4.0","tensorflow==1.15.0"]
 }
