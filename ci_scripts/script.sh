@@ -17,7 +17,7 @@ if [[ "$RUN_CODESTYLE" == "true" ]]; then
     chmod +x ci_scripts/codestyle.sh && source ./ci_scripts/codestyle.sh
 fi
 
-if [[ "$RUN_EXAMPLES" == "true" ]]; then
-    echo "Run all examples"
-    chmod +x ci_scripts/examples.sh && source ./ci_scripts/examples.sh
+if [[ "$RUN_CONTAINER_EXAMPLES" == "true" ]]; then
+    echo "Run containerized examples"
+    chmod +x ci_scripts/container_examples.sh && source ./ci_scripts/container_examples.sh
 fi
