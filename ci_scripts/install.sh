@@ -17,13 +17,21 @@ else
     echo "Skip installing tools for codestyle checking"
 fi
 
-if [[ "$RUN_EXAMPLES" == "true" ]]; then
-    echo "Install packages for examples"
+if [[ "$RUN_CONTAINER_EXAMPLES" == "true" ]]; then
+    echo "Install packages for container examples"
     echo "Install swig"
     sudo apt-get update && sudo apt-get install -y build-essential swig
-    install_packages="${install_packages}xgboost_example,cartpole_example,"
 else
-    echo "Skip installing packages for examples"
+    echo "Skip installing packages for container examples"
+fi
+
+if [[ "$RUN_LOCAL_EXAMPLES" == "true" ]]; then
+    echo "Install packages for local examples"
+    echo "Install swig"
+    sudo apt-get update && sudo apt-get install -y build-essential swig
+    install_packages="${install_packages}xgboost,"
+else
+    echo "Skip installing packages for local examples"
 fi
 
 if [[ "$USE_SINGULARITY" == "true" ]]; then
