@@ -14,13 +14,12 @@ VERSION v0.0.1
     && wget https://storage.googleapis.com/nasbench/nasbench_full.tfrecord \
 
     cd /home \
-    && pip install --upgrade tensorflow==1.15.0 ConfigSpace \
     && pip install git+https://github.com/google-research/nasbench.git@master \
     && pip install git+https://github.com/automl/nas_benchmarks.git \
-    && git clone https://github.com/PhMueller/HPOlib3.git \
+    && git clone https://github.com/automl/HPOlib3.git \
     && cd HPOlib3 \
-    && git checkout singularity \
-    && pip install .[singularity] \
+    && git checkout development \
+    && pip install .[singularity,nasbench101] \
     && cd / \
     && mkdir /var/lib/hpolib3/ \
     && chmod -R 777 /var/lib/hpolib3/
