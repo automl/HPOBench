@@ -23,7 +23,7 @@ jobs:
     dist: xenial
     env:
       - RUN_LOCAL_EXAMPLES="true"
-      - USE_SINGULARITY="true"
+      - USE_SINGULARITY="false"
 
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
