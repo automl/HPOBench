@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-cd examples
+cd examples/container
 
 for script in *.py
 do
