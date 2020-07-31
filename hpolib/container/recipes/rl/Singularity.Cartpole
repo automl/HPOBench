@@ -11,9 +11,9 @@ VERSION v0.0.1
     pip install numpy==1.18.1 cython==0.29.14
 
     cd /home \
-    && git clone https://github.com/PhMueller/HPOlib3.git \
+    && git clone https://github.com/automl/HPOlib3.git \
     && cd HPOlib3 \
-    && git checkout singularity \
+    && git checkout development \
     && pip install .[singularity,cartpole] \
     && cd / \
     && mkdir /var/lib/hpolib3/ \
