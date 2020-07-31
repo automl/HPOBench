@@ -16,7 +16,7 @@ from hpolib.util.openml_data_manager import get_openmlcc18_taskids
 
 def run_experiment(on_travis: bool = False):
     task_ids = get_openmlcc18_taskids()
-    for task_no, task_id in enumerate(task_ids[:1]):
+    for task_no, task_id in enumerate(task_ids):
 
         if on_travis and task_no == 5:
             break
