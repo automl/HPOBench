@@ -222,6 +222,31 @@ class XGBoostBenchmark(AbstractBenchmark):
         return cs
 
     @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        the XGBoost Model
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        fidel_space.add_hyperparameters([
+            CS.UniformFloatHyperparameter("subsample", lower=0.1, upper=1.0, default=1.0, log=False),
+            CS.UniformIntegerHyperparameter("n_estimators", lower=2, upper=128, default=128, log=False)
+        ])
+
+        return fidel_space
+
+    @staticmethod
     def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
         return {'name': 'XGBoost',

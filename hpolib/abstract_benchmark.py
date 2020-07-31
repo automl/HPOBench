@@ -32,6 +32,12 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
         self.rng = rng_helper.get_rng(rng=rng)
         self.configuration_space = self.get_configuration_space()
+        self.fidelity_space = self.get_fidelity_space()
+
+    @property
+    @abc.abstractmethod
+    def opt_fidelity(self) -> ConfigSpace.Configuration:
+        return self.get_fidelity_space().get_default_configuration()
 
     @abc.abstractmethod
     def objective_function(self, configuration: Dict, rng: Union[np.random.RandomState, int, None] = None,
@@ -86,7 +92,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
     @staticmethod
     def _check_configuration(foo):
         """
-        Decorator to enable checking the input configuration.
+        Decorator to enable checking the input configuration and, if given, fidelity parameters.
 
         Uses the check_configuration of the ConfigSpace class to ensure
         that all specified values are valid, and no conditionals are violated
@@ -94,6 +100,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Can be combined with the _configuration_as_array decorator.
         """
         def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict], **kwargs):
+            # Check the configuration
             if isinstance(configuration, np.ndarray):
                 try:
                     config_dict = {k: configuration[i] for (i, k) in enumerate(self.configuration_space)}
@@ -114,7 +121,23 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
                                 f'was {type(configuration)}')
 
             self.configuration_space.check_configuration(config)
-            return foo(self, configuration, **kwargs)
+
+            # Check the fidelities, if any
+            fidelity = self.opt_fidelity.get_dictionary()
+            if kwargs:
+                # If kwargs contain any fidelity parameters, take them out
+                given_fidelity = {k: kwargs.pop(k, v) for k, v in fidelity.items()}
+
+                # Ensure that the extracted fidelity values play well with the defined fidelity space
+                try:
+                    fidel_config = ConfigSpace.Configuration(self.fidelity_space, given_fidelity)
+                except Exception as e:
+                    raise Exception('Error during conversion of the provided fidelity parameters to the benchmark\'s '
+                                    'space of known fidelity parameters.') from e
+                self.fidelity_space.check_configuration(fidel_config)
+                fidelity = given_fidelity
+
+            return foo(self, configuration, **fidelity, **kwargs)
         return wrapper
 
     @staticmethod
@@ -192,6 +215,18 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         -------
         ConfigSpace.ConfigurationSpace
             A valid configuration space for the benchmark's parameters
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_fidelity_space() -> ConfigSpace.ConfigurationSpace:
+        """ Defines the available fidelity parameters as a "fidelity space" for each benchmark.
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+            A valid configuration space for the benchmark's fidelity parameters
         """
         raise NotImplementedError()
 
