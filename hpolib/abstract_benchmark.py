@@ -35,7 +35,6 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         self.fidelity_space = self.get_fidelity_space()
 
     @property
-    @abc.abstractmethod
     def opt_fidelity(self) -> ConfigSpace.Configuration:
         return self.get_fidelity_space().get_default_configuration()
 

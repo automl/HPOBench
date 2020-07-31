@@ -240,8 +240,8 @@ class XGBoostBenchmark(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformFloatHyperparameter("subsample", lower=0.1, upper=1.0, default=1.0, log=False),
-            CS.UniformIntegerHyperparameter("n_estimators", lower=2, upper=128, default=128, log=False)
+            CS.UniformFloatHyperparameter("subsample", lower=0.1, upper=1.0, default_value=1.0, log=False),
+            CS.UniformIntegerHyperparameter("n_estimators", lower=2, upper=128, default_value=128, log=False)
         ])
 
         return fidel_space
