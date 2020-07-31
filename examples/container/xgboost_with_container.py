@@ -38,7 +38,7 @@ def run_experiment(on_travis: bool = False):
 
         b = Benchmark(task_id=task_id,
                       container_name='xgboost_benchmark',
-                      container_source='library://phmueller/automl') # /home/eggenspk/Work/git/HPOlib3/hpolib/container/recipes/ml/')
+                      container_source='library://phmueller/automl')
 
         cs = b.get_configuration_space()
         start = time()
