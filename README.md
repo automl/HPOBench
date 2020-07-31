@@ -44,7 +44,7 @@ pip install .[singularity]
 ## Available Containerized Benchmarks
 
 | Benchmark Name                    | Container Name     | Container Source                     | Hosted at | Additional Info                      |
-| :-------------------------------- | ------------------ | ------------------------------------ | ------------------------------------------------ |
+| :-------------------------------- | ------------------ | ------------------------------------ | ----------|-------------------------------------- |
 | XGBoostBenchmark                  | xgboost_benchmark  | library://phmueller/automl/xgboost_benchmark | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f610eae86dd3232deb5a5) | Work with OpenML task ids |
 | CartpoleFull                      | cartpole           | library://phmueller/automl/cartpole  | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f310084a01836e4395601) | Not deterministic                    |
 | CartpoleReduced                   | cartpole           | library://phmueller/automl/cartpole  | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f310084a01836e4395601) | Not deterministic                    |
