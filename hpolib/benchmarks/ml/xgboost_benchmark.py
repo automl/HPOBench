@@ -225,7 +225,7 @@ class XGBoostBenchmark(AbstractBenchmark):
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
         Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
-        the XGBoost Model
+        the XGBoost Benchmark
 
         Parameters
         ----------

@@ -67,6 +67,30 @@ class CartpoleBase(AbstractBenchmark):
         """ Returns the CS.ConfigurationSpace of the benchmark. """
         raise NotImplementedError()
 
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        all Cartpole Benchmarks
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        fidel_space.add_hyperparameters([
+            CS.UniformIntegerHyperparameter('budget', lower=1, upper=9, default_value=9)
+        ])
+
+        return fidel_space
+
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     def objective_function(self, configuration: Union[Dict, CS.Configuration], budget: Optional[int] = 9,

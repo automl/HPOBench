@@ -169,6 +169,30 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         cs.seed(seed)
         return cs
 
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        the NAS Benchmark 101.
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        fidel_space.add_hyperparameters([
+            CS.CategoricalHyperparameter('budget', choices=[4, 12, 36, 108], default_value=108)
+        ])
+
+        return fidel_space
+
 
 class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',

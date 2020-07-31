@@ -167,6 +167,30 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         cs.seed(seed)
         return cs
 
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        the FCNetBaseBenchmark
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        fidel_space.add_hyperparameters([
+            CS.UniformIntegerHyperparameter('budget', lower=1, upper=100, default_value=100)
+        ])
+
+        return fidel_space
+
     def _reset_tracker(self):
         """ Helper function to reset the internal memory of the benchmark. """
         self.benchmark.X = []

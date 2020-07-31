@@ -232,6 +232,30 @@ class BaseLearna(AbstractBenchmark):
         return config_space
 
     @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        a Learna Benchmark.
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        fidel_space.add_hyperparameters([
+            CS.UniformFloat('cutoff_agent_per_sequence', lower=1, upper=600, default_value=600)
+        ])
+
+        return fidel_space
+
+    @staticmethod
     def _fill_config(configuration: Dict) -> Dict:
         """ Helper function to fill the configuration space with the missing parameters """
 
