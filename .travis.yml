@@ -15,14 +15,14 @@ jobs:
   - python: "3.7"
     env: RUN_CODESTYLE="true"
   - python: "3.7"
-    dist: bionic
+    dist: xenial
     env:
       - RUN_CONTAINER_EXAMPLES="true"
       - USE_SINGULARITY="true"
   - python: "3.7"
     dist: xenial
     env:
-      - RUN_CONTAINER_EXAMPLES="true"
+      - RUN_LOCAL_EXAMPLES="true"
       - USE_SINGULARITY="true"
 
 before_cache:

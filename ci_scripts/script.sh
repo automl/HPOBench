@@ -21,3 +21,8 @@ if [[ "$RUN_CONTAINER_EXAMPLES" == "true" ]]; then
     echo "Run containerized examples"
     chmod +x ci_scripts/container_examples.sh && source ./ci_scripts/container_examples.sh
 fi
+
+if [[ "$RUN_LOCAL_EXAMPLES" == "true" ]]; then
+    echo "Run containerized examples"
+    chmod +x ci_scripts/local_examples.sh && source ./ci_scripts/local_examples.sh
+fi
