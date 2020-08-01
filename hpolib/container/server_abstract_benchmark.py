@@ -85,6 +85,17 @@ class BenchmarkServer:
         logger.debug(f'Server: Configspace: {result}')
         return csjson.write(result, indent=None)
 
+    def get_fidelity_space(self, kwargs_str: str) -> str:
+        logger.debug(f'Server: get_fidelity_space: kwargs_str: {kwargs_str}')
+        seed = None
+        if kwargs_str != "{}":
+            kwargs = json.loads(kwargs_str)
+            seed = kwargs.get('seed', None)
+
+        result = self.benchmark.get_fidelity_space(seed=seed)
+        logger.debug(f'Server: Fidelity Space: {result}')
+        return csjson.write(result, indent=None)
+
     def objective_function_list(self, c_str: str, kwargs_str: str) -> str:
         configuration = json.loads(c_str)
         result = self.benchmark.objective_function(configuration, **json.loads(kwargs_str))

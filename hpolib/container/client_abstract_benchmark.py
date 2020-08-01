@@ -276,6 +276,27 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         json_str = self.benchmark.get_configuration_space(seed_dict)
         return csjson.read(json_str)
 
+    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Get the fidelity space as a ConfigurationSpace object from the benchmark.
+
+        Parameters
+        ----------
+        seed : int, None
+            seed for the configuration space object. If None:  a random seed will be used.
+
+        Returns
+        -------
+            CS.ConfigurationSpace
+        """
+        seed_dict = {}
+        if seed is not None:
+            seed_dict['seed'] = seed
+        seed_dict = json.dumps(seed_dict, indent=None)
+        logger.debug(f'Client: seed_dict {seed_dict}')
+        json_str = self.benchmark.get_fidelity_space(seed_dict)
+        return csjson.read(json_str)
+
     def get_meta_information(self) -> Dict:
         """ Return the information about the benchmark. """
         json_str = self.benchmark.get_meta_information()
