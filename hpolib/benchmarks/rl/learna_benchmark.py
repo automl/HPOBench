@@ -295,6 +295,7 @@ class Learna(BaseLearna):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
                            cutoff_agent_per_sequence: Union[int, float, None] = 600,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -345,6 +346,7 @@ class Learna(BaseLearna):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 cutoff_agent_per_sequence: Union[int, float, None] = 600,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:

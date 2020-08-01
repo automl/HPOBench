@@ -35,7 +35,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         self.fidelity_space = self.get_fidelity_space()
 
     @property
-    def opt_fidelity(self) -> ConfigSpace.Configuration:
+    def default_fidelity(self) -> ConfigSpace.Configuration:
         return self.get_fidelity_space().get_default_configuration()
 
     @abc.abstractmethod
@@ -99,7 +99,6 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Can be combined with the _configuration_as_array decorator.
         """
         def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict], **kwargs):
-            # Check the configuration
             if isinstance(configuration, np.ndarray):
                 try:
                     config_dict = {k: configuration[i] for (i, k) in enumerate(self.configuration_space)}
@@ -120,9 +119,23 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
                                 f'was {type(configuration)}')
 
             self.configuration_space.check_configuration(config)
+            return foo(self, configuration, **kwargs)
+        return wrapper
 
-            # Check the fidelities, if any
-            fidelity = self.opt_fidelity.get_dictionary()
+    @staticmethod
+    def _check_fidelity(foo):
+        """
+        Decorator to enable checking the input fidelity parameters, if any.
+
+        Uses the check_configuration of the ConfigSpace class to ensure
+        that all specified values are valid, and no conditionals are violated.
+
+        Order independent from the _check_configuration decorator, but it does forward all fidelity parameters,
+        regardless of input, as keyword arguments.
+        """
+        def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict], **kwargs):
+
+            fidelity = self.default_fidelity.get_dictionary()
             if kwargs:
                 # If kwargs contain any fidelity parameters, take them out
                 given_fidelity = {k: kwargs.pop(k, v) for k, v in fidelity.items()}

@@ -54,6 +54,7 @@ class FCNetBaseBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            budget: Union[int, None] = 100,
                            run_index: Union[int, Tuple, List, None] = (0, 1, 2, 3),
@@ -120,6 +121,7 @@ class FCNetBaseBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 rng: Union[np.random.RandomState, int, None] = None,
                                 **kwargs) -> Dict:

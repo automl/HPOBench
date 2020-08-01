@@ -75,6 +75,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            budget: Union[int, None] = 108,
                            reset: Union[bool, None] = True,
@@ -119,6 +120,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 budget: Union[int, None] = 108,
                                 rng: Union[np.random.RandomState, int, None] = None,
@@ -188,7 +190,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.CategoricalHyperparameter('budget', choices=[4, 12, 36, 108], default_value=108)
+            CS.OrdinalHyperparameter('budget', sequence=[4, 12, 36, 108], default_value=108)
         ])
 
         return fidel_space

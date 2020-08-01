@@ -93,6 +93,7 @@ class CartpoleBase(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[Dict, CS.Configuration], budget: Optional[int] = 9,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
@@ -180,6 +181,7 @@ class CartpoleBase(AbstractBenchmark):
                 'all_runs': converged_episodes}
 
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function_test(self, config: Union[Dict, CS.Configuration], budget: Optional[int] = 9,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """

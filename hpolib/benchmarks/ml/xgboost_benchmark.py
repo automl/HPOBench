@@ -90,6 +90,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[Dict, CS.Configuration], n_estimators: int = 128,
                            subsample: float = 1,
                            shuffle: bool = False, rng: Union[np.random.RandomState, int, None] = None,
@@ -151,6 +152,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 subsample: float = 1, n_estimators: int = 128,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
