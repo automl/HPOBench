@@ -23,10 +23,11 @@ VERSION v0.0.1
     && mv data/rfam_learn/train data/rfam_learn_train \
     && rm -rf data/rfam_learn \
     && chmod -R 755 data/ \
-    && cd /home \
-    && git clone https://github.com/PhMueller/HPOlib3.git \
+
+    cd /home \
+    && git clone https://github.com/automl/HPOlib3.git \
     && cd HPOlib3 \
-    && git checkout singularity \
+    && git checkout development \
     && ../learna/thirdparty/miniconda/miniconda/envs/learna/bin/python -m pip install .[singularity] \
     && cd / \
     && mkdir /var/lib/hpolib3/ \
