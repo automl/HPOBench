@@ -156,6 +156,29 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         """ Provides interface to use, e.g., SciPy optimizers """
         return self.objective_function(configuration, **kwargs)['function_value']
 
+    def test(self, n_runs: int = 5, *args, **kwargs) -> Tuple[List, List]:
+        """
+        Draws some random configuration and call objective_function(_test).
+
+        Parameters
+        ----------
+        n_runs : int
+            number of random configurations to draw and evaluate
+
+        Returns
+        -------
+        Tuple[List, List]
+        """
+        train_rvals = []
+        test_rvals = []
+
+        for _ in range(n_runs):
+            configuration = self.configuration_space.sample_configuration()
+            train_rvals.append(self.objective_function(configuration, *args, **kwargs))
+            test_rvals.append(self.objective_function_test(configuration, *args, **kwargs))
+
+        return train_rvals, test_rvals
+
     @staticmethod
     @abc.abstractmethod
     def get_configuration_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:

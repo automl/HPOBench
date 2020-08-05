@@ -118,6 +118,10 @@ class BenchmarkServer:
         result = self.benchmark.objective_function_test(configuration, **json.loads(kwargs_str))
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
+    def test(self, args_str, kwargs_str):
+        result = self.benchmark.test(*json.loads(args_str), **json.loads(kwargs_str))
+        return json.dumps(result, indent=None, cls=BenchmarkEncoder)
+
     def get_meta_information(self):
         logger.debug('Server: get_meta_info called')
         return json.dumps(self.benchmark.get_meta_information(), indent=None)

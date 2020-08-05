@@ -251,6 +251,10 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         else:
             raise ValueError(f'Type of config not understood: {type(configuration)}')
 
+    def test(self, *args, **kwargs):
+        result = self.benchmark.test(json.dumps(args), json.dumps(kwargs))
+        return json.loads(result)
+
     def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
         Get the configuration space object from the benchmark.
