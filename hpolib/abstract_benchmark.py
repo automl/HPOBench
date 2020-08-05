@@ -34,10 +34,6 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         self.configuration_space = self.get_configuration_space()
         self.fidelity_space = self.get_fidelity_space()
 
-    @property
-    def default_fidelity(self) -> ConfigSpace.Configuration:
-        return self.get_fidelity_space().get_default_configuration()
-
     @abc.abstractmethod
     def objective_function(self, configuration: Dict, rng: Union[np.random.RandomState, int, None] = None,
                            *args, **kwargs) -> dict:
@@ -125,31 +121,37 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
     @staticmethod
     def _check_fidelity(foo):
         """
-        Decorator to enable checking the input fidelity parameters, if any.
+        Decorator to enable checking the input fidelity parameters, if any. Wrapped functions are expected to contain
+        an optional 'fidelity':keyword argument, which would in turn contain a dictionary of the requested fidelity
+        parameters. If any specific parameter is missing or the entire argument is missing, the corresponding default
+        values are filled in.
 
-        Uses the check_configuration of the ConfigSpace class to ensure
-        that all specified values are valid, and no conditionals are violated.
+        Uses the check_configuration of the ConfigSpace class to ensure that all specified values are valid, and no
+        conditionals are violated.
 
         Order independent from the _check_configuration decorator, but it does forward all fidelity parameters,
-        regardless of input, as keyword arguments.
+        regardless of input, as a dictionary in the 'fidelity' keyword argument.
         """
         def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict], **kwargs):
 
-            fidelity = self.default_fidelity.get_dictionary()
-            if kwargs:
-                # If kwargs contain any fidelity parameters, take them out
-                given_fidelity = {k: kwargs.pop(k, v) for k, v in fidelity.items()}
+            # Initialize with default values
+            fidelity = self.get_fidelity_space().get_default_configuration().get_dictionary()
+
+            kwargs_fidelity = kwargs.pop("fidelity", None)
+            if kwargs_fidelity:
+                # If kwargs contains the 'fidelity' arg, extract any fidelity parameters it contains and fill in
+                # default values for the rest.
+                fidelity = {k: kwargs_fidelity.pop(k, v) for k, v in fidelity.items()}
 
                 # Ensure that the extracted fidelity values play well with the defined fidelity space
                 try:
-                    fidel_config = ConfigSpace.Configuration(self.fidelity_space, given_fidelity)
+                    fidel_config = ConfigSpace.Configuration(self.fidelity_space, fidelity)
                 except Exception as e:
                     raise Exception('Error during conversion of the provided fidelity parameters to the benchmark\'s '
                                     'space of known fidelity parameters.') from e
                 self.fidelity_space.check_configuration(fidel_config)
-                fidelity = given_fidelity
 
-            return foo(self, configuration, **fidelity, **kwargs)
+            return foo(self, configuration, fidelity=fidelity, **kwargs)
         return wrapper
 
     @staticmethod
