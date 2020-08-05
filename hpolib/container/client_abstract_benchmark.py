@@ -29,7 +29,6 @@ import ConfigSpace as CS
 import Pyro4
 import numpy as np
 from ConfigSpace.read_and_write import json as csjson
-from oslo_concurrency import lockutils
 
 import hpolib.config
 
@@ -102,28 +101,16 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         if container_source is not None \
                 and any((s in container_source for s in ['shub', 'library', 'docker', 'oras', 'http'])):
 
-            # Racing conditions:
-            # If a process is already loading the files. Let all other processes wait.
-            # Following
-            # https://github.com/dhellmann/oslo.concurrency/blob/master/openstack/common/lockutils.py (line 56)
-            # we dont need to handle any exception which can occur in the download_container-method. The lock is
-            # released if the process crashes.
-            @lockutils.synchronized('not_thread_process_safe', external=True,
-                                    lock_path=f'{self.config.cache_dir}/lock_{container_name}')
-            def download_container(container_dir, container_name, container_source):
-                if not (container_dir / container_name).exists():
-                    logger.debug('Going to pull the container from an online source.')
+            if not (container_dir / container_name).exists():
+                logger.debug('Going to pull the container from an online source.')
 
-                    container_dir.mkdir(parents=True, exist_ok=True)
-                    cmd = f"singularity pull --dir {self.config.container_dir} " \
-                          f"--name {container_name} {container_source}/{container_name.lower()}"
-                    logger.debug(cmd)
-                    subprocess.run(cmd, shell=True)
-                    time.sleep(1)
-                else:
-                    logger.debug('Skipping downloading the container. It is already downloaded.')
-
-            download_container(container_dir, container_name, container_source)
+                container_dir.mkdir(parents=True, exist_ok=True)
+                cmd = f"singularity pull --dir {self.config.container_dir} " \
+                      f"--name {container_name} {container_source}/{container_name.lower()}"
+                logger.debug(cmd)
+                subprocess.run(cmd, shell=True)
+            else:
+                logger.debug('Skipping downloading the container. It is already downloaded.')
         else:
             logger.debug(f'Looking on the local filesystem for the container file, since container source was '
                          f'either \'None\' or not a known address. Image Source: {container_source}')
