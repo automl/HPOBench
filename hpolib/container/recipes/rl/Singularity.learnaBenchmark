@@ -23,7 +23,8 @@ VERSION v0.0.1
     && mv data/rfam_learn/train data/rfam_learn_train \
     && rm -rf data/rfam_learn \
     && chmod -R 755 data/ \
-    && cd /home \
+
+    cd /home \
     && git clone https://github.com/automl/HPOlib3.git \
     && cd HPOlib3 \
     && git checkout development \
