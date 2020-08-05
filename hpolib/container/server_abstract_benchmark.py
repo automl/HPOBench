@@ -69,10 +69,9 @@ class BenchmarkServer:
                 self.benchmark = Benchmark(**kwargs)  # noqa: F821
             else:
                 self.benchmark = Benchmark()  # noqa: F821
+            logger.info('Server: Connected Successfully')
         except Exception as e:
-            print(e)
-            logger.error(e)
-        logger.info('Server: Connected Successfully')
+            logger.exception(e)
 
     def get_configuration_space(self, kwargs_str: str) -> str:
         logger.debug(f'Server: get_config_space: kwargs_str: {kwargs_str}')
@@ -116,10 +115,6 @@ class BenchmarkServer:
 
         configuration = json.loads(c_str)
         result = self.benchmark.objective_function_test(configuration, **json.loads(kwargs_str))
-        return json.dumps(result, indent=None, cls=BenchmarkEncoder)
-
-    def test(self, args_str, kwargs_str):
-        result = self.benchmark.test(*json.loads(args_str), **json.loads(kwargs_str))
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
     def get_meta_information(self):
