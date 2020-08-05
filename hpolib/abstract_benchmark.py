@@ -1,7 +1,7 @@
 """ Base-class of all benchmarks """
 
 import abc
-from typing import Tuple, Union, Dict, List
+from typing import Union, Dict
 
 import ConfigSpace
 import numpy as np
