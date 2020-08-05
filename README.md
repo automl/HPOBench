@@ -84,11 +84,11 @@ result_dict = b.objective_function_test(config, n_estimators=128, subsample=0.5)
 # HPOlib data
 HPOlib stores downloaded containers and datasets at the following locations:
 
-`bash
+```bash
 $XDG_CONFIG_HOME # ~/.config/hpolib3
 $XDG_CACHE_HOME # ~/.config/hpolib3
 $XDG_DATA_HOME # ~/.cache/hpolib3
-`
+```
 
 # OpenML data
 
