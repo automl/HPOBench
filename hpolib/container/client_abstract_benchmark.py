@@ -48,7 +48,6 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
     Attributes
     ----------
     socket_id : str
-
     """
     def __init__(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
                  gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
