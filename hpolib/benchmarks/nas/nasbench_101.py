@@ -25,7 +25,7 @@ cd /path/to/HPOlib3
 pip install .[nasbench_101]
 
 pip install git+https://github.com/google-research/nasbench.git@master
-pip install git+https//github.com/automl/nas_benchmarks.git@master
+pip install git+https://github.com/automl/nas_benchmarks.git@master
 ```
 
 Notes:

@@ -6,16 +6,7 @@ HPOlib3 is a library for hyperparameter optimization and black-box optimization 
 
 ## In 4 lines of code
 
-Evaluate a random configuration locally (requires all dependencies for XGB to be installed)
-
-```python
-from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
-b = XGBoostBenchmark(task_id=167149)
-config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function_test(config, n_estimators=128, subsample=0.5)
-```
-
-Run a random configuration within a singularity container (does not need any dependencies)
+Run a random configuration within a singularity container (requires singularity dependencies: `pip install .[singularity]`)
 ```python
 from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl')
@@ -23,53 +14,92 @@ config = b.get_configuration_space(seed=1).sample_configuration()
 result_dict = b.objective_function_test(config, n_estimators=128, subsample=0.5)
 ```
 
-Containerized benchmarks do not rely on external dependencies and thus do not change. To do so, we rely on [Singularity (version 3.5)](https://sylabs.io/guides/3.5/user-guide/). To install singularity, 
-please follow the instructions in its [user-guide](https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps).   
-However, each benchmark can also be used without singularity, but the dependencies might conflict.
+Containerized benchmarks do not rely on external dependencies and thus do not change. To do so, we rely on [Singularity (version 3.5)](https://sylabs.io/guides/3.5/user-guide/).
  
-Further requirements are: the [ConfigSpace](https://github.com/automl/ConfigSpace) package, *scikit-learn*, *scipy*, *numpy*, 
-*python-openml*. 
+Further requirements are: [ConfigSpace](https://github.com/automl/ConfigSpace), *scipy* and *numpy* 
+
+**Note:** Each benchmark can also be run locally, but the dependencies must be installed manually and might conflict with other benchmarks. 
+ This can be arbitrarily complex and further information can be found in the docstring of the benchmark.
+ 
+A simple example is the XGBoost benchmark which can be installed with `pip install .[xgboost]`
+```python
+from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
+b = XGBoostBenchmark(task_id=167149)
+config = b.get_configuration_space(seed=1).sample_configuration()
+result_dict = b.objective_function_test(config, n_estimators=128, subsample=0.5)
+```
 
 ## Installation
 
-Before we start, we recommend using a virtual environment.
- 
-In general, we can install HPOLib3 and specify its extra requirements via \
-``` pip install <path_to_hpolib3_repository>[extra requirements] ```\
+Before we start, we recommend using a virtual environment. To run any benchmark using its singularity container, 
+run the following:
+```
+git clone https://github.com/automl/HPOlib3.git
+cd HPOlib3 
+pip install .[singularity]
+```
 
-For the Xgboost benchmark we need the following command:
-``` pip install .[singularity] ```
-*Note:* This doesn't install singularity. Please install it using the link above. 
-*Note:* To run a benchmark locally all dependencies for this benchmarks need to be installed. To do so, please use `pip install .[<name>]` and check 
-the docstring of the benchmark you want to run locally. 
+**Note:** This does not install *singularity (version 3.5)*. Please follow the steps described here: [user-guide](https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps).   
 
-## Available Experiments with container
+## Available Containerized Benchmarks
 
-| Benchmark Name                                            | Container Name                             | Container Source                                             | Additional Info                                              |
-| :-------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| <font size="2em">XGBoostBenchmark</font>                  | <font size="2em">xgboost_benchmark</font>  | <font size="2em">library://phmueller/automl/xgboost_benchmark</font> | <font size="2em">Pass a openml task id to the dataset </font> |
-| <font size="2em">CartpoleFull</font>                      | <font size="2em">cartpole</font>           | <font size="2em">library://phmueller/automl/cartpole</font>  | <font size="2em">Not deterministic</font>                    |
-| <font size="2em">CartpoleReduced</font>                   | <font size="2em">cartpole</font>           | <font size="2em">library://phmueller/automl/cartpole</font>  | <font size="2em">Not deterministic</font>                    |
-| <font size="2em">Learna</font>                            | <font size="2em">learna_benchmark</font>   | <font size="2em">library://phmueller/automl/learna_benchmark</font> | <font size="2em">Not deterministic</font>                    |
-| <font size="2em">MetaLearna</font>                        | <font size="2em">learna_benchmark</font>   | <font size="2em">library://phmueller/automl/learna_benchmark</font> | <font size="2em">Not deterministic</font>                    |
-| <font size="2em">SliceLocalizationBenchmark</font>        | <font size="2em">tabular_benchmarks</font> | <font size="2em">library://phmueller/automl/tabular_benchmarks</font> | <font size="2em">Loading may take several minutes</font>     |
-| <font size="2em">ProteinStructureBenchmark</font>         | <font size="2em">tabular_benchmarks</font> | <font size="2em">library://phmueller/automl/tabular_benchmarks</font> | <font size="2em">Loading may take several minutes</font>     |
-| <font size="2em">NavalPropulsionBenchmark</font>          | <font size="2em">tabular_benchmarks</font> | <font size="2em">library://phmueller/automl/tabular_benchmarks</font> | <font size="2em">Loading may take several minutes</font>     |
-| <font size="2em">ParkinsonsTelemonitoringBenchmark</font> | <font size="2em">tabular_benchmarks</font> | <font size="2em">library://phmueller/automl/tabular_benchmarks</font> | <font size="2em">Loading may take several minutes</font>     |
-| <font size="2em">NASCifar10ABenchmark</font>              | <font size="2em">nasbench_101</font>       | <font size="2em">library://phmueller/automl/nasbench_101</font> | <font size="2em"> </font>                                    |
-| <font size="2em">NASCifar10BBenchmark</font>              | <font size="2em">nasbench_101</font>       | <font size="2em">library://phmueller/automl/nasbench_101</font> | <font size="2em"> </font>                                    |
-| <font size="2em">NASCifar10CBenchmark</font>              | <font size="2em">nasbench_101</font>       | <font size="2em">library://phmueller/automl/nasbench_101</font> | <font size="2em"> </font>                                    |
+| Benchmark Name                    | Container Name     | Container Source                     | Hosted at | Additional Info                      |
+| :-------------------------------- | ------------------ | ------------------------------------ | ----------|-------------------------------------- |
+| XGBoostBenchmark                  | xgboost_benchmark  | library://phmueller/automl/xgboost_benchmark | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f610eae86dd3232deb5a5) | Works with OpenML task ids |
+| CartpoleFull                      | cartpole           | library://phmueller/automl/cartpole  | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f310084a01836e4395601) | Not deterministic                    |
+| CartpoleReduced                   | cartpole           | library://phmueller/automl/cartpole  | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f310084a01836e4395601) | Not deterministic                    |
+| Learna                            | learna_benchmark   | library://phmueller/automl/learna_benchmark | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f31c3b1793638c1134e58) | Not deterministic                    |
+| MetaLearna                        | learna_benchmark   | library://phmueller/automl/learna_benchmark | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f31c3b1793638c1134e58) | Not deterministic                    |
+| SliceLocalizationBenchmark        | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f630cb1793638c1134e5d) | Loading may take several minutes     |
+| ProteinStructureBenchmark         | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f630cb1793638c1134e5d) | Loading may take several minutes     |
+| NavalPropulsionBenchmark          | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f630cb1793638c1134e5d) | Loading may take several minutes     |
+| ParkinsonsTelemonitoringBenchmark | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/_container/5f0f630cb1793638c1134e5d) | Loading may take several minutes     |
+| NASCifar10ABenchmark              | nasbench_101       | library://phmueller/automl/nasbench_101 | [Sylabs](https://cloud.sylabs.io/library/_container/5f227263b1793638c1135c37) |                                     |
+| NASCifar10BBenchmark              | nasbench_101       | library://phmueller/automl/nasbench_101 | [Sylabs](https://cloud.sylabs.io/library/_container/5f227263b1793638c1135c37) |                                     |
+| NASCifar10CBenchmark              | nasbench_101       | library://phmueller/automl/nasbench_101 | [Sylabs](https://cloud.sylabs.io/library/_container/5f227263b1793638c1135c37) |                                     |
 
 ## Further Notes
 
-- The usage of different OpenML task ids is shown in the example 'XGBoost_with_container.py'
-- To use a local image, (without downloading it from the sylabs-library), add the parameter 
-`container-source=<path-to-directory-in-which-the-image-is>` in the Benchmark initialization.
-E.g. (see XGBoost_with_container.py) \
+### How to build a container locally
+
+With singularity installed run the following to built the xgboost container
+
+```bash
+cd hpolib/container/recipes/ml
+sudo singularity build xgboost_benchmark Singularity.XGBoostBenchmark
 ```
-b = Benchmark(rng=my_rng, container_name='xgboost_benchmark', 
-              container_source=<PATH>, task_id=task_id)
+
+You can use this local image with:
+
+```python
+from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
+b = XGBoostBenchmark(task_id=167149, container_name="xgboost_benchmark", 
+                     container_source='./') # path to hpolib/container/recipes/ml
+config = b.get_configuration_space(seed=1).sample_configuration()
+result_dict = b.objective_function_test(config, n_estimators=128, subsample=0.5)
 ```
+
+### Remove all caches
+
+# HPOlib data
+HPOlib stores downloaded containers and datasets at the following locations:
+
+```bash
+$XDG_CONFIG_HOME # ~/.config/hpolib3
+$XDG_CACHE_HOME # ~/.config/hpolib3
+$XDG_DATA_HOME # ~/.cache/hpolib3
+```
+
+# OpenML data
+
+OpenML data additionally maintains it's own cache with is found at `~/.openml/`
+
+# Singularity container
+
+Singularity additionally maintains it's own cache which can be removed with `singularity cache clean`
+
+### Troubleshooting
+
 - For users of the Meta-Cluster in Freiburg, you have to set the following path:\
 ```export PATH=/usr/local/kislurm/singularity-3.5/bin/:$PATH```} \
 - Singularity will throw an exception 'Invalid Image format' if you use a singularity version < 3

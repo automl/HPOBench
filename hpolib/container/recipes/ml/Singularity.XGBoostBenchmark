@@ -8,14 +8,11 @@ VERSION v0.0.1
 %post
     apt update -y \
     && apt install build-essential git -y \
-    && pip install numpy==1.18.1 cython==0.29.21 \
-    && pip install xgboost==0.90 \
-    && pip install pandas==0.24.2 \
     && cd /home \
-    && git clone https://github.com/PhMueller/HPOlib3.git \
+    && git clone https://github.com/automl/HPOlib3.git \
     && cd HPOlib3 \
-    && git checkout singularity \
-    && pip install .[singularity] \
+    && git checkout development \
+    && pip install .[singularity,xgboost] \
     && cd / \
     && mkdir /var/lib/hpolib3/ \
     && chmod -R 777 /var/lib/hpolib3/

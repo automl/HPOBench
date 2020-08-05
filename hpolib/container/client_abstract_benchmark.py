@@ -152,9 +152,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             else:
                 logger.debug(f'Could not start instance: Try {num_tries + 1}|{MAX_TRIES}')
                 if num_tries + 1 == MAX_TRIES:
-                    raise SystemError('Could not start a instance of the benchmark.')
-
-            time.sleep(1)
+                    raise SystemError('Could not start a instance of the benchmark. '
+                                      'Retried %d times' % MAX_TRIES)
+            st = np.random.randint(1, 60)
+            logger.critical(f"[{num_tries + 1}/{MAX_TRIES}] Could not start instance, sleeping for {st} seconds")
+            time.sleep(st)
 
         # Give each instance a little bit time to start
         time.sleep(1)
