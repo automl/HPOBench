@@ -33,4 +33,4 @@ VERSION v0.0.1
     echo "Finally, please change the benchmark in the runscript to point to your benchmark"
 
 %runscript
-    python -s /home/HPOlib3/hpolib/container/server_abstract_benchmark.py nas.nasbench_101 $@
+    python -s /home/HPOlib3/hpolib/container/server_abstract_benchmark.py <type>.new_benchmark_file $@
