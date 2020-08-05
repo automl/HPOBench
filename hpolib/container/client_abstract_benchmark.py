@@ -156,7 +156,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             time.sleep(1)
 
             # Check if the instance is started. Starting a instance crashes sometimes without a warning.
-            # Therefore try this step multiple times unless it is really started
+            # Therefore, try this step multiple times unless it is really started
             out = subprocess.getoutput('singularity instance list')
             out = out.split()
 
