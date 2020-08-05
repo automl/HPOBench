@@ -69,10 +69,9 @@ class BenchmarkServer:
                 self.benchmark = Benchmark(**kwargs)  # noqa: F821
             else:
                 self.benchmark = Benchmark()  # noqa: F821
+            logger.info('Server: Connected Successfully')
         except Exception as e:
-            print(e)
-            logger.error(e)
-        logger.info('Server: Connected Successfully')
+            logger.exception(e)
 
     def get_configuration_space(self, kwargs_str: str) -> str:
         logger.debug(f'Server: get_config_space: kwargs_str: {kwargs_str}')
