@@ -35,7 +35,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         self.fidelity_space = self.get_fidelity_space()
 
     @abc.abstractmethod
-    def objective_function(self, configuration: Dict, rng: Union[np.random.RandomState, int, None] = None,
+    def objective_function(self, configuration: Dict, fidelity: Dict = None,
+                           rng: Union[np.random.RandomState, int, None] = None,
                            *args, **kwargs) -> dict:
         """
         Objective function.
@@ -50,6 +51,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Parameters
         ----------
         configuration : Dict
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
             It might be useful to pass a `rng` argument to the function call to
             bypass the default "seed" generator. Only using the default random
@@ -64,7 +67,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def objective_function_test(self, configuration: Dict,  rng: Union[np.random.RandomState, int, None] = None,
+    def objective_function_test(self, configuration: Dict,  fidelity: Dict = None,
+                                rng: Union[np.random.RandomState, int, None] = None,
                                 *args, **kwargs) -> Dict:
         """
         If there is a different objective function for offline testing, e.g
@@ -74,6 +78,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Parameters
         ----------
         configuration : Dict
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
             see :py:func:`~HPOlib3.abstract_benchmark.objective_function`
 

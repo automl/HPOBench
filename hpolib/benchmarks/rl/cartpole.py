@@ -94,7 +94,7 @@ class CartpoleBase(AbstractBenchmark):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function(self, configuration: Union[Dict, CS.Configuration], budget: Optional[int] = 9,
+    def objective_function(self, configuration: Union[Dict, CS.Configuration], fidelity: Optional[Dict] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a Tensorforce RL agent on the cartpole experiment. This benchmark was used in the experiments for the
@@ -106,8 +106,8 @@ class CartpoleBase(AbstractBenchmark):
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-        budget : int, None
-            Num Agents. Defaults to 9
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
@@ -124,6 +124,7 @@ class CartpoleBase(AbstractBenchmark):
             all_runs : the episode length of all runs of all agents
         """
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
+        budget = fidelity["budget"]
         tf.random.set_random_seed(self.rng.randint(1, 100000))
         np.random.seed(self.rng.randint(1, 100000))
 
@@ -182,7 +183,7 @@ class CartpoleBase(AbstractBenchmark):
 
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function_test(self, config: Union[Dict, CS.Configuration], budget: Optional[int] = 9,
+    def objective_function_test(self, config: Union[Dict, CS.Configuration], fidelity: Optional[Dict] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate a configuration on the cartpole benchmark. Use the full budget.

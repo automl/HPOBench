@@ -174,7 +174,7 @@ class BaseLearna(AbstractBenchmark):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           cutoff_agent_per_sequence: Union[int, float, None] = 600,
+                           fidelity: Dict = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """ Interface for the obejctive function. """
         raise NotImplementedError()
@@ -182,7 +182,7 @@ class BaseLearna(AbstractBenchmark):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                cutoff_agent_per_sequence: Union[int, float, None] = 600,
+                                fidelity: Dict = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """ Interface for the test obejctive function. """
         raise NotImplementedError()
@@ -297,7 +297,7 @@ class Learna(BaseLearna):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           cutoff_agent_per_sequence: Union[int, float, None] = 600,
+                           fidelity: Dict = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Start the learna experiment. Dont train a RL agent. Just optimize on the sequences.
@@ -305,8 +305,8 @@ class Learna(BaseLearna):
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-        cutoff_agent_per_sequence : int, float, None
-            Optimizing each sequence is stopped after a given time interval. Defaults to 600s.
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None,
             Random seed for benchmark. By default the class level random seed.
 
@@ -329,7 +329,7 @@ class Learna(BaseLearna):
         config, network_config, agent_config, env_config = self._setup(configuration)
 
         start_time = time()
-        validation_info = self._validate(evaluation_timeout=cutoff_agent_per_sequence,
+        validation_info = self._validate(evaluation_timeout=fidelity["cutoff_agent_per_sequence"],
                                          restore_path=None,
                                          stop_learning=False,
                                          restart_timeout=config["restart_timeout"],
@@ -348,7 +348,7 @@ class Learna(BaseLearna):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                cutoff_agent_per_sequence: Union[int, float, None] = 600,
+                                fidelity: Dict = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate the Learna experiment.
@@ -356,8 +356,8 @@ class Learna(BaseLearna):
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-        cutoff_agent_per_sequence : int, float, None
-            Optimizing each sequence is stopped after a given time interval. Defaults to 600s.
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None,
             Random seed for benchmark. By default the class level random seed.
 
@@ -374,8 +374,8 @@ class Learna(BaseLearna):
             num_solved : int - number of soved sequences
             sum_of_first_distances : metric describing quality of result
         """
-        return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence, rng=rng,
-                                       **kwargs)
+        return self.objective_function(configuration, cutoff_agent_per_sequence=fidelity["cutoff_agent_per_sequence"],
+                                       rng=rng, **kwargs)
 
 
 class MetaLearna(BaseLearna):
@@ -383,10 +383,33 @@ class MetaLearna(BaseLearna):
         super(MetaLearna, self).__init__(data_path)
         self.config = hpolib.config.config_file
 
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Overwrites the BaseLearna fidelity space so that the default value of 'cutoff_agent_per_sequence' becomes 3600s.
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        fidel_space.add_hyperparameters([
+            CS.UniformFloat('cutoff_agent_per_sequence', lower=1, upper=3600, default_value=3600)
+        ])
+
+        return fidel_space
+
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           cutoff_agent_per_sequence: Union[int, float, None] = 3600,
+                           fidelity: Dict = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         MetaLearna trains an RL agent for 1 hour on the given training set and then tries to solve the sequences.
@@ -395,8 +418,8 @@ class MetaLearna(BaseLearna):
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-        cutoff_agent_per_sequence : int, float, None
-            Timelimit for training the RL agent. Defaults to 3600s.
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None,
             Random seed for benchmark. By default the class level random seed.
 
@@ -445,7 +468,7 @@ class MetaLearna(BaseLearna):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                cutoff_agent_per_sequence: Union[int, float, None] = 3600,
+                                fidelity: Dict = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate the MetaLearna experiment.
@@ -453,8 +476,8 @@ class MetaLearna(BaseLearna):
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-        cutoff_agent_per_sequence : int, float, None
-            Timelimit for training the RL agent. Defaults to 3600s.
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None,
             Random seed for benchmark. By default the class level random seed.
 
@@ -471,7 +494,7 @@ class MetaLearna(BaseLearna):
             num_solved : int - number of soved sequences
             sum_of_first_distances : metric describing quality of result
         """
-        return self.objective_function(configuration, cutoff_agent_per_sequence=cutoff_agent_per_sequence,
+        return self.objective_function(configuration, cutoff_agent_per_sequence=fidelity["cutoff_agent_per_sequence"],
                                        rng=rng, **kwargs)
 
     def _train(self, budget: Union[int, float], tmp_dir: Path, network_config: NetworkConfig,

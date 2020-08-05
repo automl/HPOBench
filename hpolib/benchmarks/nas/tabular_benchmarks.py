@@ -56,7 +56,7 @@ class FCNetBaseBenchmark(AbstractBenchmark):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
-                           budget: Union[int, None] = 100,
+                           fidelity: Dict = None,
                            run_index: Union[int, Tuple, List, None] = (0, 1, 2, 3),
                            reset: Union[bool, None] = True,
                            rng: Union[np.random.RandomState, int, None] = None,
@@ -67,7 +67,8 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-        budget : int, None
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         run_index : int, Tuple, None
             The nas benchmark has for each configuration-budget-pair results from 4 different runs.
             If multiple `run_id`s are given, the benchmark returns the mean over the given runs.
