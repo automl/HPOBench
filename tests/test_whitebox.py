@@ -17,7 +17,6 @@ def test_whitebox_without_container_xgb():
     b = Benchmark(task_id=167199, rng=0)
     cs = b.get_configuration_space(seed=0)
 
-    start = time()
     configuration = cs.get_default_configuration()
     assert configuration['colsample_bylevel'] == 1.0
     assert len(configuration.keys()) == 6
@@ -39,8 +38,7 @@ def test_whitebox_without_container_xgb():
 @pytest.mark.skipif(skip_container_test, reason="Requires singularity and flask")
 def test_whitebox_with_container():
     from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
-    b = Benchmark(container_source='library://phmueller/automl/',
-                  container_name='xgboost_benchmark',
+    b = Benchmark(container_name='xgboost_benchmark',
                   task_id=167199,
                   rng=0)
 
@@ -62,17 +60,16 @@ def test_whitebox_with_container():
     assert np.isclose(valid_loss, 0.3873, atol=0.001)
     assert np.isclose(test_loss, 0.38181, atol=0.001)
 
+
 def test_cartpole():
     from hpolib.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
-    b = Benchmark(container_source='library://phmueller/automl',
-                  container_name='cartpole',
+    b = Benchmark(container_name='cartpole',
                   rng=1)
     cs = b.get_configuration_space(seed=1)
     print(cs.get_default_configuration())
 
     from hpolib.container.benchmarks.rl.cartpole import CartpoleFull as Benchmark
-    b = Benchmark(container_source='library://phmueller/automl',
-                  container_name='cartpole',
+    b = Benchmark(container_name='cartpole',
                   rng=1)
     cs = b.get_configuration_space(seed=1)
     print(cs.get_default_configuration())

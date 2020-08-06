@@ -147,7 +147,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
             if kwargs_fidelity:
                 # If kwargs contains the 'fidelity' arg, extract any fidelity parameters it contains and fill in
                 # default values for the rest.
-                fidelity = {k: kwargs_fidelity.pop(k, v) for k, v in fidelity.items()}
+                fidelity = {k: kwargs_fidelity.get(k, v) for k, v in fidelity.items()}
 
                 # Ensure that the extracted fidelity values play well with the defined fidelity space
                 try:
