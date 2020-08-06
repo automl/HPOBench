@@ -124,7 +124,6 @@ class CartpoleBase(AbstractBenchmark):
             all_runs : the episode length of all runs of all agents
         """
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
-        budget = fidelity["budget"]
         tf.random.set_random_seed(self.rng.randint(1, 100000))
         np.random.seed(self.rng.randint(1, 100000))
 
@@ -144,7 +143,7 @@ class CartpoleBase(AbstractBenchmark):
 
         converged_episodes = []
 
-        for i in range(budget):
+        for i in range(fidelity["budget"]):
             agent = PPOAgent(states=self.env.states,
                              actions=self.env.actions,
                              network=network_spec,
@@ -178,7 +177,6 @@ class CartpoleBase(AbstractBenchmark):
         return {'function_value': np.mean(converged_episodes),
                 'cost': cost,
                 'info': {'max_episodes': self.max_episodes,
-                         'budget': budget,
                          'all_runs': converged_episodes,
                          'fidelity': fidelity
                          }
