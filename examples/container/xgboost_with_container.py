@@ -52,7 +52,8 @@ def run_experiment(on_travis: bool = False):
                     result_dict = b.objective_function(configuration.get_dictionary(),
                                                        fidelity=fidelity)
                     valid_loss = result_dict['function_value']
-                    train_loss = result_dict['train_loss']
+                    train_loss = result_dict['info']['train_loss']
+                    assert result_dict['info']['fidelity'] == fidelity
 
                     result_dict = b.objective_function_test(configuration, n_estimators=n_estimator)
                     test_loss = result_dict['function_value']
