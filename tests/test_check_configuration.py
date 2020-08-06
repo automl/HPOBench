@@ -49,20 +49,27 @@ class TestCheckUnittest(unittest.TestCase):
     def test_fidel_decorator(self):
         @AbstractBenchmark._check_fidelity
         def tmp(_, configuration: Dict, fidelity: Dict, **kwargs):
-            return configuration, fidelity
+            return configuration, fidelity, kwargs
 
         sample_fidel = dict(self.foo.get_fidelity_space().get_default_configuration())
-        _, ret = tmp(self=self.foo,
-                     configuration=self.foo.configuration_space.sample_configuration(),
-                     fidelity=sample_fidel)
+
+        _, ret, _ = tmp(self=self.foo,
+                        configuration=self.foo.configuration_space.sample_configuration(),
+                        fidelity=sample_fidel)
         self.assertEqual(ret, sample_fidel)
 
         less_fidel = {"f_cat": 1}
-        _, ret = tmp(self=self.foo,
-                     configuration=self.foo.configuration_space.sample_configuration(),
-                     fidelity=less_fidel)
+        _, ret, _ = tmp(self=self.foo,
+                        configuration=self.foo.configuration_space.sample_configuration(),
+                        fidelity=less_fidel)
         self.assertEqual(ret, sample_fidel)
 
-        _, ret = tmp(self=self.foo,
-                     configuration=self.foo.configuration_space.sample_configuration())
+        _, ret, _ = tmp(self=self.foo,
+                        configuration=self.foo.configuration_space.sample_configuration())
         self.assertEqual(ret, sample_fidel)
+
+        try:
+            tmp(self=self.foo, configuration=self.foo.configuration_space.sample_configuration(),
+                f_cat=1)
+        except ValueError as e:
+            self.assertEqual(e.__str__(), "Fidelity parameter f_cat should not be part of kwargs")

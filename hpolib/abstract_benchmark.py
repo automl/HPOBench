@@ -139,6 +139,10 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         regardless of input, as a dictionary in the 'fidelity' keyword argument.
         """
         def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict], **kwargs):
+            # Sanity check that there are no fidelities in **kwargs
+            for f in self.get_fidelity_space().get_hyperparameters():
+                if f.name in kwargs:
+                    raise ValueError("Fidelity parameter %s should not be part of kwargs" % f.name)
 
             # Initialize with default values
             fidelity = self.get_fidelity_space().get_default_configuration().get_dictionary()
