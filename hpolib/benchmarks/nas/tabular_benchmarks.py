@@ -54,8 +54,9 @@ class FCNetBaseBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
-                           budget: Union[int, None] = 100,
+                           fidelity: Dict = None,
                            run_index: Union[int, Tuple, List, None] = (0, 1, 2, 3),
                            reset: Union[bool, None] = True,
                            rng: Union[np.random.RandomState, int, None] = None,
@@ -66,7 +67,8 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-        budget : int, None
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         run_index : int, Tuple, None
             The nas benchmark has for each configuration-budget-pair results from 4 different runs.
             If multiple `run_id`s are given, the benchmark returns the mean over the given runs.
@@ -120,6 +122,7 @@ class FCNetBaseBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 rng: Union[np.random.RandomState, int, None] = None,
                                 **kwargs) -> Dict:
@@ -166,6 +169,30 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         cs = FCNetBenchmark.get_configuration_space()
         cs.seed(seed)
         return cs
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        the FCNetBaseBenchmark
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        fidel_space.add_hyperparameters([
+            CS.UniformIntegerHyperparameter('budget', lower=1, upper=100, default_value=100)
+        ])
+
+        return fidel_space
 
     def _reset_tracker(self):
         """ Helper function to reset the internal memory of the benchmark. """

@@ -48,9 +48,15 @@ def run_experiment(on_travis: bool = False):
             print(configuration)
             for n_estimator in [8, 64]:
                 for subsample in [0.4, 1]:
+                    # Old API ---- NO LONGER SUPPORTED ---- This will simply ignore the fidelities
+                    # result_dict = b.objective_function(configuration.get_dictionary(),
+                    #                                    n_estimators=n_estimator,
+                    #                                    subsample=subsample)
+                    
+                    # New API ---- Use this
+                    fidelity = {"n_estimators": n_estimators, "subsample": subsample}
                     result_dict = b.objective_function(configuration.get_dictionary(),
-                                                       n_estimators=n_estimator,
-                                                       subsample=subsample)
+                                                       fidelity=fidelity)
                     valid_loss = result_dict['function_value']
                     train_loss = result_dict['train_loss']
 

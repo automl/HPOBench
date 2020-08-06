@@ -75,8 +75,9 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
-                           budget: Union[int, None] = 108,
+                           fidelity: Dict = None,
                            reset: Union[bool, None] = True,
                            rng: Union[np.random.RandomState, int, None] = None,
                            **kwargs) -> Dict:
@@ -86,8 +87,8 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-        budget : int, None
-            Query the tabular benchmark at the `budget`-th epoch. Defaults to the maximum budget (108).
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         reset : bool, None
             Reset the internal memory of the benchmark. Should not have an effect. Default to True.
         rng : np.random.RandomState, int, None
@@ -104,6 +105,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
             function_value : validation error
             cost : runtime
         """
+        budget = fidelity["budget"]
         assert budget in [4, 12, 36, 108], f'This benchmark supports only budgets [4, 12, 36, 108], but was {budget}'
 
         if reset:
@@ -119,8 +121,9 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                budget: Union[int, None] = 108,
+                                fidelity: Dict = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
                                 **kwargs) -> Dict:
         """
@@ -129,7 +132,8 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-        budget : int, None
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
@@ -144,7 +148,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         """
         self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
 
-        test_error, runtime = self.benchmark.objective_function(config=configuration, budget=budget)
+        test_error, runtime = self.benchmark.objective_function(config=configuration, budget=fidelity["budget"])
         return {'function_value': float(test_error), 'cost': float(runtime)}
 
     @staticmethod
@@ -168,6 +172,30 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         cs = benchmark.get_configuration_space()
         cs.seed(seed)
         return cs
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        the NAS Benchmark 101.
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        fidel_space.add_hyperparameters([
+            CS.OrdinalHyperparameter('budget', sequence=[4, 12, 36, 108], default_value=108)
+        ])
+
+        return fidel_space
 
 
 class NASCifar10ABenchmark(NASCifar10BaseBenchmark):

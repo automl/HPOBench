@@ -32,9 +32,11 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
         self.rng = rng_helper.get_rng(rng=rng)
         self.configuration_space = self.get_configuration_space()
+        self.fidelity_space = self.get_fidelity_space()
 
     @abc.abstractmethod
-    def objective_function(self, configuration: Dict, rng: Union[np.random.RandomState, int, None] = None,
+    def objective_function(self, configuration: Dict, fidelity: Dict = None,
+                           rng: Union[np.random.RandomState, int, None] = None,
                            *args, **kwargs) -> dict:
         """
         Objective function.
@@ -49,6 +51,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Parameters
         ----------
         configuration : Dict
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
             It might be useful to pass a `rng` argument to the function call to
             bypass the default "seed" generator. Only using the default random
@@ -63,7 +67,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def objective_function_test(self, configuration: Dict,  rng: Union[np.random.RandomState, int, None] = None,
+    def objective_function_test(self, configuration: Dict,  fidelity: Dict = None,
+                                rng: Union[np.random.RandomState, int, None] = None,
                                 *args, **kwargs) -> Dict:
         """
         If there is a different objective function for offline testing, e.g
@@ -73,6 +78,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Parameters
         ----------
         configuration : Dict
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
             see :py:func:`~HPOlib3.abstract_benchmark.objective_function`
 
@@ -86,7 +93,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
     @staticmethod
     def _check_configuration(foo):
         """
-        Decorator to enable checking the input configuration.
+        Decorator to enable checking the input configuration and, if given, fidelity parameters.
 
         Uses the check_configuration of the ConfigSpace class to ensure
         that all specified values are valid, and no conditionals are violated
@@ -115,6 +122,42 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
             self.configuration_space.check_configuration(config)
             return foo(self, configuration, **kwargs)
+        return wrapper
+
+    @staticmethod
+    def _check_fidelity(foo):
+        """
+        Decorator to enable checking the input fidelity parameters, if any. Wrapped functions are expected to contain
+        an optional 'fidelity':keyword argument, which would in turn contain a dictionary of the requested fidelity
+        parameters. If any specific parameter is missing or the entire argument is missing, the corresponding default
+        values are filled in.
+
+        Uses the check_configuration of the ConfigSpace class to ensure that all specified values are valid, and no
+        conditionals are violated.
+
+        Order independent from the _check_configuration decorator, but it does forward all fidelity parameters,
+        regardless of input, as a dictionary in the 'fidelity' keyword argument.
+        """
+        def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict], **kwargs):
+
+            # Initialize with default values
+            fidelity = self.get_fidelity_space().get_default_configuration().get_dictionary()
+
+            kwargs_fidelity = kwargs.pop("fidelity", None)
+            if kwargs_fidelity:
+                # If kwargs contains the 'fidelity' arg, extract any fidelity parameters it contains and fill in
+                # default values for the rest.
+                fidelity = {k: kwargs_fidelity.pop(k, v) for k, v in fidelity.items()}
+
+                # Ensure that the extracted fidelity values play well with the defined fidelity space
+                try:
+                    fidel_config = ConfigSpace.Configuration(self.fidelity_space, fidelity)
+                except Exception as e:
+                    raise Exception('Error during conversion of the provided fidelity parameters to the benchmark\'s '
+                                    'space of known fidelity parameters.') from e
+                self.fidelity_space.check_configuration(fidel_config)
+
+            return foo(self, configuration, fidelity=fidelity, **kwargs)
         return wrapper
 
     @staticmethod
@@ -169,6 +212,18 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         -------
         ConfigSpace.ConfigurationSpace
             A valid configuration space for the benchmark's parameters
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_fidelity_space() -> ConfigSpace.ConfigurationSpace:
+        """ Defines the available fidelity parameters as a "fidelity space" for each benchmark.
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+            A valid configuration space for the benchmark's fidelity parameters
         """
         raise NotImplementedError()
 

@@ -90,8 +90,9 @@ class XGBoostBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function(self, configuration: Union[Dict, CS.Configuration], n_estimators: int = 128,
-                           subsample: float = 1,
+    @AbstractBenchmark._check_fidelity
+    def objective_function(self, configuration: Union[Dict, CS.Configuration],
+                           fidelity: Dict = None,
                            shuffle: bool = False, rng: Union[np.random.RandomState, int, None] = None,
                            **kwargs) -> Dict:
         """
@@ -102,10 +103,8 @@ class XGBoostBenchmark(AbstractBenchmark):
         ----------
         configuration : Dict, CS.Configuration
             Configuration for the XGBoost model
-        n_estimators : int
-            Number of trees to fit.
-        subsample : float
-            Subsample ratio of the training instance.
+        fidelity: Dict, None
+            Fidelity parameters for the XGBoost model, check get_fidelity_space(). Uses default (max) value if None.
         shuffle : bool
             If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
             Defaults to ``False``.
@@ -126,6 +125,8 @@ class XGBoostBenchmark(AbstractBenchmark):
             subsample : fraction which was used to subsample the training data
 
         """
+        subsample = fidelity["subsample"]
+        n_estimators = fidelity["n_estimators"]
         assert 0 < subsample <= 1, ValueError(f'Parameter \'subsample\' must be in range (0, 1] but was {subsample}')
 
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
@@ -151,8 +152,9 @@ class XGBoostBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                subsample: float = 1, n_estimators: int = 128,
+                                fidelity: Dict = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a XGBoost model with a given configuration on both the train
@@ -162,10 +164,8 @@ class XGBoostBenchmark(AbstractBenchmark):
         ----------
         configuration : Dict, CS.Configuration
             Configuration for the XGBoost Model
-        n_estimators : int
-            Number of trees to fit.
-        subsample: float
-            Fraction which was used to subsample the training data
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None,
             Random seed for benchmark. By default the class level random seed.
             To prevent overfitting on a single seed, it is possible to pass a
@@ -179,6 +179,8 @@ class XGBoostBenchmark(AbstractBenchmark):
             function_value : test loss
             cost : time to train and evaluate the model
         """
+        subsample = fidelity["subsample"]
+        n_estimators = fidelity["n_estimators"]
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         start = time.time()
@@ -220,6 +222,31 @@ class XGBoostBenchmark(AbstractBenchmark):
         ])
 
         return cs
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        the XGBoost Benchmark
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        fidel_space.add_hyperparameters([
+            CS.UniformFloatHyperparameter("subsample", lower=0.1, upper=1.0, default_value=1.0, log=False),
+            CS.UniformIntegerHyperparameter("n_estimators", lower=2, upper=128, default_value=128, log=False)
+        ])
+
+        return fidel_space
 
     @staticmethod
     def get_meta_information() -> Dict:

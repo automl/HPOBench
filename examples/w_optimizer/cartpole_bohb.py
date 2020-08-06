@@ -34,7 +34,11 @@ class CustomWorker(Worker):
 
     def compute(self, config, budget, **kwargs):
         b = Benchmark(rng=self.seed)
-        result_dict = b.objective_function(config, budget=int(budget))
+        # Old API ---- NO LONGER SUPPORTED ---- This will simply ignore the fidelities
+        # result_dict = b.objective_function(config, budget=int(budget))
+        
+        # New API ---- Use this
+        result_dict = b.objective_function(config, fidelity={"budget": int(budget)})
         return {'loss': result_dict['function_value'],
                 'info': {'cost': result_dict['cost'],
                          'budget': result_dict['budget']}}
@@ -100,8 +104,13 @@ def run_experiment(out_path, on_travis):
 
     if not on_travis:
         benchmark = Benchmark(container_source='library://phmueller/automl')
+        # Old API ---- NO LONGER SUPPORTED ---- This will simply ignore the fidelities
+        # incumbent_result = benchmark.objective_function_test(configuration=inc_cfg,
+        #                                                      budget=settings['max_budget'])
+        
+        # New API ---- Use this
         incumbent_result = benchmark.objective_function_test(configuration=inc_cfg,
-                                                             budget=settings['max_budget'])
+                                                             fidelity={"budget": settings['max_budget']})
         print(incumbent_result)
 
 

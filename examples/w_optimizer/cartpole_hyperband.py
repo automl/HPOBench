@@ -64,7 +64,11 @@ def run_experiment(out_path: str, on_travis: bool = False):
                       container_name='cartpole',
                       rng=seed)
 
-        result_dict = b.objective_function(cfg, budget=int(budget))
+        # Old API ---- NO LONGER SUPPORTED ---- This will simply ignore the fidelities
+        # result_dict = b.objective_function(cfg, budget=int(budget))
+
+        # New API ---- Use this
+        result_dict = b.objective_function(cfg, fidelity={"budget": int(budget)})
         return result_dict['function_value']
 
     smac = SMAC4HPO(scenario=scenario,
