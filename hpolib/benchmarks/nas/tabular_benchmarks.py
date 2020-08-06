@@ -57,7 +57,7 @@ class FCNetBaseBenchmark(AbstractBenchmark):
     @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Dict = None,
-                           run_index: Union[int, Tuple, List, None] = (0, 1, 2, 3),
+                           run_index: Union[int, Tuple, List] = (0, 1, 2, 3),
                            reset: Union[bool, None] = True,
                            rng: Union[np.random.RandomState, int, None] = None,
                            **kwargs) -> Dict:
@@ -72,13 +72,14 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         run_index : int, Tuple, None
             The nas benchmark has for each configuration-budget-pair results from 4 different runs.
             If multiple `run_id`s are given, the benchmark returns the mean over the given runs.
-            By default all runs are used. A specific run can be chosen by setting the `run_id` to a value from [0, 3].
+            By default all runs are used. A specific run can be chosen by setting the `run_id` to a
+            value from [0, 3].
         reset : bool, None
             Reset the internal memory of the benchmark. Should not have an effect. Defaults to True.
         rng : np.random.RandomState, int, None
-            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
-            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
-            If this parameter is not given, the default random state is used.
+            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is
+            possible to pass a parameter ``rng`` as 'int' or 'np.random.RandomState' to this
+            function. If this parameter is not given, the default random state is used.
         kwargs
 
         Returns
@@ -98,16 +99,18 @@ class FCNetBaseBenchmark(AbstractBenchmark):
             assert min(run_index) >= 0 and max(run_index) <= 3, \
                 f'all run_index values must be in [0, 3], but were {run_index}'
         else:
-            raise ValueError(f'run index must be one of List, Tuple or Int, but was {type(run_index)}')
+            raise ValueError(f'run index must be one of List, '
+                             f'Tuple or Int, but was {type(run_index)}')
 
         if reset:
             self._reset_tracker()
 
         valid_rmse_list, runtime_list = [], []
         for run_id in run_index:
-            valid_rmse, runtime = self.benchmark.objective_function_deterministic(config=configuration,
-                                                                                  budget=budget,
-                                                                                  index=run_id)
+            valid_rmse, runtime = self.benchmark.\
+                objective_function_deterministic(config=configuration,
+                                                 budget=fidelity["budget"],
+                                                 index=run_id)
             valid_rmse_list.append(float(valid_rmse))
             runtime_list.append(float(runtime))
 
@@ -117,13 +120,15 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         return {'function_value': float(valid_rmse),
                 'cost': float(runtime),
                 'info': {'valid_rmse_per_run': valid_rmse_list,
-                         'runtime_per_run': runtime_list}
+                         'runtime_per_run': runtime_list,
+                         'fidelity': fidelity},
                 }
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                fidelity: Dict = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
                                 **kwargs) -> Dict:
         """
@@ -131,10 +136,12 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         Parameters
         ----------
         configuration : Dict, CS.Configuration
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
-            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
-            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
-            If this parameter is not given, the default random state is used.
+            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is
+            possible to pass a parameter ``rng`` as 'int' or 'np.random.RandomState' to this
+            function. If this parameter is not given, the default random state is used.
         kwargs
 
         Returns
@@ -143,11 +150,8 @@ class FCNetBaseBenchmark(AbstractBenchmark):
             function_value : test loss
             cost : time to train and evaluate the model
         """
-        self.rng = rng_helper.get_rng(rng)
-
-        test_error, runtime = self.benchmark.objective_function_test(config=configuration)
-
-        return {'function_value': float(test_error), 'cost': float(runtime)}
+        return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
+                                       **kwargs)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:

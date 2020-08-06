@@ -105,18 +105,18 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
             function_value : validation error
             cost : runtime
         """
-        budget = fidelity["budget"]
-        assert budget in [4, 12, 36, 108], f'This benchmark supports only budgets [4, 12, 36, 108], but was {budget}'
-
         if reset:
             self.benchmark.reset_tracker()
 
         self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
 
-        # Returns (valid_error_rate: 1, runtime: 0) if it is invalid. E.g. config not ok or budget not in 4 12 36 108
-        valid_error_rate, runtime = self.benchmark.objective_function(config=configuration, budget=budget)
+        # Returns (valid_error_rate: 1, runtime: 0) if it is invalid, e.g. config not valid or
+        # budget not in 4 12 36 108
+        valid_error_rate, runtime = self.benchmark.objective_function(config=configuration,
+                                                                      budget=fidelity["budget"])
         return {'function_value': float(valid_error_rate),
                 'cost': float(runtime),
+                'info': {'fidelity': fidelity}
                 }
 
     @AbstractBenchmark._configuration_as_dict
@@ -135,9 +135,9 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         fidelity: Dict, None
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
-            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
-            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
-            If this parameter is not given, the default random state is used.
+            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is
+            possible to pass a parameter ``rng`` as 'int' or 'np.random.RandomState' to this
+            function. If this parameter is not given, the default random state is used.
         kwargs
 
         Returns
@@ -146,10 +146,8 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
             function_value : test error
             cost : runtime
         """
-        self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
-
-        test_error, runtime = self.benchmark.objective_function(config=configuration, budget=fidelity["budget"])
-        return {'function_value': float(test_error), 'cost': float(runtime)}
+        return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
+                                       **kwargs)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:

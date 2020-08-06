@@ -340,8 +340,10 @@ class Learna(BaseLearna):
 
         return {'function_value': validation_info["sum_of_min_distances"],
                 'cost': cost,
-                'num_solved': validation_info["num_solved"],
-                'sum_of_first_distances': validation_info["sum_of_first_distances"],
+                'info': {'num_solved': validation_info["num_solved"],
+                         'sum_of_first_distances': validation_info["sum_of_first_distances"],
+                         'fidelity': fidelity,
+                         }
                 }
 
     @AbstractBenchmark._configuration_as_dict
@@ -374,8 +376,8 @@ class Learna(BaseLearna):
             num_solved : int - number of soved sequences
             sum_of_first_distances : metric describing quality of result
         """
-        return self.objective_function(configuration, cutoff_agent_per_sequence=fidelity["cutoff_agent_per_sequence"],
-                                       rng=rng, **kwargs)
+        return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
+                                       **kwargs)
 
 
 class MetaLearna(BaseLearna):
@@ -442,7 +444,7 @@ class MetaLearna(BaseLearna):
         config, network_config, agent_config, env_config = self._setup(configuration)
         start_time = time()
         try:
-            train_info = self._train(budget=cutoff_agent_per_sequence,
+            train_info = self._train(budget=fidelity["cutoff_agent_per_sequence"],
                                      tmp_dir=tmp_dir,
                                      network_config=network_config,
                                      agent_config=agent_config,
@@ -462,8 +464,10 @@ class MetaLearna(BaseLearna):
 
         return {'function_value': validation_info["sum_of_min_distances"],
                 'cost': cost,
-                'train_info': train_info,
-                'validation_info': validation_info}
+                'info': {'train_info': train_info,
+                         'validation_info': validation_info,
+                         'fidelity': fidelity},
+                }
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
@@ -494,8 +498,8 @@ class MetaLearna(BaseLearna):
             num_solved : int - number of soved sequences
             sum_of_first_distances : metric describing quality of result
         """
-        return self.objective_function(configuration, cutoff_agent_per_sequence=fidelity["cutoff_agent_per_sequence"],
-                                       rng=rng, **kwargs)
+        return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
+                                       **kwargs)
 
     def _train(self, budget: Union[int, float], tmp_dir: Path, network_config: NetworkConfig,
                agent_config: AgentConfig, env_config: RnaDesignEnvironmentConfig) -> Dict:

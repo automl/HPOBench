@@ -9,9 +9,19 @@ HPOlib3 is a library for hyperparameter optimization and black-box optimization 
 Run a random configuration within a singularity container (requires singularity dependencies: `pip install .[singularity]`)
 ```python
 from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
-b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl')
+b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl', rng=1)
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function_test(config, n_estimators=128, subsample=0.5)
+result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "subsample": 0.5}, rng=1)
+```
+
+All benchmarks can als be queried with fewer or no fidelities:
+
+```python
+from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
+b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl', rng=1)
+config = b.get_configuration_space(seed=1).sample_configuration()
+result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128,}, rng=1)
+result_dict = b.objective_function(configuration=config, rng=1)
 ```
 
 Containerized benchmarks do not rely on external dependencies and thus do not change. To do so, we rely on [Singularity (version 3.5)](https://sylabs.io/guides/3.5/user-guide/).
@@ -26,7 +36,8 @@ A simple example is the XGBoost benchmark which can be installed with `pip insta
 from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149)
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function_test(config, n_estimators=128, subsample=0.5)
+result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "subsample": 0.5}, rng=1)
+
 ```
 
 ## Installation
@@ -76,12 +87,12 @@ from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_name="xgboost_benchmark", 
                      container_source='./') # path to hpolib/container/recipes/ml
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function_test(config, n_estimators=128, subsample=0.5)
+result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "subsample": 0.5})
 ```
 
 ### Remove all caches
 
-# HPOlib data
+#### HPOlib data
 HPOlib stores downloaded containers and datasets at the following locations:
 
 ```bash
@@ -90,19 +101,25 @@ $XDG_CACHE_HOME # ~/.config/hpolib3
 $XDG_DATA_HOME # ~/.cache/hpolib3
 ```
 
-# OpenML data
+For crashes or when not properly shutting down containers, there might be socket files left under `/tmp/`.
+
+#### OpenML data
 
 OpenML data additionally maintains it's own cache with is found at `~/.openml/`
 
-# Singularity container
+#### Singularity container
 
 Singularity additionally maintains it's own cache which can be removed with `singularity cache clean`
 
 ### Troubleshooting
 
-- For users of the Meta-Cluster in Freiburg, you have to set the following path:\
-```export PATH=/usr/local/kislurm/singularity-3.5/bin/:$PATH```} \
-- Singularity will throw an exception 'Invalid Image format' if you use a singularity version < 3
+  - **Singularity throws an 'Invalid Image format' exception**
+  Use a singularity version > 3. For users of the Meta-Cluster in Freiburg, you have to set the following path:
+  ```export PATH=/usr/local/kislurm/singularity-3.5/bin/:$PATH```
+
+  - **A Benchmark fails with `SystemError: Could not start a instance of the benchmark. Retried 5 times` but the container 
+can be started locally with `singularity instance start <pathtocontainer> test`**
+See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that does not end with '}'. If yes delete this file and retry.   
   
 ## Status
 
