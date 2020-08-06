@@ -29,14 +29,14 @@ class HPOlibConfig:
 
         self.config = None
         self.data_dir = None
-        self.socket_dir = None
+        self.socket_dir = Path("/tmp")
         self.container_dir = None
         self.container_source = None
         self.use_global_data = None
 
         self.defaults = {'verbosity': 0,
                          'data_dir': self.config_base_dir,
-                         'socket_dir': self.cache_dir,
+                         'socket_dir': self.socket_dir,
                          'container_dir': self.cache_dir / f'hpolib3-{os.getuid()}',
                          # Find all hosted container on:
                          # https://cloud.sylabs.io/library/keggensperger/automl
