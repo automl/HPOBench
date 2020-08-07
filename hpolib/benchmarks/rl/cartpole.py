@@ -124,7 +124,6 @@ class CartpoleBase(AbstractBenchmark):
             all_runs : the episode length of all runs of all agents
         """
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
-        budget = fidelity["budget"]
         tf.random.set_random_seed(self.rng.randint(1, 100000))
         np.random.seed(self.rng.randint(1, 100000))
 
@@ -144,7 +143,7 @@ class CartpoleBase(AbstractBenchmark):
 
         converged_episodes = []
 
-        for i in range(budget):
+        for i in range(fidelity["budget"]):
             agent = PPOAgent(states=self.env.states,
                              actions=self.env.actions,
                              network=network_spec,
@@ -177,13 +176,16 @@ class CartpoleBase(AbstractBenchmark):
 
         return {'function_value': np.mean(converged_episodes),
                 'cost': cost,
-                'max_episodes': self.max_episodes,
-                'budget': budget,
-                'all_runs': converged_episodes}
+                'info': {'max_episodes': self.max_episodes,
+                         'all_runs': converged_episodes,
+                         'fidelity': fidelity
+                         }
+                }
 
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function_test(self, config: Union[Dict, CS.Configuration], fidelity: Optional[Dict] = None,
+    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                fidelity: Optional[Dict] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate a configuration on the cartpole benchmark. Use the full budget.
@@ -206,7 +208,8 @@ class CartpoleBase(AbstractBenchmark):
             budget : number of agents used
             all_runs : the episode length of all runs of all agents
         """
-        return self.objective_function(config, budget=budget, rng=rng, **kwargs)
+        return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
+                                       **kwargs)
 
     @staticmethod
     def get_meta_information() -> Dict:

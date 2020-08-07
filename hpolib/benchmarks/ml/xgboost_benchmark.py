@@ -125,10 +125,6 @@ class XGBoostBenchmark(AbstractBenchmark):
             subsample : fraction which was used to subsample the training data
 
         """
-        subsample = fidelity["subsample"]
-        n_estimators = fidelity["n_estimators"]
-        assert 0 < subsample <= 1, ValueError(f'Parameter \'subsample\' must be in range (0, 1] but was {subsample}')
-
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         if shuffle:
@@ -136,9 +132,9 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         start = time.time()
 
-        train_idx = self.train_idx[:int(len(self.train_idx) * subsample)]
+        train_idx = self.train_idx[:int(len(self.train_idx) * fidelity["subsample"])]
 
-        model = self._get_pipeline(n_estimators=n_estimators, **configuration)
+        model = self._get_pipeline(n_estimators=fidelity["n_estimators"], **configuration)
         model.fit(X=self.X_train[train_idx], y=self.y_train[train_idx])
 
         train_loss = 1 - self.accuracy_scorer(model, self.X_train[train_idx], self.y_train[train_idx])
@@ -147,8 +143,9 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         return {'function_value': val_loss,
                 'cost': cost,
-                'train_loss': train_loss,
-                'subsample': subsample}
+                'info': {'train_loss': train_loss,
+                         'fidelity': fidelity}
+                }
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
@@ -179,20 +176,24 @@ class XGBoostBenchmark(AbstractBenchmark):
             function_value : test loss
             cost : time to train and evaluate the model
         """
-        subsample = fidelity["subsample"]
-        n_estimators = fidelity["n_estimators"]
+        tmp = self.get_fidelity_space().get_hyperparameter("subsample").default_value
+        if fidelity["subsample"] != tmp:
+            raise NotImplementedError("Test error can not be computed for subsample <= %d" % tmp)
+
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         start = time.time()
-        model = self._get_pipeline(n_estimators=n_estimators, **configuration)
-
+        model = self._get_pipeline(n_estimators=fidelity["n_estimators"], **configuration)
         model.fit(X=np.concatenate((self.X_train, self.X_valid)),
                   y=np.concatenate((self.y_train, self.y_valid)))
 
         test_loss = 1 - self.accuracy_scorer(model, self.X_test, self.y_test)
         cost = time.time() - start
 
-        return {'function_value': test_loss, 'cost': cost}
+        return {'function_value': test_loss,
+                'cost': cost,
+                'info': {'fidelity': fidelity},
+                }
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
