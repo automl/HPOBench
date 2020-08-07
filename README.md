@@ -14,7 +14,7 @@ config = b.get_configuration_space(seed=1).sample_configuration()
 result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "subsample": 0.5}, rng=1)
 ```
 
-All benchmarks can als be queried with fewer or no fidelities:
+All benchmarks can also be queried with fewer or no fidelities:
 
 ```python
 from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
