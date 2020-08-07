@@ -1,23 +1,21 @@
 Bootstrap: docker
-From: python:3.8-slim
+From: python:3.7-slim
 
 %labels
-MAINTAINER muelleph@informatik.uni-freiburg.de
+MAINTAINER muelleph@cs.uni-freiburg.de
 VERSION v0.0.1
 
 %post
-    apt update -y
-    apt install build-essential git -y
-    pip install numpy==1.18.1 cython==0.29.14
-
-    cd /home \
-        && git clone https://github.com/automl/HPOlib3.git \
-        && cd HPOlib3 \
-        && pip install .[singularity,xgboost] \
-        && cd /
-
-    mkdir /var/lib/hpolib3/
-    chmod -R 777 /var/lib/hpolib3/
+    apt update -y \
+    && apt install build-essential git -y \
+    && cd /home \
+    && git clone https://github.com/automl/HPOlib3.git \
+    && cd HPOlib3 \
+    && git checkout master \
+    && pip install .[singularity,xgboost] \
+    && cd / \
+    && mkdir /var/lib/hpolib3/ \
+    && chmod -R 777 /var/lib/hpolib3/
 
 %runscript
     python -s /home/HPOlib3/hpolib/container/server_abstract_benchmark.py ml.xgboost_benchmark $@

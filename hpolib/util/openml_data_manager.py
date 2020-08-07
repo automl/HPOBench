@@ -12,8 +12,17 @@ For Non-OpenML data sets please use the hpolib.util.data_manager.
 from typing import Tuple, Union
 
 import numpy as np
-import openml
-from sklearn.model_selection import train_test_split
+
+try:
+    import openml
+except ImportError:
+    print("openmlpython not installed, can't download datasets (not needed for containers)")
+
+try:
+    from sklearn.model_selection import train_test_split
+except ImportError:
+    print("scikit-learn not installed, can't download datasets (not needed for containers)")
+
 
 import hpolib
 from hpolib.util.data_manager import HoldoutDataManager, \

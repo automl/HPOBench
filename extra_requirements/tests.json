@@ -1,4 +1,4 @@
 {
   "codestyle": ["pycodestyle","flake8"],
-  "pytest": ["pytest","pytest-cov"]
+  "pytest": ["pytest>=4.6","pytest-cov"]
 }

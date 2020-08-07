@@ -1,0 +1,28 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+%labels
+MAINTAINER muelleph@cs.uni-freiburg.de
+VERSION v0.0.1
+
+%post
+    apt update -y
+    apt install build-essential git wget -y
+
+    cd /home \
+    && mkdir data && cd data \
+    && wget https://storage.googleapis.com/nasbench/nasbench_full.tfrecord \
+
+    cd /home \
+    && pip install git+https://github.com/google-research/nasbench.git@master \
+    && pip install git+https://github.com/automl/nas_benchmarks.git \
+    && git clone https://github.com/automl/HPOlib3.git \
+    && cd HPOlib3 \
+    && git checkout master \
+    && pip install .[singularity,nasbench_101] \
+    && cd / \
+    && mkdir /var/lib/hpolib3/ \
+    && chmod -R 777 /var/lib/hpolib3/
+
+%runscript
+    python -s /home/HPOlib3/hpolib/container/server_abstract_benchmark.py nas.nasbench_101 $@

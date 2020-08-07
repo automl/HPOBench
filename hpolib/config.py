@@ -29,20 +29,20 @@ class HPOlibConfig:
 
         self.config = None
         self.data_dir = None
-        self.socket_dir = None
+        self.socket_dir = Path("/tmp")
         self.container_dir = None
         self.container_source = None
         self.use_global_data = None
 
         self.defaults = {'verbosity': 0,
                          'data_dir': self.config_base_dir,
-                         'socket_dir': self.cache_dir,
+                         'socket_dir': self.socket_dir,
                          'container_dir': self.cache_dir / f'hpolib3-{os.getuid()}',
                          # Find all hosted container on:
                          # https://cloud.sylabs.io/library/keggensperger/automl
-                         'container_source': 'library://keggensperger/automl',
+                         'container_source': 'library://phmueller/automl',
                          'use_global_data': True,
-                         'pyro_connect_max_wait': 60}
+                         'pyro_connect_max_wait': 400}
 
         self._setup(self.config_file)
 
@@ -128,7 +128,7 @@ class HPOlibConfig:
     def __check_dir(self, path: Path):
         """ Check whether dir exists and if not create it"""
         try:
-            Path(path).mkdir(exist_ok=True)
+            Path(path).mkdir(exist_ok=True, parents=True)
         except (IOError, OSError) as e:
             self.logger.debug(f'Could not create directory here: {self.data_dir}')
             raise e

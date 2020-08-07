@@ -5,22 +5,22 @@ SMAC on Cartpole with BOHB
 This example shows the usage of an Hyperparameter Tuner, such as BOHB on the cartpole benchmark.
 BOHB is a combination of Bayesian optimization and Hyperband.
 
-Please install the necessary dependencies via ``pip install .[cartpole_example]``
+Please install the necessary dependencies via ``pip install .[singularity]`` and singularity (v3.5).
+https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps
+
 """
 import logging
 import pickle
-
 from pathlib import Path
 
-logging.basicConfig(level=logging.DEBUG)
-
-from hpolib.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
-from hpolib.util.rng_helper import get_rng
-from hpolib.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
 import hpbandster.core.nameserver as hpns
 import hpbandster.core.result as hpres
-from hpbandster.optimizers import BOHB
 from hpbandster.core.worker import Worker
+from hpbandster.optimizers import BOHB
+
+from hpolib.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
+from hpolib.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
+from hpolib.util.rng_helper import get_rng
 
 logger = logging.getLogger('BOHB on cartpole')
 set_env_variables_to_use_only_one_core()
@@ -33,8 +33,12 @@ class CustomWorker(Worker):
         self.max_budget = max_budget
 
     def compute(self, config, budget, **kwargs):
-        b = Benchmark(rng=self.seed, max_budget=self.max_budget)
-        result_dict = b.objective_function(config, budget=int(budget))
+        b = Benchmark(rng=self.seed)
+        # Old API ---- NO LONGER SUPPORTED ---- This will simply ignore the fidelities
+        # result_dict = b.objective_function(config, budget=int(budget))
+        
+        # New API ---- Use this
+        result_dict = b.objective_function(config, fidelity={"budget": int(budget)})
         return {'loss': result_dict['function_value'],
                 'info': {'cost': result_dict['cost'],
                          'budget': result_dict['budget']}}
@@ -51,9 +55,13 @@ def run_experiment(out_path, on_travis):
     if on_travis:
         settings.update(get_travis_settings('bohb'))
 
+    b = Benchmark(container_source='library://phmueller/automl',
+                  container_name='cartpole')
+
+    b.get_configuration_space(seed=1)
     settings.get('output_dir').mkdir(exist_ok=True)
 
-    cs = Benchmark.get_configuration_space()
+    cs = b.get_configuration_space()
     seed = get_rng(rng=0)
     run_id = 'BOHB_on_cartpole'
 
@@ -94,9 +102,16 @@ def run_experiment(out_path, on_travis):
     logger.info(f'Inc Config:\n{inc_cfg}\n'
                 f'with Performance: {inc_value:.2f}')
 
-    benchmark = Benchmark()
-    incumbent_result = benchmark.objective_function(config=inc_cfg)
-    print(incumbent_result)
+    if not on_travis:
+        benchmark = Benchmark(container_source='library://phmueller/automl')
+        # Old API ---- NO LONGER SUPPORTED ---- This will simply ignore the fidelities
+        # incumbent_result = benchmark.objective_function_test(configuration=inc_cfg,
+        #                                                      budget=settings['max_budget'])
+        
+        # New API ---- Use this
+        incumbent_result = benchmark.objective_function_test(configuration=inc_cfg,
+                                                             fidelity={"budget": settings['max_budget']})
+        print(incumbent_result)
 
 
 if __name__ == '__main__':

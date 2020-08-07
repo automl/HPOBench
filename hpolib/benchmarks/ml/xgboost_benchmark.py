@@ -5,9 +5,9 @@ import ConfigSpace as CS
 import numpy as np
 import xgboost as xgb
 from sklearn import pipeline
+from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, make_scorer
-from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 
 import hpolib.util.rng_helper as rng_helper
@@ -88,28 +88,32 @@ class XGBoostBenchmark(AbstractBenchmark):
         random_state = rng_helper.get_rng(rng, self.rng)
         random_state.shuffle(self.train_idx)
 
+    @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function(self, config: Dict, n_estimators: int = 128, subsample: float = 1,
-                           shuffle: bool = False, **kwargs) -> Dict:
+    @AbstractBenchmark._check_fidelity
+    def objective_function(self, configuration: Union[Dict, CS.Configuration],
+                           fidelity: Dict = None,
+                           shuffle: bool = False, rng: Union[np.random.RandomState, int, None] = None,
+                           **kwargs) -> Dict:
         """
         Trains a XGBoost model given a hyperparameter configuration and
         evaluates the model on the validation set.
 
-        To prevent overfitting on a single seed, it is possible to pass a
-        parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
-        If this parameter is not given, the default random state is used.
-
         Parameters
         ----------
-        config : Dict
+        configuration : Dict, CS.Configuration
             Configuration for the XGBoost model
-        n_estimators : int
-            Number of trees to fit.
-        subsample : float
-            Subsample ratio of the training instance.
+        fidelity: Dict, None
+            Fidelity parameters for the XGBoost model, check get_fidelity_space(). Uses default (max) value if None.
         shuffle : bool
             If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
             Defaults to ``False``.
+        rng : np.random.RandomState, int, None,
+            Random seed for benchmark. By default the class level random seed.
+
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
         kwargs
 
         Returns
@@ -121,9 +125,6 @@ class XGBoostBenchmark(AbstractBenchmark):
             subsample : fraction which was used to subsample the training data
 
         """
-        assert 0 < subsample <= 1, ValueError(f'Parameter \'subsample\' must be in range (0, 1] but was {subsample}')
-
-        rng = kwargs.get('rng', None)
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         if shuffle:
@@ -131,9 +132,9 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         start = time.time()
 
-        train_idx = self.train_idx[:int(len(self.train_idx) * subsample)]
+        train_idx = self.train_idx[:int(len(self.train_idx) * fidelity["subsample"])]
 
-        model = self._get_pipeline(n_estimators=n_estimators, **config)
+        model = self._get_pipeline(n_estimators=fidelity["n_estimators"], **configuration)
         model.fit(X=self.X_train[train_idx], y=self.y_train[train_idx])
 
         train_loss = 1 - self.accuracy_scorer(model, self.X_train[train_idx], self.y_train[train_idx])
@@ -142,27 +143,31 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         return {'function_value': val_loss,
                 'cost': cost,
-                'train_loss': train_loss,
-                'subsample': subsample}
+                'info': {'train_loss': train_loss,
+                         'fidelity': fidelity}
+                }
 
+    @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, config: Dict, subsample: float = 1, n_estimators: int = 128, **kwargs) -> Dict:
+    @AbstractBenchmark._check_fidelity
+    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                fidelity: Dict = None,
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a XGBoost model with a given configuration on both the train
         and validation data set and evaluates the model on the test data set.
 
-        To prevent overfitting on a single seed, it is possible to pass a
-        parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
-        If this parameter is not given, the default random state is used.
-
         Parameters
         ----------
-        config : Dict
+        configuration : Dict, CS.Configuration
             Configuration for the XGBoost Model
-        n_estimators : int
-            Number of trees to fit.
-        subsample: float
-            Fraction which was used to subsample the training data
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        rng : np.random.RandomState, int, None,
+            Random seed for benchmark. By default the class level random seed.
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
         kwargs
 
         Returns
@@ -171,19 +176,24 @@ class XGBoostBenchmark(AbstractBenchmark):
             function_value : test loss
             cost : time to train and evaluate the model
         """
-        rng = kwargs.get('rng', None)
+        tmp = self.get_fidelity_space().get_hyperparameter("subsample").default_value
+        if fidelity["subsample"] != tmp:
+            raise NotImplementedError("Test error can not be computed for subsample <= %d" % tmp)
+
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         start = time.time()
-        model = self._get_pipeline(n_estimators=n_estimators, **config)
-
+        model = self._get_pipeline(n_estimators=fidelity["n_estimators"], **configuration)
         model.fit(X=np.concatenate((self.X_train, self.X_valid)),
                   y=np.concatenate((self.y_train, self.y_valid)))
 
         test_loss = 1 - self.accuracy_scorer(model, self.X_test, self.y_test)
         cost = time.time() - start
 
-        return {'function_value': test_loss, 'cost': cost}
+        return {'function_value': test_loss,
+                'cost': cost,
+                'info': {'fidelity': fidelity},
+                }
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -213,6 +223,31 @@ class XGBoostBenchmark(AbstractBenchmark):
         ])
 
         return cs
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        the XGBoost Benchmark
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        fidel_space.add_hyperparameters([
+            CS.UniformFloatHyperparameter("subsample", lower=0.1, upper=1.0, default_value=1.0, log=False),
+            CS.UniformIntegerHyperparameter("n_estimators", lower=2, upper=128, default_value=128, log=False)
+        ])
+
+        return fidel_space
 
     @staticmethod
     def get_meta_information() -> Dict:

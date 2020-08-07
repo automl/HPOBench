@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-cd examples
+cd examples/local
 
 for script in *.py
 do
