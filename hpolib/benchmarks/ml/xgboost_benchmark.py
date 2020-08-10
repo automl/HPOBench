@@ -92,9 +92,8 @@ class XGBoostBenchmark(AbstractBenchmark):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Dict = None,
-                           shuffle: bool = False, rng: Union[np.random.RandomState, int, None] = None,
-                           **kwargs) -> Dict:
+                           fidelity: Union[Dict, None] = None, shuffle: bool = False,
+                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a XGBoost model given a hyperparameter configuration and
         evaluates the model on the validation set.
@@ -121,9 +120,9 @@ class XGBoostBenchmark(AbstractBenchmark):
         Dict -
             function_value : validation loss
             cost : time to train and evaluate the model
-            train_loss : trainings loss
-            subsample : fraction which was used to subsample the training data
-
+            info : Dict
+                train_loss : trainings loss
+                fidelity : used fidelities in this evaluation
         """
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
@@ -151,8 +150,8 @@ class XGBoostBenchmark(AbstractBenchmark):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Dict = None,
-                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+                                fidelity: Union[Dict, None] = None, rng: Union[np.random.RandomState, int, None] = None,
+                                **kwargs) -> Dict:
         """
         Trains a XGBoost model with a given configuration on both the train
         and validation data set and evaluates the model on the test data set.
@@ -175,15 +174,17 @@ class XGBoostBenchmark(AbstractBenchmark):
         Dict -
             function_value : test loss
             cost : time to train and evaluate the model
+            info : Dict
+                fidelity : used fidelities in this evaluation
         """
-        tmp = self.get_fidelity_space().get_hyperparameter("subsample").default_value
-        if fidelity["subsample"] != tmp:
-            raise NotImplementedError("Test error can not be computed for subsample <= %d" % tmp)
+        default_subsample = self.get_fidelity_space().get_hyperparameter('subsample').default_value
+        if fidelity['subsample'] != default_subsample:
+            raise NotImplementedError(f'Test error can not be computed for subsample <= {default_subsample:d}')
 
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         start = time.time()
-        model = self._get_pipeline(n_estimators=fidelity["n_estimators"], **configuration)
+        model = self._get_pipeline(n_estimators=fidelity['n_estimators'], **configuration)
         model.fit(X=np.concatenate((self.X_train, self.X_valid)),
                   y=np.concatenate((self.y_train, self.y_valid)))
 

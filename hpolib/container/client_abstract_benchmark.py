@@ -101,14 +101,20 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         if container_source is not None \
                 and any((s in container_source for s in ['shub', 'library', 'docker', 'oras', 'http'])):
 
-            # Racing conditions:
-            # If a process is already loading the files. Let all other processes wait.
-            # Following
-            # https://github.com/dhellmann/oslo.concurrency/blob/master/openstack/common/lockutils.py (line 56)
-            # we dont need to handle any exception which can occur in the download_container-method. The lock is
-            # released if the process crashes.
+            # Racing conditions: If a process is already loading the benchmark container, let all other processes wait.
+            # Following https://github.com/dhellmann/oslo.concurrency/blob/master/openstack/common/lockutils.py
+            # (line 56), we don't need to handle any exception which can occur in the download_container-method.
+            # The lock is released if the process crashes.
+            # Also, oslo.concurrency does not delete the unused lockfiles
+            # after usage. (An existing lock file does not mean that it is still locked!). They argue that in their
+            # "testing, when a lock file was deleted while another process was waiting for it, it created a sort of
+            # split-brain situation between any process that had been waiting for the deleted file, and any process
+            # that attempted to lock the file after it had been deleted."
+            # See: https://docs.openstack.org/oslo.concurrency/latest/admin/index.html
+            # We limit the number of lock file by having at most one lock file per benchmark and storing them in the
+            # temp folder, so that they are automatically deleted after reboot.
             @lockutils.synchronized('not_thread_process_safe', external=True,
-                                    lock_path=f'{self.config.cache_dir}/lock_{container_name}')
+                                    lock_path=f'{self.config.socket_dir}/lock_{container_name}', delay=5)
             def download_container(container_dir, container_name, container_source):
                 if not (container_dir / container_name).exists():
                     logger.debug('Going to pull the container from an online source.')
@@ -164,10 +170,10 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             else:
                 logger.debug(f'Could not start instance: Try {num_tries + 1}|{MAX_TRIES}')
                 if num_tries + 1 == MAX_TRIES:
-                    raise SystemError('Could not start a instance of the benchmark. '
-                                      'Retried %d times' % MAX_TRIES)
+                    raise SystemError(f'Could not start a instance of the benchmark. Retried {MAX_TRIES:d} times'
+                                      f'\nStdout: {output} \nStderr: {err}')
             st = np.random.randint(1, 60)
-            logger.critical(f"[{num_tries + 1}/{MAX_TRIES}] Could not start instance, sleeping for {st} seconds")
+            logger.critical(f'[{num_tries + 1}/{MAX_TRIES}] Could not start instance, sleeping for {st} seconds')
             time.sleep(st)
 
         # Give each instance a little bit time to start
@@ -208,60 +214,108 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             break
         logger.debug('Connected to container')
 
+    def _parse_kwargs(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        """ Helper function to parse the named keyword arguments to json str. """
+        if rng is not None:
+            rng = self._cast_random_state_to_int(rng)
+            kwargs['rng'] = rng
+        kwargs_str = json.dumps(kwargs, indent=None)
+        return kwargs_str
+
+    def _parse_fidelities(self, fidelity: Union[CS.Configuration, Dict, None] = None):
+        if fidelity is None:
+            fidelity = {}
+        elif isinstance(fidelity, CS.Configuration):
+            fidelity = fidelity.get_dictionary()
+        elif isinstance(fidelity, dict):
+            fidelity = fidelity
+        else:
+            raise ValueError(f'Type of fidelity not understood: {type(fidelity)}')
+        f_str = json.dumps(fidelity, indent=None)
+        return f_str
+
     def objective_function(self, configuration: Union[np.ndarray, List, CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-        """ Run a configuration for a given budget on the benchmark.
-        The parameter name for the budget may vary from benchmark to benchmark. Please use the parameter name
-        specified in the benchmark.
+        """
+        Run a given configuration for a given fidelity on the containerized benchmark.
+
+        Convert the given parameters to strings and send them via Pyro to the container.
+        Read the result information and parse them.
+
+        Parameters
+        ----------
+        configuration : np.ndarray, List, CS.Configuration, Dict
+        fidelity : CS.Configuration, Dict, None
+        rng : np.random.RandomState, int, None
+        kwargs : Dict
+
+        Returns
+        -------
+        Dict
         """
 
-        if rng is not None:
-            rng = self._cast_random_state_to_int(rng)
-            kwargs['rng'] = rng
+        kwargs_str = self._parse_kwargs(rng, **kwargs)
+        f_str = self._parse_fidelities(fidelity)
 
         if isinstance(configuration, np.ndarray):
             configuration = configuration.tolist()
 
         if isinstance(configuration, list):
-            configuration_str = json.dumps(configuration, indent=None)
-            json_str = self.benchmark.objective_function_list(configuration_str, json.dumps(kwargs))
+            c_str = json.dumps(configuration, indent=None)
+            json_str = self.benchmark.objective_function_list(c_str, f_str, kwargs_str)
             return json.loads(json_str)
         elif isinstance(configuration, CS.Configuration):
             c_str = json.dumps(configuration.get_dictionary(), indent=None)
-            json_str = self.benchmark.objective_function(c_str, json.dumps(kwargs))
-            return json.loads(json_str)
         elif isinstance(configuration, dict):
             c_str = json.dumps(configuration, indent=None)
-            json_str = self.benchmark.objective_function(c_str, json.dumps(kwargs))
-            return json.loads(json_str)
         else:
             raise ValueError(f'Type of config not understood: {type(configuration)}')
+
+        json_str = self.benchmark.objective_function(c_str, f_str, kwargs_str)
+        return json.loads(json_str)
 
     def objective_function_test(self, configuration: Union[np.ndarray, List, CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-        """ Run a configuration on the test set of the benchmark. """
+        """
+        Run a given configuration for a given fidelity on the test function of the containerized  benchmark.
 
-        if rng is not None:
-            rng = self._cast_random_state_to_int(rng)
-            kwargs['rng'] = rng
+        Convert the given parameters to strings and send them via Pyro to the container.
+        Read the result information and parse them.
+
+        Parameters
+        ----------
+        configuration : np.ndarray, List, CS.Configuration, Dict
+        fidelity : CS.Configuration, Dict, None
+        rng : np.random.RandomState, int, None
+        kwargs : Dict
+
+        Returns
+        -------
+        Dict
+        """
+
+        kwargs_str = self._parse_kwargs(rng=rng, **kwargs)
+        f_str = self._parse_fidelities(fidelity)
 
         if isinstance(configuration, np.ndarray):
             configuration = configuration.tolist()
 
         if isinstance(configuration, list):
-            x_str = json.dumps(configuration, indent=None)
-            json_str = self.benchmark.objective_function_test_list(x_str, json.dumps(kwargs))
+            c_str = json.dumps(configuration, indent=None)
+            json_str = self.benchmark.objective_function_test_list(c_str, f_str, kwargs_str)
             return json.loads(json_str)
         elif isinstance(configuration, CS.Configuration):
             c_str = json.dumps(configuration.get_dictionary(), indent=None)
-            json_str = self.benchmark.objective_function_test(c_str, json.dumps(kwargs))
-            return json.loads(json_str)
         elif isinstance(configuration, dict):
             c_str = json.dumps(configuration, indent=None)
-            json_str = self.benchmark.objective_function_test(c_str, json.dumps(kwargs))
-            return json.loads(json_str)
+
         else:
             raise ValueError(f'Type of config not understood: {type(configuration)}')
+
+        json_str = self.benchmark.objective_function_test(c_str, f_str, kwargs_str)
+        return json.loads(json_str)
 
     def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
@@ -291,7 +345,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         Parameters
         ----------
         seed : int, None
-            seed for the configuration space object. If None:  a random seed will be used.
+            seed for the fidelity space object. If None:  a random seed will be used.
 
         Returns
         -------
@@ -321,7 +375,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
         # self.benchmark._pyroRelease()
 
-    def _id_generator(self) -> str:
+    @staticmethod
+    def _id_generator() -> str:
         """ Helper function: Creates unique socket ids for the benchmark server """
         return str(uuid1())
 

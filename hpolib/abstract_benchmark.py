@@ -3,10 +3,13 @@
 import abc
 from typing import Union, Dict
 
+import logging
 import ConfigSpace
 import numpy as np
 
 from hpolib.util import rng_helper
+
+logger = logging.getLogger('AbstractBenchmark')
 
 
 class AbstractBenchmark(object, metaclass=abc.ABCMeta):
@@ -35,7 +38,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         self.fidelity_space = self.get_fidelity_space()
 
     @abc.abstractmethod
-    def objective_function(self, configuration: Dict, fidelity: Dict = None,
+    def objective_function(self, configuration: Dict, fidelity: Union[Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
                            *args, **kwargs) -> dict:
         """
@@ -62,12 +65,12 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Returns
         -------
         Dict
-            Must contain at least the key `function_value`.
+            Must contain at least the key `function_value` and `cost`.
         """
         pass
 
     @abc.abstractmethod
-    def objective_function_test(self, configuration: Dict,  fidelity: Dict = None,
+    def objective_function_test(self, configuration: Dict, fidelity: Union[Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
                                 *args, **kwargs) -> Dict:
         """
@@ -86,7 +89,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Returns
         -------
         Dict
-            Must contain at least the key `function_value`.
+            Must contain at least the key `function_value` and `cost`.
         """
         pass
 
@@ -101,22 +104,23 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Can be combined with the _configuration_as_array decorator.
         """
         def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict], **kwargs):
-            if isinstance(configuration, np.ndarray):
-                try:
+
+            try:
+                if isinstance(configuration, np.ndarray):
                     config_dict = {k: configuration[i] for (i, k) in enumerate(self.configuration_space)}
                     config = ConfigSpace.Configuration(self.configuration_space, config_dict)
-                except Exception as e:
-                    raise Exception('Error during the conversion of the provided configuration '
-                                    'into a ConfigSpace.Configuration object') from e
-            elif isinstance(configuration, dict):
-                try:
+                elif isinstance(configuration, dict):
                     config = ConfigSpace.Configuration(self.configuration_space, configuration)
-                except Exception as e:
-                    raise Exception('Error during the conversion of the provided configuration '
-                                    'into a ConfigSpace.Configuration object') from e
-            elif isinstance(configuration, ConfigSpace.Configuration):
-                config = configuration
-            else:
+                elif isinstance(configuration, ConfigSpace.Configuration):
+                    config = configuration
+                else:
+                    config = None
+            except Exception as e:
+                logger.error('Error during the conversion of the provided configuration '
+                             'into a ConfigSpace.Configuration object')
+                raise e
+
+            if config is None:
                 raise TypeError(f'Configuration has to be from type np.ndarray, dict, or ConfigSpace.Configuration but '
                                 f'was {type(configuration)}')
 
@@ -138,28 +142,43 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Order independent from the _check_configuration decorator, but it does forward all fidelity parameters,
         regardless of input, as a dictionary in the 'fidelity' keyword argument.
         """
-        def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict], **kwargs):
+        def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict],
+                    fidelity: Union[Dict, ConfigSpace.Configuration, None] = None, **kwargs):
+
             # Sanity check that there are no fidelities in **kwargs
-            for f in self.get_fidelity_space().get_hyperparameters():
+            for f in self.fidelity_space.get_hyperparameters():
                 if f.name in kwargs:
-                    raise ValueError("Fidelity parameter %s should not be part of kwargs" % f.name)
+                    raise ValueError(f'Fidelity parameter {f.name} should not be part of kwargs\n'
+                                     f'Fidelity: {fidelity}\n Kwargs: {kwargs}')
 
-            # Initialize with default values
-            fidelity = self.get_fidelity_space().get_default_configuration().get_dictionary()
+            # If kwargs contains the 'fidelity' arg, extract any fidelity parameters it contains and fill in
+            # default values for the rest.
+            default_fidelities = self.fidelity_space.get_default_configuration()
+            try:
+                if fidelity is None:
+                    fidelity = default_fidelities
+                if isinstance(fidelity, dict):
+                    default_fidelities_cfg = default_fidelities.get_dictionary()
+                    fidelity = {k: fidelity.get(k, v) for k, v in default_fidelities_cfg.items()}
+                    fidelity = ConfigSpace.Configuration(self.fidelity_space, fidelity)
+                elif isinstance(fidelity, ConfigSpace.Configuration):
+                    fidelity = fidelity
+                else:
+                    fidelity = None
+            except Exception as e:
+                logger.error('Error during the conversion of the provided fidelities '
+                             'into a FidelitySpace (ConfigSpace.Configuration) object')
+                raise e
 
-            kwargs_fidelity = kwargs.pop("fidelity", None)
-            if kwargs_fidelity:
-                # If kwargs contains the 'fidelity' arg, extract any fidelity parameters it contains and fill in
-                # default values for the rest.
-                fidelity = {k: kwargs_fidelity.get(k, v) for k, v in fidelity.items()}
+            if fidelity is None:
+                raise TypeError(f'Configuration has to be from type np.ndarray, dict, or ConfigSpace.Configuration but '
+                                f'was {type(configuration)}')
 
-                # Ensure that the extracted fidelity values play well with the defined fidelity space
-                try:
-                    fidel_config = ConfigSpace.Configuration(self.fidelity_space, fidelity)
-                except Exception as e:
-                    raise Exception('Error during conversion of the provided fidelity parameters to the benchmark\'s '
-                                    'space of known fidelity parameters.') from e
-                self.fidelity_space.check_configuration(fidel_config)
+            # Ensure that the extracted fidelity values play well with the defined fidelity space
+            self.fidelity_space.check_configuration(fidelity)
+
+            # All benchmarks should work on dictionaries. Cast the fidelity space object to a dictionary.
+            fidelity = fidelity.get_dictionary()
 
             return foo(self, configuration, fidelity=fidelity, **kwargs)
         return wrapper
