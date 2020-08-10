@@ -11,7 +11,7 @@ VERSION v0.0.1
     && cd /home \
     && git clone https://github.com/PhMueller/HPOlib3.git \
     && cd HPOlib3 \
-    && git checkout Interface \
+    && git checkout debug_level \
     && pip install .[singularity,xgboost] \
     && cd / \
     && mkdir /var/lib/hpolib3/ \

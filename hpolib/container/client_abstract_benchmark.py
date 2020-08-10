@@ -14,8 +14,9 @@ are defined in the ~/.hpolibrc - file.
 The name of the container (``container_name``) is defined either in its belonging
 container-benchmark definition. (hpolib/container/<type>/<name> or via ``container_name``.
 """
-
+import os
 import abc
+import sys
 import json
 import logging
 import subprocess
@@ -27,19 +28,28 @@ from uuid import uuid1
 
 import ConfigSpace as CS
 import Pyro4
+import Pyro4.util
 import numpy as np
 from ConfigSpace.read_and_write import json as csjson
 from oslo_concurrency import lockutils
 
 import hpolib.config
 
+# Read in the verbosity level from the environment variable HPOLIB_DEBUG
+log_level_str = os.environ.get('HPOLIB_DEBUG', 'false')
+log_level = logging.DEBUG if log_level_str == 'true' else logging.INFO
+
 console = logging.StreamHandler()
-console.setLevel(logging.DEBUG)
+console.setLevel(log_level)
 
 root = logging.getLogger()
-root.setLevel(level=logging.INFO)
+root.setLevel(level=log_level)
+
 logger = logging.getLogger("BenchmarkClient")
-logger.setLevel(level=logging.INFO)
+logger.setLevel(level=log_level)
+
+# This option improves the quality of stacktraces if a container crashes
+sys.excepthook = Pyro4.util.excepthook
 
 
 class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
@@ -147,7 +157,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         gpu_opt = '--nv ' if gpu else ''  # Option for enabling GPU support
         container_options = f'{container_dir / container_name}'
 
-        cmd = f'singularity instance start {bind_options}{gpu_opt}{container_options} {self.socket_id}'
+        log_str = f'SINGULARITYENV_HPOLIB_DEBUG={log_level_str}'
+        cmd = f'{log_str} singularity instance start {bind_options}{gpu_opt}{container_options} {self.socket_id}'
         logger.debug(cmd)
 
         MAX_TRIES = 5
