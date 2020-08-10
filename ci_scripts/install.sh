@@ -68,5 +68,5 @@ fi
 
 # remove the trailing comma
 install_packages="$(echo ${install_packages} | sed 's/,*\r*$//')"
-echo "Install HPOlib3 with options: ${install_packages}"
+echo "Install HPOlib2 with options: ${install_packages}"
 pip install .["${install_packages}"]

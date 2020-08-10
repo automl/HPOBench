@@ -94,7 +94,7 @@ def run_experiment(out_path: str, on_travis: bool = False):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(prog='HPOlib - Hyperband',
-                                     description='HPOlib3 with HB on Cartpole',
+                                     description='HPOlib2 with HB on Cartpole',
                                      usage='%(prog)s --out_path <string>')
     parser.add_argument('--out_path', default='./cartpole_smac_hb', type=str)
     parser.add_argument('--on_travis', action='store_true',

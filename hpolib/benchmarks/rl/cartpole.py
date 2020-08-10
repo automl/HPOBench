@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Union, Optional, Dict
+from typing import Union, Dict
 
 import ConfigSpace as CS
 import numpy as np
@@ -18,8 +18,8 @@ logger = logging.getLogger('CartpoleBenchmark')
 
 
 class CartpoleBase(AbstractBenchmark):
-    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, defaults: Optional[Dict] = None,
-                 max_episodes: Optional[int] = 3000):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, defaults: Union[Dict, None] = None,
+                 max_episodes: Union[int, None] = 3000):
         """
         Parameters
         ----------
@@ -94,7 +94,7 @@ class CartpoleBase(AbstractBenchmark):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function(self, configuration: Union[Dict, CS.Configuration], fidelity: Optional[Dict] = None,
+    def objective_function(self, configuration: Union[Dict, CS.Configuration], fidelity: Union[Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a Tensorforce RL agent on the cartpole experiment. This benchmark was used in the experiments for the
@@ -119,9 +119,11 @@ class CartpoleBase(AbstractBenchmark):
         Dict -
             function_value : average episode length
             cost : time to run all agents
-            max_episodes : the maximum length of an episode
-            budget : number of agents used
-            all_runs : the episode length of all runs of all agents
+            info : Dict
+                max_episodes : the maximum length of an episode
+                budget : number of agents used
+                all_runs : the episode length of all runs of all agents
+                fidelity : the used fidelities in this evaluation
         """
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
         tf.random.set_random_seed(self.rng.randint(1, 100000))
@@ -185,14 +187,15 @@ class CartpoleBase(AbstractBenchmark):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Optional[Dict] = None,
+                                fidelity: Union[Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate a configuration on the cartpole benchmark. Use the full budget.
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-        budget : int, None
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark. To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
@@ -204,10 +207,13 @@ class CartpoleBase(AbstractBenchmark):
         Dict -
             function_value : average episode length
             cost : time to run all agents
-            max_episodes : the maximum length of an episode
-            budget : number of agents used
-            all_runs : the episode length of all runs of all agents
+            info : Dict
+                max_episodes : the maximum length of an episode
+                budget : number of agents used
+                all_runs : the episode length of all runs of all agents
+                fidelity : the used fidelities in this evaluation
         """
+
         return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
                                        **kwargs)
 

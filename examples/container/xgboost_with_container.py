@@ -12,7 +12,7 @@ To use the container-example, you have to have singulartiy (>3.5) installed. Fol
 https://sylabs.io/guides/3.1/user-guide/quick_start.html#quick-installation-steps
 
 Furthermore, make sure to install the right dependencies for the hpolib via:
-``pip3 install .[xgboost_example,singularity]``.
+``pip3 install .[singularity]``.
 """
 
 import argparse
@@ -48,14 +48,14 @@ def run_experiment(on_travis: bool = False):
             print(configuration)
             for n_estimator in [8, 64]:
                 for subsample in [0.4, 1]:
-                    fidelity = {"n_estimators": n_estimator, "subsample": subsample}
+                    fidelity = {'n_estimators': n_estimator, 'subsample': subsample}
                     result_dict = b.objective_function(configuration.get_dictionary(),
                                                        fidelity=fidelity)
                     valid_loss = result_dict['function_value']
                     train_loss = result_dict['info']['train_loss']
                     assert result_dict['info']['fidelity'] == fidelity
 
-                    result_dict = b.objective_function_test(configuration, n_estimators=n_estimator)
+                    result_dict = b.objective_function_test(configuration, fidelity={'n_estimators': n_estimator})
                     test_loss = result_dict['function_value']
 
                     print(f'[{i+1}|{num_configs}] No Estimator: {n_estimator:3d} - '
@@ -65,12 +65,12 @@ def run_experiment(on_travis: bool = False):
         print(f'Done, took totally {time()-start:.2f}')
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog='HPOlib CC Datasets', description='HPOlib3 on the CC18 data sets.',
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(prog='HPOlib CC Datasets', description='HPOlib2 on the CC18 data sets.',
                                      usage='%(prog)s --array_id <task_id>')
 
     parser.add_argument('--on_travis', action='store_true',
-                        help='Flag to speed up the run on the continuous integration tool \"travis\". This flag can be'
+                        help='Flag to speed up the run on the continuous integration tool \'travis\'. This flag can be'
                              'ignored by the user')
 
     args = parser.parse_args()

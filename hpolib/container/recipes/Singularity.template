@@ -18,19 +18,19 @@ VERSION v0.0.1
 
     cd /home \
     && echo "Here you can install everything you need, e.g. dependencies not available on pypi" \
-    && echo "Next, we clone and install HPOlib3" \
-    && git clone https://github.com/automl/HPOlib3.git \
-    && cd HPOlib3 \
+    && echo "Next, we clone and install HPOlib2" \
+    && git clone https://github.com/automl/HPOlib2.git \
+    && cd HPOlib2 \
     && echo "Please never push a recipe that checks out any other branch than development or master" \
     && git checkout development \
     && echo "Here you can install extra requirements additional to singularity" \
     && pip install .[singularity] \
     && echo "Please don't touch the following lines"
     && cd / \
-    && mkdir /var/lib/hpolib3/ \
-    && chmod -R 777 /var/lib/hpolib3/
+    && mkdir /var/lib/hpolib2/ \
+    && chmod -R 777 /var/lib/hpolib2/
 
     echo "Finally, please change the benchmark in the runscript to point to your benchmark"
 
 %runscript
-    python -s /home/HPOlib3/hpolib/container/server_abstract_benchmark.py <type>.new_benchmark_file $@
+    python -s /home/HPOlib2/hpolib/container/server_abstract_benchmark.py <type>.new_benchmark_file $@

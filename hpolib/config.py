@@ -22,10 +22,10 @@ class HPOlibConfig:
         self.logger = logging.getLogger('HPOlibConfig')
 
         # According to https://github.com/openml/openml-python/issues/884, try to set default directories.
-        self.config_base_dir = Path(os.environ.get('XDG_CONFIG_HOME', '~/.config/hpolib3')).expanduser()
+        self.config_base_dir = Path(os.environ.get('XDG_CONFIG_HOME', '~/.config/hpolib2')).expanduser()
         self.config_file = self.config_base_dir / '.hpolibrc'
-        self.cache_dir = Path(os.environ.get('XDG_CACHE_HOME', '~/.cache/hpolib3')).expanduser()
-        self.global_data_dir = Path(os.environ.get('XDG_DATA_HOME', '~/.local/share/hpolib3')).expanduser()
+        self.cache_dir = Path(os.environ.get('XDG_CACHE_HOME', '~/.cache/hpolib2')).expanduser()
+        self.global_data_dir = Path(os.environ.get('XDG_DATA_HOME', '~/.local/share/hpolib2')).expanduser()
 
         self.config = None
         self.data_dir = None
@@ -37,9 +37,9 @@ class HPOlibConfig:
         self.defaults = {'verbosity': 0,
                          'data_dir': self.config_base_dir,
                          'socket_dir': self.socket_dir,
-                         'container_dir': self.cache_dir / f'hpolib3-{os.getuid()}',
+                         'container_dir': self.cache_dir / f'hpolib2-{os.getuid()}',
                          # Find all hosted container on:
-                         # https://cloud.sylabs.io/library/keggensperger/automl
+                         # https://cloud.sylabs.io/library/phmueller/automl
                          'container_source': 'library://phmueller/automl',
                          'use_global_data': True,
                          'pyro_connect_max_wait': 400}

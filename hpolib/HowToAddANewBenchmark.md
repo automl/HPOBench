@@ -2,12 +2,12 @@
 
 ## Create a local benchmark
 
-  1. Clone Hpolib3, switch to the development branch and create your own branch, then install hpolib3. 
+  1. Clone Hpolib2, switch to the development branch and create your own branch, then install hpolib2. 
 Note that with `pip install .`
 
 ```bash
-git clone https://github.com/automl/HPOlib3.git
-cd HPOlib3 
+git clone https://github.com/automl/HPOlib2.git
+cd HPOlib2
 git checkout development
 git branch newBenchmark
 git checkout newBenchmark

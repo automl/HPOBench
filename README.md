@@ -1,8 +1,10 @@
-# HPOlib3
+# HPOlib2
 
-HPOlib3 is a library for hyperparameter optimization and black-box optimization benchmark with a focus on reproducibility.
+HPOlib2 is a library for hyperparameter optimization and black-box optimization benchmark with a focus on reproducibility.
 
-**Note:** Hpolib3 is under active construction. Stay tuned for more benchmarks. Information on how to contribute a new benchmark will follow shortly.
+**Note:** Hpolib2 is under active construction. Stay tuned for more benchmarks. Information on how to contribute a new benchmark will follow shortly.
+
+**Note:** If you are looking for a different version of HPOlib2, you might be looking for [HPOlib1.5](https://github.com/automl/HPOlib1.5) 
 
 ## In 4 lines of code
 
@@ -45,8 +47,8 @@ result_dict = b.objective_function(configuration=config, fidelity={"n_estimators
 Before we start, we recommend using a virtual environment. To run any benchmark using its singularity container, 
 run the following:
 ```
-git clone https://github.com/automl/HPOlib3.git
-cd HPOlib3 
+git clone https://github.com/automl/HPOlib2.git
+cd HPOlib2 
 pip install .[singularity]
 ```
 
@@ -96,9 +98,9 @@ result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "subsa
 HPOlib stores downloaded containers and datasets at the following locations:
 
 ```bash
-$XDG_CONFIG_HOME # ~/.config/hpolib3
-$XDG_CACHE_HOME # ~/.config/hpolib3
-$XDG_DATA_HOME # ~/.cache/hpolib3
+$XDG_CONFIG_HOME # ~/.config/hpolib2
+$XDG_CACHE_HOME # ~/.config/hpolib2
+$XDG_DATA_HOME # ~/.cache/hpolib2
 ```
 
 For crashes or when not properly shutting down containers, there might be socket files left under `/tmp/`.
@@ -125,10 +127,10 @@ See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that
 
 Status for Master Branch: 
 
-[![Build Status](https://travis-ci.org/automl/HPOlib3.svg?branch=master)](https://travis-ci.org/automl/HPOlib3)
-[![codecov](https://codecov.io/gh/automl/HPOlib3/branch/master/graph/badge.svg)](https://codecov.io/gh/automl/HPOlib3)
+[![Build Status](https://travis-ci.org/automl/HPOlib2.svg?branch=master)](https://travis-ci.org/automl/HPOlib2)
+[![codecov](https://codecov.io/gh/automl/HPOlib2/branch/master/graph/badge.svg)](https://codecov.io/gh/automl/HPOlib2)
 
 Status for Development Branch: 
 
-[![Build Status](https://travis-ci.org/automl/HPOlib3.svg?branch=development)](https://travis-ci.org/automl/HPOlib3)
-[![codecov](https://codecov.io/gh/automl/HPOlib3/branch/development/graph/badge.svg)](https://codecov.io/gh/automl/HPOlib3)
+[![Build Status](https://travis-ci.org/automl/HPOlib2.svg?branch=development)](https://travis-ci.org/automl/HPOlib2)
+[![codecov](https://codecov.io/gh/automl/HPOlib2/branch/development/graph/badge.svg)](https://codecov.io/gh/automl/HPOlib2)

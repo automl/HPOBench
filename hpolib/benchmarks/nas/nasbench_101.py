@@ -21,7 +21,7 @@ optimization.
 2. Clone and install
 ====================
 ```
-cd /path/to/HPOlib3
+cd /path/to/HPOlib2
 pip install .[nasbench_101]
 
 pip install git+https://github.com/google-research/nasbench.git@master
@@ -77,8 +77,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
-                           fidelity: Dict = None,
-                           reset: Union[bool, None] = True,
+                           fidelity: Union[Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
                            **kwargs) -> Dict:
         """
@@ -89,8 +88,6 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         configuration : Dict, CS.Configuration
         fidelity: Dict, None
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
-        reset : bool, None
-            Reset the internal memory of the benchmark. Should not have an effect. Default to True.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark.
 
@@ -104,9 +101,10 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         Dict -
             function_value : validation error
             cost : runtime
+            info : Dict
+                fidelity : used fidelities in this evaluation
         """
-        if reset:
-            self.benchmark.reset_tracker()
+        self.benchmark.reset_tracker()
 
         self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
 
@@ -123,7 +121,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Dict = None,
+                                fidelity: Union[Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
                                 **kwargs) -> Dict:
         """
@@ -145,6 +143,8 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         Dict -
             function_value : test error
             cost : runtime
+            info : Dict
+                fidelity : used fidelities in this evaluation
         """
         return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
                                        **kwargs)
