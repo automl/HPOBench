@@ -65,7 +65,7 @@ class BenchmarkServer:
                     (rnd0, rnd1, rnd2, rnd3, rnd4) = kwargs['rng']
                     rnd1 = [np.uint32(number) for number in rnd1]
                     kwargs['rng'] = np.random.set_state((rnd0, rnd1, rnd2, rnd3, rnd4))
-                    logger.debug('rng works!!')
+                    logger.debug('Server: Rng works')
                 self.benchmark = Benchmark(**kwargs)  # noqa: F821
             else:
                 self.benchmark = Benchmark()  # noqa: F821
@@ -75,10 +75,9 @@ class BenchmarkServer:
 
     def get_configuration_space(self, kwargs_str: str) -> str:
         logger.debug(f'Server: get_config_space: kwargs_str: {kwargs_str}')
-        seed = None
-        if kwargs_str != "{}":
-            kwargs = json.loads(kwargs_str)
-            seed = kwargs.get('seed', None)
+
+        kwargs = json.loads(kwargs_str)
+        seed = kwargs.get('seed', None)
 
         result = self.benchmark.get_configuration_space(seed=seed)
         logger.debug(f'Server: Configspace: {result}')
@@ -86,46 +85,48 @@ class BenchmarkServer:
 
     def get_fidelity_space(self, kwargs_str: str) -> str:
         logger.debug(f'Server: get_fidelity_space: kwargs_str: {kwargs_str}')
-        seed = None
-        if kwargs_str != "{}":
-            kwargs = json.loads(kwargs_str)
-            seed = kwargs.get('seed', None)
+
+        kwargs = json.loads(kwargs_str)
+        seed = kwargs.get('seed', None)
 
         result = self.benchmark.get_fidelity_space(seed=seed)
         logger.debug(f'Server: Fidelity Space: {result}')
         return csjson.write(result, indent=None)
 
-    def objective_function_list(self, c_str: str, kwargs_str: str) -> str:
+    def objective_function_list(self, c_str: str, f_str: str, kwargs_str: str) -> str:
         configuration = json.loads(c_str)
-        result = self.benchmark.objective_function(configuration, **json.loads(kwargs_str))
-        return json.dumps(result, indent=None, cls=BenchmarkEncoder)
-
-    def objective_function(self, c_str: str, kwargs_str: str) -> str:
-        logger.debug(f'Server: objective_function: c_str: {c_str} kwargs_str: {kwargs_str}')
-
-        configuration = json.loads(c_str)
+        fidelity = json.loads(f_str)
         kwargs = json.loads(kwargs_str)
 
-        rng = kwargs.get('rng', None)
-
-        if rng is not None:
-            del kwargs['rng']
-            result = self.benchmark.objective_function(configuration, rng=rng, **kwargs)
-        else:
-            result = self.benchmark.objective_function(configuration, **kwargs)
-
+        result = self.benchmark.objective_function(configuration=configuration, fidelity=fidelity, **kwargs)
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
-    def objective_function_test_list(self, c_str, kwargs_str):
+    def objective_function_test_list(self, c_str: str, f_str: str, kwargs_str: str) -> str:
         configuration = json.loads(c_str)
-        result = self.benchmark.objective_function_test(configuration, **json.loads(kwargs_str))
+        fidelity = json.loads(f_str)
+        kwargs = json.loads(kwargs_str)
+
+        result = self.benchmark.objective_function_test(configuration=configuration, fidelity=fidelity, **kwargs)
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
-    def objective_function_test(self, c_str, kwargs_str):
-        logger.debug(f'Server: objective_function: c_str: {c_str} kwargs_str: {kwargs_str}')
+    def objective_function(self, c_str: str, f_str: str, kwargs_str: str) -> str:
+        logger.debug(f'Server: objective_function: c_str: {c_str} f_str: {f_str} kwargs_str: {kwargs_str}')
 
         configuration = json.loads(c_str)
-        result = self.benchmark.objective_function_test(configuration, **json.loads(kwargs_str))
+        fidelity = json.loads(f_str)
+        kwargs = json.loads(kwargs_str)
+
+        result = self.benchmark.objective_function(configuration=configuration, fidelity=fidelity, **kwargs)
+        return json.dumps(result, indent=None, cls=BenchmarkEncoder)
+
+    def objective_function_test(self, c_str: str, f_str: str, kwargs_str: str) -> str:
+        logger.debug(f'Server: objective_function: c_str: {c_str} f_str: {f_str} kwargs_str: {kwargs_str}')
+
+        configuration = json.loads(c_str)
+        fidelity = json.loads(f_str)
+        kwargs = json.loads(kwargs_str)
+
+        result = self.benchmark.objective_function_test(configuration=configuration, fidelity=fidelity, **kwargs)
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
     def get_meta_information(self):

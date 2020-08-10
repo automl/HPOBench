@@ -174,7 +174,7 @@ class BaseLearna(AbstractBenchmark):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Dict = None,
+                           fidelity: Union[Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """ Interface for the obejctive function. """
         raise NotImplementedError()
@@ -182,7 +182,7 @@ class BaseLearna(AbstractBenchmark):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Dict = None,
+                                fidelity: Union[Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """ Interface for the test obejctive function. """
         raise NotImplementedError()
@@ -250,7 +250,7 @@ class BaseLearna(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformFloat('cutoff_agent_per_sequence', lower=1, upper=600, default_value=600)
+            CS.UniformIntegerHyperparameter('cutoff_agent_per_sequence', lower=1, upper=600, default_value=600)
         ])
 
         return fidel_space
@@ -297,7 +297,7 @@ class Learna(BaseLearna):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Dict = None,
+                           fidelity: Union[Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Start the learna experiment. Dont train a RL agent. Just optimize on the sequences.
@@ -320,8 +320,10 @@ class Learna(BaseLearna):
         Dict -
             function_value : sum of min distances
             cost : time to train and evaluate the model
-            num_solved : int - number of soved sequences
-            sum_of_first_distances : metric describing quality of result
+            info : Dict
+                num_solved : int - number of soved sequences
+                sum_of_first_distances : metric describing quality of result
+                fidelity : the used fidelities in this evaluation
         """
 
         self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
@@ -350,7 +352,7 @@ class Learna(BaseLearna):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Dict = None,
+                                fidelity: Union[Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate the Learna experiment.
@@ -373,8 +375,10 @@ class Learna(BaseLearna):
         Dict -
             function_value : sum of min distances
             cost : time to train and evaluate the model
-            num_solved : int - number of soved sequences
-            sum_of_first_distances : metric describing quality of result
+            info : Dict
+                num_solved : int - number of soved sequences
+                sum_of_first_distances : metric describing quality of result
+                fidelity : the used fidelities in this evaluation
         """
         return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
                                        **kwargs)
@@ -403,7 +407,7 @@ class MetaLearna(BaseLearna):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformFloat('cutoff_agent_per_sequence', lower=1, upper=3600, default_value=3600)
+            CS.UniformIntegerHyperparameter('cutoff_agent_per_sequence', lower=1, upper=3600, default_value=3600)
         ])
 
         return fidel_space
@@ -411,7 +415,7 @@ class MetaLearna(BaseLearna):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Dict = None,
+                           fidelity: Union[Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         MetaLearna trains an RL agent for 1 hour on the given training set and then tries to solve the sequences.
@@ -435,8 +439,10 @@ class MetaLearna(BaseLearna):
         Dict -
             function_value : sum of min distances
             cost : time to train and evaluate the model
-            num_solved : int - number of soved sequences
-            sum_of_first_distances : metric describing quality of result
+            info : Dict
+                num_solved : int - number of solved sequences
+                sum_of_first_distances : metric describing quality of result
+                fidelity : the used fidelities in this evaluation
         """
         self.rng = rng_helper.get_rng(rng, self.rng)
         tmp_dir = Path(tempfile.mkdtemp(dir=self.config.cache_dir))
@@ -472,7 +478,7 @@ class MetaLearna(BaseLearna):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Dict = None,
+                                fidelity: Union[Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate the MetaLearna experiment.
@@ -495,8 +501,10 @@ class MetaLearna(BaseLearna):
         Dict -
             function_value : sum of min distances
             cost : time to train and evaluate the model
-            num_solved : int - number of soved sequences
-            sum_of_first_distances : metric describing quality of result
+            info : Dict
+                num_solved : int - number of solved sequences
+                sum_of_first_distances : metric describing quality of result
+                fidelity : the used fidelities in this evaluation
         """
         return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
                                        **kwargs)

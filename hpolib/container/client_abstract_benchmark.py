@@ -208,60 +208,108 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             break
         logger.debug('Connected to container')
 
+    def _parse_kwargs(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        """ Helper function to parse the named keyword arguments to json str. """
+        if rng is not None:
+            rng = self._cast_random_state_to_int(rng)
+            kwargs['rng'] = rng
+        kwargs_str = json.dumps(kwargs, indent=None)
+        return kwargs_str
+
+    def _parse_fidelities(self, fidelity: Union[CS.Configuration, Dict, None] = None):
+        if fidelity is None:
+            fidelity = {}
+        elif isinstance(fidelity, CS.Configuration):
+            fidelity = fidelity.get_dictionary()
+        elif isinstance(fidelity, dict):
+            fidelity = fidelity
+        else:
+            raise ValueError(f'Type of fidelity not understood: {type(fidelity)}')
+        f_str = json.dumps(fidelity, indent=None)
+        return f_str
+
     def objective_function(self, configuration: Union[np.ndarray, List, CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-        """ Run a configuration for a given budget on the benchmark.
-        The parameter name for the budget may vary from benchmark to benchmark. Please use the parameter name
-        specified in the benchmark.
+        """
+        Run a given configuration for a given fidelity on the containerized benchmark.
+
+        Convert the given parameters to strings and send them via Pyro to the container.
+        Read the result information and parse them.
+
+        Parameters
+        ----------
+        configuration : np.ndarray, List, CS.Configuration, Dict
+        fidelity : CS.Configuration, Dict, None
+        rng : np.random.RandomState, int, None
+        kwargs : Dict
+
+        Returns
+        -------
+        Dict
         """
 
-        if rng is not None:
-            rng = self._cast_random_state_to_int(rng)
-            kwargs['rng'] = rng
+        kwargs_str = self._parse_kwargs(rng, **kwargs)
+        f_str = self._parse_fidelities(fidelity)
 
         if isinstance(configuration, np.ndarray):
             configuration = configuration.tolist()
 
         if isinstance(configuration, list):
-            configuration_str = json.dumps(configuration, indent=None)
-            json_str = self.benchmark.objective_function_list(configuration_str, json.dumps(kwargs))
+            c_str = json.dumps(configuration, indent=None)
+            json_str = self.benchmark.objective_function_list(c_str, f_str, kwargs_str)
             return json.loads(json_str)
         elif isinstance(configuration, CS.Configuration):
             c_str = json.dumps(configuration.get_dictionary(), indent=None)
-            json_str = self.benchmark.objective_function(c_str, json.dumps(kwargs))
-            return json.loads(json_str)
         elif isinstance(configuration, dict):
             c_str = json.dumps(configuration, indent=None)
-            json_str = self.benchmark.objective_function(c_str, json.dumps(kwargs))
-            return json.loads(json_str)
         else:
             raise ValueError(f'Type of config not understood: {type(configuration)}')
+
+        json_str = self.benchmark.objective_function(c_str, f_str, kwargs_str)
+        return json.loads(json_str)
 
     def objective_function_test(self, configuration: Union[np.ndarray, List, CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-        """ Run a configuration on the test set of the benchmark. """
+        """
+        Run a given configuration for a given fidelity on the test function of the containerized  benchmark.
 
-        if rng is not None:
-            rng = self._cast_random_state_to_int(rng)
-            kwargs['rng'] = rng
+        Convert the given parameters to strings and send them via Pyro to the container.
+        Read the result information and parse them.
+
+        Parameters
+        ----------
+        configuration : np.ndarray, List, CS.Configuration, Dict
+        fidelity : CS.Configuration, Dict, None
+        rng : np.random.RandomState, int, None
+        kwargs : Dict
+
+        Returns
+        -------
+        Dict
+        """
+
+        kwargs_str = self._parse_kwargs(rng=rng, **kwargs)
+        f_str = self._parse_fidelities(fidelity)
 
         if isinstance(configuration, np.ndarray):
             configuration = configuration.tolist()
 
         if isinstance(configuration, list):
-            x_str = json.dumps(configuration, indent=None)
-            json_str = self.benchmark.objective_function_test_list(x_str, json.dumps(kwargs))
+            c_str = json.dumps(configuration, indent=None)
+            json_str = self.benchmark.objective_function_test_list(c_str, f_str, kwargs_str)
             return json.loads(json_str)
         elif isinstance(configuration, CS.Configuration):
             c_str = json.dumps(configuration.get_dictionary(), indent=None)
-            json_str = self.benchmark.objective_function_test(c_str, json.dumps(kwargs))
-            return json.loads(json_str)
         elif isinstance(configuration, dict):
             c_str = json.dumps(configuration, indent=None)
-            json_str = self.benchmark.objective_function_test(c_str, json.dumps(kwargs))
-            return json.loads(json_str)
+
         else:
             raise ValueError(f'Type of config not understood: {type(configuration)}')
+
+        json_str = self.benchmark.objective_function_test(c_str, f_str, kwargs_str)
+        return json.loads(json_str)
 
     def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
@@ -291,7 +339,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         Parameters
         ----------
         seed : int, None
-            seed for the configuration space object. If None:  a random seed will be used.
+            seed for the fidelity space object. If None:  a random seed will be used.
 
         Returns
         -------
@@ -321,6 +369,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
         # self.benchmark._pyroRelease()
 
+    @staticmethod
     def _id_generator(self) -> str:
         """ Helper function: Creates unique socket ids for the benchmark server """
         return str(uuid1())
