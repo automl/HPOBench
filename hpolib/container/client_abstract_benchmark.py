@@ -101,14 +101,20 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         if container_source is not None \
                 and any((s in container_source for s in ['shub', 'library', 'docker', 'oras', 'http'])):
 
-            # Racing conditions:
-            # If a process is already loading the files. Let all other processes wait.
-            # Following
-            # https://github.com/dhellmann/oslo.concurrency/blob/master/openstack/common/lockutils.py (line 56)
-            # we dont need to handle any exception which can occur in the download_container-method. The lock is
-            # released if the process crashes.
+            # Racing conditions: If a process is already loading the benchmark container, let all other processes wait.
+            # Following https://github.com/dhellmann/oslo.concurrency/blob/master/openstack/common/lockutils.py
+            # (line 56), we don't need to handle any exception which can occur in the download_container-method.
+            # The lock is released if the process crashes.
+            # Also, oslo.concurrency does not delete the unused lockfiles
+            # after usage. (An existing lock file does not mean that it is still locked!). They argue that in their
+            # "testing, when a lock file was deleted while another process was waiting for it, it created a sort of
+            # split-brain situation between any process that had been waiting for the deleted file, and any process
+            # that attempted to lock the file after it had been deleted."
+            # See: https://docs.openstack.org/oslo.concurrency/latest/admin/index.html
+            # We limit the number of lock file by having at most one lock file per benchmark and storing them in the
+            # temp folder, so that they are automatically deleted after reboot.
             @lockutils.synchronized('not_thread_process_safe', external=True,
-                                    lock_path=f'{self.config.cache_dir}/lock_{container_name}')
+                                    lock_path=f'{self.config.socket_dir}/lock_{container_name}', delay=5)
             def download_container(container_dir, container_name, container_source):
                 if not (container_dir / container_name).exists():
                     logger.debug('Going to pull the container from an online source.')

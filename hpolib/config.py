@@ -39,7 +39,7 @@ class HPOlibConfig:
                          'socket_dir': self.socket_dir,
                          'container_dir': self.cache_dir / f'hpolib3-{os.getuid()}',
                          # Find all hosted container on:
-                         # https://cloud.sylabs.io/library/keggensperger/automl
+                         # https://cloud.sylabs.io/library/phmueller/automl
                          'container_source': 'library://phmueller/automl',
                          'use_global_data': True,
                          'pyro_connect_max_wait': 400}
