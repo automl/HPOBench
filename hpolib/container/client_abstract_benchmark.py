@@ -370,7 +370,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # self.benchmark._pyroRelease()
 
     @staticmethod
-    def _id_generator(self) -> str:
+    def _id_generator() -> str:
         """ Helper function: Creates unique socket ids for the benchmark server """
         return str(uuid1())
 
