@@ -39,9 +39,6 @@ import hpolib.config
 log_level_str = os.environ.get('HPOLIB_DEBUG', 'false')
 log_level = logging.DEBUG if log_level_str == 'true' else logging.INFO
 
-console = logging.StreamHandler()
-console.setLevel(log_level)
-
 root = logging.getLogger()
 root.setLevel(level=log_level)
 
@@ -163,8 +160,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
         MAX_TRIES = 5
         for num_tries in range(MAX_TRIES):
-            p = subprocess.Popen(cmd.split(),
-                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p = subprocess.Popen(cmd,
+                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             output, err = p.communicate()
             logger.debug(err)
 

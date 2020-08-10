@@ -56,7 +56,7 @@ def run_experiment(on_travis: bool = False):
                     train_loss = result_dict['info']['train_loss']
                     assert result_dict['info']['fidelity'] == fidelity
 
-                    result_dict = b.objective_function_test(configuration, n_estimators=n_estimator)
+                    result_dict = b.objective_function_test(configuration, fidelity={'n_estimators': n_estimator})
                     test_loss = result_dict['function_value']
 
                     print(f'[{i+1}|{num_configs}] No Estimator: {n_estimator:3d} - '

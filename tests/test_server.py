@@ -16,5 +16,23 @@ def test_debug_env_variable_1():
     assert log_level == logging.DEBUG
 
 
+def test_debug_container():
+    os.environ['HPOLIB_DEBUG'] = 'true'
+    import hpolib.container.client_abstract_benchmark as client
+    importlib.reload(client)
+    importlib.reload(logging)
+    from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+
+    from hpolib.util.openml_data_manager import get_openmlcc18_taskids
+    task_id = get_openmlcc18_taskids()[0]
+
+    b = Benchmark(task_id=task_id,
+                  container_name='xgboost_benchmark',
+                  # container_source='library://phmueller/automl')
+                  container_source='/home/philipp/Dokumente/Code/TabularBenchmarks/Container')
+    cs = b.get_configuration_space()
+
+
 if __name__ == '__main__':
     test_debug_env_variable_1()
+    test_debug_container()
