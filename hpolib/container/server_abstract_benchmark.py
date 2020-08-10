@@ -21,11 +21,15 @@ from ConfigSpace.read_and_write import json as csjson
 
 from hpolib.config import HPOlibConfig
 
+# Read in the verbosity level from the environment variable HPOLIB_DEBUG
+log_level_str = os.environ.get('HPOLIB_DEBUG', 'false')
+log_level = logging.DEBUG if log_level_str == 'true' else logging.INFO
+
 console = logging.StreamHandler()
-console.setLevel(logging.INFO)
+console.setLevel(log_level)
 
 logger = logging.getLogger('BenchmarkServer')
-logger.setLevel(level=logging.INFO)
+logger.setLevel(log_level)
 logger.addHandler(console)
 
 
