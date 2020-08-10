@@ -19,7 +19,7 @@ tar xf fcnet_tabular_benchmarks.tar.gz
 2. Clone and install
 ====================
 ```
-cd /path/to/HPOlib3
+cd /path/to/HPOlib2
 pip install .[tabular_benchmarks]
 pip install git+https://github.com/google-research/nasbench.git@master
 

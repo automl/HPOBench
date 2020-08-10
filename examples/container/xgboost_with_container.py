@@ -66,7 +66,7 @@ def run_experiment(on_travis: bool = False):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(prog='HPOlib CC Datasets', description='HPOlib3 on the CC18 data sets.',
+    parser = argparse.ArgumentParser(prog='HPOlib CC Datasets', description='HPOlib2 on the CC18 data sets.',
                                      usage='%(prog)s --array_id <task_id>')
 
     parser.add_argument('--on_travis', action='store_true',

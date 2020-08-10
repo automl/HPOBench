@@ -16,13 +16,13 @@ VERSION v0.0.1
     cd /home \
     && pip install git+https://github.com/google-research/nasbench.git@master \
     && pip install git+https://github.com/automl/nas_benchmarks.git \
-    && git clone https://github.com/automl/HPOlib3.git \
-    && cd HPOlib3 \
+    && git clone https://github.com/automl/HPOlib2.git \
+    && cd HPOlib2 \
     && git checkout master \
     && pip install .[singularity,tabular_benchmarks] \
     && cd / \
-    && mkdir /var/lib/hpolib3/ \
-    && chmod -R 777 /var/lib/hpolib3/
+    && mkdir /var/lib/hpolib2/ \
+    && chmod -R 777 /var/lib/hpolib2/
 
 %runscript
-    python -s /home/HPOlib3/hpolib/container/server_abstract_benchmark.py nas.tabular_benchmarks $@
+    python -s /home/HPOlib2/hpolib/container/server_abstract_benchmark.py nas.tabular_benchmarks $@

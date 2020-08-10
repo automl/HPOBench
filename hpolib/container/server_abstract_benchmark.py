@@ -149,7 +149,7 @@ if __name__ == "__main__":
     Pyro4.config.REQUIRE_EXPOSE = False
 
     parser = argparse.ArgumentParser(prog='server_abstract_benchmark.py',
-                                     description='HPOlib3 Container Server',
+                                     description='HPOlib2 Container Server',
                                      usage='%(prog)s <importBase> <benchmark> <socket_id>')
     parser.add_argument('importBase', type=str,
                         help='Relative path to benchmark file in hpolib/benchmarks, e.g. ml.xgboost_benchmark')
