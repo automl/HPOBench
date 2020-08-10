@@ -9,9 +9,9 @@ VERSION v0.0.1
     apt update -y \
     && apt install build-essential git -y \
     && cd /home \
-    && git clone https://github.com/PhMueller/HPOlib3.git \
+    && git clone https://github.com/automl/HPOlib3.git \
     && cd HPOlib3 \
-    && git checkout debug_level \
+    && git checkout master \
     && pip install .[singularity,xgboost] \
     && cd / \
     && mkdir /var/lib/hpolib3/ \
