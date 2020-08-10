@@ -11,6 +11,7 @@ from hpolib.util import rng_helper
 
 logger = logging.getLogger('AbstractBenchmark')
 
+
 class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None):
@@ -147,7 +148,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
             # Sanity check that there are no fidelities in **kwargs
             for f in self.fidelity_space.get_hyperparameters():
                 if f.name in kwargs:
-                    raise ValueError(f'Fidelity parameter {f.name} should not be part of kwargs')
+                    raise ValueError(f'Fidelity parameter {f.name} should not be part of kwargs\n'
+                                     f'Fidelity: {fidelity}\n Kwargs: {kwargs}')
 
             # If kwargs contains the 'fidelity' arg, extract any fidelity parameters it contains and fill in
             # default values for the rest.
