@@ -21,7 +21,7 @@ optimization.
 2. Clone and install
 ====================
 ```
-cd /path/to/HPOlib3
+cd /path/to/HPOlib2
 pip install .[nasbench_101]
 
 pip install git+https://github.com/google-research/nasbench.git@master

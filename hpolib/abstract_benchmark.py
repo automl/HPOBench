@@ -84,7 +84,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         fidelity: Dict, None
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
-            see :py:func:`~HPOlib3.abstract_benchmark.objective_function`
+            see :py:func:`~HPOlib2.abstract_benchmark.objective_function`
 
         Returns
         -------

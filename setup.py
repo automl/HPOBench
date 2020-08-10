@@ -22,7 +22,7 @@ def read_file(file_name):
 
 
 setuptools.setup(
-    name='hpolib3',
+    name='hpolib2',
     author_email='eggenspk@informatik.uni-freiburg.de',
     description='Benchmark-Suite for Hyperparameter Optimization',
     long_description=read_file('README.md'),
@@ -30,8 +30,8 @@ setuptools.setup(
     license='Apache-2.0',
     url='https://www.automl.org/automl/hpolib/',
     project_urls={
-        'Documentation': 'https://automl.github.io/HPOlib3/',
-        'Source Code': 'https://github.com/automl/HPOlib3'
+        'Documentation': 'https://automl.github.io/HPOlib2/',
+        'Source Code': 'https://github.com/automl/HPOlib2'
     },
     version=read_file('hpolib/__version__.py').split()[-1].strip('\''),
     packages=setuptools.find_packages(exclude=['*.tests', '*.tests.*',
