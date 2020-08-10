@@ -3,11 +3,13 @@
 import abc
 from typing import Union, Dict
 
+import logging
 import ConfigSpace
 import numpy as np
 
 from hpolib.util import rng_helper
 
+logger = logging.getLogger('AbstractBenchmark')
 
 class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
@@ -113,8 +115,9 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
                 else:
                     config = None
             except Exception as e:
-                raise Exception('Error during the conversion of the provided configuration '
-                                'into a ConfigSpace.Configuration object') from e
+                logger.error('Error during the conversion of the provided configuration '
+                             'into a ConfigSpace.Configuration object')
+                raise e
 
             if config is None:
                 raise TypeError(f'Configuration has to be from type np.ndarray, dict, or ConfigSpace.Configuration but '
@@ -144,7 +147,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
             # Sanity check that there are no fidelities in **kwargs
             for f in self.fidelity_space.get_hyperparameters():
                 if f.name in kwargs:
-                    raise ValueError("Fidelity parameter %s should not be part of kwargs" % f.name)
+                    raise ValueError(f'Fidelity parameter {f.name} should not be part of kwargs')
 
             # If kwargs contains the 'fidelity' arg, extract any fidelity parameters it contains and fill in
             # default values for the rest.
@@ -155,14 +158,15 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
                 if isinstance(fidelity, dict):
                     default_fidelities_cfg = default_fidelities.get_dictionary()
                     fidelity = {k: fidelity.get(k, v) for k, v in default_fidelities_cfg.items()}
-                    fidelity = ConfigSpace.Configuration(self.configuration_space, fidelity)
+                    fidelity = ConfigSpace.Configuration(self.fidelity_space, fidelity)
                 elif isinstance(fidelity, ConfigSpace.Configuration):
                     fidelity = fidelity
                 else:
                     fidelity = None
             except Exception as e:
-                raise Exception('Error during the conversion of the provided fidelities '
-                                'into a FidelitySpace (ConfigSpace.Configuration) object') from e
+                logger.error('Error during the conversion of the provided fidelities '
+                             'into a FidelitySpace (ConfigSpace.Configuration) object')
+                raise e
 
             if fidelity is None:
                 raise TypeError(f'Configuration has to be from type np.ndarray, dict, or ConfigSpace.Configuration but '

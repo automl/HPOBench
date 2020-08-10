@@ -38,7 +38,8 @@ def run_experiment(on_travis: bool = False):
 
         b = Benchmark(task_id=task_id,
                       container_name='xgboost_benchmark',
-                      container_source='library://phmueller/automl')
+                      # container_source='library://phmueller/automl')
+                      container_source='/home/philipp/Dokumente/Code/TabularBenchmarks/Container')
 
         cs = b.get_configuration_space()
         start = time()
