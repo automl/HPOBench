@@ -11,6 +11,7 @@ from hpolib.util import rng_helper
 
 logger = logging.getLogger('AbstractBenchmark')
 
+
 class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None):
