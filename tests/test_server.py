@@ -1,7 +1,6 @@
-import pytest
-import os
-import logging
 import importlib
+import logging
+import os
 
 
 def set_log_level(debug):

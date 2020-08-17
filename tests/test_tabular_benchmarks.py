@@ -14,7 +14,7 @@ def test_tabular_benchmark_wrong_input():
     default_config = setup()
     benchmark = SliceLocalizationBenchmark(rng=1)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         benchmark.objective_function(configuration=default_config, fidelity=dict(budget=0))
 
     with pytest.raises(ValueError):
@@ -32,7 +32,7 @@ def test_tabular_benchmark_wrong_input():
     with pytest.raises(AssertionError):
         benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1), run_index=4)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         benchmark.objective_function(configuration=default_config, fidelity=dict(budget=101), run_index=3)
 
     benchmark = None

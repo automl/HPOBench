@@ -1,8 +1,8 @@
+import logging
+
 import numpy as np
 import pytest
-from time import time
 
-import logging
 logging.basicConfig(level=logging.DEBUG)
 
 try:
@@ -23,9 +23,10 @@ def test_whitebox_without_container_xgb():
 
     n_estimator = 32
     subsample = 1
-    result_dict = b.objective_function(configuration, fidelity=dict(n_estimators=n_estimator, subsample=subsample), rng=0)
+    result_dict = b.objective_function(configuration, fidelity=dict(n_estimators=n_estimator, subsample=subsample),
+                                       rng=0)
     valid_loss = result_dict['function_value']
-    train_loss = result_dict['train_loss']
+    train_loss = result_dict['info']['train_loss']
 
     result_dict = b.objective_function_test(configuration, fidelity=dict(n_estimators=n_estimator), rng=0)
     test_loss = result_dict['function_value']
@@ -51,7 +52,7 @@ def test_whitebox_with_container():
     subsample = 1
     result_dict = b.objective_function(configuration, fidelity=dict(n_estimators=n_estimator, subsample=subsample))
     valid_loss = result_dict['function_value']
-    train_loss = result_dict['train_loss']
+    train_loss = result_dict['info']['train_loss']
     result_dict = b.objective_function_test(configuration, fidelity=dict(n_estimators=n_estimator))
     test_loss = result_dict['function_value']
 
