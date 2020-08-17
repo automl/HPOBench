@@ -1,14 +1,22 @@
 #!/usr/bin/env sh
 
 if [[ "$RUN_TESTS" == "true" ]]; then
-    if [[ "$USE_SINGULARITY" == "true" ]]; then
-        echo "Run tests with singularity support"
-        # Create the coverage report for the singularity example, since it covers more tests.
+    if [[ "RUN_CODECOV" == "true" ]]; then
+        echo "Run tests with code coverage"
         pytest -sv --cov=hpolib tests/
+        exit_code=$?
         codecov
     else
-        echo "Run tests without singularity support"
+        echo "Run tests without code coverage"
         pytest -sv tests/
+        exit_code=$?
+    fi
+
+    if [[ "$exit_code" -eq 0 ]]; then
+        echo "All test have passed."
+    else
+        echo "Some Tests have failed."
+        exit 1
     fi
 fi
 

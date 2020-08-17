@@ -12,6 +12,7 @@ jobs:
     env:
       - RUN_TESTS="true"
       - USE_SINGULARITY="true"
+      - RUN_CODECOV="true"
   - python: "3.7"
     env: RUN_CODESTYLE="true"
   - python: "3.7"
