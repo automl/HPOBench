@@ -1,8 +1,5 @@
 import pytest
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
 from hpolib.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark, \
     NavalPropulsionBenchmark, ParkinsonsTelemonitoringBenchmark, ProteinStructureBenchmark
 
@@ -10,43 +7,42 @@ from hpolib.container.benchmarks.nas.tabular_benchmarks import SliceLocalization
 def setup():
     benchmark = SliceLocalizationBenchmark()
     default_config = benchmark.get_configuration_space(seed=1).get_default_configuration()
-
     return default_config
 
 
 def test_tabular_benchmark_wrong_input():
-    container_source, default_config = setup()
+    default_config = setup()
     benchmark = SliceLocalizationBenchmark(rng=1)
 
     with pytest.raises(AssertionError):
-        benchmark.objective_function(configuration=default_config, budget=0)
+        benchmark.objective_function(configuration=default_config, fidelity=dict(budget=0))
 
     with pytest.raises(ValueError):
-        benchmark.objective_function(configuration=default_config, budget=1, run_index=0.1)
+        benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1), run_index=0.1)
 
     with pytest.raises(AssertionError):
-        benchmark.objective_function(configuration=default_config, budget=1, run_index=[4])
+        benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1), run_index=[4])
 
     with pytest.raises(AssertionError):
-        benchmark.objective_function(configuration=default_config, budget=1, run_index=[])
+        benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1), run_index=[])
 
     with pytest.raises(AssertionError):
-        benchmark.objective_function(configuration=default_config, budget=1, run_index=-1)
+        benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1), run_index=-1)
 
     with pytest.raises(AssertionError):
-        benchmark.objective_function(configuration=default_config, budget=1, run_index=4)
+        benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1), run_index=4)
 
     with pytest.raises(AssertionError):
-        benchmark.objective_function(configuration=default_config, budget=101, run_index=3)
+        benchmark.objective_function(configuration=default_config, fidelity=dict(budget=101), run_index=3)
 
     benchmark = None
 
 
 def test_slice_benchmark():
-    container_source, default_config = setup()
+    default_config = setup()
 
     benchmark = SliceLocalizationBenchmark(rng=1)
-    result = benchmark.objective_function(configuration=default_config, budget=1, run_index=[0, 1, 2, 3])
+    result = benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1), run_index=[0, 1, 2, 3])
 
     mean = 0.01828
     assert result['function_value'] == pytest.approx(mean, abs=0.0001)
@@ -65,10 +61,10 @@ def test_slice_benchmark():
 
 
 def test_naval_benchmark():
-    container_source, default_config = setup()
+    default_config = setup()
 
     benchmark = NavalPropulsionBenchmark(rng=1)
-    result = benchmark.objective_function(configuration=default_config, budget=1, run_index=[0, 1, 2, 3])
+    result = benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1), run_index=[0, 1, 2, 3])
 
     mean = 0.8928
     assert result['function_value'] == pytest.approx(mean, abs=0.0001)
@@ -87,10 +83,10 @@ def test_naval_benchmark():
 
 
 def test_protein_benchmark():
-    container_source, default_config = setup()
+    default_config = setup()
 
     benchmark = ProteinStructureBenchmark(rng=1)
-    result = benchmark.objective_function(configuration=default_config, budget=1, run_index=[0, 1, 2, 3])
+    result = benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1), run_index=[0, 1, 2, 3])
 
     mean = 0.4474
     assert result['function_value'] == pytest.approx(mean, abs=0.0001)
@@ -109,10 +105,10 @@ def test_protein_benchmark():
 
 
 def test_parkinson_benchmark():
-    container_source, default_config = setup()
+    default_config = setup()
 
     benchmark = ParkinsonsTelemonitoringBenchmark(rng=1)
-    result = benchmark.objective_function(configuration=default_config, budget=1, run_index=[0, 1, 2, 3])
+    result = benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1), run_index=[0, 1, 2, 3])
 
     mean = 0.7425
     assert result['function_value'] == pytest.approx(mean, abs=0.0001)

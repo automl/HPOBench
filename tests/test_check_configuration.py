@@ -1,7 +1,7 @@
 from typing import Union, Tuple, Dict, List
 import unittest
 
-import numpy as np
+import pytest
 
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace import UniformFloatHyperparameter, UniformIntegerHyperparameter, \
@@ -68,8 +68,6 @@ class TestCheckUnittest(unittest.TestCase):
                         configuration=self.foo.configuration_space.sample_configuration())
         self.assertEqual(ret, sample_fidel)
 
-        try:
+        with pytest.raises(ValueError):
             tmp(self=self.foo, configuration=self.foo.configuration_space.sample_configuration(),
                 f_cat=1)
-        except ValueError as e:
-            self.assertEqual(e.__str__(), "Fidelity parameter f_cat should not be part of kwargs")
