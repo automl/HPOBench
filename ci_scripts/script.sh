@@ -1,10 +1,12 @@
 #!/usr/bin/env sh
 
 if [[ "$RUN_TESTS" == "true" ]]; then
-    if [[ "RUN_CODECOV" == "true" ]]; then
+    if [[ "$RUN_CODECOV" == "true" ]]; then
         echo "Run tests with code coverage"
         pytest -sv --cov=hpolib tests/
         exit_code=$?
+
+        echo "Run code coverage"
         codecov
     else
         echo "Run tests without code coverage"
