@@ -1,8 +1,8 @@
-from typing import Union, Tuple, Dict, List
 import unittest
+from typing import Dict, Union
 
+import numpy as np
 import pytest
-
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace import UniformFloatHyperparameter, UniformIntegerHyperparameter, \
     CategoricalHyperparameter
@@ -42,9 +42,13 @@ class TestCheckUnittest(unittest.TestCase):
         @AbstractBenchmark._check_configuration
         def tmp(_, configuration: Dict, **kwargs):
             return configuration
+
         tmp(self=self.foo, configuration={"flt": 0.2, "cat": 1, "itg": 1})
         tmp(self=self.foo, configuration=self.foo.configuration_space.sample_configuration())
+
         self.assertRaises(Exception, tmp, {"self": self.foo, "configuration": {"flt": 0.2, "cat": 1}})
+        self.assertRaises(Exception, tmp, {"self": self.foo, "configuration": {"flt": 10000, "cat": 500000}})
+        self.assertRaises(Exception, tmp, {"self": self.foo, "configuration": [0.2, 1]})
 
     def test_fidel_decorator(self):
         @AbstractBenchmark._check_fidelity
@@ -71,3 +75,40 @@ class TestCheckUnittest(unittest.TestCase):
         with pytest.raises(ValueError):
             tmp(self=self.foo, configuration=self.foo.configuration_space.sample_configuration(),
                 f_cat=1)
+
+        self.assertRaises(Exception, tmp, {"self": self.foo,
+                                           "configuration": self.foo.configuration_space.sample_configuration(),
+                                           "fidelity": {"f_cat": "b"}})
+        self.assertRaises(TypeError, tmp, {"self": self.foo,
+                                           "configuration": self.foo.configuration_space.sample_configuration(),
+                                           "fidelity": [0.1]})
+
+
+class TestCheckUnittest2(unittest.TestCase):
+
+    def setUp(self):
+        class Dummy():
+            configuration_space = ConfigurationSpace(seed=1)
+            hp1 = UniformFloatHyperparameter("hp1", lower=0.0, upper=0.5, default_value=0.5)
+            hp2 = UniformFloatHyperparameter("hp2", lower=1.0, upper=1.5, default_value=1.5)
+            hp3 = UniformFloatHyperparameter("hp3", lower=2.0, upper=2.5, default_value=2.5)
+            configuration_space.add_hyperparameters([hp1, hp2, hp3])
+
+        self.foo = Dummy()
+
+    def test_config_decorator(self):
+        @AbstractBenchmark._check_configuration
+        def tmp(_, configuration: Union[Dict, np.ndarray], **kwargs):
+            return configuration
+
+        tmp(self=self.foo, configuration=np.array([0.25, 1.25, 2.25]))
+
+        @AbstractBenchmark._configuration_as_array
+        def tmp(_, configuration: Dict, **kwargs):
+            return configuration
+
+        result = tmp(self=self.foo, configuration=self.foo.configuration_space.get_default_configuration())
+        assert np.array_equal(result, np.array([0.5, 1.5, 2.5]))
+
+        result = tmp(self=self.foo, configuration=np.array([0.5, 1.5, 2.5]))
+        assert np.array_equal(result, np.array([0.5, 1.5, 2.5]))

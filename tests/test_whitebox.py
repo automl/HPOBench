@@ -7,6 +7,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 try:
     import Pyro4
+
     skip_container_test = False
 except ImportError:
     skip_container_test = True
