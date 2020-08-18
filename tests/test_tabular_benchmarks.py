@@ -1,5 +1,11 @@
 import pytest
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+import os
+os.environ['HPOLIB_DEBUG'] = 'true'
+
 from hpolib.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark, \
     NavalPropulsionBenchmark, ParkinsonsTelemonitoringBenchmark, ProteinStructureBenchmark
 
