@@ -5,7 +5,7 @@ SMAC on Cartpole with Hyperband
 This example shows the usage of an Hyperparameter Tuner, such as SMAC on the cartpole benchmark.
 We use SMAC with Hyperband.
 
-Please install the necessary dependencies via ``pip install .[singularity]`` and singularity (v3.5).
+Please install the necessary dependencies via ``pip install .`` and singularity (v3.5).
 https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps
 """
 import logging

@@ -11,7 +11,7 @@ file system. If it is a link to a registry, the container will be downloaded to 
 hpolibrc. A second call, will first look into the data directory, if the container is already available, so it will not
 be downloaded twice.
 
-Please install the necessary dependencies via ``pip install .[singularity]`` and singularity (v3.5).
+Please install the necessary dependencies via ``pip install .`` and singularity (v3.5).
 https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps
 """
 

@@ -19,7 +19,7 @@ Recommend: ``Python >= 3.6.0``
 
 ```
 cd /path/to/HPOlib3
-pip install .[]
+pip install .
 ```
 
 For more info about the nasbench201, please have a look at

@@ -12,7 +12,7 @@ To use the container-example, you have to have singulartiy (>3.5) installed. Fol
 https://sylabs.io/guides/3.1/user-guide/quick_start.html#quick-installation-steps
 
 Furthermore, make sure to install the right dependencies for the hpolib via:
-``pip3 install .[singularity]``.
+``pip3 install .``.
 """
 
 import argparse
