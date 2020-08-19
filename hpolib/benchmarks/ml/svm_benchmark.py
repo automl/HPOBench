@@ -165,7 +165,6 @@ class SupportVectorMachine(AbstractBenchmark):
                 'info': {'train_loss': train_loss,
                          'fidelity': fidelity['dataset_fraction']}}
 
-
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
@@ -198,7 +197,8 @@ class SupportVectorMachine(AbstractBenchmark):
                 train_valid_loss: Loss on the train+valid data set
                 fidelity : used fidelities in this evaluation
         """
-        assert np.isclose(fidelity['dataset_fraction'], 1), f'Data set fraction must be 1 but was {fidelity["dataset_fraction"]}'
+        assert np.isclose(fidelity['dataset_fraction'], 1), \
+            f'Data set fraction must be 1 but was {fidelity["dataset_fraction"]}'
 
         start_time = time.time()
 
