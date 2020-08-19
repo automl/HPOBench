@@ -1,20 +1,19 @@
 import logging
-
-import pytest
-
 logging.basicConfig(level=logging.DEBUG)
 
-import os
-
-os.environ['HPOLIB_DEBUG'] = 'true'
+import pytest
 
 from hpolib.container.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
     Cifar10ValidNasBench201Benchmark, Cifar10NasBench201Benchmark as Cifar10NasBench201BenchmarkContainer
 
 from hpolib.benchmarks.nas.nasbench_201 import Cifar10NasBench201Benchmark
+from hpolib.util.container_utils import enable_container_debug
+
+enable_container_debug()
 
 
 def test_nasbench201_cifar10valid():
+
     b = Cifar10ValidNasBench201Benchmark(rng=0)
 
     cs = b.get_configuration_space(seed=0)
@@ -59,6 +58,7 @@ def test_nasbench201_Image():
     assert result['cost'] == pytest.approx(13385.25, abs=0.1)
     assert result['info']['train_precision'] == result['function_value']
     assert result['info']['train_cost'] == result['cost']
+
 
 def test_nasbench201_cifar10_container():
     b = Cifar10NasBench201BenchmarkContainer(rng=0)
@@ -128,7 +128,7 @@ def test_nasbench201_fidelity_space():
 
 
 def test_nasbench201_config():
-    cs = Cifar10NasBench201Benchmark(rng=0).get_configuration_space(0)
+    cs = Cifar10NasBench201Benchmark(rng=0).get_configuration_space(seed=0)
     c = cs.sample_configuration()
     func = Cifar10NasBench201Benchmark.config_to_structure_func(4)
     struct = func(c)
