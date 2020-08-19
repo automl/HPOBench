@@ -7,12 +7,17 @@ from hpolib.container.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benc
     Cifar10ValidNasBench201Benchmark, Cifar10NasBench201Benchmark as Cifar10NasBench201BenchmarkContainer
 
 from hpolib.benchmarks.nas.nasbench_201 import Cifar10NasBench201Benchmark
-from hpolib.util.container_utils import enable_container_debug
-
-enable_container_debug()
+from hpolib.util.container_utils import disable_container_debug, enable_container_debug
 
 
-def test_nasbench201_cifar10valid():
+@pytest.fixture(scope='module')
+def enable_debug():
+    enable_container_debug()
+    yield
+    disable_container_debug()
+
+
+def test_nasbench201_cifar10valid(enable_debug):
 
     b = Cifar10ValidNasBench201Benchmark(rng=0)
 
@@ -28,7 +33,7 @@ def test_nasbench201_cifar10valid():
     assert result['info']['train_cost'] == result['cost']
 
 
-def test_nasbench201_cifar100():
+def test_nasbench201_cifar100(enable_debug):
     b = Cifar100NasBench201Benchmark(rng=0)
 
     cs = b.get_configuration_space(seed=0)
@@ -44,7 +49,7 @@ def test_nasbench201_cifar100():
     assert result['info']['train_cost'] == result['cost']
 
 
-def test_nasbench201_Image():
+def test_nasbench201_Image(enable_debug):
     b = ImageNetNasBench201Benchmark(rng=0)
 
     cs = b.get_configuration_space(seed=0)
@@ -60,7 +65,7 @@ def test_nasbench201_Image():
     assert result['info']['train_cost'] == result['cost']
 
 
-def test_nasbench201_cifar10_container():
+def test_nasbench201_cifar10_container(enable_debug):
     b = Cifar10NasBench201BenchmarkContainer(rng=0)
 
     cs = b.get_configuration_space(seed=0)

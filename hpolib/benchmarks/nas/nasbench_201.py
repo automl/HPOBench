@@ -25,8 +25,10 @@ pip install .[]
 For more info about the nasbench201, please have a look at
 https://github.com/D-X-Y/AutoDL-Projects/blob/master/docs/NAS-Bench-201.md
 """
+import logging
 from typing import Union, Dict, List, Text, Tuple
 from copy import deepcopy
+from time import time
 
 import ConfigSpace as CS
 import numpy as np
@@ -37,6 +39,8 @@ from hpolib.util.data_manager import NASBench_201Data
 
 __version__ = '0.0.1'
 MAX_NODES = 4
+
+logger = logging.getLogger('NASBENCH201')
 
 
 class NasBench201BaseBenchmark(AbstractBenchmark):
@@ -114,7 +118,10 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         super(NasBench201BaseBenchmark, self).__init__(rng=rng)
 
         data_manager = NASBench_201Data(dataset=dataset)
+        logger.debug('Starting to load data')
+        t = time()
         self.data = data_manager.load()
+        logger.info(f'Loading data took {time() - t:.2f}')
 
         self.config_to_structure = NasBench201BaseBenchmark.config_to_structure_func(max_nodes=MAX_NODES)
 
