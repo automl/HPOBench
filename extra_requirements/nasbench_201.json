@@ -1,0 +1,3 @@
+{
+  "nasbench_201": ["oslo.concurrency>=4.2.0"]
+}

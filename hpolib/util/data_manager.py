@@ -21,7 +21,11 @@ from urllib.request import urlretrieve, urlopen
 from zipfile import ZipFile
 
 import numpy as np
-from oslo_concurrency import lockutils
+
+try:
+    from oslo_concurrency import lockutils
+except ImportError:
+    print("oslo_concurrency not installed, can't download datasets for nasbench201 (not needed for containers)")
 
 import hpolib
 
