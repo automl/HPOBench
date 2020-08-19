@@ -124,7 +124,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
-                           data_seed: Union[Tuple, int, None] = (777, 888, 999),
+                           data_seed: Union[List, Tuple, int, None] = (777, 888, 999),
                            **kwargs) -> Dict:
         """
         Objective function for the NASBench201 Benchmark.
@@ -164,7 +164,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
             To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
             If this parameter is not given, the default random state is used.
-        data_seed : Tuple, None, int
+        data_seed : List, Tuple, None, int
             The nasbench_201 experiments include for each run 3 different seeds: 777, 888, 999.
             The user can specify which seed to use. If more than one seed is given, the results are averaged
             across the seeds.
@@ -191,8 +191,11 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         """
 
         # Check if the data set seeds are valid
-        assert isinstance(data_seed, Tuple) or isinstance(data_seed, int), \
+        assert isinstance(data_seed, List) or isinstance(data_seed, Tuple) or isinstance(data_seed, int), \
             f'data seed has unknown data type {type(data_seed)}, but should be tuple or int (777,888,999)'
+
+        if isinstance(data_seed, List):
+            data_seed = tuple(data_seed)
 
         if isinstance(data_seed, int):
             data_seed = (data_seed, )

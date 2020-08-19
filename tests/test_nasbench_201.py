@@ -116,7 +116,7 @@ def test_nasbench201_cifar10():
         b.objective_function(configuration=config, fidelity=fidelity, data_seed=0)
 
     with pytest.raises(AssertionError):
-        b.objective_function(configuration=config, fidelity=fidelity, data_seed=[777])
+        b.objective_function(configuration=config, fidelity=fidelity, data_seed=[777, 881])
 
     with pytest.raises(AssertionError):
         b.objective_function(configuration=config, fidelity=fidelity, data_seed=(777, 881))
