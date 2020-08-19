@@ -50,3 +50,13 @@ def test_rng_helper_2():
     old_rng = np.random.RandomState(123)
     rng = get_rng(None, old_rng)
     assert rng == old_rng
+
+
+def test_debug_level():
+    from hpolib.util.container_utils import enable_container_debug, disable_container_debug
+    import os
+    enable_container_debug()
+    assert os.environ['HPOLIB_DEBUG'] == 'true'
+
+    disable_container_debug()
+    assert os.environ['HPOLIB_DEBUG'] == 'false'
