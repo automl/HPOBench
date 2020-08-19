@@ -10,9 +10,9 @@ VERSION v0.0.1
     apt install build-essential git wget curl -y
 
     cd /home \
-    && git clone https://github.com/PhMueller/HPOlib3.git \
+    && git clone https://github.com/automl/HPOlib3.git \
     && cd HPOlib3 \
-    && git checkout UpDev \
+    && git checkout development \
     && pip install .[singularity] \
     && cd / \
     && mkdir /var/lib/hpolib3/ \
