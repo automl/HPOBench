@@ -8,14 +8,15 @@ import os
 
 os.environ['HPOLIB_DEBUG'] = 'true'
 
-from hpolib.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
-    Cifar10ValidNasBench201Benchmark, Cifar10NasBench201Benchmark
+from hpolib.container.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
+    Cifar10ValidNasBench201Benchmark, Cifar10NasBench201Benchmark as Cifar10NasBench201BenchmarkContainer
+
+from hpolib.benchmarks.nas.nasbench_201 import Cifar10NasBench201Benchmark
 
 
 def test_nasbench201_cifar10valid():
     b = Cifar10ValidNasBench201Benchmark(rng=0)
 
-    assert b.data is not None
     cs = b.get_configuration_space(seed=0)
     config = cs.sample_configuration()
     fidelity = {'epoch': 199}
@@ -31,7 +32,6 @@ def test_nasbench201_cifar10valid():
 def test_nasbench201_cifar100():
     b = Cifar100NasBench201Benchmark(rng=0)
 
-    assert b.data is not None
     cs = b.get_configuration_space(seed=0)
     config = cs.sample_configuration()
     fidelity = {'epoch': 199}
@@ -48,7 +48,6 @@ def test_nasbench201_cifar100():
 def test_nasbench201_Image():
     b = ImageNetNasBench201Benchmark(rng=0)
 
-    assert b.data is not None
     cs = b.get_configuration_space(seed=0)
     config = cs.sample_configuration()
     fidelity = {'epoch': 199}
@@ -60,6 +59,20 @@ def test_nasbench201_Image():
     assert result['cost'] == pytest.approx(13385.25, abs=0.1)
     assert result['info']['train_precision'] == result['function_value']
     assert result['info']['train_cost'] == result['cost']
+
+def test_nasbench201_cifar10_container():
+    b = Cifar10NasBench201BenchmarkContainer(rng=0)
+
+    cs = b.get_configuration_space(seed=0)
+    config = cs.sample_configuration()
+    fidelity = {'epoch': 199}
+
+    result = b.objective_function(configuration=config, fidelity=fidelity, data_seed=(777, 888, 999))
+
+    assert result is not None
+    assert result['function_value'] == pytest.approx(0.5019, abs=0.1)
+    assert result['cost'] == pytest.approx(4411.75, abs=0.1)
+    assert result['info']['train_precision'] == result['function_value']
 
 
 def test_nasbench201_cifar10():
