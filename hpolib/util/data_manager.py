@@ -14,12 +14,14 @@ import gzip
 import logging
 import pickle
 import tarfile
+from io import BytesIO
 from pathlib import Path
-from typing import Tuple
-from urllib.request import urlretrieve
+from typing import Tuple, Dict
+from urllib.request import urlretrieve, urlopen
+from zipfile import ZipFile
 
 import numpy as np
-from scipy.io import loadmat
+from oslo_concurrency import lockutils
 
 import hpolib
 
@@ -251,7 +253,7 @@ class CIFAR10Data(DataManager):
         xs = []
         ys = []
         for j in range(5):
-            fh = open(self.__load_data(filename=f'data_batch_{j+1}'), "rb")
+            fh = open(self.__load_data(filename=f'data_batch_{j + 1}'), "rb")
             d = pickle.load(fh, encoding='latin1')
             fh.close()
             x = d['data']
@@ -381,8 +383,7 @@ class SVHNData(DataManager):
             X -= X.mean(axis=1)[:, np.newaxis]
             X = X.reshape(data_shape)
 
-        return X_train, y_train[:, 0], X_valid, y_valid[:, 0], \
-            X_test, y_test[:, 0]
+        return X_train, y_train[:, 0], X_valid, y_valid[:, 0], X_test, y_test[:, 0]
 
     def __load_data(self, filename_train: str,
                     filename_test: str) -> Tuple[np.ndarray, np.ndarray,
@@ -413,6 +414,7 @@ class SVHNData(DataManager):
             else:
                 self.logger.debug(f"Load data {save_fl}")
 
+            from scipy.io import loadmat
             data = loadmat(save_fl)
 
             x = data['X'].T
@@ -423,3 +425,92 @@ class SVHNData(DataManager):
         X_test, y_test = __load_x_y(filename_test)
 
         return X_train, y_train, X_test, y_test
+
+
+class NASBench_201Data(DataManager):
+    """ Download the necessary files for the nasbench201 benchmark. The benchmark has a data file for every pair of
+    data set (cifar10, cifar10-valid, cifar100, ImageNet16-120)
+    seed (777,888,999)
+    metric (train_acc1es, train_times, train_losses, eval_acc1es, eval_times, eval_losses)
+
+    Download for each data set the all corresponding data files.
+    The files should be hosted on automl.org.
+
+    For more information about the metric, have a look in the benchmark docstrings.
+    """
+
+    def __init__(self, dataset: str):
+        """
+        Init the NasbenchData Manager.
+
+        Parameters
+        ----------
+        dataset : str
+            One of cifar10, cifar10-valid, cifar100, ImageNet16-120
+        """
+        assert dataset in ['cifar10', 'cifar10-valid', 'cifar100', 'ImageNet16-120']
+
+        super(NASBench_201Data, self).__init__()
+
+        self.files = self.get_files_per_dataset(dataset)
+        self._save_dir = hpolib.config_file.data_dir / "nasbench_201"
+        self._url_source = 'https://www.automl.org/wp-content/uploads/2020/08/nasbench_201_data_v1.1.zip'
+        self.data = {}
+
+        self.create_save_directory(self._save_dir)
+
+    @staticmethod
+    def get_seeds_metrics():
+        from itertools import product
+        seeds = [777, 888, 999]
+        metrics = NASBench_201Data.get_metrics()
+        return product(seeds, metrics)
+
+    @staticmethod
+    def get_metrics():
+        return ['train_acc1es', 'train_losses', 'train_times',
+                'eval_acc1es', 'eval_times', 'eval_losses']
+
+    @staticmethod
+    def get_files_per_dataset(dataset):
+        seeds_metrics = NASBench_201Data.get_seeds_metrics()
+        files = [f'nb201_{dataset}_{seed}_{metric}.pkl' for seed, metric in seeds_metrics]
+        return files
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpolib.config_file.cache_dir}/lock_nasbench_201_data', delay=0.5)
+    def _download(self):
+        # Check if data is already downloaded. If a single file is missing, we have to download the complete zip again.
+        # Use a file lock to ensure that no two processes try to download the same files at the same time.
+        file_is_missing = not all([(self._save_dir / 'data' / file).exists() for file in self.files])
+
+        if not file_is_missing:
+            self.logger.debug('NasBench201DataManager: Data already downloaded')
+        else:
+            self.logger.info(f'NasBench201DataManager: Start downloading data from {self._url_source} '
+                             f'to {self._save_dir}')
+
+            with urlopen(self._url_source) as zip_archive:
+                with ZipFile(BytesIO(zip_archive.read())) as zip_file:
+                    zip_file.extractall(self._save_dir)
+
+    def _load(self) -> Dict:
+        """ Load the data from the file system """
+        import pickle
+        data = {}
+        for (seed, metric_name), file in zip(NASBench_201Data.get_seeds_metrics(), self.files):
+            with (self._save_dir / 'data' / file).open('rb') as fh:
+                metric = pickle.load(fh)
+                data[(seed, metric_name)] = metric
+
+        return data
+
+    def load(self) -> Dict:
+        """ Loads data from data directory as defined in config_file.data_directory"""
+
+        self._download()
+
+        self.data = self._load()
+        self.logger.info('NasBench201DataManager: Data successfully loaded')
+
+        return self.data
