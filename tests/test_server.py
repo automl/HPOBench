@@ -1,17 +1,20 @@
-import pytest
-import os
-import logging
 import importlib
+import logging
+import os
+
+
+def set_log_level(debug):
+    os.environ['HPOLIB_DEBUG'] = 'true' if debug else 'false'
+    import hpolib.container.client_abstract_benchmark as client
+    importlib.reload(client)
 
 
 def test_debug_env_variable_1():
-    os.environ['HPOLIB_DEBUG'] = 'false'
+    set_log_level(False)
     from hpolib.container.client_abstract_benchmark import log_level
     assert log_level == logging.INFO
 
-    os.environ['HPOLIB_DEBUG'] = 'true'
-    import hpolib.container.client_abstract_benchmark as client
-    importlib.reload(client)
+    set_log_level(True)
     from hpolib.container.client_abstract_benchmark import log_level
     assert log_level == logging.DEBUG
 
@@ -19,10 +22,7 @@ def test_debug_env_variable_1():
 def test_debug_container():
     # Test if the debug option works. Check if some debug output from the server is visible.
 
-    os.environ['HPOLIB_DEBUG'] = 'true'
-
-    import hpolib.container.client_abstract_benchmark as client
-    importlib.reload(client)
+    set_log_level(True)
 
     from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
     from hpolib.util.openml_data_manager import get_openmlcc18_taskids
@@ -34,6 +34,29 @@ def test_debug_container():
                   container_source='library://phmueller/automl')
     cs = b.get_configuration_space()
     assert cs is not None
+
+    set_log_level(False)
+
+
+def test_benchmark_encoder():
+    from enum import Enum
+    class test_enum(Enum):
+        obj = 'name'
+
+        def __str__(self):
+            return str(self.value)
+
+    from hpolib.container.server_abstract_benchmark import BenchmarkEncoder
+    import json
+    import numpy as np
+
+    enum_obj = test_enum.obj
+    enum_obj_str = json.dumps(enum_obj, cls=BenchmarkEncoder)
+    assert enum_obj_str == '"name"'
+
+    array = np.array([1, 2, 3, 4])
+    array_str = json.dumps(array, cls=BenchmarkEncoder)
+    assert array_str == '[1, 2, 3, 4]'
 
 
 if __name__ == '__main__':

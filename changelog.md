@@ -1,5 +1,6 @@
 # 0.0.4
-
+  * improve test coverage
+  
 # 0.0.3
   * improve forwarding exceptions in containerized benchmarks
   * allow to set debug level with env variable
