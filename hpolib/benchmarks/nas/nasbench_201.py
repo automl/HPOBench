@@ -164,7 +164,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
             If this parameter is not given, the default random state is used.
         data_seed : List, Tuple, None, int
-            The nasbench_201 experiments include for each run 3 different seeds: 777, 888, 999.
+            The nasbench_201 benchmark include for each run 3 different seeds: 777, 888, 999.
             The user can specify which seed to use. If more than one seed is given, the results are averaged
             across the seeds but then the time needed for training is the sum of the costs per seed.
             Note:
