@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Tuple, Dict
 from urllib.request import urlretrieve, urlopen
 from zipfile import ZipFile
+from time import time
 
 import numpy as np
 
@@ -511,10 +512,11 @@ class NASBench_201Data(DataManager):
 
     def load(self) -> Dict:
         """ Loads data from data directory as defined in config_file.data_directory"""
+        self.logger.debug('NasBench201DataManager: Starting to load data')
+        t = time()
 
         self._download()
-
         self.data = self._load()
-        self.logger.info('NasBench201DataManager: Data successfully loaded')
+        self.logger.info(f'NasBench201DataManager: Data successfully loaded after {time() - t:.2f}')
 
         return self.data

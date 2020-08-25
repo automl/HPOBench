@@ -28,7 +28,6 @@ https://github.com/D-X-Y/AutoDL-Projects/blob/master/docs/NAS-Bench-201.md
 import logging
 from typing import Union, Dict, List, Text, Tuple
 from copy import deepcopy
-from time import time
 
 import ConfigSpace as CS
 import numpy as np
@@ -51,61 +50,55 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         results for architectures on 4 different data sets.
 
         We have split the "api" file from NASBench201 in separate files per data set.
-        The original "api" file contains all data sets, but this took to much RAM.
+        The original "api" file contains all data sets, but loading this single file took too much RAM.
 
         We recommend to not call this base class directly but using the correct subclass below.
 
         The parameter ``dataset`` indicates which data set was used for training.
 
         For each data set the metrics
-        train_acc1es, train_losses, train_times, 'eval_acc1es', 'eval_times', 'eval_losses' are available.
-        However, the data sets report them on different data splits (test, valid or test+valid).
+        'train_acc1es', 'train_losses', 'train_times', 'eval_acc1es', 'eval_times', 'eval_losses' are available.
+        However, the data sets report them on different data splits (train, train + valid, test, valid or test+valid).
+
+        Note:
+        - The parameter epoch is 0 indexed!
+        - In the original data, the training splits are always marked with the key 'train' but they use different
+          identifiers to refer to the available evaluation splits. We report them also in the table below.
+
         The table in the following shows the mapping from data set and metric to used split.
 
-        |-------------------|---------------|---------------|
-        | Data set          | train_*       | eval_*        |
-        |-------------------|---------------|---------------|
-        | 'cifar10-valid'   | train         | valid + test  |
-        | 'cifar10'         | train + valid | test          |
-        | 'cifar100'        | train         | valid + test  |
-        | 'ImageNet16-120'  | train         | valid + test  |
-        |-------------------|---------------|---------------|
-
-        In the stored data, they use different identifiers to refer to the right splits from above.
-        The next table shows which identifiers should be used for each data set
-
-        |-------------------|---------------|
-        | Data set          | eval*         |
-        |-------------------|---------------|
-        | 'cifar10-valid'   | x-valid       |
-        | 'cifar10'         | ori-test      |
-        | 'cifar100'        | ori-test      |
-        | 'ImageNet16-120'  | ori-test      |
-        |-------------------|---------------|
+        |-------------------|---------------|-----------------------------------|
+        | Data set          | train_*       | eval_*        (key in orig. data) |
+        |-------------------|---------------|-----------------------------------|
+        | 'cifar10-valid'   | train         | valid         (x-valid)           |
+        | 'cifar10'         | train + valid | test          (ori-test)          |
+        | 'cifar100'        | train         | valid + test  (ori-test)          |
+        | 'ImageNet16-120'  | train         | valid + test  (ori-test)          |
+        |-------------------|---------------|-----------------------------------|
 
 
         Some further remarks:
-        - cifar10 is trained on the train and validation split and tested on the test and validation split
-        - cifar10-valid is trained on the train split and tested on the validation split
+        - cifar10-valid is trained on the train split and tested on the validation split.
+        - cifar10 is trained on the train *and* validation split and tested on the test split.
         - The train metrics are dictionaries with epochs (e.g. 0, 1, 2) as key and the metric as value.
-          The evaluation metrics, however, have as key the identifiere, e.g. ori-test@0, with 0 indicating the epoch.
-          Also, for all (except for cifar10), they report values for all 200 epochs for a metric on the specified
-          split (see second table) and a single value on the 200th epoch for the other splits.
+          The evaluation metrics, however, have as key the identifiers, e.g. ori-test@0, with 0 indicating the epoch.
+          Also, each data set (except for cifar10) reports values for all 200 epochs for a metric on the specified
+          split (see first table) and a single value on the 200th epoch for the other splits.
           Table 3 shows the available identifiers for each data set.
 
-        |-------------------|-------------------|
-        | Data set          | eval*             |
-        |-------------------|-------------------|
-        | 'cifar10-valid'   | x-valid:	0-199	|
-        |		     		| ori-test:	199		|
-        | 'cifar10'         | ori-test:	0-199	|
-        | 'cifar100'        | ori-test:	0-199	|
-        |					| x-valid:	199		|
-        |   				| x-test:   199     |
-        | 'ImageNet16-120'  | ori-test:	0-199	|
-        |					| x-valid:	199		|
-        |   				| x-test:  	199     |
-        |-------------------|-------------------|
+        |-------------------|------------------------------|
+        | Data set          | eval*:   values for epochs   |
+        |-------------------|------------------------------|
+        | 'cifar10-valid'   | x-valid:	0-199	           |
+        |		     		| ori-test:	199		           |
+        | 'cifar10'         | ori-test:	0-199	           |
+        | 'cifar100'        | ori-test:	0-199	           |
+        |					| x-valid:	199		           |
+        |   				| x-test:   199                |
+        | 'ImageNet16-120'  | ori-test:	0-199	           |
+        |					| x-valid:	199		           |
+        |   				| x-test:  	199                |
+        |-------------------|------------------------------|
 
         Parameters
         ----------
@@ -118,10 +111,8 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         super(NasBench201BaseBenchmark, self).__init__(rng=rng)
 
         data_manager = NASBench_201Data(dataset=dataset)
-        logger.debug('Starting to load data')
-        t = time()
+
         self.data = data_manager.load()
-        logger.info(f'Loading data took {time() - t:.2f}')
 
         self.config_to_structure = NasBench201BaseBenchmark.config_to_structure_func(max_nodes=MAX_NODES)
 
@@ -134,13 +125,13 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
                            data_seed: Union[List, Tuple, int, None] = (777, 888, 999),
                            **kwargs) -> Dict:
         """
-        Objective function for the NASBench201 Benchmark.
+        Objective function for the NASBench201 benchmark.
         This functions sends a query to NASBench201 and evaluates the configuration.
-        As already explained in the class definition, different data sets are trained on
-        different sets. For example cifar10 is trained on the train and validation set and
-        tested on the test set. Therefore, different entries are returned from the NASBench201 result.
+        As already explained in the class definition, different data sets are trained on different splits. For example
+        cifar10 is trained on the train and validation split and tested on the test split. Therefore, different entries
+        are returned from the NASBench201 result.
 
-        Overview over the used splits for training and testing and which are returned in the objective_function and
+        Overview of the used splits for training and testing and which are returned in the objective_function and
         which in the objective_function_test.
 
         |-------------------|-----------------------|---------------------------|
@@ -148,7 +139,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         |                   |   objective_function  |   objective_function_test |
         | Data set          | train_*               | eval_*                    |
         |-------------------|-----------------------|---------------------------|
-        | 'cifar10-valid'   | train                 | valid + test              |
+        | 'cifar10-valid'   | train                 | valid                     |
         | 'cifar10'         | train + valid         | test                      |
         | 'cifar100'        | train                 | valid + test              |
         | 'ImageNet16-120'  | train                 | valid + test              |
@@ -163,6 +154,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         fidelity: Dict, None
             epoch: int - Values: [0, 199]
                 Number of epochs an architecture was trained.
+                Note: the number of epoch is 0 indexed! (Results after the first epoch: epoch = 0)
 
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
@@ -174,7 +166,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         data_seed : List, Tuple, None, int
             The nasbench_201 experiments include for each run 3 different seeds: 777, 888, 999.
             The user can specify which seed to use. If more than one seed is given, the results are averaged
-            across the seeds.
+            across the seeds but then the time needed for training is the sum of the costs per seed.
             Note:
                 For some architectures (configurations) no run was available. We've set missing values to an
                 available value from another seed. Therefore, it is possible that run results are exactly the same for
@@ -188,13 +180,18 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
             function_value : training precision
             cost : time to train the network
             info : Dict
-                train_precision
-                train_losses
-                train_cost
-                eval_precision
-                eval_losses
-                eval_cost
-                fidelity : used fidelities in this evaluation
+                train_precision : float
+                train_losses : float
+                train_cost : float
+                    Time needed to train the network for 'epoch' many epochs. If more than one seed is given,
+                    this field is the sum of the training time per network
+                eval_precision : float
+                eval_losses : float
+                eval_cost : float
+                    Time needed to train the network for 'epoch many epochs plus the time to evaluate the network on the
+                    evaluation split. If more than one seed is given, this field is the sum of the eval cost per network
+                fidelity : Dict
+                    used fidelities in this evaluation
         """
 
         # Check if the data set seeds are valid
@@ -219,20 +216,20 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
         train_accuracies = [self.data[(seed, 'train_acc1es')][structure_str][epoch] for seed in data_seed]
         train_losses = [self.data[(seed, 'train_losses')][structure_str][epoch] for seed in data_seed]
-        train_times = [self.data[(seed, 'train_times')][structure_str][epoch] for seed in data_seed]
+        train_times = [np.sum(self.data[(seed, 'train_times')][structure_str][:epoch + 1]) for seed in data_seed]
 
         eval_accuracies = [self.data[(seed, 'eval_acc1es')][structure_str][epoch] for seed in data_seed]
         eval_losses = [self.data[(seed, 'eval_losses')][structure_str][epoch] for seed in data_seed]
-        eval_times = [self.data[(seed, 'eval_times')][structure_str][epoch] for seed in data_seed]
+        eval_times = [np.sum(self.data[(seed, 'eval_times')][structure_str][:epoch + 1]) for seed in data_seed]
 
         return {'function_value': float(100 - np.mean(train_accuracies)),
-                'cost': float(np.mean(train_times) * epoch),
+                'cost': float(np.sum(train_times)),
                 'info': {'train_precision': float(100 - np.mean(train_accuracies)),
                          'train_losses': float(np.mean(train_losses)),
-                         'train_cost': float(np.mean(train_times) * epoch),
+                         'train_cost': float(np.sum(train_times)),
                          'eval_precision': float(100 - np.mean(eval_accuracies)),
                          'eval_losses': float(np.mean(eval_losses)),
-                         'eval_cost': float(np.mean(eval_times) * epoch),
+                         'eval_cost': float(np.sum(train_times)) + float(np.sum(eval_times)),
                          'fidelity': fidelity
                          }
                 }
@@ -255,6 +252,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         fidelity: Dict, None
             epoch: int - Values: [0, 199]
                 Number of epochs an architecture was trained.
+                Note: the number of epoch is 0 indexed! (Results after the first epoch: epoch = 0)
 
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
@@ -286,7 +284,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         result = self.objective_function(configuration=configuration, fidelity=fidelity, data_seed=(777, 888, 999),
                                          rng=rng, **kwargs)
         result['function_value'] = result['info']['eval_precision']
-        result['cost'] = result['info']['eval_cost'] + result['info']['train_cost']
+        result['cost'] = result['info']['eval_cost']
         return result
 
     @staticmethod
