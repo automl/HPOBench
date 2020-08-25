@@ -3,7 +3,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 import pytest
 
-from hpolib.container.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
+from hpolib.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
     Cifar10ValidNasBench201Benchmark, Cifar10NasBench201Benchmark as Cifar10NasBench201BenchmarkContainer
 
 from hpolib.benchmarks.nas.nasbench_201 import Cifar10NasBench201Benchmark
@@ -28,7 +28,7 @@ def test_nasbench201_cifar10valid(enable_debug):
     result = b.objective_function(configuration=config, fidelity=fidelity, data_seed=(777, 888, 999))
 
     assert result['function_value'] == pytest.approx(0.411, abs=0.1)
-    assert result['cost'] == pytest.approx(2205.87, abs=0.1)
+    assert result['cost'] == pytest.approx(6650.88, abs=0.1)
     assert result['info']['train_precision'] == result['function_value']
     assert result['info']['train_cost'] == result['cost']
 
@@ -44,7 +44,7 @@ def test_nasbench201_cifar100(enable_debug):
 
     assert result is not None
     assert result['function_value'] == pytest.approx(7.8259, abs=0.1)
-    assert result['cost'] == pytest.approx(4411.75, abs=0.1)
+    assert result['cost'] == pytest.approx(13301.76, abs=0.1)
     assert result['info']['train_precision'] == result['function_value']
     assert result['info']['train_cost'] == result['cost']
 
@@ -60,7 +60,7 @@ def test_nasbench201_Image(enable_debug):
 
     assert result is not None
     assert result['function_value'] == pytest.approx(62.858, abs=0.1)
-    assert result['cost'] == pytest.approx(13385.25, abs=0.1)
+    assert result['cost'] == pytest.approx(40357.56, abs=0.1)
     assert result['info']['train_precision'] == result['function_value']
     assert result['info']['train_cost'] == result['cost']
 
@@ -76,7 +76,7 @@ def test_nasbench201_cifar10_container(enable_debug):
 
     assert result is not None
     assert result['function_value'] == pytest.approx(0.5019, abs=0.1)
-    assert result['cost'] == pytest.approx(4411.75, abs=0.1)
+    assert result['cost'] == pytest.approx(13301.76, abs=0.1)
     assert result['info']['train_precision'] == result['function_value']
 
 
@@ -94,7 +94,7 @@ def test_nasbench201_cifar10():
 
     assert result is not None
     assert result['function_value'] == pytest.approx(0.5019, abs=0.1)
-    assert result['cost'] == pytest.approx(4411.75, abs=0.1)
+    assert result['cost'] == pytest.approx(13301.76, abs=0.1)
     assert result['info']['train_precision'] == result['function_value']
 
     result_test = b.objective_function_test(configuration=config, fidelity=fidelity)
