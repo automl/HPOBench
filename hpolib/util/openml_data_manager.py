@@ -9,7 +9,7 @@ It can be distinguished between holdout and cross-validation data sets.
 For Non-OpenML data sets please use the hpolib.util.data_manager.
 """
 
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 
 import numpy as np
 
@@ -165,6 +165,31 @@ class OpenMLHoldoutDataManager(HoldoutDataManager):
                                                                                   random_state=self.rng)
 
         return self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test
+
+    @staticmethod
+    def replace_nans_in_cat_columns(X_train: np.ndarray, X_valid: np.ndarray, X_test: np.ndarray,
+                                    is_categorical: Union[np.ndarray, List]) \
+            -> Tuple[np.ndarray, np.ndarray, np.ndarray, List]:
+        """ Helper function to replace nan values in categorical features / columns by a non-used value.
+        Here: Min - 1.
+        """
+        _cat_data = np.concatenate([X_train, X_valid, X_test], axis=0)
+        nan_index = np.isnan(_cat_data[:, is_categorical])
+        categories = [np.unique(_cat_data[:, i][~nan_index[:, i]]) for i in range(X_train.shape[1]) if is_categorical[i]]
+        replace_nans_with = np.nanmin(_cat_data[:, is_categorical], axis=0) - 1
+
+        categories = [np.concatenate([replace_value.flatten(), cat])
+                      for (replace_value, cat) in zip(replace_nans_with, categories)]
+
+        def _find_and_replace(array, replace_nans_with, categorical_data):
+            nan_idx = np.where(np.isnan(array))
+            array[nan_idx] = np.take(replace_nans_with, nan_idx[1])
+            return array
+
+        X_train[:, is_categorical] = _find_and_replace(X_train[:, is_categorical], replace_nans_with, is_categorical)
+        X_valid[:, is_categorical] = _find_and_replace(X_valid[:, is_categorical], replace_nans_with, is_categorical)
+        X_test[:, is_categorical] = _find_and_replace(X_test[:, is_categorical], replace_nans_with, is_categorical)
+        return X_train, X_valid, X_test, categories
 
 
 class OpenMLCrossvalidationDataManager(CrossvalidationDataManager):

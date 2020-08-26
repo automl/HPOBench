@@ -21,6 +21,7 @@ import logging
 
 logger = logging.getLogger('SVMBenchmark')
 
+
 class SupportVectorMachine(AbstractBenchmark):
     """
     Hyperparameter optimization task to optimize the regularization
@@ -60,6 +61,9 @@ class SupportVectorMachine(AbstractBenchmark):
 
         nan_columns = np.all(np.isnan(self.X_train), axis=0)
         self.categorical_data = self.categorical_data[~nan_columns]
+        self.X_train, self.X_valid, self.X_test, self.categories = \
+            OpenMLHoldoutDataManager.replace_nans_in_cat_columns(self.X_train, self.X_valid, self.X_test,
+                                                                 is_categorical=self.categorical_data)
 
         self.train_idx = self.rng.choice(a=np.arange(len(self.X_train)),
                                          size=len(self.X_train),
@@ -144,29 +148,17 @@ class SupportVectorMachine(AbstractBenchmark):
         train_size = int(train_size * len(self.train_idx))
         train_idx = self.train_idx[:train_size]
 
-        X_train = self.X_train[train_idx]
-        y_train = self.y_train[train_idx]
-
-        # Impute potential nan values with the feature-means
-        mean_imputer = SimpleImputer(strategy='mean')
-        X_train = mean_imputer.fit_transform(X_train)
-        X_valid = mean_imputer.transform(self.X_valid)
-
-        # For one-hot-encoding the categorical data, we need all potential values per feature.
-        cat_data = np.concatenate([X_train, X_valid], axis=0)
-        categories = [np.unique(cat_data[:, i]) for i in range(self.X_train.shape[1]) if self.categorical_data[i]]
-
         # Transform hyperparameters to linear scale
         hp_c = np.exp(float(configuration['C']))
         hp_gamma = np.exp(float(configuration['gamma']))
 
         # Train support vector machine
-        model = self.get_pipeline(hp_c, hp_gamma, categories)
-        model.fit(X_train, y_train)
+        model = self.get_pipeline(hp_c, hp_gamma)
+        model.fit(self.X_train[train_idx], self.y_train[train_idx])
 
         # Compute validation error
-        train_loss = 1 - self.accuracy_scorer(model, X_train, y_train)
-        val_loss = 1 - self.accuracy_scorer(model, X_valid, self.y_valid)
+        train_loss = 1 - self.accuracy_scorer(model, self.X_train[train_idx], self.y_train[train_idx])
+        val_loss = 1 - self.accuracy_scorer(model, self.X_valid, self.y_valid)
 
         cost = time.time() - start_time
 
@@ -221,20 +213,11 @@ class SupportVectorMachine(AbstractBenchmark):
             data = np.concatenate((self.X_train, self.X_valid))
         targets = np.concatenate((self.y_train, self.y_valid))
 
-        # Impute potential nan values with the feature-means
-        mean_imputer = SimpleImputer(strategy='mean')
-        data = mean_imputer.fit_transform(data)
-        X_test = mean_imputer.transform(self.X_test)
-
-        # For one-hot-encoding the categorical data, we need all potential values per feature.
-        cat_data = np.concatenate([data, X_test], axis=0)
-        categories = [np.unique(cat_data[:, i]) for i in range(self.X_train.shape[1]) if self.categorical_data[i]]
-
         # Transform hyperparameters to linear scale
         hp_c = np.exp(float(configuration['C']))
         hp_gamma = np.exp(float(configuration['gamma']))
 
-        model = self.get_pipeline(hp_c, hp_gamma, categories)
+        model = self.get_pipeline(hp_c, hp_gamma)
         model.fit(data, targets)
 
         # Compute validation error
@@ -250,13 +233,17 @@ class SupportVectorMachine(AbstractBenchmark):
                 'info': {'train_valid_loss': train_valid_loss,
                          'fidelity': fidelity}}
 
-    def get_pipeline(self, C: float, gamma: float, categories: List) -> pipeline.Pipeline:
+    def get_pipeline(self, C: float, gamma: float) -> pipeline.Pipeline:
         """ Create the scikit-learn (training-)pipeline """
 
         model = pipeline.Pipeline([
+            ('preprocess_impute',
+             ColumnTransformer([
+                 ("categorical", "passthrough", self.categorical_data),
+                 ("continuous", SimpleImputer(missing_values="mean"), ~self.categorical_data)])),
             ('preprocess_one_hot',
              ColumnTransformer([
-                 ("categorical", OneHotEncoder(categories=categories, sparse=False), self.categorical_data),
+                 ("categorical", OneHotEncoder(categories=self.categories, sparse=False), self.categorical_data),
                  ("continuous", "passthrough", ~self.categorical_data)])),
             ('svm',
              svm.SVC(gamma=gamma, C=C, random_state=self.rng, cache_size=self.cache_size))
