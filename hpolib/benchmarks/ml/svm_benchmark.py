@@ -1,12 +1,11 @@
 import time
 from typing import Union, Tuple, Dict, List
 
-import numpy as np
 import ConfigSpace as CS
-
+import numpy as np
 from scipy import sparse
-from sklearn import svm
 from sklearn import pipeline
+from sklearn import svm
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, make_scorer
@@ -18,6 +17,9 @@ from hpolib.util.openml_data_manager import OpenMLHoldoutDataManager
 
 __version__ = '0.0.1'
 
+import logging
+
+logger = logging.getLogger('SVMBenchmark')
 
 class SupportVectorMachine(AbstractBenchmark):
     """
@@ -40,6 +42,7 @@ class SupportVectorMachine(AbstractBenchmark):
         super(SupportVectorMachine, self).__init__(rng=rng)
 
         self.task_id = task_id
+        self.cache_size = 200  # Cache for the SVC in MB
         self.accuracy_scorer = make_scorer(accuracy_score)
 
         self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test, variable_types = \
@@ -58,21 +61,13 @@ class SupportVectorMachine(AbstractBenchmark):
         nan_columns = np.all(np.isnan(self.X_train), axis=0)
         self.categorical_data = self.categorical_data[~nan_columns]
 
-        mean_imputer = SimpleImputer(strategy='mean')
-        self.X_train = mean_imputer.fit_transform(self.X_train)
-        self.X_valid = mean_imputer.transform(self.X_valid)
-        self.X_test = mean_imputer.transform(self.X_test)
-
-        # Determine all possible values per categorical feature
-        complete_data = np.concatenate([self.X_train, self.X_valid, self.X_test], axis=0)
-        self.categories = [np.unique(complete_data[:, i])
-                           for i in range(self.X_train.shape[1]) if self.categorical_data[i]]
-
         self.train_idx = self.rng.choice(a=np.arange(len(self.X_train)),
                                          size=len(self.X_train),
                                          replace=False)
 
-        # Use 10 time the number of classes as lower bound for the dataset fraction
+        # Similar to [Fast Bayesian Optimization of Machine Learning Hyperparameters on Large Datasets]
+        # (https://arxiv.org/pdf/1605.07079.pdf),
+        # use 10 time the number of classes as lower bound for the dataset fraction
         n_classes = np.unique(self.y_train).shape[0]
         self.lower_bound_train_size = int((10 * n_classes) / self.X_train.shape[0])
 
@@ -138,32 +133,47 @@ class SupportVectorMachine(AbstractBenchmark):
             self.shuffle_data(self.rng)
 
         # Split of dataset subset
-        train_size = max(fidelity['dataset_fraction'],
-                         self.lower_bound_train_size)
-        train_size = int(train_size * len(self.train_idx))
+        if self.lower_bound_train_size > fidelity['dataset_fraction']:
+            train_size = self.lower_bound_train_size
+            logger.warning(f'The given data set fraction is lower than the lower bound (10 * number of classes.) '
+                           f'Increase the fidelity from {fidelity["dataset_fraction"]:.2f} to '
+                           f'{self.lower_bound_train_size:.2f}')
+        else:
+            train_size = fidelity['dataset_fraction']
 
+        train_size = int(train_size * len(self.train_idx))
         train_idx = self.train_idx[:train_size]
-        train = self.X_train[train_idx]
-        train_targets = self.y_train[train_idx]
+
+        X_train = self.X_train[train_idx]
+        y_train = self.y_train[train_idx]
+
+        # Impute potential nan values with the feature-means
+        mean_imputer = SimpleImputer(strategy='mean')
+        X_train = mean_imputer.fit_transform(X_train)
+        X_valid = mean_imputer.transform(self.X_valid)
+
+        # For one-hot-encoding the categorical data, we need all potential values per feature.
+        cat_data = np.concatenate([X_train, X_valid], axis=0)
+        categories = [np.unique(cat_data[:, i]) for i in range(self.X_train.shape[1]) if self.categorical_data[i]]
 
         # Transform hyperparameters to linear scale
         hp_c = np.exp(float(configuration['C']))
         hp_gamma = np.exp(float(configuration['gamma']))
 
         # Train support vector machine
-        model = self.get_pipeline(hp_c, hp_gamma)
-        model.fit(train, train_targets)
+        model = self.get_pipeline(hp_c, hp_gamma, categories)
+        model.fit(X_train, y_train)
 
         # Compute validation error
-        train_loss = 1 - self.accuracy_scorer(model, self.X_train[train_idx], self.y_train[train_idx])
-        val_loss = 1 - self.accuracy_scorer(model, self.X_valid, self.y_valid)
+        train_loss = 1 - self.accuracy_scorer(model, X_train, y_train)
+        val_loss = 1 - self.accuracy_scorer(model, X_valid, self.y_valid)
 
         cost = time.time() - start_time
 
         return {'function_value': val_loss,
                 "cost": cost,
                 'info': {'train_loss': train_loss,
-                         'fidelity': fidelity['dataset_fraction']}}
+                         'fidelity': fidelity}}
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
@@ -200,9 +210,9 @@ class SupportVectorMachine(AbstractBenchmark):
         assert np.isclose(fidelity['dataset_fraction'], 1), \
             f'Data set fraction must be 1 but was {fidelity["dataset_fraction"]}'
 
-        start_time = time.time()
-
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
+
+        start_time = time.time()
 
         # Concatenate training and validation dataset
         if isinstance(self.X_train, sparse.csr.csr_matrix) or isinstance(self.X_valid, sparse.csr.csr_matrix):
@@ -211,11 +221,20 @@ class SupportVectorMachine(AbstractBenchmark):
             data = np.concatenate((self.X_train, self.X_valid))
         targets = np.concatenate((self.y_train, self.y_valid))
 
+        # Impute potential nan values with the feature-means
+        mean_imputer = SimpleImputer(strategy='mean')
+        data = mean_imputer.fit_transform(data)
+        X_test = mean_imputer.transform(self.X_test)
+
+        # For one-hot-encoding the categorical data, we need all potential values per feature.
+        cat_data = np.concatenate([data, X_test], axis=0)
+        categories = [np.unique(cat_data[:, i]) for i in range(self.X_train.shape[1]) if self.categorical_data[i]]
+
         # Transform hyperparameters to linear scale
         hp_c = np.exp(float(configuration['C']))
         hp_gamma = np.exp(float(configuration['gamma']))
 
-        model = self.get_pipeline(hp_c, hp_gamma)
+        model = self.get_pipeline(hp_c, hp_gamma, categories)
         model.fit(data, targets)
 
         # Compute validation error
@@ -229,18 +248,18 @@ class SupportVectorMachine(AbstractBenchmark):
         return {'function_value': test_loss,
                 "cost": cost,
                 'info': {'train_valid_loss': train_valid_loss,
-                         'fidelity': fidelity['dataset_fraction']}}
+                         'fidelity': fidelity}}
 
-    def get_pipeline(self, C: float, gamma: float) -> pipeline.Pipeline:
+    def get_pipeline(self, C: float, gamma: float, categories: List) -> pipeline.Pipeline:
         """ Create the scikit-learn (training-)pipeline """
 
         model = pipeline.Pipeline([
             ('preprocess_one_hot',
              ColumnTransformer([
-                 ("categorical", OneHotEncoder(categories=self.categories, sparse=False), self.categorical_data),
+                 ("categorical", OneHotEncoder(categories=categories, sparse=False), self.categorical_data),
                  ("continuous", "passthrough", ~self.categorical_data)])),
             ('svm',
-             svm.SVC(gamma=gamma, C=C, random_state=self.rng))
+             svm.SVC(gamma=gamma, C=C, random_state=self.rng, cache_size=self.cache_size))
         ])
         return model
 
@@ -304,13 +323,20 @@ class SupportVectorMachine(AbstractBenchmark):
     @staticmethod
     def get_meta_information():
         """ Returns the meta information for the benchmark """
-
         return {'name': 'Support Vector Machine',
-                'references': ["@article{klein-corr16,"
-                               "author = {A. Klein and S. Falkner and S. Bartels and P. Hennig and F. Hutter},"
-                               "title = {Fast Bayesian Optimization of Machine Learning"
-                               "Hyperparameters on Large Datasets},"
-                               "journal = corr,"
-                               "llvolume = {abs/1605.07079},"
-                               "lurl = {http://arxiv.org/abs/1605.07079}, year = {2016} }"]
+                'references': ["@InProceedings{pmlr-v54-klein17a",
+                               "author = {Aaron Klein and Stefan Falkner and Simon Bartels and Philipp Hennig and "
+                               "Frank Hutter}, "
+                               "title = {{Fast Bayesian Optimization of Machine Learning Hyperparameters on "
+                               "Large Datasets}}"
+                               "pages = {528--536}, year = {2017},"
+                               "editor = {Aarti Singh and Jerry Zhu},"
+                               "volume = {54},"
+                               "series = {Proceedings of Machine Learning Research},"
+                               "address = {Fort Lauderdale, FL, USA},"
+                               "month = {20--22 Apr},"
+                               "publisher = {PMLR},"
+                               "pdf = {http://proceedings.mlr.press/v54/klein17a/klein17a.pdf}, "
+                               "url = {http://proceedings.mlr.press/v54/klein17a.html}, "
+                               ]
                 }

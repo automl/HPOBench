@@ -37,7 +37,6 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test, variable_types = \
             self.get_data()
-
         self.categorical_data = np.array([var_type == 'categorical' for var_type in variable_types])
 
         # XGB needs sorted data. Data should be (Categorical + numerical) not mixed.
@@ -51,16 +50,6 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         nan_columns = np.all(np.isnan(self.X_train), axis=0)
         self.categorical_data = self.categorical_data[~nan_columns]
-
-        mean_imputer = SimpleImputer(strategy='mean')
-        self.X_train = mean_imputer.fit_transform(self.X_train)
-        self.X_valid = mean_imputer.transform(self.X_valid)
-        self.X_test = mean_imputer.transform(self.X_test)
-
-        # Determine all possible values per categorical feature
-        complete_data = np.concatenate([self.X_train, self.X_valid, self.X_test], axis=0)
-        self.categories = [np.unique(complete_data[:, i])
-                           for i in range(self.X_train.shape[1]) if self.categorical_data[i]]
 
         # Determine the number of categories in the labels.
         # In case of binary classification ``self.num_class`` has to be 1 for xgboost.
@@ -133,11 +122,23 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         train_idx = self.train_idx[:int(len(self.train_idx) * fidelity["subsample"])]
 
-        model = self._get_pipeline(n_estimators=fidelity["n_estimators"], **configuration)
-        model.fit(X=self.X_train[train_idx], y=self.y_train[train_idx])
+        X_train = self.X_train[train_idx]
+        y_train = self.y_train[train_idx]
 
-        train_loss = 1 - self.accuracy_scorer(model, self.X_train[train_idx], self.y_train[train_idx])
-        val_loss = 1 - self.accuracy_scorer(model, self.X_valid, self.y_valid)
+        # Impute potential nan values with the feature-means
+        mean_imputer = SimpleImputer(strategy='mean')
+        X_train = mean_imputer.fit_transform(X_train)
+        X_valid = mean_imputer.transform(self.X_valid)
+
+        # For one-hot-encoding the categorical data, we need all potential values per feature.
+        cat_data = np.concatenate([X_train, X_valid], axis=0)
+        categories = [np.unique(cat_data[:, i]) for i in range(self.X_train.shape[1]) if self.categorical_data[i]]
+
+        model = self._get_pipeline(n_estimators=fidelity["n_estimators"], categories=categories, **configuration)
+        model.fit(X=X_train, y=y_train)
+
+        train_loss = 1 - self.accuracy_scorer(model, X_train, y_train)
+        val_loss = 1 - self.accuracy_scorer(model, X_valid, self.y_valid)
         cost = time.time() - start
 
         return {'function_value': val_loss,
@@ -184,17 +185,28 @@ class XGBoostBenchmark(AbstractBenchmark):
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         start = time.time()
-        model = self._get_pipeline(n_estimators=fidelity['n_estimators'], **configuration)
-        model.fit(X=np.concatenate((self.X_train, self.X_valid)),
-                  y=np.concatenate((self.y_train, self.y_valid)))
 
-        test_loss = 1 - self.accuracy_scorer(model, self.X_test, self.y_test)
+        # Impute potential nan values with the feature-
+        data = np.concatenate((self.X_train, self.X_valid))
+        targets = np.concatenate((self.y_train, self.y_valid))
+
+        mean_imputer = SimpleImputer(strategy='mean')
+        data = mean_imputer.fit_transform(data)
+        X_test = mean_imputer.transform(self.X_test)
+
+        # For one-hot-encoding the categorical data, we need all potential values per feature.
+        cat_data = np.concatenate([data, X_test], axis=0)
+        categories = [np.unique(cat_data[:, i]) for i in range(self.X_train.shape[1]) if self.categorical_data[i]]
+
+        model = self._get_pipeline(n_estimators=fidelity['n_estimators'], categories=categories, **configuration)
+        model.fit(X=data, y=targets)
+
+        test_loss = 1 - self.accuracy_scorer(model, X_test, self.y_test)
         cost = time.time() - start
 
         return {'function_value': test_loss,
                 'cost': cost,
-                'info': {'fidelity': fidelity},
-                }
+                'info': {'fidelity': fidelity}}
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -258,14 +270,14 @@ class XGBoostBenchmark(AbstractBenchmark):
                 }
 
     def _get_pipeline(self, eta: float, min_child_weight: int, colsample_bytree: float, colsample_bylevel: float,
-                      reg_lambda: int, reg_alpha: int, n_estimators: int) -> pipeline.Pipeline:
+                      reg_lambda: int, reg_alpha: int, n_estimators: int, categories: List) -> pipeline.Pipeline:
         """ Create the scikit-learn (training-)pipeline """
         objective = 'binary:logistic' if self.num_class <= 2 else 'multi:softmax'
 
         clf = pipeline.Pipeline(
             [('preprocess_one_hot',
               ColumnTransformer([
-                 ("categorical", OneHotEncoder(categories=self.categories, sparse=False), self.categorical_data),
+                 ("categorical", OneHotEncoder(categories=categories, sparse=False), self.categorical_data),
                  ("continuous", "passthrough", ~self.categorical_data)])),
              ('xgb', xgb.XGBClassifier(
                  learning_rate=eta,
