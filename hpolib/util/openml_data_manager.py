@@ -25,8 +25,7 @@ except ImportError:
 
 
 import hpolib
-from hpolib.util.data_manager import HoldoutDataManager, \
-    CrossvalidationDataManager
+from hpolib.util.data_manager import HoldoutDataManager, CrossvalidationDataManager
 from hpolib.util.rng_helper import get_rng
 
 

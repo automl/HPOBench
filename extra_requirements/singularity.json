@@ -1,3 +1,0 @@
-{
-  "singularity": ["Pyro4==4.80","oslo.concurrency>=4.2.0"]
-}
