@@ -175,7 +175,8 @@ class OpenMLHoldoutDataManager(HoldoutDataManager):
         """
         _cat_data = np.concatenate([X_train, X_valid, X_test], axis=0)
         nan_index = np.isnan(_cat_data[:, is_categorical])
-        categories = [np.unique(_cat_data[:, i][~nan_index[:, i]]) for i in range(X_train.shape[1]) if is_categorical[i]]
+        categories = [np.unique(_cat_data[:, i][~nan_index[:, i]])
+                      for i in range(X_train.shape[1]) if is_categorical[i]]
         replace_nans_with = np.nanmin(_cat_data[:, is_categorical], axis=0) - 1
 
         categories = [np.concatenate([replace_value.flatten(), cat])
