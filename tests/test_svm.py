@@ -1,9 +1,12 @@
 import pytest
 
-from hpolib.benchmarks.ml.svm_benchmark import SupportVectorMachine
+from hpolib.container.benchmarks.ml.svm_benchmark import SupportVectorMachine
 from hpolib.util.openml_data_manager import get_openmlcc18_taskids
 
 task_ids = get_openmlcc18_taskids()
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 
 def test_svm_init():
@@ -11,20 +14,19 @@ def test_svm_init():
 
     fs = benchmark.get_fidelity_space(seed=0)
     fidelity = fs.sample_configuration().get_dictionary()
-    assert fidelity['dataset_fraction'] == pytest.approx(0.5939321535345923, abs=0.001)
+    assert fidelity['dataset_fraction'] == pytest.approx(0.5939, abs=0.001)
 
     meta = benchmark.get_meta_information()
     assert meta is not None
 
     cs = benchmark.get_configuration_space(seed=0)
     config = cs.sample_configuration().get_dictionary()
-    print(config)
     assert config['C'] == pytest.approx(0.9762, abs=0.001)
     assert config['gamma'] == pytest.approx(4.3037, abs=0.001)
 
     result = benchmark.objective_function(configuration=config, fidelity=fidelity)
     assert result['function_value'] == pytest.approx(0.4837, abs=0.1)
-    assert result['cost'] is not None
+    assert result['cost'] == pytest.approx(0.323, abs=0.1)
 
     with pytest.raises(AssertionError):
         result = benchmark.objective_function_test(configuration=config, fidelity=fidelity)
