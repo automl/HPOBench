@@ -344,7 +344,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         seed_dict = json.dumps(seed_dict, indent=None)
         logger.debug(f'Client: seed_dict {seed_dict}')
         json_str = self.benchmark.get_configuration_space(seed_dict)
-        return csjson.read(json_str)
+
+        config_space = csjson.read(json_str)
+        if seed is not None:
+            config_space.seed(seed)
+        return config_space
 
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
@@ -365,7 +369,12 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         seed_dict = json.dumps(seed_dict, indent=None)
         logger.debug(f'Client: seed_dict {seed_dict}')
         json_str = self.benchmark.get_fidelity_space(seed_dict)
-        return csjson.read(json_str)
+
+        fs = csjson.read(json_str)
+        if seed is not None:
+            fs.seed(seed)
+
+        return fs
 
     def get_meta_information(self) -> Dict:
         """ Return the information about the benchmark. """
