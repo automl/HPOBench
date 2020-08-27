@@ -240,7 +240,7 @@ class SupportVectorMachine(AbstractBenchmark):
             ('preprocess_impute',
              ColumnTransformer([
                  ("categorical", "passthrough", self.categorical_data),
-                 ("continuous", SimpleImputer(missing_values="mean"), ~self.categorical_data)])),
+                 ("continuous", SimpleImputer(strategy="mean"), ~self.categorical_data)])),
             ('preprocess_one_hot',
              ColumnTransformer([
                  ("categorical", OneHotEncoder(categories=self.categories, sparse=False), self.categorical_data),
