@@ -45,6 +45,7 @@ Now, you can create a PR marked as [WIP] and proceed with building a containeriz
   base class `AbstractBenchmarkClient` in `hpolib.container.client_abstract_benchmark`. 
   Note: this are just a few lines of code, see, e.g. `hpolib/container/benchmarks/ml/xgboost_benchmark.py`)
   2. Copy `hpolib/container/recipes/Singularity.template` to  `hpolib/container/recipes/<type>/name`
+  3. Modify the recipe and add your **additional Python** and **non-Python** dependencies collected above. 
   3. Test your container locally (see below)
 
 Now, you can update your PR and let us know, so we can upload the container to Sylabs. Thanks.
