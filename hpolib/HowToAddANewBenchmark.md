@@ -14,18 +14,19 @@ pip install .
 ```
 
 Then: 
-  2. Implement your new benchmark `hpolib/benchmarks/<type>/<name>` inheriting from the base class 
+
+  1. Implement your new benchmark `hpolib/benchmarks/<type>/<name>` inheriting from the base class 
   `AbstractBenchmark` in `hpolib.abstract_benchmark`. Your benchmark should implement `__init__()`, 
   `get_configuration_space()`, `get_fidelity_space()`, `objective_function()` and `objective_function_test()`.
-  A good example for this can be found in `hpolib/benchmarks/ml/xgboost_benchmark.py`
-  2. If your benchmarks needs a dataset (e.g. for training a ml model), please also implement a DataManager, see e.g.
+    A good example for this can be found in `hpolib/benchmarks/ml/xgboost_benchmark.py`
+  3. If your benchmarks needs a dataset (e.g. for training a ml model), please also implement a DataManager, see e.g.
    `hpolib/util/openml_data_manager.py` with a `load()` method that downloads data once and reuses it for further calls.
-  3. Collect all **additional Python** and **non-Python** dependencies while doing this. 
+  4. Collect all **additional Python** and **non-Python** dependencies while doing this. 
   Consider fixing the version of each dependency to maintain reproducibility.
-  4. Add dependencies to PIPy in a new file to `/extra_requirements`
-  5. Add the remaining dependencies or steps necessary to run your benchmark in the docstring of your benchmark class
+  5. Add dependencies to PIPy in a new file to `/extra_requirements`
+  6. Add the remaining dependencies or steps necessary to run your benchmark in the docstring of your benchmark class
     (see, e.g. `hpolib/benchmarks/nas/nasbench_101.py`).
-  6. Verify that everything works with, e.g.
+  7. Verify that everything works with, e.g.
 ```python
 from hpolib.benchmarks.<type>.<newbenchmark> import <NewBenchmark>
 b = <NewBenchmark>(<some_args>, rng=1)
