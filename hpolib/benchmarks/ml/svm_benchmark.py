@@ -3,8 +3,9 @@ from typing import Union, Tuple, Dict, List
 
 import ConfigSpace as CS
 import numpy as np
-import xgboost as xgb
+from scipy import sparse
 from sklearn import pipeline
+from sklearn import svm
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, make_scorer
@@ -16,30 +17,40 @@ from hpolib.util.openml_data_manager import OpenMLHoldoutDataManager
 
 __version__ = '0.0.1'
 
+import logging
 
-class XGBoostBenchmark(AbstractBenchmark):
+logger = logging.getLogger('SVMBenchmark')
 
-    def __init__(self, task_id: Union[int, None] = None, n_threads: int = 1,
+
+class SupportVectorMachine(AbstractBenchmark):
+    """
+    Hyperparameter optimization task to optimize the regularization
+    parameter C and the kernel parameter gamma of a support vector machine.
+    Both hyperparameters are optimized on a log scale in [-10, 10].
+    The X_test data set is only used for a final offline evaluation of
+    a configuration. For that the validation and training data is
+    concatenated to form the whole training data set.
+    """
+
+    def __init__(self, task_id: Union[int, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         """
-
         Parameters
         ----------
         task_id : int, None
-        n_threads  : int, None
         rng : np.random.RandomState, int, None
         """
+        super(SupportVectorMachine, self).__init__(rng=rng)
 
-        super(XGBoostBenchmark, self).__init__(rng=rng)
-        self.n_threads = n_threads
         self.task_id = task_id
+        self.cache_size = 200  # Cache for the SVC in MB
         self.accuracy_scorer = make_scorer(accuracy_score)
 
         self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test, variable_types = \
             self.get_data()
         self.categorical_data = np.array([var_type == 'categorical' for var_type in variable_types])
 
-        # XGB needs sorted data. Data should be (Categorical + numerical) not mixed.
+        # Sort data (Categorical + numerical) so that categorical and continous are not mixed.
         categorical_idx = np.argwhere(self.categorical_data)
         continuous_idx = np.argwhere(~self.categorical_data)
         sorting = np.concatenate([categorical_idx, continuous_idx]).squeeze()
@@ -50,19 +61,19 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         nan_columns = np.all(np.isnan(self.X_train), axis=0)
         self.categorical_data = self.categorical_data[~nan_columns]
-
         self.X_train, self.X_valid, self.X_test, self.categories = \
             OpenMLHoldoutDataManager.replace_nans_in_cat_columns(self.X_train, self.X_valid, self.X_test,
                                                                  is_categorical=self.categorical_data)
 
-        # Determine the number of categories in the labels.
-        # In case of binary classification ``self.num_class`` has to be 1 for xgboost.
-        self.num_class = len(np.unique(np.concatenate([self.y_train, self.y_test, self.y_valid])))
-        self.num_class = 1 if self.num_class == 2 else self.num_class
-
         self.train_idx = self.rng.choice(a=np.arange(len(self.X_train)),
                                          size=len(self.X_train),
                                          replace=False)
+
+        # Similar to [Fast Bayesian Optimization of Machine Learning Hyperparameters on Large Datasets]
+        # (https://arxiv.org/pdf/1605.07079.pdf),
+        # use 10 time the number of classes as lower bound for the dataset fraction
+        n_classes = np.unique(self.y_train).shape[0]
+        self.lower_bound_train_size = int((10 * n_classes) / self.X_train.shape[0])
 
     def get_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, List]:
         """ Loads the data given a task or another source. """
@@ -85,18 +96,19 @@ class XGBoostBenchmark(AbstractBenchmark):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None, shuffle: bool = False,
+                           fidelity: Union[Dict, None] = None,
+                           shuffle: bool = False,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
-        Trains a XGBoost model given a hyperparameter configuration and
+        Trains a SVM model given a hyperparameter configuration and
         evaluates the model on the validation set.
 
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-            Configuration for the XGBoost model
+            Configuration for the SVM model
         fidelity: Dict, None
-            Fidelity parameters for the XGBoost model, check get_fidelity_space(). Uses default (max) value if None.
+            Fidelity parameters for the SVM model, check get_fidelity_space(). Uses default (max) value if None.
         shuffle : bool
             If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
             Defaults to ``False``.
@@ -114,45 +126,61 @@ class XGBoostBenchmark(AbstractBenchmark):
             function_value : validation loss
             cost : time to train and evaluate the model
             info : Dict
-                train_loss : trainings loss
+                train_loss : training loss
                 fidelity : used fidelities in this evaluation
         """
+        start_time = time.time()
+
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         if shuffle:
             self.shuffle_data(self.rng)
 
-        start = time.time()
+        # Split of dataset subset
+        if self.lower_bound_train_size > fidelity['dataset_fraction']:
+            train_size = self.lower_bound_train_size
+            logger.warning(f'The given data set fraction is lower than the lower bound (10 * number of classes.) '
+                           f'Increase the fidelity from {fidelity["dataset_fraction"]:.2f} to '
+                           f'{self.lower_bound_train_size:.2f}')
+        else:
+            train_size = fidelity['dataset_fraction']
 
-        train_idx = self.train_idx[:int(len(self.train_idx) * fidelity["subsample"])]
+        train_size = int(train_size * len(self.train_idx))
+        train_idx = self.train_idx[:train_size]
 
-        model = self._get_pipeline(n_estimators=fidelity["n_estimators"], **configuration)
-        model.fit(X=self.X_train[train_idx], y=self.y_train[train_idx])
+        # Transform hyperparameters to linear scale
+        hp_c = np.exp(float(configuration['C']))
+        hp_gamma = np.exp(float(configuration['gamma']))
 
+        # Train support vector machine
+        model = self.get_pipeline(hp_c, hp_gamma)
+        model.fit(self.X_train[train_idx], self.y_train[train_idx])
+
+        # Compute validation error
         train_loss = 1 - self.accuracy_scorer(model, self.X_train[train_idx], self.y_train[train_idx])
         val_loss = 1 - self.accuracy_scorer(model, self.X_valid, self.y_valid)
-        cost = time.time() - start
+
+        cost = time.time() - start_time
 
         return {'function_value': val_loss,
-                'cost': cost,
+                "cost": cost,
                 'info': {'train_loss': train_loss,
-                         'fidelity': fidelity}
-                }
+                         'fidelity': fidelity}}
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None, rng: Union[np.random.RandomState, int, None] = None,
-                                **kwargs) -> Dict:
+                                fidelity: Union[Dict, None] = None, shuffle: bool = False,
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
-        Trains a XGBoost model with a given configuration on both the train
-        and validation data set and evaluates the model on the test data set.
+        Trains a SVM model with a given configuration on both the X_train
+        and validation data set and evaluates the model on the X_test data set.
 
         Parameters
         ----------
         configuration : Dict, CS.Configuration
-            Configuration for the XGBoost Model
+            Configuration for the SVM Model
         fidelity: Dict, None
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None,
@@ -165,38 +193,71 @@ class XGBoostBenchmark(AbstractBenchmark):
         Returns
         -------
         Dict -
-            function_value : test loss
-            cost : time to train and evaluate the model
+            function_value : X_test loss
+            cost : time to X_train and evaluate the model
             info : Dict
+                train_valid_loss: Loss on the train+valid data set
                 fidelity : used fidelities in this evaluation
         """
-        default_subsample = self.get_fidelity_space().get_hyperparameter('subsample').default_value
-        if fidelity['subsample'] != default_subsample:
-            raise NotImplementedError(f'Test error can not be computed for subsample <= {default_subsample:d}')
+        assert np.isclose(fidelity['dataset_fraction'], 1), \
+            f'Data set fraction must be 1 but was {fidelity["dataset_fraction"]}'
 
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
-        start = time.time()
+        start_time = time.time()
 
-        # Impute potential nan values with the feature-
-        data = np.concatenate((self.X_train, self.X_valid))
+        # Concatenate training and validation dataset
+        if isinstance(self.X_train, sparse.csr.csr_matrix) or isinstance(self.X_valid, sparse.csr.csr_matrix):
+            data = sparse.vstack((self.X_train, self.X_valid))
+        else:
+            data = np.concatenate((self.X_train, self.X_valid))
         targets = np.concatenate((self.y_train, self.y_valid))
 
-        model = self._get_pipeline(n_estimators=fidelity['n_estimators'], **configuration)
-        model.fit(X=data, y=targets)
+        # Transform hyperparameters to linear scale
+        hp_c = np.exp(float(configuration['C']))
+        hp_gamma = np.exp(float(configuration['gamma']))
 
+        model = self.get_pipeline(hp_c, hp_gamma)
+        model.fit(data, targets)
+
+        # Compute validation error
+        train_valid_loss = 1 - self.accuracy_scorer(model, data, targets)
+
+        # Compute test error
         test_loss = 1 - self.accuracy_scorer(model, self.X_test, self.y_test)
-        cost = time.time() - start
+
+        cost = time.time() - start_time
 
         return {'function_value': test_loss,
-                'cost': cost,
-                'info': {'fidelity': fidelity}}
+                "cost": cost,
+                'info': {'train_valid_loss': train_valid_loss,
+                         'fidelity': fidelity}}
+
+    def get_pipeline(self, C: float, gamma: float) -> pipeline.Pipeline:
+        """ Create the scikit-learn (training-)pipeline """
+
+        model = pipeline.Pipeline([
+            ('preprocess_impute',
+             ColumnTransformer([
+                 ("categorical", "passthrough", self.categorical_data),
+                 ("continuous", SimpleImputer(strategy="mean"), ~self.categorical_data)])),
+            ('preprocess_one_hot',
+             ColumnTransformer([
+                 ("categorical", OneHotEncoder(categories=self.categories, sparse=False), self.categorical_data),
+                 ("continuous", "passthrough", ~self.categorical_data)])),
+            ('svm',
+             svm.SVC(gamma=gamma, C=C, random_state=self.rng, cache_size=self.cache_size))
+        ])
+        return model
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
         Creates a ConfigSpace.ConfigurationSpace containing all parameters for
-        the XGBoost Model
+        the SVM Model
+
+        For a detailed explanation of the hyperparameters:
+        https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
 
         Parameters
         ----------
@@ -207,25 +268,27 @@ class XGBoostBenchmark(AbstractBenchmark):
         -------
         ConfigSpace.ConfigurationSpace
         """
+
         seed = seed if seed is not None else np.random.randint(1, 100000)
         cs = CS.ConfigurationSpace(seed=seed)
 
         cs.add_hyperparameters([
-            CS.UniformFloatHyperparameter('eta', lower=1e-5, upper=1, default_value=0.3, log=True),
-            CS.UniformFloatHyperparameter('min_child_weight', lower=0.05, upper=10., default_value=1., log=True),
-            CS.UniformFloatHyperparameter('colsample_bytree', lower=0.05, upper=1., default_value=1.),
-            CS.UniformFloatHyperparameter('colsample_bylevel', lower=0.05, upper=1., default_value=1.),
-            CS.UniformFloatHyperparameter('reg_lambda', lower=1e-5, upper=2, default_value=1, log=True),
-            CS.UniformFloatHyperparameter('reg_alpha', lower=1e-5, upper=2, default_value=1e-5, log=True)
+            CS.UniformFloatHyperparameter('C', lower=-10., upper=10., default_value=0., log=False),
+            CS.UniformFloatHyperparameter('gamma', lower=-10., upper=10., default_value=1., log=False),
         ])
-
+        # cs.generate_all_continuous_from_bounds(SupportVectorMachine.get_meta_information()['bounds'])
         return cs
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
         Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
-        the XGBoost Benchmark
+        the SupportVector Benchmark
+
+        Fidelities
+        ----------
+        dataset_fraction: float - [0.1, 1]
+            fraction of training data set to use
 
         Parameters
         ----------
@@ -240,45 +303,27 @@ class XGBoostBenchmark(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformFloatHyperparameter("subsample", lower=0.1, upper=1.0, default_value=1.0, log=False),
-            CS.UniformIntegerHyperparameter("n_estimators", lower=2, upper=128, default_value=128, log=False)
+            CS.UniformFloatHyperparameter("dataset_fraction", lower=0.1, upper=1.0, default_value=1.0, log=False),
         ])
-
         return fidel_space
 
     @staticmethod
-    def get_meta_information() -> Dict:
+    def get_meta_information():
         """ Returns the meta information for the benchmark """
-        return {'name': 'XGBoost',
-                'references': [],
+        return {'name': 'Support Vector Machine',
+                'references': ["@InProceedings{pmlr-v54-klein17a",
+                               "author = {Aaron Klein and Stefan Falkner and Simon Bartels and Philipp Hennig and "
+                               "Frank Hutter}, "
+                               "title = {{Fast Bayesian Optimization of Machine Learning Hyperparameters on "
+                               "Large Datasets}}"
+                               "pages = {528--536}, year = {2017},"
+                               "editor = {Aarti Singh and Jerry Zhu},"
+                               "volume = {54},"
+                               "series = {Proceedings of Machine Learning Research},"
+                               "address = {Fort Lauderdale, FL, USA},"
+                               "month = {20--22 Apr},"
+                               "publisher = {PMLR},"
+                               "pdf = {http://proceedings.mlr.press/v54/klein17a/klein17a.pdf}, "
+                               "url = {http://proceedings.mlr.press/v54/klein17a.html}, "
+                               ]
                 }
-
-    def _get_pipeline(self, eta: float, min_child_weight: int, colsample_bytree: float, colsample_bylevel: float,
-                      reg_lambda: int, reg_alpha: int, n_estimators: int) -> pipeline.Pipeline:
-        """ Create the scikit-learn (training-)pipeline """
-        objective = 'binary:logistic' if self.num_class <= 2 else 'multi:softmax'
-
-        clf = pipeline.Pipeline([
-            ('preprocess_impute',
-             ColumnTransformer([
-                ("categorical", "passthrough", self.categorical_data),
-                ("continuous", SimpleImputer(strategy="mean"), ~self.categorical_data)])),
-            ('preprocess_one_hot',
-             ColumnTransformer([
-                 ("categorical", OneHotEncoder(categories=self.categories, sparse=False), self.categorical_data),
-                 ("continuous", "passthrough", ~self.categorical_data)])),
-            ('xgb',
-             xgb.XGBClassifier(
-                 learning_rate=eta,
-                 min_child_weight=min_child_weight,
-                 colsample_bytree=colsample_bytree,
-                 colsample_bylevel=colsample_bylevel,
-                 reg_alpha=reg_alpha,
-                 reg_lambda=reg_lambda,
-                 n_estimators=n_estimators,
-                 objective=objective,
-                 n_jobs=self.n_threads,
-                 random_state=self.rng.randint(1, 100000),
-                 num_class=self.num_class))
-             ])
-        return clf

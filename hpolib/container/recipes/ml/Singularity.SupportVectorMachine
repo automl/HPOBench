@@ -6,18 +6,16 @@ MAINTAINER muelleph@cs.uni-freiburg.de
 VERSION v0.0.1
 
 %post
-    apt update -y
-    apt install build-essential git -y
-    pip install numpy==1.18.1 cython==0.29.14
-
-    cd /home \
+    apt update -y \
+    && apt install build-essential git -y \
+    && cd /home \
     && git clone https://github.com/automl/HPOlib2.git \
     && cd HPOlib2 \
     && git checkout master \
-    && pip install .[cartpole] \
+    && pip install .[svm] \
     && cd / \
     && mkdir /var/lib/hpolib2/ \
     && chmod -R 777 /var/lib/hpolib2/
 
 %runscript
-    python -s /home/HPOlib2/hpolib/container/server_abstract_benchmark.py rl.cartpole $@
+    python -s /home/HPOlib2/hpolib/container/server_abstract_benchmark.py ml.svm_benchmark $@

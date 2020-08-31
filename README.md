@@ -8,7 +8,7 @@ HPOlib2 is a library for hyperparameter optimization and black-box optimization 
 
 ## In 4 lines of code
 
-Run a random configuration within a singularity container (requires singularity dependencies: `pip install .[singularity]`)
+Run a random configuration within a singularity container
 ```python
 from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl', rng=1)
@@ -49,7 +49,7 @@ run the following:
 ```
 git clone https://github.com/automl/HPOlib2.git
 cd HPOlib2 
-pip install .[singularity]
+pip install .
 ```
 
 **Note:** This does not install *singularity (version 3.5)*. Please follow the steps described here: [user-guide](https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps).   

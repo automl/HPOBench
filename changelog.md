@@ -1,3 +1,9 @@
+# 0.0.4
+  * improve test coverage
+  * update HowToAddANewBenchmark.md
+  * Add SVM benchmark working on OpenML data
+  * Add nasbench201 benchmark
+  
 # 0.0.3
   * improve forwarding exceptions in containerized benchmarks
   * allow to set debug level with env variable

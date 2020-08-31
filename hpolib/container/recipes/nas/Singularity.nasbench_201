@@ -5,45 +5,15 @@ From: python:3.7-slim
 MAINTAINER muelleph@cs.uni-freiburg.de
 VERSION v0.0.1
 
-%environment
-    export PYTHONPATH=${PYTHONPATH}:/home/AutoDL-Projects/lib/
-
 %post
     apt update -y
     apt install build-essential git wget curl -y
 
-    # Cifar10:              https://drive.google.com/file/d/1VHxlF4SaS04tEkRZAslXJbkVTZJPN4hx/view?usp=sharing
-    # Cifar10-valid:        https://drive.google.com/file/d/12GuhUvTGHNPGVRthprP7vHBL8Mcp-uGN/view?usp=sharing
-    # Cifar100:             https://drive.google.com/file/d/1h6vke2_LjbtM7UJ2KEAUu6m0k8Uj6na7/view?usp=sharing
-    # ImageNet16-120:       https://drive.google.com/file/d/1bI5-_2YEWOGA0Ug9VGkGD1ismrKZQNVS/view?usp=sharing
-
     cd /home \
-    && mkdir data \
-    && cd data \
-    && curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=1VHxlF4SaS04tEkRZAslXJbkVTZJPN4hx" > /dev/null \
-    && curl -Lb ./cookie "http://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' \
-           ./cookie`&id=1VHxlF4SaS04tEkRZAslXJbkVTZJPN4hx" -o NAS-Bench-201-v1_1-096897_cifar10.pth \
-    && rm ./cookie \
-    && curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=12GuhUvTGHNPGVRthprP7vHBL8Mcp-uGN" > /dev/null \
-    && curl -Lb ./cookie "http://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' \
-           ./cookie`&id=12GuhUvTGHNPGVRthprP7vHBL8Mcp-uGN" -o NAS-Bench-201-v1_1-096897_cifar10-valid.pth \
-    && rm ./cookie \
-    && curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=1h6vke2_LjbtM7UJ2KEAUu6m0k8Uj6na7" > /dev/null \
-    && curl -Lb ./cookie "http://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' \
-           ./cookie`&id=1h6vke2_LjbtM7UJ2KEAUu6m0k8Uj6na7" -o NAS-Bench-201-v1_1-096897_cifar100.pth \
-    && rm ./cookie \
-    && curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=1bI5-_2YEWOGA0Ug9VGkGD1ismrKZQNVS" > /dev/null \
-    && curl -Lb ./cookie "http://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' \
-           ./cookie`&id=1bI5-_2YEWOGA0Ug9VGkGD1ismrKZQNVS" -o NAS-Bench-201-v1_1-096897_ImageNet16-120.pth \
-    && rm ./cookie
-
-    cd /home \
-    && git clone https://github.com/D-X-Y/AutoDL-Projects.git \
-    && pip install git+https://github.com/D-X-Y/NAS-Bench-201 \
-    && git clone https://github.com/PhMueller/HPOlib3.git \
+    && git clone https://github.com/automl/HPOlib3.git \
     && cd HPOlib3 \
-    && git checkout singularity \
-    && pip install .[singularity,nasbench_201] \
+    && git checkout master \
+    && pip install . \
     && cd / \
     && mkdir /var/lib/hpolib3/ \
     && chmod -R 777 /var/lib/hpolib3/

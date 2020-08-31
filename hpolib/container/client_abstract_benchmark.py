@@ -118,10 +118,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             # split-brain situation between any process that had been waiting for the deleted file, and any process
             # that attempted to lock the file after it had been deleted."
             # See: https://docs.openstack.org/oslo.concurrency/latest/admin/index.html
-            # We limit the number of lock file by having at most one lock file per benchmark and storing them in the
-            # temp folder, so that they are automatically deleted after reboot.
             @lockutils.synchronized('not_thread_process_safe', external=True,
-                                    lock_path=f'{self.config.socket_dir}/lock_{container_name}', delay=5)
+                                    lock_path=f'{self.config.cache_dir}/lock_{container_name}', delay=5)
             def download_container(container_dir, container_name, container_source):
                 if not (container_dir / container_name).exists():
                     logger.debug('Going to pull the container from an online source.')
@@ -344,7 +342,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         seed_dict = json.dumps(seed_dict, indent=None)
         logger.debug(f'Client: seed_dict {seed_dict}')
         json_str = self.benchmark.get_configuration_space(seed_dict)
-        return csjson.read(json_str)
+
+        config_space = csjson.read(json_str)
+        if seed is not None:
+            config_space.seed(seed)
+        return config_space
 
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
@@ -365,7 +367,12 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         seed_dict = json.dumps(seed_dict, indent=None)
         logger.debug(f'Client: seed_dict {seed_dict}')
         json_str = self.benchmark.get_fidelity_space(seed_dict)
-        return csjson.read(json_str)
+
+        fs = csjson.read(json_str)
+        if seed is not None:
+            fs.seed(seed)
+
+        return fs
 
     def get_meta_information(self) -> Dict:
         """ Return the information about the benchmark. """
