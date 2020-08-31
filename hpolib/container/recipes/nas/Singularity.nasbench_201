@@ -12,7 +12,7 @@ VERSION v0.0.1
     cd /home \
     && git clone https://github.com/automl/HPOlib3.git \
     && cd HPOlib3 \
-    && git checkout development \
+    && git checkout master \
     && pip install . \
     && cd / \
     && mkdir /var/lib/hpolib3/ \
