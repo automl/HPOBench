@@ -58,8 +58,9 @@ Now, you can update your PR and let us know, so we can upload the container to S
     && git clone https://github.com/automl/HPOlib2.git \
     && cd HPOlib2 \
     && git checkout development \
-```
-   to point to the branch/repo where your fork is on, e.g. `newBenchmark`
+  ```
+   to point to the branch/repo where your fork is on, e.g. `newBenchmark`.
+   
   2. Run `sudo singularity build <newBenchmark> Singularity.<newBenchmark>`
   3. Verify that everything works with:
 
