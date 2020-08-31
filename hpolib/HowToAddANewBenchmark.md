@@ -27,6 +27,7 @@ Then:
   6. Add the remaining dependencies or steps necessary to run your benchmark in the docstring of your benchmark class
     (see, e.g. `hpolib/benchmarks/nas/nasbench_101.py`).
   7. Verify that everything works with, e.g.
+
 ```python
 from hpolib.benchmarks.<type>.<newbenchmark> import <NewBenchmark>
 b = <NewBenchmark>(<some_args>, rng=1)
@@ -60,8 +61,9 @@ Now, you can update your PR and let us know, so we can upload the container to S
 ```
    to point to the branch/repo where your fork is on, e.g. `newBenchmark`
   2. Run `sudo singularity build <newBenchmark> Singularity.<newBenchmark>`
-  3. Verify that everything works with
-  ```python
+  3. Verify that everything works with:
+
+```python
 from hpolib.container.benchmarks.<type>.<newbenchmark> import <NewBenchmark>
 b = <NewBenchmark>(container_source="./", container_name="newBenchmark")
 res = b.objective_function(configuration=b.get_configuration_space(seed=1).sample_configuration())
