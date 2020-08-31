@@ -1,5 +1,7 @@
 # 0.0.4
   * improve test coverage
+  * update HowToAddANewBenchmark.md
+  * Add SVM benchmark working on OpenML data
   
 # 0.0.3
   * improve forwarding exceptions in containerized benchmarks
