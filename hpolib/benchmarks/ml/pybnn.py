@@ -1,30 +1,41 @@
 """
-How to install:
----------------
+How to use this benchmark:
+--------------------------
 
+We recommend using the containerized version of this benchmark.
+If you want to use this benchmark locally (without running it via the corresponding container),
+you need to install the following packages besides installing the hpolib.
+
+```
 pip3 install Theano==1.0.5
 pip3 install git+https://github.com/Lasagne/Lasagne.git
 pip3 install git+https://github.com/automl/sgmcmc.git
-"""
+```
 
-import os
+"""
 import time
 from functools import partial
 
 
 import numpy as np
 from scipy import stats
-
+from hpolib.util import rng_helper
 import lasagne
 
 import ConfigSpace as CS
 
 from sgmcmc.bnn.model import BayesianNeuralNetwork
 from sgmcmc.bnn.lasagne_layers import AppendLayer
-from typing import Tuple, Union, Dict, Any
+from typing import Union, Dict, Any
 
+from hpolib.util.data_manager import BostonHousingData, ProteinStructureData, YearPredictionMSDData
 from hpolib.abstract_benchmark import AbstractBenchmark
-# from hpolib.util.data_manager import BostonHousingData, ProteinStructureData,YearPredictionMSDData
+
+import logging
+
+__version__ = '0.0.1'
+
+logger = logging.getLogger('PyBnnBenchmark')
 
 
 class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
@@ -84,6 +95,9 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
         """
         start = time.time()
 
+        self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
+        np.random.seed(self.rng.randint(1, 10000))
+
         burn_in_steps = int(configuration['burn_in'] * fidelity['budget'])
 
         net = partial(_get_net,
@@ -98,7 +112,8 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
                                       n_iters=fidelity['budget'],
                                       precondition=True,
                                       normalize_input=True,
-                                      normalize_output=True)
+                                      normalize_output=True,
+                                      rng=self.rng)
 
         model.train(self.train, self.train_targets,
                     valid=self.valid, valid_targets=self.valid_targets,
@@ -154,7 +169,9 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
         """
         start = time.time()
 
-        # TODO (pm, 26.8): Raise exception if budget is not maximal?
+        self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
+        np.random.seed(self.rng.randint(1, 10000))
+
         burn_in_steps = int(configuration['burn_in'] * fidelity['budget'])
 
         net = partial(_get_net,
@@ -169,7 +186,8 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
                                       n_iters=fidelity['budget'],
                                       precondition=True,
                                       normalize_input=True,
-                                      normalize_output=True)
+                                      normalize_output=True,
+                                      rng=self.rng)
 
         train = np.concatenate((self.train, self.valid))
         train_targets = np.concatenate((self.train_targets, self.valid_targets))
@@ -295,3 +313,21 @@ class BNNOnToyFunction(BayesianNeuralNetworkBenchmark):
         test = X[800:]
         test_targets = y[800:]
         return train, train_targets, valid, valid_targets, test, test_targets
+
+
+class BNNOnBostonHousing(BayesianNeuralNetworkBenchmark):
+    def get_data(self):
+        dm = BostonHousingData()
+        return dm.load()
+
+
+class BNNOnProteinStructure(BayesianNeuralNetworkBenchmark):
+    def get_data(self):
+        dm = ProteinStructureData()
+        return dm.load()
+
+
+class BNNOnYearPrediction(BayesianNeuralNetworkBenchmark):
+    def get_data(self):
+        dm = YearPredictionMSDData()
+        return dm.load()

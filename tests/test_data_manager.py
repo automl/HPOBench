@@ -1,8 +1,10 @@
-import pytest
-import hpolib
-from hpolib.util.data_manager import NASBench_201Data
 import shutil
 from multiprocessing import Pool
+
+import pytest
+
+import hpolib
+from hpolib.util.data_manager import NASBench_201Data, YearPredictionMSDData, ProteinStructureData, BostonHousingData
 
 
 def test_nasbench_201_load_thread_safe():
@@ -57,3 +59,54 @@ def test_nasbench_201_load():
     data_manager = NASBench_201Data(dataset='cifar100')
     data = data_manager.load()
     assert len(data) == 3 * len(NASBench_201Data.get_metrics())
+
+
+def test_year_prediction_msd_data():
+    dm = YearPredictionMSDData()
+    assert dm.url_source == 'https://archive.ics.uci.edu/ml/machine-learning-databases/00203/YearPredictionMSD.txt.zip'
+    assert dm._save_dir.exists()
+
+    # First one downloads the data
+    x_train, y_train, x_valid, y_valid, x_test, y_test = dm.load()
+
+    # second call should check the 'if exists' branch
+    _ = dm.load()
+
+    # train = 70%, valid = 20%, test = 10%
+    assert 0 < len(x_test) == len(y_test)
+    assert len(y_test) < len(x_valid) == len(y_valid)
+    assert len(y_valid) < len(x_train) == len(y_train)
+
+
+def test_protein_structure_data():
+    dm = ProteinStructureData()
+    assert dm.url_source == 'https://archive.ics.uci.edu/ml/machine-learning-databases/00265/CASP.csv'
+    assert dm._save_dir.exists()
+
+    # First one downloads the data
+    x_train, y_train, x_valid, y_valid, x_test, y_test = dm.load()
+
+    # second call should check the 'if exists' branch
+    _ = dm.load()
+
+    # train = 60%, valid = 20%, test = 20%
+    assert 0 < len(x_test) == len(y_test)
+    assert 0 < len(x_valid) == len(y_valid)
+    assert len(y_valid) < len(x_train) == len(y_train)
+
+
+def test_boston_data():
+    dm = BostonHousingData()
+    assert dm.url_source == 'https://archive.ics.uci.edu/ml/machine-learning-databases/housing/housing.data'
+    assert dm._save_dir.exists()
+
+    # First one downloads the data
+    x_train, y_train, x_valid, y_valid, x_test, y_test = dm.load()
+
+    # second call should check the 'if exists' branch
+    _ = dm.load()
+
+    # train = 60%, valid = 20%, test = 20%
+    assert 0 < len(x_test) == len(y_test)
+    assert 0 < len(x_valid) == len(y_valid)
+    assert len(y_valid) < len(x_train) == len(y_train)
