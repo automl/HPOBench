@@ -4,13 +4,9 @@ How to use this benchmark:
 
 We recommend using the containerized version of this benchmark.
 If you want to use this benchmark locally (without running it via the corresponding container),
-you need to install the following packages besides installing the hpolib.
+you need to install the following packages besides installing the hpolib with
 
-```
-pip3 install Theano==1.0.5
-pip3 install git+https://github.com/Lasagne/Lasagne.git
-pip3 install git+https://github.com/automl/sgmcmc.git
-```
+```pip install .[pybnn]```
 
 """
 import time
@@ -265,7 +261,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
     @staticmethod
     def get_meta_information():
         return {'name': 'BNN Benchmark',
-                'references': []
+                'references': ['http://proceedings.mlr.press/v80/falkner18a.html'],
                 }
 
 
