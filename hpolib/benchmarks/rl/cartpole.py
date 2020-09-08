@@ -225,7 +225,7 @@ class CartpoleBase(AbstractBenchmark):
                                'url       = http://proceedings.mlr.press/v80/falkner18a.html'
                                'author    = {Falkner, Stefan and Klein, Aaron and Hutter, Frank}, '
                                'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
-                               'pages     = {1436 - -1445},' 
+                               'pages     = {1436 - -1445},'
                                'year      = {2018}}'],
                 'note': 'This benchmark is not deterministic, since the gym environment is not deterministic.'
                         ' Also, often the benchmark is already converged after 1000 episodes.'
