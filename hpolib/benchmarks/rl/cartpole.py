@@ -220,7 +220,13 @@ class CartpoleBase(AbstractBenchmark):
     @staticmethod
     def get_meta_information() -> Dict:
         return {'name': 'Cartpole',
-                'references': ['http://proceedings.mlr.press/v80/falkner18a.html'],
+                'references': ['@InProceedings{falkner-icml-18,'
+                               'title     = {{BOHB}: Robust and Efficient Hyperparameter Optimization at Scale},'
+                               'url       = http://proceedings.mlr.press/v80/falkner18a.html'
+                               'author    = {Falkner, Stefan and Klein, Aaron and Hutter, Frank}, '
+                               'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
+                               'pages     = {1436 - -1445},' 
+                               'year      = {2018}}'],
                 'note': 'This benchmark is not deterministic, since the gym environment is not deterministic.'
                         ' Also, often the benchmark is already converged after 1000 episodes.'
                         ' Increasing the budget \"max_episodes\" may lead to the same results.'}

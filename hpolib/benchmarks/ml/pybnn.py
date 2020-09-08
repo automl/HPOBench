@@ -261,7 +261,13 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
     @staticmethod
     def get_meta_information():
         return {'name': 'BNN Benchmark',
-                'references': ['http://proceedings.mlr.press/v80/falkner18a.html'],
+                'references': ['@InProceedings{falkner-icml-18,'
+                               'title     = {{BOHB}: Robust and Efficient Hyperparameter Optimization at Scale},'
+                               'url       = http://proceedings.mlr.press/v80/falkner18a.html'
+                               'author    = {Falkner, Stefan and Klein, Aaron and Hutter, Frank}, '
+                               'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
+                               'pages     = {1436 - -1445},' 
+                               'year      = {2018}}'],
                 }
 
 
