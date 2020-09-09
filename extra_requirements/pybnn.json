@@ -1,0 +1,4 @@
+{
+  "pybnn": ["Theano==1.0.5","sgmcmc@git+https://github.com/automl/sgmcmc#egg=sgmcmc-0.0.1",
+    "Lasagne@git+https://github.com/Lasagne/Lasagne#egg=Lasagne-0.0.1"]
+}

@@ -34,7 +34,3 @@ def test_svm_init():
     result = benchmark.objective_function_test(configuration=config)
     assert result['function_value'] == pytest.approx(0.4648, abs=0.1)
     assert result['cost'] is not None
-
-
-if __name__ == "__main__":
-    test_svm_init()

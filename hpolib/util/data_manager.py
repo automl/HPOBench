@@ -520,3 +520,231 @@ class NASBench_201Data(DataManager):
         self.logger.info(f'NasBench201DataManager: Data successfully loaded after {time() - t:.2f}')
 
         return self.data
+
+
+class BostonHousingData(HoldoutDataManager):
+
+    def __init__(self):
+
+        super(BostonHousingData, self).__init__()
+        self.url_source = 'https://archive.ics.uci.edu/ml/machine-learning-databases/housing/housing.data'
+        self._save_dir = hpolib.config_file.data_dir / "BostonHousing"
+        self.create_save_directory(self._save_dir)
+
+    def load(self):
+        """
+        Loads BostonHousing from data directory as defined in hpolibrc.data_directory.
+        Downloads data if necessary.
+
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+        self.logger.debug('BostonHousingDataManager: Starting to load data')
+        t = time()
+
+        self._download()
+
+        X_trn, y_trn, X_val, y_val, X_tst, y_tst = self._load()
+        self.logger.info(f'BostonHousingDataManager: Data successfully loaded after {time() - t:.2f}')
+
+        return X_trn, y_trn, X_val, y_val, X_tst, y_tst
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpolib.config_file.cache_dir}/lock_protein_structure_data', delay=0.5)
+    def _download(self):
+        """
+        Loads data from UCI website
+        https://archive.ics.uci.edu/ml/machine-learning-databases/housing/housing.data
+        If necessary downloads data, otherwise loads data from data_directory
+        """
+        # Check if data is already downloaded.
+        # Use a file lock to ensure that no two processes try to download the same files at the same time.
+        if (self._save_dir / 'housing.data').exists():
+            self.logger.debug('BostonHousingDataManager: Data already downloaded')
+        else:
+            self.logger.info(f'BostonHousingDataManager: Start downloading data from {self.url_source} '
+                             f'to {self._save_dir}')
+            urlretrieve(self.url_source, self._save_dir / 'housing.data')
+
+    def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Load the data from file and split it into train, test and validation split.
+
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+        data = np.loadtxt(self._save_dir / 'housing.data')
+
+        N = data.shape[0]
+
+        n_train = int(N * 0.6)
+        n_val = int(N * 0.2)
+
+        X_train, y_train = data[:n_train, :-1], data[:n_train, -1]
+        X_val, y_val = data[n_train:n_train + n_val, :-1], data[n_train:n_train + n_val, -1]
+        X_test, y_test = data[n_train + n_val:, :-1], data[n_train + n_val:, -1]
+
+        return X_train, y_train, X_val, y_val, X_test, y_test
+
+
+class ProteinStructureData(HoldoutDataManager):
+
+    def __init__(self):
+        super(ProteinStructureData, self).__init__()
+        self.url_source = 'https://archive.ics.uci.edu/ml/machine-learning-databases/00265/CASP.csv'
+        self._save_dir = hpolib.config_file.data_dir / "ProteinStructure"
+        self.create_save_directory(self._save_dir)
+
+    def load(self):
+        """
+        Loads Physicochemical Properties of Protein Tertiary Structure Data Set
+        from data directory as defined in _config.data_directory.
+        Downloads data if necessary from UCI.
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+        self.logger.debug('ProteinStructureDataManager: Starting to load data')
+        t = time()
+        self._download()
+
+        X_train, y_train, X_val, y_val, X_test, y_test = self._load()
+        self.logger.info(f'ProteinStructureDataManager: Data successfully loaded after {time() - t:.2f}')
+
+        return X_train, y_train, X_val, y_val, X_test, y_test
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpolib.config_file.cache_dir}/lock_protein_structure_data', delay=0.5)
+    def _download(self):
+        """
+        Loads data from UCI website
+        https://archive.ics.uci.edu/ml/machine-learning-databases/00265/CASP.csv
+        If necessary downloads data, otherwise loads data from data_directory
+        """
+        # Check if data is already downloaded.
+        # Use a file lock to ensure that no two processes try to download the same files at the same time.
+        if (self._save_dir / 'CASP.csv').exists():
+            self.logger.debug('ProteinStructureDataManager: Data already downloaded')
+        else:
+            self.logger.info(f'ProteinStructureDataManager: Start downloading data from {self.url_source} '
+                             f'to {self._save_dir}')
+            urlretrieve(self.url_source, self._save_dir / 'CASP.csv')
+
+    def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Load the data from file and split it into train, test and validation split.
+
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+        data = np.loadtxt(self._save_dir / 'CASP.csv', delimiter=',', skiprows=1)
+
+        n_train = int(data.shape[0] * 0.6)
+        n_val = int(data.shape[0] * 0.2)
+
+        # note the target value is the first column for this dataset!
+        X_train, y_train = data[:n_train, 1:], data[:n_train, 0]
+        X_val, y_val = data[n_train:n_train + n_val, 1:], data[n_train:n_train + n_val, 0]
+        X_test, y_test = data[n_train + n_val:, 1:], data[n_train + n_val:, 0]
+
+        return X_train, y_train, X_val, y_val, X_test, y_test
+
+
+class YearPredictionMSDData(HoldoutDataManager):
+
+    def __init__(self):
+        super(YearPredictionMSDData, self).__init__()
+        self.url_source = 'https://archive.ics.uci.edu/ml/machine-learning-databases/00203/YearPredictionMSD.txt.zip'
+        self._save_dir = hpolib.config_file.data_dir / "YearPredictionMSD"
+        self.create_save_directory(self._save_dir)
+
+    def load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Loads Physicochemical Properties of Protein Tertiary Structure Data Set from data directory as
+        defined in _config.data_directory. Downloads data if necessary from UCI.
+
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+        self.logger.debug('YearPredictionMSDDataManager: Starting to load data')
+        t = time()
+
+        self._download()
+
+        X_trn, y_trn, X_val, y_val, X_tst, y_tst = self._load()
+        self.logger.info(f'YearPredictionMSDDataManager: Data successfully loaded after {time() - t:.2f}')
+
+        return X_trn, y_trn, X_val, y_val, X_tst, y_tst
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpolib.config_file.cache_dir}/lock_year_prediction_data', delay=0.5)
+    def _download(self):
+        # Check if data is already downloaded.
+        # Use a file lock to ensure that no two processes try to download the same files at the same time.
+
+        if (self._save_dir / 'YearPredictionMSD.txt').exists():
+            self.logger.debug('YearPredictionMSDDataManager: Data already downloaded')
+        else:
+            self.logger.info(f'YearPredictionMSDDataManager: Start downloading data from {self.url_source} '
+                             f'to {self._save_dir}')
+
+            with urlopen(self.url_source) as zip_archive:
+                with ZipFile(BytesIO(zip_archive.read())) as zip_file:
+                    zip_file.extractall(self._save_dir)
+
+    def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Load the data from file and split it into train, test and validation split.
+
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+
+        with (self._save_dir / 'YearPredictionMSD.txt').open('r') as fh:
+            data = np.loadtxt(fh, delimiter=',')
+
+        # Use 70% of the data as train split, 20% as validation split and 10% as test split
+        n_trn = int(data.shape[0] * 0.7)
+        n_val = int(data.shape[0] * 0.2)
+
+        # Note the target value is the first column for this dataset!
+        X_trn, y_trn = data[:n_trn, 1:], data[:n_trn, 0]
+        X_val, y_val = data[n_trn:n_trn + n_val, 1:], data[n_trn:n_trn + n_val, 0]
+        X_tst, y_tst = data[n_trn + n_val:, 1:], data[n_trn + n_val:, 0]
+
+        return X_trn, y_trn, X_val, y_val, X_tst, y_tst
