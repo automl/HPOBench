@@ -9,7 +9,7 @@ from sklearn import svm
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, make_scorer
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 
 import hpolib.util.rng_helper as rng_helper
 from hpolib.abstract_benchmark import AbstractBenchmark
@@ -244,7 +244,7 @@ class SupportVectorMachine(AbstractBenchmark):
             ('preprocess_one_hot',
              ColumnTransformer([
                  ("categorical", OneHotEncoder(categories=self.categories, sparse=False), self.categorical_data),
-                 ("continuous", "passthrough", ~self.categorical_data)])),
+                 ("continuous", MinMaxScaler(feature_range=(0, 1)), ~self.categorical_data)])),
             ('svm',
              svm.SVC(gamma=gamma, C=C, random_state=self.rng, cache_size=self.cache_size))
         ])
