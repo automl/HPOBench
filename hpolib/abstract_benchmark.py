@@ -131,7 +131,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
                                 f'was {type(configuration)}')
 
             self.configuration_space.check_configuration(config)
-            return foo(self, configuration, **kwargs)
+            return foo(self, configuration=config.get_dictionary(), **kwargs)
         return wrapper
 
     @staticmethod
