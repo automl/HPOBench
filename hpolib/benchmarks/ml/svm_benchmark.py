@@ -73,7 +73,7 @@ class SupportVectorMachine(AbstractBenchmark):
         # (https://arxiv.org/pdf/1605.07079.pdf),
         # use 10 time the number of classes as lower bound for the dataset fraction
         n_classes = np.unique(self.y_train).shape[0]
-        self.lower_bound_train_size = int((10 * n_classes) / self.X_train.shape[0])
+        self.lower_bound_train_size = float((10 * n_classes) / self.X_train.shape[0])
 
     def get_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, List]:
         """ Loads the data given a task or another source. """
@@ -140,8 +140,8 @@ class SupportVectorMachine(AbstractBenchmark):
         if self.lower_bound_train_size > fidelity['dataset_fraction']:
             train_size = self.lower_bound_train_size
             logger.warning(f'The given data set fraction is lower than the lower bound (10 * number of classes.) '
-                           f'Increase the fidelity from {fidelity["dataset_fraction"]:.2f} to '
-                           f'{self.lower_bound_train_size:.2f}')
+                           f'Increase the fidelity from {fidelity["dataset_fraction"]} to '
+                           f'{self.lower_bound_train_size}')
         else:
             train_size = fidelity['dataset_fraction']
 
@@ -287,7 +287,7 @@ class SupportVectorMachine(AbstractBenchmark):
 
         Fidelities
         ----------
-        dataset_fraction: float - [0.1, 1]
+        dataset_fraction: float - [0.0, 1]
             fraction of training data set to use
 
         Parameters
@@ -303,7 +303,7 @@ class SupportVectorMachine(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformFloatHyperparameter("dataset_fraction", lower=0.1, upper=1.0, default_value=1.0, log=False),
+            CS.UniformFloatHyperparameter("dataset_fraction", lower=0.0, upper=1.0, default_value=1.0, log=False),
         ])
         return fidel_space
 

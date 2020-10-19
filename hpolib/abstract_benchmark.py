@@ -1,7 +1,8 @@
 """ Base-class of all benchmarks """
 
 import abc
-from typing import Union, Dict
+from typing import Union, Dict, List
+import functools
 
 import logging
 import ConfigSpace
@@ -38,7 +39,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         self.fidelity_space = self.get_fidelity_space()
 
     @abc.abstractmethod
-    def objective_function(self, configuration: Dict, fidelity: Union[Dict, None] = None,
+    def objective_function(self, configuration: Union[np.ndarray, List, ConfigSpace.Configuration, Dict],
+                           fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
                            *args, **kwargs) -> dict:
         """
@@ -70,7 +72,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def objective_function_test(self, configuration: Dict, fidelity: Union[Dict, None] = None,
+    def objective_function_test(self, configuration: Union[np.ndarray, List, ConfigSpace.Configuration, Dict],
+                                fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
                                 *args, **kwargs) -> Dict:
         """
@@ -103,10 +106,13 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
         Can be combined with the _configuration_as_array decorator.
         """
-        def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict], **kwargs):
+
+        # Copy all documentation from the underlying function except the annotations.
+        @functools.wraps(wrapped=foo, assigned=('__module__', '__name__', '__qualname__', '__doc__',))
+        def wrapper(self, configuration: Union[np.ndarray, List, ConfigSpace.Configuration, Dict], **kwargs):
 
             try:
-                if isinstance(configuration, np.ndarray):
+                if isinstance(configuration, (np.ndarray, List)):
                     config_dict = {k: configuration[i] for (i, k) in enumerate(self.configuration_space)}
                     config = ConfigSpace.Configuration(self.configuration_space, config_dict)
                 elif isinstance(configuration, dict):
@@ -125,7 +131,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
                                 f'was {type(configuration)}')
 
             self.configuration_space.check_configuration(config)
-            return foo(self, configuration, **kwargs)
+            return foo(self, configuration=config.get_dictionary(), **kwargs)
         return wrapper
 
     @staticmethod
@@ -142,6 +148,9 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Order independent from the _check_configuration decorator, but it does forward all fidelity parameters,
         regardless of input, as a dictionary in the 'fidelity' keyword argument.
         """
+
+        # Copy all documentation from the underlying function except the annotations.
+        @functools.wraps(wrapped=foo, assigned=('__module__', '__name__', '__qualname__', '__doc__',))
         def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict],
                     fidelity: Union[Dict, ConfigSpace.Configuration, None] = None, **kwargs):
 
@@ -154,13 +163,17 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
             # If kwargs contains the 'fidelity' arg, extract any fidelity parameters it contains and fill in
             # default values for the rest.
             default_fidelities = self.fidelity_space.get_default_configuration()
+            fidelity = dict(fidelity)
+
             try:
                 if fidelity is None:
                     fidelity = default_fidelities
                 if isinstance(fidelity, dict):
                     default_fidelities_cfg = default_fidelities.get_dictionary()
-                    fidelity = {k: fidelity.get(k, v) for k, v in default_fidelities_cfg.items()}
-                    fidelity = ConfigSpace.Configuration(self.fidelity_space, fidelity)
+                    new_fidelity = {k: fidelity.pop(k, v) for k, v in default_fidelities_cfg.items()}
+                    if len(fidelity) != 0:
+                        raise ValueError("Provided fidelity dict contained unknown fidelity values: %s" % str(fidelity))
+                    fidelity = ConfigSpace.Configuration(self.fidelity_space, new_fidelity)
                 elif isinstance(fidelity, ConfigSpace.Configuration):
                     fidelity = fidelity
                 else:
@@ -171,8 +184,8 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
                 raise e
 
             if fidelity is None:
-                raise TypeError(f'Configuration has to be from type np.ndarray, dict, or ConfigSpace.Configuration but '
-                                f'was {type(configuration)}')
+                raise TypeError(f'Fidelity has to be an instance of type np.ndarray, dict, or '
+                                f'ConfigSpace.Configuration but was {type(configuration)}')
 
             # Ensure that the extracted fidelity values play well with the defined fidelity space
             self.fidelity_space.check_configuration(fidelity)
