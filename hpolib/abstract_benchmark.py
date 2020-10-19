@@ -163,13 +163,17 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
             # If kwargs contains the 'fidelity' arg, extract any fidelity parameters it contains and fill in
             # default values for the rest.
             default_fidelities = self.fidelity_space.get_default_configuration()
+            fidelity = dict(fidelity)
+
             try:
                 if fidelity is None:
                     fidelity = default_fidelities
                 if isinstance(fidelity, dict):
                     default_fidelities_cfg = default_fidelities.get_dictionary()
-                    fidelity = {k: fidelity.get(k, v) for k, v in default_fidelities_cfg.items()}
-                    fidelity = ConfigSpace.Configuration(self.fidelity_space, fidelity)
+                    new_fidelity = {k: fidelity.pop(k, v) for k, v in default_fidelities_cfg.items()}
+                    if len(fidelity) != 0:
+                        raise ValueError("Provided fidelity dict contained unknown fidelity values: %s" % str(fidelity))
+                    fidelity = ConfigSpace.Configuration(self.fidelity_space, new_fidelity)
                 elif isinstance(fidelity, ConfigSpace.Configuration):
                     fidelity = fidelity
                 else:
