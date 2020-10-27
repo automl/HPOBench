@@ -18,7 +18,6 @@ __version__ = '0.0.1'
 
 
 class XGBoostBenchmark(AbstractBenchmark):
-
     def __init__(self, task_id: Union[int, None] = None, n_threads: int = 1,
                  rng: Union[np.random.RandomState, int, None] = None):
         """

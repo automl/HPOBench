@@ -67,7 +67,7 @@ import hpolib.config
 from hpolib.abstract_benchmark import AbstractBenchmark
 from hpolib.util import rng_helper
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 logger = logging.getLogger('LearnaBenchmark')
 
@@ -173,16 +173,16 @@ class BaseLearna(AbstractBenchmark):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None,
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-        """ Interface for the obejctive function. """
+        """ Interface for the objective function. """
         raise NotImplementedError()
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None,
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """ Interface for the test obejctive function. """
         raise NotImplementedError()
@@ -296,8 +296,8 @@ class Learna(BaseLearna):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None,
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Start the learna experiment. Dont train a RL agent. Just optimize on the sequences.
@@ -351,8 +351,8 @@ class Learna(BaseLearna):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None,
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate the Learna experiment.
@@ -385,8 +385,8 @@ class Learna(BaseLearna):
 
 
 class MetaLearna(BaseLearna):
-    def __init__(self, data_path: Union[str, Path]):
-        super(MetaLearna, self).__init__(data_path)
+    def __init__(self, data_path: Union[str, Path], rng: Union[np.random.RandomState, int, None] = None):
+        super(MetaLearna, self).__init__(data_path=data_path, rng=rng)
         self.config = hpolib.config.config_file
 
     @staticmethod
@@ -414,9 +414,10 @@ class MetaLearna(BaseLearna):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None,
-                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+
         """
         MetaLearna trains an RL agent for 1 hour on the given training set and then tries to solve the sequences.
         MetaLearna has only a maximum solving time per sequence of 60 seconds.
@@ -477,8 +478,8 @@ class MetaLearna(BaseLearna):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
-    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None,
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate the MetaLearna experiment.
