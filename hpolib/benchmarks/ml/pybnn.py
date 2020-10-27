@@ -16,6 +16,17 @@ from functools import partial
 import numpy as np
 from scipy import stats
 from hpolib.util import rng_helper
+
+# This has to happen before any other imports
+import os
+if "TMPDIR" not in os.environ:
+    import tempfile
+    tmpdir = tempfile.TemporaryDirectory()
+    tmpdir_name = tmpdir.name
+else:
+    tmpdir_name = os.environ["TMPDIR"]
+os.environ["THEANO_FLAGS"] = "base_compiledir=%s" % tmpdir_name
+
 import lasagne
 
 import ConfigSpace as CS
