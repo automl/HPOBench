@@ -264,7 +264,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformIntegerHyperparameter("budget", lower=100, upper=10000, default_value=10000, log=False)
+            CS.UniformIntegerHyperparameter("budget", lower=500, upper=10000, default_value=10000, log=False)
         ])
 
         return fidel_space
