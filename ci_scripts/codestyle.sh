@@ -29,7 +29,7 @@ if [[ "$RUN_CODESTYLE" == "true" ]]; then
     fi
 
     # Just print the pylint output without throwing an error.
-    pylint --rcfile=./pylint.rc ./hpolib
+    pylint --exit-zero --rcfile=./pylint.rc ./hpolib
 
 else
     echo "Skip code style checking"
