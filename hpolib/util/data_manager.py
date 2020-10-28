@@ -9,6 +9,8 @@ For OpenML data sets (defined by task id or similar) please use the
 hpolib.util.openml_data_manager.
 """
 
+# pylint: disable=logging-fstring-interpolation,invalid-name
+
 import abc
 import gzip
 import logging
@@ -20,6 +22,7 @@ from typing import Tuple, Dict
 from urllib.request import urlretrieve, urlopen
 from zipfile import ZipFile
 from time import time
+from itertools import product
 
 import numpy as np
 
@@ -31,7 +34,7 @@ except ImportError:
 import hpolib
 
 
-class DataManager(object, metaclass=abc.ABCMeta):
+class DataManager(abc.ABC, metaclass=abc.ABCMeta):
     """ Base Class for loading and managing the data.
 
     Attributes
@@ -70,8 +73,8 @@ class HoldoutDataManager(DataManager):
     ----------
     X_train : np.ndarray
     y_train : np.ndarray
-    X_val : np.ndarray
-    y_val : np.ndarray
+    X_valid : np.ndarray
+    y_valid : np.ndarray
     X_test : np.ndarray
     y_test : np.ndarray
     """
@@ -81,8 +84,8 @@ class HoldoutDataManager(DataManager):
 
         self.X_train = None
         self.y_train = None
-        self.X_val = None
-        self.y_val = None
+        self.X_valid = None
+        self.y_valid = None
         self.X_test = None
         self.y_test = None
 
@@ -419,6 +422,7 @@ class SVHNData(DataManager):
             else:
                 self.logger.debug(f"Load data {save_fl}")
 
+            # pylint: disable=import-outside-toplevel
             from scipy.io import loadmat
             data = loadmat(save_fl)
 
@@ -466,7 +470,6 @@ class NASBench_201Data(DataManager):
 
     @staticmethod
     def get_seeds_metrics():
-        from itertools import product
         seeds = [777, 888, 999]
         metrics = NASBench_201Data.get_metrics()
         return product(seeds, metrics)
@@ -501,7 +504,6 @@ class NASBench_201Data(DataManager):
 
     def _load(self) -> Dict:
         """ Load the data from the file system """
-        import pickle
         data = {}
         for (seed, metric_name), file in zip(NASBench_201Data.get_seeds_metrics(), self.files):
             with (self._save_dir / 'data' / file).open('rb') as fh:

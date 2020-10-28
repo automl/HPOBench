@@ -18,6 +18,19 @@ if [[ "$RUN_CODESTYLE" == "true" ]]; then
     else
       echo "Flake8: No errors found"
     fi
+
+    # Enable the error W0221: Parameters differ from overridden method (arguments-differ)
+    test_pylint=$(pylint --disable=all --enable=W0221 ./hpolib)
+    if [[ $test_pylint ]]; then
+      echo $test_pylint
+      exit 1
+    else
+      echo "Pylint: No signature errors found"
+    fi
+
+    # Just print the pylint output without throwing an error.
+    pylint --rcfile=./pylint.rc ./hpolib
+
 else
     echo "Skip code style checking"
 fi

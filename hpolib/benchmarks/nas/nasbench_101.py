@@ -66,9 +66,10 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
             Path to the folder, which contains the downloaded tabular benchmarks.
         rng : np.random.RandomState, int, None
             Random seed for the benchmarks
+        kwargs : Dict
         """
 
-        super(NASCifar10BaseBenchmark, self).__init__(rng=rng)
+        super(NASCifar10BaseBenchmark, self).__init__(rng=rng, **kwargs)
 
         self.benchmark = benchmark
         self.data_path = data_path

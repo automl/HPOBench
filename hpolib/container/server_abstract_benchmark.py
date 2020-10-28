@@ -23,30 +23,35 @@ from hpolib.config import HPOlibConfig
 
 # Read in the verbosity level from the environment variable HPOLIB_DEBUG
 log_level_str = os.environ.get('HPOLIB_DEBUG', 'false')
-log_level = logging.DEBUG if log_level_str == 'true' else logging.INFO
+LOG_LEVEL = logging.DEBUG if log_level_str == 'true' else logging.INFO
 
 console = logging.StreamHandler()
-console.setLevel(log_level)
+console.setLevel(LOG_LEVEL)
 
 logger = logging.getLogger('BenchmarkServer')
-logger.setLevel(log_level)
+logger.setLevel(LOG_LEVEL)
 logger.addHandler(console)
 
 
 class BenchmarkEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        if isinstance(obj, enum.Enum):
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
+    """ Simple encoder to serialize numpy arrays and other things which are not directly serializable """
+    def default(self, o):
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        if isinstance(o, np.int):
+            return int(o)
+        if isinstance(o, np.float):
+            return float(o)
+        if isinstance(o, enum.Enum):
+            return str(o)
+        return json.JSONEncoder.default(self, o)
 
 
 @Pyro4.expose
 @Pyro4.behavior(instance_mode="single")
 class BenchmarkServer:
     def __init__(self, socket_id):
-        self.pyroRunning = True
+        self.pyro_running = True
         config = HPOlibConfig()
         self.benchmark = None
 
@@ -59,13 +64,13 @@ class BenchmarkServer:
         _ = self.daemon.register(self, self.socket_id + ".unixsock")
 
         # start the event loop of the server to wait for calls
-        self.daemon.requestLoop(loopCondition=lambda: self.pyroRunning)
+        self.daemon.requestLoop(loopCondition=lambda: self.pyro_running)
 
     def init_benchmark(self, kwargs_str):
         try:
             if kwargs_str != "{}":
                 kwargs = json.loads(kwargs_str)
-                if 'rng' in kwargs and type(kwargs['rng']) == list:
+                if 'rng' in kwargs and isinstance(kwargs['rng'], list):
                     (rnd0, rnd1, rnd2, rnd3, rnd4) = kwargs['rng']
                     rnd1 = [np.uint32(number) for number in rnd1]
                     kwargs['rng'] = np.random.set_state((rnd0, rnd1, rnd2, rnd3, rnd4))
@@ -74,8 +79,8 @@ class BenchmarkServer:
             else:
                 self.benchmark = Benchmark()  # noqa: F821
             logger.info('Server: Connected Successfully')
-        except Exception as e:
-            logger.exception(e)
+        except Exception as exception:
+            logger.exception(exception)
 
     def get_configuration_space(self, kwargs_str: str) -> str:
         logger.debug(f'Server: get_config_space: kwargs_str: {kwargs_str}')
@@ -141,7 +146,7 @@ class BenchmarkServer:
     def shutdown(self):
         logger.debug('Server: Shutting down...')
         Pyro4.config.COMMTIMEOUT = 0.5
-        self.pyroRunning = False
+        self.pyro_running = False
         self.daemon.shutdown()
 
 
@@ -160,5 +165,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # pylint: disable=logging-fstring-interpolation
     exec(f"from hpolib.benchmarks.{args.importBase} import {args.benchmark} as Benchmark")
     bp = BenchmarkServer(args.socket_id)

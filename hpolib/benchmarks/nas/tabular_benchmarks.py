@@ -40,7 +40,7 @@ from tabular_benchmarks.fcnet_benchmark import FCNetBenchmark
 import hpolib.util.rng_helper as rng_helper
 from hpolib.abstract_benchmark import AbstractBenchmark
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class FCNetBaseBenchmark(AbstractBenchmark):
@@ -52,11 +52,12 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         self.benchmark = benchmark
         self.data_path = data_path
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
-                           fidelity: Union[Dict, None] = None,
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            run_index: Union[int, Tuple, None] = (0, 1, 2, 3),
                            rng: Union[np.random.RandomState, int, None] = None,
                            **kwargs) -> Dict:
@@ -95,7 +96,7 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         if isinstance(run_index, int):
             assert 0 <= run_index <= 3, f'run_index must be in [0, 3], not {run_index}'
             run_index = (run_index, )
-        elif isinstance(run_index, tuple) or isinstance(run_index, list):
+        elif isinstance(run_index, (tuple, list)):
             assert len(run_index) != 0, 'run_index must not be empty'
             assert min(run_index) >= 0 and max(run_index) <= 3, \
                 f'all run_index values must be in [0, 3], but were {run_index}'
@@ -153,8 +154,17 @@ class FCNetBaseBenchmark(AbstractBenchmark):
                 runtime_per_run
                 fidelity : used fidelities in this evaluation
         """
-        return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
-                                       **kwargs)
+        self.rng = rng_helper.get_rng(rng)
+        self._reset_tracker()
+
+        test_rmse, runtime = self.benchmark.objective_function_test(config=configuration)
+
+        return {'function_value': float(test_rmse),
+                'cost': float(runtime),
+                'info': {'valid_rmse_per_run': test_rmse,
+                         'runtime_per_run': float(runtime),
+                         'fidelity': fidelity},
+                }
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:

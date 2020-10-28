@@ -181,14 +181,14 @@ class OpenMLHoldoutDataManager(HoldoutDataManager):
         categories = [np.concatenate([replace_value.flatten(), cat])
                       for (replace_value, cat) in zip(replace_nans_with, categories)]
 
-        def _find_and_replace(array, replace_nans_with, categorical_data):
+        def _find_and_replace(array, replace_nans_with):
             nan_idx = np.where(np.isnan(array))
             array[nan_idx] = np.take(replace_nans_with, nan_idx[1])
             return array
 
-        X_train[:, is_categorical] = _find_and_replace(X_train[:, is_categorical], replace_nans_with, is_categorical)
-        X_valid[:, is_categorical] = _find_and_replace(X_valid[:, is_categorical], replace_nans_with, is_categorical)
-        X_test[:, is_categorical] = _find_and_replace(X_test[:, is_categorical], replace_nans_with, is_categorical)
+        X_train[:, is_categorical] = _find_and_replace(X_train[:, is_categorical], replace_nans_with)
+        X_valid[:, is_categorical] = _find_and_replace(X_valid[:, is_categorical], replace_nans_with)
+        X_test[:, is_categorical] = _find_and_replace(X_test[:, is_categorical], replace_nans_with)
         return X_train, X_valid, X_test, categories
 
 

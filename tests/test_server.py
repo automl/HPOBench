@@ -11,12 +11,12 @@ def set_log_level(debug):
 
 def test_debug_env_variable_1():
     set_log_level(False)
-    from hpolib.container.client_abstract_benchmark import log_level
-    assert log_level == logging.INFO
+    from hpolib.container.client_abstract_benchmark import LOG_LEVEL
+    assert LOG_LEVEL == logging.INFO
 
     set_log_level(True)
-    from hpolib.container.client_abstract_benchmark import log_level
-    assert log_level == logging.DEBUG
+    from hpolib.container.client_abstract_benchmark import LOG_LEVEL
+    assert LOG_LEVEL == logging.DEBUG
 
 
 def test_debug_container():

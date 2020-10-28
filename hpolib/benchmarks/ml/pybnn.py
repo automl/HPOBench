@@ -9,27 +9,23 @@ you need to install the following packages besides installing the hpolib with
 ```pip install .[pybnn]```
 
 """
+import logging
 import time
 from functools import partial
-
-
-import numpy as np
-from scipy import stats
-from hpolib.util import rng_helper
-import lasagne
-
-import ConfigSpace as CS
-
-from sgmcmc.bnn.model import BayesianNeuralNetwork
-from sgmcmc.bnn.lasagne_layers import AppendLayer
 from typing import Union, Dict, Any
 
-from hpolib.util.data_manager import BostonHousingData, ProteinStructureData, YearPredictionMSDData
+import ConfigSpace as CS
+import numpy as np
+import lasagne
+from scipy import stats
+from sgmcmc.bnn.lasagne_layers import AppendLayer
+from sgmcmc.bnn.model import BayesianNeuralNetwork
+
 from hpolib.abstract_benchmark import AbstractBenchmark
+from hpolib.util import rng_helper
+from hpolib.util.data_manager import BostonHousingData, ProteinStructureData, YearPredictionMSDData
 
-import logging
-
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 logger = logging.getLogger('PyBnnBenchmark')
 
@@ -58,9 +54,10 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[Dict, CS.Configuration, None] = None,
-                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+                           rng: Union[np.random.RandomState, int, None] = None,
+                           **kwargs) -> Dict:
         """
         Trains a bayesian neural network with 3 layers on the defined data set and evaluates the trained model on
         the validation split.
@@ -300,36 +297,36 @@ class BNNOnToyFunction(BayesianNeuralNetworkBenchmark):
     def get_data(self):
         rng = np.random.RandomState(42)
 
-        def f(x):
+        def toy_function(x):
             eps = rng.normal() * 0.02
             y = x + 0.3 * np.sin(2 * np.pi * (x + eps)) + 0.3 * np.sin(4 * np.pi * (x + eps)) + eps
             return y
 
-        X = rng.rand(1000, 1)
-        y = np.array([f(xi) for xi in X])[:, 0]
+        data_x = rng.rand(1000, 1)
+        data_y = np.array([toy_function(xi) for xi in data_x])[:, 0]
 
-        train = X[:600]
-        train_targets = y[:600]
-        valid = X[600:800]
-        valid_targets = y[600:800]
-        test = X[800:]
-        test_targets = y[800:]
+        train = data_x[:600]
+        train_targets = data_y[:600]
+        valid = data_x[600:800]
+        valid_targets = data_y[600:800]
+        test = data_x[800:]
+        test_targets = data_y[800:]
         return train, train_targets, valid, valid_targets, test, test_targets
 
 
 class BNNOnBostonHousing(BayesianNeuralNetworkBenchmark):
     def get_data(self):
-        dm = BostonHousingData()
-        return dm.load()
+        data_manager = BostonHousingData()
+        return data_manager.load()
 
 
 class BNNOnProteinStructure(BayesianNeuralNetworkBenchmark):
     def get_data(self):
-        dm = ProteinStructureData()
-        return dm.load()
+        data_manager = ProteinStructureData()
+        return data_manager.load()
 
 
 class BNNOnYearPrediction(BayesianNeuralNetworkBenchmark):
     def get_data(self):
-        dm = YearPredictionMSDData()
-        return dm.load()
+        data_manager = YearPredictionMSDData()
+        return data_manager.load()

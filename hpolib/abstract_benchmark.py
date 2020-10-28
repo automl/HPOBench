@@ -13,9 +13,9 @@ from hpolib.util import rng_helper
 logger = logging.getLogger('AbstractBenchmark')
 
 
-class AbstractBenchmark(object, metaclass=abc.ABCMeta):
+class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
 
-    def __init__(self, rng: Union[int, np.random.RandomState, None] = None):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
         """
         Interface for benchmarks.
 
@@ -39,10 +39,10 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         self.fidelity_space = self.get_fidelity_space()
 
     @abc.abstractmethod
-    def objective_function(self, configuration: Union[np.ndarray, List, ConfigSpace.Configuration, Dict],
+    def objective_function(self, configuration: Union[ConfigSpace.Configuration, Dict],
                            fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
-                           *args, **kwargs) -> dict:
+                           **kwargs) -> Dict:
         """
         Objective function.
 
@@ -69,13 +69,13 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Dict
             Must contain at least the key `function_value` and `cost`.
         """
-        pass
+        NotImplementedError()
 
     @abc.abstractmethod
-    def objective_function_test(self, configuration: Union[np.ndarray, List, ConfigSpace.Configuration, Dict],
+    def objective_function_test(self, configuration: Union[ConfigSpace.Configuration, Dict],
                                 fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
-                                *args, **kwargs) -> Dict:
+                                **kwargs) -> Dict:
         """
         If there is a different objective function for offline testing, e.g
         testing a machine learning on a hold extra test set instead
@@ -94,7 +94,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Dict
             Must contain at least the key `function_value` and `cost`.
         """
-        pass
+        NotImplementedError()
 
     @staticmethod
     def _check_configuration(foo):
@@ -171,7 +171,7 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
                     fidelity = {k: fidelity.get(k, v) for k, v in default_fidelities_cfg.items()}
                     fidelity = ConfigSpace.Configuration(self.fidelity_space, fidelity)
                 elif isinstance(fidelity, ConfigSpace.Configuration):
-                    fidelity = fidelity
+                    pass
                 else:
                     fidelity = None
             except Exception as e:
@@ -249,9 +249,12 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def get_fidelity_space() -> ConfigSpace.ConfigurationSpace:
+    def get_fidelity_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
         """ Defines the available fidelity parameters as a "fidelity space" for each benchmark.
-
+        Parameters
+        ----------
+        seed: int, None
+            Seed for the fidelity space.
         Returns
         -------
         ConfigSpace.ConfigurationSpace

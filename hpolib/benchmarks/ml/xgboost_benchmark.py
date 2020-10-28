@@ -14,7 +14,7 @@ import hpolib.util.rng_helper as rng_helper
 from hpolib.abstract_benchmark import AbstractBenchmark
 from hpolib.util.openml_data_manager import OpenMLHoldoutDataManager
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class XGBoostBenchmark(AbstractBenchmark):
@@ -34,7 +34,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         self.task_id = task_id
         self.accuracy_scorer = make_scorer(accuracy_score)
 
-        self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test, variable_types = \
+        self.x_train, self.y_train, self.x_valid, self.y_valid, self.x_test, self.y_test, variable_types = \
             self.get_data()
         self.categorical_data = np.array([var_type == 'categorical' for var_type in variable_types])
 
@@ -43,15 +43,15 @@ class XGBoostBenchmark(AbstractBenchmark):
         continuous_idx = np.argwhere(~self.categorical_data)
         sorting = np.concatenate([categorical_idx, continuous_idx]).squeeze()
         self.categorical_data = self.categorical_data[sorting]
-        self.X_train = self.X_train[:, sorting]
-        self.X_valid = self.X_valid[:, sorting]
-        self.X_test = self.X_test[:, sorting]
+        self.x_train = self.x_train[:, sorting]
+        self.x_valid = self.x_valid[:, sorting]
+        self.x_test = self.x_test[:, sorting]
 
-        nan_columns = np.all(np.isnan(self.X_train), axis=0)
+        nan_columns = np.all(np.isnan(self.x_train), axis=0)
         self.categorical_data = self.categorical_data[~nan_columns]
 
-        self.X_train, self.X_valid, self.X_test, self.categories = \
-            OpenMLHoldoutDataManager.replace_nans_in_cat_columns(self.X_train, self.X_valid, self.X_test,
+        self.x_train, self.x_valid, self.x_test, self.categories = \
+            OpenMLHoldoutDataManager.replace_nans_in_cat_columns(self.x_train, self.x_valid, self.x_test,
                                                                  is_categorical=self.categorical_data)
 
         # Determine the number of categories in the labels.
@@ -59,8 +59,8 @@ class XGBoostBenchmark(AbstractBenchmark):
         self.num_class = len(np.unique(np.concatenate([self.y_train, self.y_test, self.y_valid])))
         self.num_class = 1 if self.num_class == 2 else self.num_class
 
-        self.train_idx = self.rng.choice(a=np.arange(len(self.X_train)),
-                                         size=len(self.X_train),
+        self.train_idx = self.rng.choice(a=np.arange(len(self.x_train)),
+                                         size=len(self.x_train),
                                          replace=False)
 
     def get_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, List]:
@@ -69,10 +69,10 @@ class XGBoostBenchmark(AbstractBenchmark):
         assert self.task_id is not None, NotImplementedError('No task-id given. Please either specify a task-id or '
                                                              'overwrite the get_data method.')
 
-        dm = OpenMLHoldoutDataManager(openml_task_id=self.task_id, rng=self.rng)
-        X_train, y_train, X_val, y_val, X_test, y_test = dm.load()
+        data_manager = OpenMLHoldoutDataManager(openml_task_id=self.task_id, rng=self.rng)
+        x_train, y_train, x_val, y_val, x_test, y_test = data_manager.load()
 
-        return X_train, y_train, X_val, y_val, X_test, y_test, dm.variable_types
+        return x_train, y_train, x_val, y_val, x_test, y_test, data_manager.variable_types
 
     def shuffle_data(self, rng=None):
         """ Reshuffle the training data. If 'rng' is None, the training idx are shuffled according to the
@@ -80,11 +80,13 @@ class XGBoostBenchmark(AbstractBenchmark):
         random_state = rng_helper.get_rng(rng, self.rng)
         random_state.shuffle(self.train_idx)
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None, shuffle: bool = False,
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
+                           shuffle: bool = False,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a XGBoost model given a hyperparameter configuration and
@@ -126,10 +128,10 @@ class XGBoostBenchmark(AbstractBenchmark):
         train_idx = self.train_idx[:int(len(self.train_idx) * fidelity["subsample"])]
 
         model = self._get_pipeline(n_estimators=fidelity["n_estimators"], **configuration)
-        model.fit(X=self.X_train[train_idx], y=self.y_train[train_idx])
+        model.fit(X=self.x_train[train_idx], y=self.y_train[train_idx])
 
-        train_loss = 1 - self.accuracy_scorer(model, self.X_train[train_idx], self.y_train[train_idx])
-        val_loss = 1 - self.accuracy_scorer(model, self.X_valid, self.y_valid)
+        train_loss = 1 - self.accuracy_scorer(model, self.x_train[train_idx], self.y_train[train_idx])
+        val_loss = 1 - self.accuracy_scorer(model, self.x_valid, self.y_valid)
         cost = time.time() - start
 
         return {'function_value': val_loss,
@@ -138,12 +140,14 @@ class XGBoostBenchmark(AbstractBenchmark):
                          'fidelity': fidelity}
                 }
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None, rng: Union[np.random.RandomState, int, None] = None,
-                                **kwargs) -> Dict:
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
+                                shuffle: bool = False,
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a XGBoost model with a given configuration on both the train
         and validation data set and evaluates the model on the test data set.
@@ -154,6 +158,9 @@ class XGBoostBenchmark(AbstractBenchmark):
             Configuration for the XGBoost Model
         fidelity: Dict, None
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        shuffle : bool
+            If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
+            Defaults to ``False``.
         rng : np.random.RandomState, int, None,
             Random seed for benchmark. By default the class level random seed.
             To prevent overfitting on a single seed, it is possible to pass a
@@ -175,16 +182,19 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
+        if shuffle:
+            self.shuffle_data(self.rng)
+
         start = time.time()
 
         # Impute potential nan values with the feature-
-        data = np.concatenate((self.X_train, self.X_valid))
+        data = np.concatenate((self.x_train, self.x_valid))
         targets = np.concatenate((self.y_train, self.y_valid))
 
         model = self._get_pipeline(n_estimators=fidelity['n_estimators'], **configuration)
         model.fit(X=data, y=targets)
 
-        test_loss = 1 - self.accuracy_scorer(model, self.X_test, self.y_test)
+        test_loss = 1 - self.accuracy_scorer(model, self.x_test, self.y_test)
         cost = time.time() - start
 
         return {'function_value': test_loss,
@@ -260,8 +270,8 @@ class XGBoostBenchmark(AbstractBenchmark):
         clf = pipeline.Pipeline([
             ('preprocess_impute',
              ColumnTransformer([
-                ("categorical", "passthrough", self.categorical_data),
-                ("continuous", SimpleImputer(strategy="mean"), ~self.categorical_data)])),
+                 ("categorical", "passthrough", self.categorical_data),
+                 ("continuous", SimpleImputer(strategy="mean"), ~self.categorical_data)])),
             ('preprocess_one_hot',
              ColumnTransformer([
                  ("categorical", OneHotEncoder(categories=self.categories, sparse=False), self.categorical_data),
@@ -279,5 +289,5 @@ class XGBoostBenchmark(AbstractBenchmark):
                  n_jobs=self.n_threads,
                  random_state=self.rng.randint(1, 100000),
                  num_class=self.num_class))
-             ])
+            ])
         return clf
