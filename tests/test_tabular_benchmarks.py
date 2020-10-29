@@ -43,6 +43,9 @@ def test_tabular_benchmark_wrong_input():
     with pytest.raises(ValueError):
         benchmark.objective_function(configuration=default_config, fidelity=dict(budget=101), run_index=3)
 
+    with pytest.raises(AssertionError):
+        benchmark.objective_function_test(configuration=default_config, fidelity=dict(budget=107))
+
     benchmark = None
 
 
@@ -120,6 +123,13 @@ def test_parkinson_benchmark():
 
     mean = 0.7425
     assert result['function_value'] == pytest.approx(mean, abs=0.0001)
+
+    with pytest.raises(AssertionError):
+        benchmark.objective_function_test(default_config, fidelity=dict(budget=1,))
+
+    result = benchmark.objective_function_test(configuration=default_config, fidelity=dict(budget=100),
+                                               run_index=[0, 1, 2, 3])
+    assert pytest.approx(0.15010187, result['function_value'], abs=0.001)
 
     runs = result['info']['valid_rmse_per_run']
     calculated_mean = sum(runs) / len(runs)

@@ -155,7 +155,12 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         """
         default_fidelity = self.get_fidelity_space().get_default_configuration().get_dictionary()
         assert fidelity == default_fidelity, 'Test function works only on the highest budget.'
-        return self.benchmark.objective_function_test(configuration)
+        result = self.benchmark.objective_function_test(configuration)
+
+        return {'function_value': result[0],
+                'cost': result[1],
+                'info': {'fidelity': fidelity},
+                }
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
