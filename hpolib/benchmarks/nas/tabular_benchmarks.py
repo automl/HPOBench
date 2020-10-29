@@ -153,8 +153,9 @@ class FCNetBaseBenchmark(AbstractBenchmark):
                 runtime_per_run
                 fidelity : used fidelities in this evaluation
         """
-        return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
-                                       **kwargs)
+        default_fidelity = self.get_fidelity_space().get_default_configuration().get_dictionary()
+        assert fidelity == default_fidelity, 'Test function works only on the highest budget.'
+        return self.benchmark.objective_function_test(configuration)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
