@@ -157,8 +157,8 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         assert fidelity == default_fidelity, 'Test function works only on the highest budget.'
         result = self.benchmark.objective_function_test(configuration)
 
-        return {'function_value': result[0],
-                'cost': result[1],
+        return {'function_value': float(result[0]),
+                'cost': float(result[1]),
                 'info': {'fidelity': fidelity},
                 }
 
