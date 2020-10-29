@@ -218,18 +218,26 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         train_losses = [self.data[(seed, 'train_losses')][structure_str][epoch] for seed in data_seed]
         train_times = [np.sum(self.data[(seed, 'train_times')][structure_str][:epoch + 1]) for seed in data_seed]
 
-        eval_accuracies = [self.data[(seed, 'eval_acc1es')][structure_str][epoch] for seed in data_seed]
-        eval_losses = [self.data[(seed, 'eval_losses')][structure_str][epoch] for seed in data_seed]
-        eval_times = [np.sum(self.data[(seed, 'eval_times')][structure_str][:epoch + 1]) for seed in data_seed]
+        valid_accuracies = [self.data[(seed, 'valid_acc1es')][structure_str][epoch] for seed in data_seed]
+        valid_losses = [self.data[(seed, 'valid_losses')][structure_str][epoch] for seed in data_seed]
+        valid_times = [np.sum(self.data[(seed, 'valid_times')][structure_str][:epoch + 1]) for seed in data_seed]
 
-        return {'function_value': float(100 - np.mean(train_accuracies)),
-                'cost': float(np.sum(train_times)),
+        # There is a single value for the eval data per seed. (only epoch 199)
+        test_accuracies = [self.data[(seed, 'test_acc1es')][structure_str] for seed in data_seed]
+        test_losses = [self.data[(seed, 'test_losses')][structure_str] for seed in data_seed]
+        test_times = [np.sum(self.data[(seed, 'test_times')][structure_str]) for seed in data_seed]
+
+        return {'function_value': float(100 - np.mean(valid_accuracies)),
+                'cost': float(np.sum(valid_times) + np.sum(train_times)),
                 'info': {'train_precision': float(100 - np.mean(train_accuracies)),
                          'train_losses': float(np.mean(train_losses)),
                          'train_cost': float(np.sum(train_times)),
-                         'eval_precision': float(100 - np.mean(eval_accuracies)),
-                         'eval_losses': float(np.mean(eval_losses)),
-                         'eval_cost': float(np.sum(train_times)) + float(np.sum(eval_times)),
+                         'valid_precision': float(100 - np.mean(valid_accuracies)),
+                         'valid_losses': float(np.mean(valid_losses)),
+                         'valid_cost': float(np.sum(valid_times) + np.sum(train_times)),
+                         'test_precision': float(100 - np.mean(test_accuracies)),
+                         'test_losses': float(np.mean(test_losses)),
+                         'test_cost': float(np.sum(train_times)) + float(np.sum(test_times)),
                          'fidelity': fidelity
                          }
                 }
@@ -281,10 +289,13 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
         # The result dict should contain already all necessary information -> Just swap the function value from valid
         # to test and the corresponding time cost
+        assert fidelity['epoch'] == 199, 'Only test data for the 200. epoch is available. ' \
+                                         'Please set the epoch to 199 (offset by 1).'
+
         result = self.objective_function(configuration=configuration, fidelity=fidelity, data_seed=(777, 888, 999),
                                          rng=rng, **kwargs)
-        result['function_value'] = result['info']['eval_precision']
-        result['cost'] = result['info']['eval_cost']
+        result['function_value'] = result['info']['test_precision']
+        result['cost'] = result['info']['test_cost']
         return result
 
     @staticmethod

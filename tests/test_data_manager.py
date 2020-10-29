@@ -17,7 +17,7 @@ def test_nasbench_201_load_thread_safe():
 def test_nasbench_201_get_files():
 
     files = NASBench_201Data.get_files_per_dataset(dataset='cifar10')
-    assert len(files) == 18
+    assert len(files) == 27
     assert all([file.startswith('nb201_cifar10') for file in files])
 
 
@@ -25,13 +25,14 @@ def test_nasbench_201_get_metrics():
 
     metrics = NASBench_201Data.get_metrics()
     assert metrics == ['train_acc1es', 'train_losses', 'train_times',
-                       'eval_acc1es', 'eval_times', 'eval_losses']
+                       'valid_acc1es', 'valid_times', 'valid_losses',
+                       'test_acc1es', 'test_times', 'test_losses']
 
 
 def test_nasbench_201_init():
 
     data_manager = NASBench_201Data(dataset='cifar100')
-    assert len(data_manager.files) == 18
+    assert len(data_manager.files) == 27
     assert all([file.startswith('nb201_cifar10') for file in data_manager.files])
 
     with pytest.raises(AssertionError):
@@ -51,8 +52,8 @@ def test_nasbench_201_load():
     assert len(data) == len(list(NASBench_201Data.get_seeds_metrics()))
     assert len(data) == 3 * len(NASBench_201Data.get_metrics())
     assert (hpolib.config_file.data_dir / "nasbench_201").exists()
-    assert len(list((hpolib.config_file.data_dir / "nasbench_201" / "data").glob('*.pkl'))) == 72
-    assert not (hpolib.config_file.data_dir / "nasbench_201_data_v1.1.zip").exists()
+    assert len(list((hpolib.config_file.data_dir / "nasbench_201").glob('*.pkl'))) == 72
+    assert not (hpolib.config_file.data_dir / "nasbench_201_data_v1.2.zip").exists()
 
     data_manager.data = None
 
@@ -110,3 +111,10 @@ def test_boston_data():
     assert 0 < len(x_test) == len(y_test)
     assert 0 < len(x_valid) == len(y_valid)
     assert len(y_valid) < len(x_train) == len(y_train)
+
+if __name__ == '__main__':
+    # test_nasbench_201_get_files()
+    # test_nasbench_201_get_metrics()
+    # test_nasbench_201_init()
+    test_nasbench_201_load()
+    test_nasbench_201_load_thread_safe()

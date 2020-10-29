@@ -34,6 +34,10 @@ def test_nasbench201_cifar10valid(enable_debug):
     assert result['info']['train_precision'] == result['function_value']
     assert result['info']['train_cost'] == result['cost']
 
+    result = b.objective_function_test(configuration=config, fidelity=fidelity, data_seed=(777, 888, 999))
+
+    with pytest.raises(AssertionError):
+        result = b.objective_function_test(configuration=config, fidelity={'epoch': 10})
 
 @pytest.mark.skip(reason=skip_message)
 def test_nasbench201_cifar100(enable_debug):

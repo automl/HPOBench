@@ -459,7 +459,7 @@ class NASBench_201Data(DataManager):
 
         self.files = self.get_files_per_dataset(dataset)
         self._save_dir = hpolib.config_file.data_dir / "nasbench_201"
-        self._url_source = 'https://www.automl.org/wp-content/uploads/2020/08/nasbench_201_data_v1.1.zip'
+        self._url_source = 'https://www.automl.org/wp-content/uploads/2020/08/nasbench_201_data_v1.2.zip'
         self.data = {}
 
         self.create_save_directory(self._save_dir)
@@ -474,7 +474,8 @@ class NASBench_201Data(DataManager):
     @staticmethod
     def get_metrics():
         return ['train_acc1es', 'train_losses', 'train_times',
-                'eval_acc1es', 'eval_times', 'eval_losses']
+                'valid_acc1es', 'valid_times', 'valid_losses',
+                'test_acc1es', 'test_times', 'test_losses']
 
     @staticmethod
     def get_files_per_dataset(dataset):
@@ -487,7 +488,7 @@ class NASBench_201Data(DataManager):
     def _download(self):
         # Check if data is already downloaded. If a single file is missing, we have to download the complete zip again.
         # Use a file lock to ensure that no two processes try to download the same files at the same time.
-        file_is_missing = not all([(self._save_dir / 'data' / file).exists() for file in self.files])
+        file_is_missing = not all([(self._save_dir / file).exists() for file in self.files])
 
         if not file_is_missing:
             self.logger.debug('NasBench201DataManager: Data already downloaded')
@@ -504,7 +505,7 @@ class NASBench_201Data(DataManager):
         import pickle
         data = {}
         for (seed, metric_name), file in zip(NASBench_201Data.get_seeds_metrics(), self.files):
-            with (self._save_dir / 'data' / file).open('rb') as fh:
+            with (self._save_dir / file).open('rb') as fh:
                 metric = pickle.load(fh)
                 data[(seed, metric_name)] = metric
 
