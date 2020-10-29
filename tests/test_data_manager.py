@@ -111,10 +111,3 @@ def test_boston_data():
     assert 0 < len(x_test) == len(y_test)
     assert 0 < len(x_valid) == len(y_valid)
     assert len(y_valid) < len(x_train) == len(y_train)
-
-if __name__ == '__main__':
-    # test_nasbench_201_get_files()
-    # test_nasbench_201_get_metrics()
-    # test_nasbench_201_init()
-    test_nasbench_201_load()
-    test_nasbench_201_load_thread_safe()

@@ -47,7 +47,7 @@ from nasbench.lib import graph_util
 import hpolib.util.rng_helper as rng_helper
 from hpolib.abstract_benchmark import AbstractBenchmark
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 MAX_EDGES = 9
 VERTICES = 7
