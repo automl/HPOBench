@@ -9,16 +9,22 @@ you need to install the following packages besides installing the hpolib with
 ```pip install .[pybnn]```
 
 """
-import time
 from functools import partial
-
+import logging
+import os
+import time
+from typing import Union, Dict, Any
 
 import numpy as np
 from scipy import stats
+
+import ConfigSpace as CS  # noqa
+
+from hpolib.util.data_manager import BostonHousingData, ProteinStructureData, YearPredictionMSDData
+from hpolib.abstract_benchmark import AbstractBenchmark
 from hpolib.util import rng_helper
 
 # This has to happen before any other imports
-import os
 if "TMPDIR" not in os.environ:
     import tempfile
     tmpdir = tempfile.TemporaryDirectory()
@@ -27,18 +33,10 @@ else:
     tmpdir_name = os.environ["TMPDIR"]
 os.environ["THEANO_FLAGS"] = "base_compiledir=%s" % tmpdir_name
 
-import lasagne
+import lasagne  # noqa
+from sgmcmc.bnn.model import BayesianNeuralNetwork  # noqa
+from sgmcmc.bnn.lasagne_layers import AppendLayer  # noqa
 
-import ConfigSpace as CS
-
-from sgmcmc.bnn.model import BayesianNeuralNetwork
-from sgmcmc.bnn.lasagne_layers import AppendLayer
-from typing import Union, Dict, Any
-
-from hpolib.util.data_manager import BostonHousingData, ProteinStructureData, YearPredictionMSDData
-from hpolib.abstract_benchmark import AbstractBenchmark
-
-import logging
 
 __version__ = '0.0.1'
 
