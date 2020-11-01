@@ -1,3 +1,4 @@
+import logging
 import time
 from typing import Union, Tuple, Dict, List
 
@@ -16,8 +17,6 @@ from hpolib.abstract_benchmark import AbstractBenchmark
 from hpolib.util.openml_data_manager import OpenMLHoldoutDataManager
 
 __version__ = '0.0.1'
-
-import logging
 
 logger = logging.getLogger('SVMBenchmark')
 

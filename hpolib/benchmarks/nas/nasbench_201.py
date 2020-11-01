@@ -193,7 +193,6 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
                 fidelity : Dict
                     used fidelities in this evaluation
         """
-
         # Check if the data set seeds are valid
         assert isinstance(data_seed, List) or isinstance(data_seed, Tuple) or isinstance(data_seed, int), \
             f'data seed has unknown data type {type(data_seed)}, but should be tuple or int (777,888,999)'
@@ -212,7 +211,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         structure = self.config_to_structure(configuration)
         structure_str = structure.tostr()
 
-        epoch = fidelity['epoch']
+        epoch = fidelity['epoch'] - 1
 
         train_accuracies = [self.data[(seed, 'train_acc1es')][structure_str][epoch] for seed in data_seed]
         train_losses = [self.data[(seed, 'train_losses')][structure_str][epoch] for seed in data_seed]
@@ -279,9 +278,10 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
                 fidelity : used fidelities in this evaluation
         """
 
-        # The result dict should contain already all necessary information -> Just swap the function value from valid
-        # to test and the corresponding time cost
-        result = self.objective_function(configuration=configuration, fidelity=fidelity, data_seed=(777, 888, 999),
+        # The result dict should contain already all necessary information ->
+        # Just swap the function value from valid to test and the corresponding time cost
+        result = self.objective_function(configuration=configuration, fidelity=fidelity,
+                                         data_seed=(777, 888, 999),
                                          rng=rng, **kwargs)
         result['function_value'] = result['info']['eval_precision']
         result['cost'] = result['info']['eval_cost']
@@ -364,7 +364,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformIntegerHyperparameter('epoch', lower=0, upper=199, default_value=199)
+            CS.UniformIntegerHyperparameter('epoch', lower=1, upper=200, default_value=200)
         ])
 
         return fidel_space
