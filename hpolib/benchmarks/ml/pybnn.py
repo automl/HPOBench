@@ -9,39 +9,36 @@ you need to install the following packages besides installing the hpolib with
 ```pip install .[pybnn]```
 
 """
-import time
 from functools import partial
-
+import logging
+import os
+import time
+import tempfile
+from typing import Union, Dict, Any
 
 import numpy as np
 from scipy import stats
+
+import ConfigSpace as CS
+
+from hpolib.util.data_manager import BostonHousingData, ProteinStructureData, YearPredictionMSDData
+from hpolib.abstract_benchmark import AbstractBenchmark
 from hpolib.util import rng_helper
 
 # This has to happen before any other imports
-import os
 if "TMPDIR" not in os.environ:
-    import tempfile
     tmpdir = tempfile.TemporaryDirectory()
     tmpdir_name = tmpdir.name
 else:
     tmpdir_name = os.environ["TMPDIR"]
-os.environ["THEANO_FLAGS"] = "base_compiledir=%s" % tmpdir_name
+os.environ["THEANO_FLAGS"] = f"base_compiledir={tmpdir_name}"
 
-import lasagne
+import lasagne  # noqa: E402
+from sgmcmc.bnn.model import BayesianNeuralNetwork  # noqa: E402
+from sgmcmc.bnn.lasagne_layers import AppendLayer  # noqa: E402
 
-import ConfigSpace as CS
 
-from sgmcmc.bnn.model import BayesianNeuralNetwork
-from sgmcmc.bnn.lasagne_layers import AppendLayer
-from typing import Union, Dict, Any
-
-from hpolib.util.data_manager import BostonHousingData, ProteinStructureData, YearPredictionMSDData
-from hpolib.abstract_benchmark import AbstractBenchmark
-
-import logging
-
-__version__ = '0.0.1'
-
+__version__ = '0.0.2'
 logger = logging.getLogger('PyBnnBenchmark')
 
 
