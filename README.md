@@ -99,8 +99,8 @@ HPOlib stores downloaded containers and datasets at the following locations:
 
 ```bash
 $XDG_CONFIG_HOME # ~/.config/hpolib2
-$XDG_CACHE_HOME # ~/.config/hpolib2
-$XDG_DATA_HOME # ~/.cache/hpolib2
+$XDG_CACHE_HOME # ~/.cache/hpolib2
+$XDG_DATA_HOME # ~/.local/share/hpolib2
 ```
 
 For crashes or when not properly shutting down containers, there might be socket files left under `/tmp/`.
