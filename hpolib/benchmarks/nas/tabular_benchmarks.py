@@ -40,7 +40,7 @@ from tabular_benchmarks.fcnet_benchmark import FCNetBenchmark
 import hpolib.util.rng_helper as rng_helper
 from hpolib.abstract_benchmark import AbstractBenchmark
 
-__version__ = '0.0.1'
+__version__ = '0.0.3'
 
 
 class FCNetBaseBenchmark(AbstractBenchmark):
@@ -153,8 +153,14 @@ class FCNetBaseBenchmark(AbstractBenchmark):
                 runtime_per_run
                 fidelity : used fidelities in this evaluation
         """
-        return self.objective_function(configuration=configuration, fidelity=fidelity, rng=rng,
-                                       **kwargs)
+        default_fidelity = self.get_fidelity_space().get_default_configuration().get_dictionary()
+        assert fidelity == default_fidelity, 'Test function works only on the highest budget.'
+        result = self.benchmark.objective_function_test(configuration)
+
+        return {'function_value': float(result[0]),
+                'cost': float(result[1]),
+                'info': {'fidelity': fidelity},
+                }
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:

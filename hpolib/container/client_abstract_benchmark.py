@@ -144,7 +144,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                                                               f'{container_dir / container_name}'
             logger.debug('Image found on the local file system.')
 
-        bind_options = f'--bind /var/lib/,{self.config.global_data_dir}:/var/lib/'
+        bind_options = f'--bind /var/lib/,{self.config.global_data_dir}:/var/lib/,{self.config.container_dir}'
         if self.config.global_data_dir != self.config.data_dir:
             bind_options += f',{self.config.data_dir}:/var/lib/'
         bind_options += ' '
