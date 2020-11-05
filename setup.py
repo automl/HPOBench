@@ -28,7 +28,7 @@ setuptools.setup(
     long_description=read_file('README.md'),
     long_description_content_type='text/markdown',
     license='Apache-2.0',
-    url='https://www.automl.org/automl/hpolib/',
+    url='https://www.automl.org/automl/hpobench/',
     project_urls={
         'Documentation': 'https://automl.github.io/HPOBench/',
         'Source Code': 'https://github.com/automl/HPOBench'

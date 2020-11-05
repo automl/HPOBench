@@ -1,4 +1,4 @@
-# HPOlib2
+# HPOBench
 
 HPOBench is a library for hyperparameter optimization and black-box optimization benchmark with a focus on reproducibility.
 
