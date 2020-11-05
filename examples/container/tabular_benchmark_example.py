@@ -8,7 +8,7 @@ demonstration purpose, we show how to set it.
 
 container_source can be either a path to a registry (e.g. sylabs.io, singularity_hub.org) or a local path on your local
 file system. If it is a link to a registry, the container will be downloaded to the default data dir, set in the
-hpolibrc. A second call, will first look into the data directory, if the container is already available, so it will not
+hpobenchrc. A second call, will first look into the data directory, if the container is already available, so it will not
 be downloaded twice.
 
 Please install the necessary dependencies via ``pip install .`` and singularity (v3.5).
@@ -17,7 +17,7 @@ https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-step
 
 import argparse
 
-from hpolib.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark as TabBenchmarkContainer
+from hpobench.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark as TabBenchmarkContainer
 
 
 def run_experiment(on_travis=False):

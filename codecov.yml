@@ -20,6 +20,6 @@ comment:
   require_changes: no
 
 ignore:
-  - "hpolib/benchmarks"
-  - "hpolib/util/dependencies.py"
-  - "hpolib/util/example_utils.py"
+  - "hpobench/benchmarks"
+  - "hpobench/util/dependencies.py"
+  - "hpobench/util/example_utils.py"

@@ -3,7 +3,7 @@ import pytest
 
 
 def test_example_utils():
-    from hpolib.util.example_utils import get_travis_settings
+    from hpobench.util.example_utils import get_travis_settings
 
     res = get_travis_settings('smac')
     assert res['runcount-limit'] == 5
@@ -16,7 +16,7 @@ def test_example_utils():
 
 
 def test_example_utils_2():
-    from hpolib.util.example_utils import set_env_variables_to_use_only_one_core
+    from hpobench.util.example_utils import set_env_variables_to_use_only_one_core
     import os
     set_env_variables_to_use_only_one_core()
     assert os.environ['OMP_NUM_THREADS'] == '1'
@@ -28,7 +28,7 @@ def test_example_utils_2():
 
 
 def test_rng_helper():
-    from hpolib.util.rng_helper import _cast_int_to_random_state
+    from hpobench.util.rng_helper import _cast_int_to_random_state
 
     rng = np.random.RandomState(123)
 
@@ -42,7 +42,7 @@ def test_rng_helper():
 
 
 def test_rng_helper_2():
-    from hpolib.util.rng_helper import get_rng
+    from hpobench.util.rng_helper import get_rng
 
     rng = get_rng(None, None)
     assert isinstance(rng, np.random.RandomState)
@@ -53,10 +53,10 @@ def test_rng_helper_2():
 
 
 def test_debug_level():
-    from hpolib.util.container_utils import enable_container_debug, disable_container_debug
+    from hpobench.util.container_utils import enable_container_debug, disable_container_debug
     import os
     enable_container_debug()
-    assert os.environ['HPOLIB_DEBUG'] == 'true'
+    assert os.environ['HPOBENCH_DEBUG'] == 'true'
 
     disable_container_debug()
-    assert os.environ['HPOLIB_DEBUG'] == 'false'
+    assert os.environ['HPOBENCH_DEBUG'] == 'false'

@@ -3,7 +3,7 @@ Example with XGBoost (container)
 ================================
 
 In this example, we show how to use a benchmark with a container. We provide container for some benchmarks.
-They are hosted on https://cloud.sylabs.io/library/keggensperger/automl.
+They are hosted on https://cloud.sylabs.io/library/muelleph/automl.
 
 Furthermore, we use different fidelities to train the xgboost model - the number of estimators as well as the fraction
 of training data points.
@@ -11,7 +11,7 @@ of training data points.
 To use the container-example, you have to have singulartiy (>3.5) installed. Follow the official installation guide on
 https://sylabs.io/guides/3.1/user-guide/quick_start.html#quick-installation-steps
 
-Furthermore, make sure to install the right dependencies for the hpolib via:
+Furthermore, make sure to install the right dependencies for the hpobench via:
 ``pip3 install .``.
 """
 
@@ -19,8 +19,8 @@ import argparse
 import logging
 from time import time
 
-from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
-from hpolib.util.openml_data_manager import get_openmlcc18_taskids
+from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+from hpobench.util.openml_data_manager import get_openmlcc18_taskids
 
 logging.basicConfig(level=logging.INFO)
 
@@ -66,7 +66,7 @@ def run_experiment(on_travis: bool = False):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(prog='HPOlib CC Datasets', description='HPOlib2 on the CC18 data sets.',
+    parser = argparse.ArgumentParser(prog='HPOBench CC Datasets', description='HPOBench on the CC18 data sets.',
                                      usage='%(prog)s --array_id <task_id>')
 
     parser.add_argument('--on_travis', action='store_true',

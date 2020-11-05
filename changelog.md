@@ -1,4 +1,5 @@
 # 0.0.5
+  * Rename package to HPOBench
 
 # 0.0.4
   * improve test coverage

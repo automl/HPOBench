@@ -1,0 +1,37 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+%labels
+MAINTAINER muelleph@cs.uni-freiburg.de
+VERSION v0.0.1
+
+%post
+    apt update -y
+    apt install build-essential git wget -y
+
+    cd /home \
+    && git clone --single-branch --branch development https://github.com/PhMueller/learna.git \
+    && cd learna \
+    && ./thirdparty/miniconda/make_miniconda.sh \
+    && ./thirdparty/miniconda/miniconda/bin/conda env create -f environment.yml \
+    && ./thirdparty/miniconda/miniconda/envs/learna/bin/python -m pip install . \
+    && ./thirdparty/miniconda/miniconda/envs/learna/bin/python -m learna.data.download_and_build_eterna ./learna/data/secondaries_to_single_files.sh data/eterna data/eterna/interim/eterna.txt \
+    && ./learna/data/download_and_build_rfam_taneda.sh \
+    && ./learna/data/download_and_build_rfam_learn.sh \
+    && mv data/rfam_learn/test data/rfam_learn_test \
+    && mv data/rfam_learn/validation data/rfam_learn_validation \
+    && mv data/rfam_learn/train data/rfam_learn_train \
+    && rm -rf data/rfam_learn \
+    && chmod -R 755 data/ \
+    && cd /home \
+    && git clone https://github.com/automl/HPOBench.git \
+    && cd HPOBench \
+    && git checkout master \
+    && ../learna/thirdparty/miniconda/miniconda/envs/learna/bin/python -m pip install . \
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/
+
+%runscript
+    /home/learna/thirdparty/miniconda/miniconda/envs/learna/bin/python -s \
+        /home/HPOBench/hpobench/container/server_abstract_benchmark.py rl.learna_benchmark $@
