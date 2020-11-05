@@ -1,6 +1,6 @@
 import pytest
 
-from hpolib.abstract_benchmark import AbstractBenchmark
+from hpobench.abstract_benchmark import AbstractBenchmark
 
 with pytest.raises(NotImplementedError):
     AbstractBenchmark.get_configuration_space()

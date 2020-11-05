@@ -1,0 +1,28 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+%labels
+MAINTAINER muelleph@cs.uni-freiburg.de
+VERSION v0.0.1
+
+%post
+    apt update -y
+    apt install build-essential git wget -y
+
+    cd /home \
+    && wget http://ml4aad.org/wp-content/uploads/2019/01/fcnet_tabular_benchmarks.tar.gz \
+    && tar xf fcnet_tabular_benchmarks.tar.gz
+
+    cd /home \
+    && pip install git+https://github.com/google-research/nasbench.git@master \
+    && pip install git+https://github.com/automl/nas_benchmarks.git \
+    && git clone https://github.com/automl/HPOBench.git \
+    && cd HPOBench \
+    && git checkout master \
+    && pip install .[tabular_benchmarks] \
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py nas.tabular_benchmarks $@

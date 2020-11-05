@@ -1,16 +1,16 @@
 # HPOlib2
 
-HPOlib2 is a library for hyperparameter optimization and black-box optimization benchmark with a focus on reproducibility.
+HPOBench is a library for hyperparameter optimization and black-box optimization benchmark with a focus on reproducibility.
 
-**Note:** Hpolib2 is under active construction. Stay tuned for more benchmarks. Information on how to contribute a new benchmark will follow shortly.
+**Note:** HPOBench is under active construction. Stay tuned for more benchmarks. Information on how to contribute a new benchmark will follow shortly.
 
-**Note:** If you are looking for a different version of HPOlib2, you might be looking for [HPOlib1.5](https://github.com/automl/HPOlib1.5) 
+**Note:** If you are looking for a different version of HPOBench, you might be looking for [HPOlib1.5](https://github.com/automl/HPOlib1.5) 
 
 ## In 4 lines of code
 
 Run a random configuration within a singularity container
 ```python
-from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
+from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl', rng=1)
 config = b.get_configuration_space(seed=1).sample_configuration()
 result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "subsample": 0.5}, rng=1)
@@ -19,7 +19,7 @@ result_dict = b.objective_function(configuration=config, fidelity={"n_estimators
 All benchmarks can also be queried with fewer or no fidelities:
 
 ```python
-from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
+from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl', rng=1)
 config = b.get_configuration_space(seed=1).sample_configuration()
 result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128,}, rng=1)
@@ -35,7 +35,7 @@ Further requirements are: [ConfigSpace](https://github.com/automl/ConfigSpace), 
  
 A simple example is the XGBoost benchmark which can be installed with `pip install .[xgboost]`
 ```python
-from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
+from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149)
 config = b.get_configuration_space(seed=1).sample_configuration()
 result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "subsample": 0.5}, rng=1)
@@ -47,8 +47,8 @@ result_dict = b.objective_function(configuration=config, fidelity={"n_estimators
 Before we start, we recommend using a virtual environment. To run any benchmark using its singularity container, 
 run the following:
 ```
-git clone https://github.com/automl/HPOlib2.git
-cd HPOlib2 
+git clone https://github.com/automl/HPOBench.git
+cd HPOBench 
 pip install .
 ```
 
@@ -78,29 +78,29 @@ pip install .
 With singularity installed run the following to built the xgboost container
 
 ```bash
-cd hpolib/container/recipes/ml
+cd hpobench/container/recipes/ml
 sudo singularity build xgboost_benchmark Singularity.XGBoostBenchmark
 ```
 
 You can use this local image with:
 
 ```python
-from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
+from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_name="xgboost_benchmark", 
-                     container_source='./') # path to hpolib/container/recipes/ml
+                     container_source='./') # path to hpobench/container/recipes/ml
 config = b.get_configuration_space(seed=1).sample_configuration()
 result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "subsample": 0.5})
 ```
 
 ### Remove all caches
 
-#### HPOlib data
-HPOlib stores downloaded containers and datasets at the following locations:
+#### HPOBench data
+HPOBench stores downloaded containers and datasets at the following locations:
 
 ```bash
-$XDG_CONFIG_HOME # ~/.config/hpolib2
-$XDG_CACHE_HOME # ~/.config/hpolib2
-$XDG_DATA_HOME # ~/.cache/hpolib2
+$XDG_CONFIG_HOME # ~/.config/hpobench
+$XDG_CACHE_HOME # ~/.config/hpobench
+$XDG_DATA_HOME # ~/.cache/hpobench
 ```
 
 For crashes or when not properly shutting down containers, there might be socket files left under `/tmp/`.
@@ -127,10 +127,10 @@ See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that
 
 Status for Master Branch: 
 
-[![Build Status](https://travis-ci.org/automl/HPOlib2.svg?branch=master)](https://travis-ci.org/automl/HPOlib2)
-[![codecov](https://codecov.io/gh/automl/HPOlib2/branch/master/graph/badge.svg)](https://codecov.io/gh/automl/HPOlib2)
+[![Build Status](https://travis-ci.org/automl/HPOBench.svg?branch=master)](https://travis-ci.org/automl/HPOBench)
+[![codecov](https://codecov.io/gh/automl/HPOBench/branch/master/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)
 
 Status for Development Branch: 
 
-[![Build Status](https://travis-ci.org/automl/HPOlib2.svg?branch=development)](https://travis-ci.org/automl/HPOlib2)
-[![codecov](https://codecov.io/gh/automl/HPOlib2/branch/development/graph/badge.svg)](https://codecov.io/gh/automl/HPOlib2)
+[![Build Status](https://travis-ci.org/automl/HPOBench.svg?branch=development)](https://travis-ci.org/automl/HPOBench)
+[![codecov](https://codecov.io/gh/automl/HPOBench/branch/development/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)

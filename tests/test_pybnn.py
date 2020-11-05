@@ -1,11 +1,11 @@
 import pytest
 
-from hpolib.container.benchmarks.ml.pybnn import BNNOnToyFunction, BNNOnBostonHousing, BNNOnProteinStructure, \
+from hpobench.container.benchmarks.ml.pybnn import BNNOnToyFunction, BNNOnBostonHousing, BNNOnProteinStructure, \
     BNNOnYearPrediction
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
-from hpolib.util.container_utils import enable_container_debug
+from hpobench.util.container_utils import enable_container_debug
 enable_container_debug()
 
 def test_bnn_init():

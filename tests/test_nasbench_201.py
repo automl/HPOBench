@@ -3,10 +3,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 import pytest
 
-from hpolib.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
+from hpobench.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
     Cifar10ValidNasBench201Benchmark, Cifar10NasBench201Benchmark
 
-from hpolib.util.container_utils import disable_container_debug, enable_container_debug
+from hpobench.util.container_utils import disable_container_debug, enable_container_debug
 
 skip_message = 'We currently skip this test because it takes too much time.'
 

@@ -1,5 +1,5 @@
 import subprocess
-from hpolib import config_file
+from hpobench import config_file
 import logging
 
 

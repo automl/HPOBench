@@ -18,9 +18,9 @@ import hpbandster.core.result as hpres
 from hpbandster.core.worker import Worker
 from hpbandster.optimizers import BOHB
 
-from hpolib.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
-from hpolib.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
-from hpolib.util.rng_helper import get_rng
+from hpobench.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
+from hpobench.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
+from hpobench.util.rng_helper import get_rng
 
 logger = logging.getLogger('BOHB on cartpole')
 set_env_variables_to_use_only_one_core()
@@ -116,8 +116,8 @@ def run_experiment(out_path, on_travis):
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(prog='HPOlib - BOHB',
-                                     description='HPOlib2 with BOHB on Cartpole',
+    parser = argparse.ArgumentParser(prog='HPOBench - BOHB',
+                                     description='HPOBench with BOHB on Cartpole',
                                      usage='%(prog)s --out_path <string>')
     parser.add_argument('--out_path', default='./cartpole_smac_hb', type=str)
     parser.add_argument('--on_travis', action='store_true',

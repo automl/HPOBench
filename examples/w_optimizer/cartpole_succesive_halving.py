@@ -17,8 +17,8 @@ from smac.facade.smac_hpo_facade import SMAC4HPO
 from smac.intensification.hyperband import SuccessiveHalving
 from smac.scenario.scenario import Scenario
 
-from hpolib.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
-from hpolib.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
+from hpobench.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
+from hpobench.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
 
 logger = logging.getLogger("SH on cartpole")
 logging.basicConfig(level=logging.INFO)
@@ -96,8 +96,8 @@ def run_experiment(out_path: str, on_travis: bool = False):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(prog='HPOlib - Successive Halving',
-                                     description='HPOlib2 with SH on Cartpole',
+    parser = argparse.ArgumentParser(prog='HPOBench - Successive Halving',
+                                     description='HPOBench with SH on Cartpole',
                                      usage='%(prog)s --out_path <string>')
     parser.add_argument('--out_path', default='./cartpole_smac_sh', type=str)
     parser.add_argument('--on_travis', action='store_true',

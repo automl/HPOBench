@@ -1,7 +1,7 @@
 import pytest
 
-from hpolib.container.benchmarks.ml.svm_benchmark import SupportVectorMachine
-from hpolib.util.openml_data_manager import get_openmlcc18_taskids
+from hpobench.container.benchmarks.ml.svm_benchmark import SupportVectorMachine
+from hpobench.util.openml_data_manager import get_openmlcc18_taskids
 
 task_ids = get_openmlcc18_taskids()
 

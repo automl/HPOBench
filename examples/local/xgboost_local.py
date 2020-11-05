@@ -10,8 +10,8 @@ To run this example please install the necessary dependencies via:
 import argparse
 from time import time
 
-from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
-from hpolib.util.openml_data_manager import get_openmlcc18_taskids
+from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+from hpobench.util.openml_data_manager import get_openmlcc18_taskids
 
 
 def run_experiment(on_travis: bool = False):
@@ -51,7 +51,7 @@ def run_experiment(on_travis: bool = False):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(prog='HPOlib CC Datasets', description='HPOlib2 on the CC18 data sets.',
+    parser = argparse.ArgumentParser(prog='HPOlib CC Datasets', description='HPOBench on the CC18 data sets.',
                                      usage='%(prog)s --array_id <task_id>')
 
     parser.add_argument('--on_travis', action='store_true',

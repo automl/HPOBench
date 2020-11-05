@@ -1,0 +1,23 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+%labels
+MAINTAINER muelleph@cs.uni-freiburg.de
+VERSION v0.0.1
+
+%post
+    apt update -y
+    apt install build-essential git -y
+    pip install numpy==1.18.1 cython==0.29.14
+
+    cd /home \
+    && git clone https://github.com/automl/HPOBench.git \
+    && cd HPOBench \
+    && git checkout master \
+    && pip install .[cartpole] \
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/bench/hpobench/
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py rl.cartpole $@

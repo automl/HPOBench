@@ -4,18 +4,18 @@ import os
 
 
 def set_log_level(debug):
-    os.environ['HPOLIB_DEBUG'] = 'true' if debug else 'false'
-    import hpolib.container.client_abstract_benchmark as client
+    os.environ['HPOBENCH_DEBUG'] = 'true' if debug else 'false'
+    import hpobench.container.client_abstract_benchmark as client
     importlib.reload(client)
 
 
 def test_debug_env_variable_1():
     set_log_level(False)
-    from hpolib.container.client_abstract_benchmark import log_level
+    from hpobench.container.client_abstract_benchmark import log_level
     assert log_level == logging.INFO
 
     set_log_level(True)
-    from hpolib.container.client_abstract_benchmark import log_level
+    from hpobench.container.client_abstract_benchmark import log_level
     assert log_level == logging.DEBUG
 
 
@@ -24,8 +24,8 @@ def test_debug_container():
 
     set_log_level(True)
 
-    from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
-    from hpolib.util.openml_data_manager import get_openmlcc18_taskids
+    from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+    from hpobench.util.openml_data_manager import get_openmlcc18_taskids
 
     task_id = get_openmlcc18_taskids()[0]
 
@@ -46,7 +46,7 @@ def test_benchmark_encoder():
         def __str__(self):
             return str(self.value)
 
-    from hpolib.container.server_abstract_benchmark import BenchmarkEncoder
+    from hpobench.container.server_abstract_benchmark import BenchmarkEncoder
     import json
     import numpy as np
 

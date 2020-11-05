@@ -6,9 +6,9 @@ logging.basicConfig(level=logging.DEBUG)
 
 import os
 
-os.environ['HPOLIB_DEBUG'] = 'true'
+os.environ['HPOBENCH_DEBUG'] = 'true'
 
-from hpolib.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark, \
+from hpobench.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark, \
     NavalPropulsionBenchmark, ParkinsonsTelemonitoringBenchmark, ProteinStructureBenchmark
 
 
