@@ -1,0 +1,36 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+%labels
+MAINTAINER <yournamehere>
+VERSION v0.0.1
+
+%help
+    This is a template for a Singularity recipe
+
+%post
+    apt update -y
+    apt install build-essential git wget -y
+
+    cd /home \
+    && mkdir data && cd data \
+    && echo "Here you could download data e.g. using wget" \
+
+    cd /home \
+    && echo "Here you can install everything you need, e.g. dependencies not available on pypi" \
+    && echo "Next, we clone and install HPOBench" \
+    && git clone https://github.com/automl/HPOBench.git \
+    && cd HPOBench \
+    && echo "Please never push a recipe that checks out any other branch than development or master" \
+    && git checkout development \
+    && echo "Here you can install extra requirements additional to singularity" \
+    && pip install . \
+    && echo "Please don't touch the following lines"
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/
+
+    echo "Finally, please change the benchmark in the runscript to point to your benchmark"
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py <type>.new_benchmark_file $@

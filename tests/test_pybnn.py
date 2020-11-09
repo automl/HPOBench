@@ -1,19 +1,20 @@
 import pytest
 
-from hpolib.container.benchmarks.ml.pybnn import BNNOnToyFunction, BNNOnBostonHousing, BNNOnProteinStructure, \
+from hpobench.container.benchmarks.ml.pybnn import BNNOnToyFunction, BNNOnBostonHousing, BNNOnProteinStructure, \
     BNNOnYearPrediction
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
-from hpolib.util.container_utils import enable_container_debug
+from hpobench.util.container_utils import enable_container_debug
 enable_container_debug()
+
 
 def test_bnn_init():
     benchmark = BNNOnToyFunction(rng=1)
 
     fs = benchmark.get_fidelity_space(seed=0)
     fidelity = fs.sample_configuration().get_dictionary()
-    assert fidelity['budget'] == 5533
+    assert fidelity['budget'] == 5714
 
     meta = benchmark.get_meta_information()
     assert meta is not None
@@ -28,9 +29,9 @@ def test_bnn_init():
     assert config['mdecay'] == pytest.approx(0.6027, abs=0.001)
 
     result = benchmark.objective_function(configuration=config, fidelity=fidelity, rng=1)
-    assert result['function_value'] == pytest.approx(414.8362, abs=0.1)
+    assert result['function_value'] == pytest.approx(380.08, abs=0.1)
     assert result['cost'] > 1
-    assert result['info']['fidelity']['budget'] == 5533
+    assert result['info']['fidelity']['budget'] == 5714
 
     result = benchmark.objective_function_test(configuration=config)
     assert result['function_value'] == pytest.approx(183.6146, abs=0.1)

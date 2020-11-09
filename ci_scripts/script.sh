@@ -3,7 +3,7 @@
 if [[ "$RUN_TESTS" == "true" ]]; then
     if [[ "$RUN_CODECOV" == "true" ]]; then
         echo "Run tests with code coverage"
-        pytest -sv --cov=hpolib tests/
+        pytest -sv --cov=hpobench tests/
         exit_code=$?
 
         echo "Run code coverage"
