@@ -31,7 +31,7 @@ def test_bnn_init():
     result = benchmark.objective_function(configuration=config, fidelity=fidelity, rng=1)
     assert result['function_value'] == pytest.approx(380.08, abs=0.1)
     assert result['cost'] > 1
-    assert result['info']['fidelity']['budget'] == 5533
+    assert result['info']['fidelity']['budget'] == 5714
 
     result = benchmark.objective_function_test(configuration=config)
     assert result['function_value'] == pytest.approx(183.6146, abs=0.1)

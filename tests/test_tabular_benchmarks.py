@@ -132,8 +132,4 @@ def test_parkinson_benchmark():
 
     runtime = 62.7268
     assert result['cost'] == pytest.approx(runtime, abs=0.0001)
-
-    runtimes = result['info']['runtime_per_run']
-    calculated_runtime = sum(runtimes) / len(runtimes)
-    assert calculated_runtime == pytest.approx(runtime, abs=0.0001)
     benchmark = None
