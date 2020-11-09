@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.DEBUG)
 from hpobench.util.container_utils import enable_container_debug
 enable_container_debug()
 
+
 def test_bnn_init():
     benchmark = BNNOnToyFunction(rng=1)
 
@@ -28,7 +29,7 @@ def test_bnn_init():
     assert config['mdecay'] == pytest.approx(0.6027, abs=0.001)
 
     result = benchmark.objective_function(configuration=config, fidelity=fidelity, rng=1)
-    assert result['function_value'] == pytest.approx(414.8362, abs=0.1)
+    assert result['function_value'] == pytest.approx(380.08, abs=0.1)
     assert result['cost'] > 1
     assert result['info']['fidelity']['budget'] == 5533
 

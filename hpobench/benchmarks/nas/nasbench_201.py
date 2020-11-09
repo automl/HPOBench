@@ -292,7 +292,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         assert fidelity['epoch'] == 199, 'Only test data for the 200. epoch is available. ' \
                                          'Please set the epoch to 199 (offset by 1).'
 
-        result = self.objective_function(configuration=configuration, fidelity=fidelity, 
+        result = self.objective_function(configuration=configuration, fidelity=fidelity,
                                          data_seed=(777, 888, 999),
                                          rng=rng, **kwargs)
         result['function_value'] = result['info']['test_precision']

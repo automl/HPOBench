@@ -130,7 +130,7 @@ def test_parkinson_benchmark():
     result = benchmark.objective_function_test(configuration=default_config, fidelity=dict(budget=100))
     assert pytest.approx(0.15010187, result['function_value'], abs=0.001)
 
-    runtime = 0.6272
+    runtime = 62.7268
     assert result['cost'] == pytest.approx(runtime, abs=0.0001)
 
     runtimes = result['info']['runtime_per_run']
