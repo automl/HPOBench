@@ -13,7 +13,7 @@ def test_bnn_init():
 
     fs = benchmark.get_fidelity_space(seed=0)
     fidelity = fs.sample_configuration().get_dictionary()
-    assert fidelity['budget'] == 5533
+    assert fidelity['budget'] == 5714
 
     meta = benchmark.get_meta_information()
     assert meta is not None

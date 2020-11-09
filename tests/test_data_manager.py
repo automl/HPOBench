@@ -52,7 +52,7 @@ def test_nasbench_201_load():
     assert len(data) == len(list(NASBench_201Data.get_seeds_metrics()))
     assert len(data) == 3 * len(NASBench_201Data.get_metrics())
     assert (hpobench.config_file.data_dir / "nasbench_201").exists()
-    assert len(list((hpobench.config_file.data_dir / "nasbench_201").glob('*.pkl'))) == 72
+    assert len(list((hpobench.config_file.data_dir / "nasbench_201").glob('*.pkl'))) == 108
     assert not (hpobench.config_file.data_dir / "nasbench_201_data_v1.2.zip").exists()
 
     data_manager.data = None
