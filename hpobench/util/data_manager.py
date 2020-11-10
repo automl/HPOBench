@@ -16,7 +16,7 @@ import pickle
 import tarfile
 from io import BytesIO
 from pathlib import Path
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Any, Union
 from urllib.request import urlretrieve, urlopen
 from zipfile import ZipFile
 from time import time
@@ -521,6 +521,48 @@ class NASBench_201Data(DataManager):
         self.logger.info(f'NasBench201DataManager: Data successfully loaded after {time() - t:.2f}')
 
         return self.data
+
+
+class NASBench_101DataManager(DataManager):
+    def __init__(self, data_path: Union[str, Path]):
+        super(NASBench_101DataManager, self).__init__()
+
+        self._save_dir = (hpobench.config_file.data_dir / "nasbench_101") if data_path is None else Path(data_path)
+        self.fname = 'nasbench_full.tfrecord'
+        self.url = 'https://storage.googleapis.com/nasbench/' + self.fname
+
+        self.create_save_directory(self._save_dir)
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_nasbench_101_data', delay=0.5)
+    def _download(self):
+        from tqdm import tqdm
+        import requests
+
+        r = requests.get(self.url, stream=True)
+        with open(self.fname, 'wb') as f:
+            total_length = int(r.headers.get('content-length'))
+            for chunk in tqdm(r.iter_content(chunk_size=1024),
+                              unit_divisor=1024, unit='kB', total=int(total_length / 1024) + 1):
+                if chunk:
+                    _ = f.write(chunk)
+                    f.flush()
+
+    def load(self) -> Any:
+        """ Loads data from data directory as defined in config_file.data_directory"""
+        self.logger.debug('NasBench101DataManager: Starting to load data')
+        t = time()
+
+        if not (self._save_dir / self.fname).exists():
+            self._download()
+        else:
+            self.logger.info('NasBench201DataManager: Data already available. Skip downloading.')
+
+        from nasbench import api
+        data = api.NASBench(str(self._save_dir / self.fname))
+        self.logger.info(f'NasBench201DataManager: Data successfully loaded after {time() - t:.2f}')
+
+        return data
 
 
 class BostonHousingData(HoldoutDataManager):

@@ -12,6 +12,12 @@ you need to perform the following steps.
 
 1. Download data
 ================
+
+The data will be downloaded automatically.
+Note: However, if you use the benchmark locally, you can specify also the data directory (path to the folder, where the
+nasbench_full.tfrecord is) by hand.
+
+In this case you can download the data with the following command.
 ```
 wget https://storage.googleapis.com/nasbench/nasbench_full.tfrecord
 ```
@@ -24,7 +30,7 @@ Recommend: ``Python >= 3.6.0``
 ====================
 ```
 cd /path/to/HPOBench
-pip install .[nasbench_101]
+pip install .[nasbench_1shot1]
 
 pip install git+https://github.com/google-research/nasbench.git@master
 git clone https://github.com/automl/nasbench-1shot1/tree/master/nasbench_analysis/
@@ -34,7 +40,7 @@ git clone https://github.com/automl/nasbench-1shot1/tree/master/nasbench_analysi
 
 To use the nasbench_analysis package, add the path to this folder to your PATH variable.
 ```
-export PATH=/Path/to/nasbench-1shot1:$PATH
+export PATH=/Path/to/nasbench-1shot1-directory:$PATH
 ```
 
 """
@@ -46,6 +52,7 @@ import ConfigSpace as CS
 import numpy as np
 from nasbench import api
 from hpobench.abstract_benchmark import AbstractBenchmark
+from hpobench.util.data_manager import NASBench_101DataManager
 
 from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1  # noqa
 from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2  # noqa
@@ -56,7 +63,7 @@ __version__ = '0.0.1'
 
 
 class NASBench1shot1BaseBenchmark(AbstractBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = "./",
+    def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         """
         Baseclass for the nasbench 1shot1 benchmarks.
@@ -70,9 +77,8 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
             Random seed for the benchmarks
         """
         super(NASBench1shot1BaseBenchmark, self).__init__(rng=rng)
-
-        self.data_path = data_path
-        self.api = api.NASBench(data_path)
+        data_manager = NASBench_101DataManager(data_path)
+        self.api = data_manager.load()
         self.search_space = None
 
     def _query_benchmark(self, config: Dict, fidelity: Dict) -> Dict:
@@ -231,7 +237,7 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
 
 
 class NASBench1shot1SearchSpace1Benchmark(NASBench1shot1BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = "./",
+    def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         super(NASBench1shot1SearchSpace1Benchmark, self).__init__(data_path=data_path, rng=rng)
         self.search_space = SearchSpace1()
@@ -242,7 +248,7 @@ class NASBench1shot1SearchSpace1Benchmark(NASBench1shot1BaseBenchmark):
 
 
 class NASBench1shot1SearchSpace2Benchmark(NASBench1shot1BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = "./",
+    def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         super(NASBench1shot1SearchSpace2Benchmark, self).__init__(data_path=data_path, rng=rng)
         self.search_space = SearchSpace2()
@@ -253,7 +259,7 @@ class NASBench1shot1SearchSpace2Benchmark(NASBench1shot1BaseBenchmark):
 
 
 class NASBench1shot1SearchSpace3Benchmark(NASBench1shot1BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = "./",
+    def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         super(NASBench1shot1SearchSpace3Benchmark, self).__init__(data_path=data_path, rng=rng)
         self.search_space = SearchSpace3()
