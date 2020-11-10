@@ -4,7 +4,8 @@ HPOBench is a library for hyperparameter optimization and black-box optimization
 
 **Note:** HPOBench is under active construction. Stay tuned for more benchmarks. Information on how to contribute a new benchmark will follow shortly.
 
-**Note:** If you are looking for a different version of HPOBench, you might be looking for [HPOlib1.5](https://github.com/automl/HPOlib1.5) 
+**Note:** "If you are looking for a different or older version of our benchmarking library, you might be looking for
+ [HPOlib1.5](https://github.com/automl/HPOlib1.5) 
 
 ## In 4 lines of code
 
@@ -99,8 +100,8 @@ HPOBench stores downloaded containers and datasets at the following locations:
 
 ```bash
 $XDG_CONFIG_HOME # ~/.config/hpobench
-$XDG_CACHE_HOME # ~/.config/hpobench
-$XDG_DATA_HOME # ~/.cache/hpobench
+$XDG_CACHE_HOME # ~/.cache/hpobench
+$XDG_DATA_HOME # ~/.local/share/hpobench
 ```
 
 For crashes or when not properly shutting down containers, there might be socket files left under `/tmp/`.

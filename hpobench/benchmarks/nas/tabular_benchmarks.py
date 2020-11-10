@@ -40,7 +40,7 @@ from tabular_benchmarks.fcnet_benchmark import FCNetBenchmark
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 
-__version__ = '0.0.3'
+__version__ = '0.0.2'
 
 
 class FCNetBaseBenchmark(AbstractBenchmark):

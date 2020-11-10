@@ -152,9 +152,9 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         ----------
         configuration
         fidelity: Dict, None
-            epoch: int - Values: [0, 199]
+            epoch: int - Values: [1, 200]
                 Number of epochs an architecture was trained.
-                Note: the number of epoch is 0 indexed! (Results after the first epoch: epoch = 0)
+                Note: the number of epoch is 1 indexed! (Results after the first epoch: epoch = 1)
 
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
@@ -221,7 +221,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         valid_losses = [self.data[(seed, 'valid_losses')][structure_str][epoch] for seed in data_seed]
         valid_times = [np.sum(self.data[(seed, 'valid_times')][structure_str][:epoch + 1]) for seed in data_seed]
 
-        # There is a single value for the eval data per seed. (only epoch 199)
+        # There is a single value for the eval data per seed. (only epoch 200)
         test_accuracies = [self.data[(seed, 'test_acc1es')][structure_str] for seed in data_seed]
         test_losses = [self.data[(seed, 'test_losses')][structure_str] for seed in data_seed]
         test_times = [np.sum(self.data[(seed, 'test_times')][structure_str]) for seed in data_seed]
@@ -249,7 +249,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
                                 rng: Union[np.random.RandomState, int, None] = None,
                                 **kwargs) -> Dict:
         """
-        Get the validated results from the NASBench201. Runs a given configuration on the largest budget (here: 199).
+        Get the validated results from the NASBench201. Runs a given configuration on the largest budget (here: 200).
         The test function uses all data set seeds (777, 888, 999).
 
         See also :py:meth:`~hpobench.benchmarks.nas.nasbench_201.objective_function`
@@ -258,9 +258,9 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         ----------
         configuration
         fidelity: Dict, None
-            epoch: int - Values: [0, 199]
+            epoch: int - Values: [1, 200]
                 Number of epochs an architecture was trained.
-                Note: the number of epoch is 0 indexed! (Results after the first epoch: epoch = 0)
+                Note: the number of epoch is 1 indexed. (Results after the first epoch: epoch = 1)
 
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
@@ -289,8 +289,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
         # The result dict should contain already all necessary information -> Just swap the function value from valid
         # to test and the corresponding time cost
-        assert fidelity['epoch'] == 199, 'Only test data for the 200. epoch is available. ' \
-                                         'Please set the epoch to 199 (offset by 1).'
+        assert fidelity['epoch'] == 200, 'Only test data for the 200. epoch is available. '
 
         result = self.objective_function(configuration=configuration, fidelity=fidelity,
                                          data_seed=(777, 888, 999),

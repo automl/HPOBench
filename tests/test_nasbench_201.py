@@ -107,7 +107,7 @@ def test_nasbench201_cifar10():
     assert result['cost'] == pytest.approx(13301.76, abs=0.1)
     assert result['info']['train_precision'] == result['function_value']
 
-    result_test = b.objective_function_test(configuration=config, fidelity=fidelity)
+    result_test = b.objective_function_test(configuration=config)
     assert result['info']['train_precision'] == result_test['info']['train_precision']
     assert result['info']['train_cost'] == result_test['info']['train_cost']
     assert result['info']['train_losses'] == result_test['info']['train_losses']
