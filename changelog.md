@@ -1,5 +1,6 @@
 # 0.0.6
-
+  * Add NasBench1shot1 Benchmark
+  
 # 0.0.5
   * Rename package to HPOBench
   * Add BNN (pybnn) benchmark
