@@ -1,5 +1,6 @@
-from hpolib.util.openml_data_manager import OpenMLHoldoutDataManager
 import numpy as np
+
+from hpobench.util.openml_data_manager import OpenMLHoldoutDataManager
 
 
 def test_convert_nan_values_in_cat_columns():

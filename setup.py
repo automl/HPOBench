@@ -22,18 +22,18 @@ def read_file(file_name):
 
 
 setuptools.setup(
-    name='hpolib2',
+    name='hpobench',
     author_email='eggenspk@informatik.uni-freiburg.de',
     description='Benchmark-Suite for Hyperparameter Optimization',
     long_description=read_file('README.md'),
     long_description_content_type='text/markdown',
     license='Apache-2.0',
-    url='https://www.automl.org/automl/hpolib/',
+    url='https://www.automl.org/automl/hpobench/',
     project_urls={
-        'Documentation': 'https://automl.github.io/HPOlib2/',
-        'Source Code': 'https://github.com/automl/HPOlib2'
+        'Documentation': 'https://automl.github.io/HPOBench/',
+        'Source Code': 'https://github.com/automl/HPOBench'
     },
-    version=read_file('hpolib/__version__.py').split()[-1].strip('\''),
+    version=read_file('hpobench/__version__.py').split()[-1].strip('\''),
     packages=setuptools.find_packages(exclude=['*.tests', '*.tests.*',
                                                'tests.*', 'tests'],),
     python_requires='>=3.6, <3.8',

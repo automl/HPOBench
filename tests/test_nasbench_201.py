@@ -3,12 +3,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 import pytest
 
-from hpolib.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
-    Cifar10ValidNasBench201Benchmark, Cifar10NasBench201Benchmark as Cifar10NasBench201BenchmarkContainer
+from hpobench.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
+    Cifar10ValidNasBench201Benchmark, Cifar10NasBench201Benchmark
 
-from hpolib.benchmarks.nas.nasbench_201 import Cifar10NasBench201Benchmark
-from hpolib.util.container_utils import disable_container_debug, enable_container_debug
+from hpobench.util.container_utils import disable_container_debug, enable_container_debug
 
+skip_message = 'We currently skip this test because it takes too much time.'
 
 @pytest.fixture(scope='module')
 def enable_debug():
@@ -17,6 +17,8 @@ def enable_debug():
     disable_container_debug()
 
 
+
+@pytest.mark.skip(reason=skip_message)
 def test_nasbench201_cifar10valid(enable_debug):
 
     b = Cifar10ValidNasBench201Benchmark(rng=0)
@@ -32,7 +34,12 @@ def test_nasbench201_cifar10valid(enable_debug):
     assert result['info']['train_precision'] == result['function_value']
     assert result['info']['train_cost'] == result['cost']
 
+    result = b.objective_function_test(configuration=config, fidelity=fidelity, data_seed=(777, 888, 999))
 
+    with pytest.raises(AssertionError):
+        result = b.objective_function_test(configuration=config, fidelity={'epoch': 10})
+
+@pytest.mark.skip(reason=skip_message)
 def test_nasbench201_cifar100(enable_debug):
     b = Cifar100NasBench201Benchmark(rng=0)
 
@@ -49,6 +56,7 @@ def test_nasbench201_cifar100(enable_debug):
     assert result['info']['train_cost'] == result['cost']
 
 
+@pytest.mark.skip(reason=skip_message)
 def test_nasbench201_Image(enable_debug):
     b = ImageNetNasBench201Benchmark(rng=0)
 
@@ -65,8 +73,9 @@ def test_nasbench201_Image(enable_debug):
     assert result['info']['train_cost'] == result['cost']
 
 
+@pytest.mark.skip(reason=skip_message)
 def test_nasbench201_cifar10_container(enable_debug):
-    b = Cifar10NasBench201BenchmarkContainer(rng=0)
+    b = Cifar10NasBench201Benchmark(rng=0)
 
     cs = b.get_configuration_space(seed=0)
     config = cs.sample_configuration()
@@ -80,6 +89,7 @@ def test_nasbench201_cifar10_container(enable_debug):
     assert result['info']['train_precision'] == result['function_value']
 
 
+@pytest.mark.skip(reason=skip_message)
 def test_nasbench201_cifar10():
     b = Cifar10NasBench201Benchmark(rng=0)
 
@@ -97,7 +107,7 @@ def test_nasbench201_cifar10():
     assert result['cost'] == pytest.approx(13301.76, abs=0.1)
     assert result['info']['train_precision'] == result['function_value']
 
-    result_test = b.objective_function_test(configuration=config, fidelity=fidelity)
+    result_test = b.objective_function_test(configuration=config)
     assert result['info']['train_precision'] == result_test['info']['train_precision']
     assert result['info']['train_cost'] == result_test['info']['train_cost']
     assert result['info']['train_losses'] == result_test['info']['train_losses']
@@ -128,12 +138,12 @@ def test_nasbench201_cifar10():
 
 
 def test_nasbench201_fidelity_space():
-    fs = Cifar10NasBench201Benchmark(rng=0).get_fidelity_space()
+    fs = Cifar10NasBench201Benchmark.get_fidelity_space()
     assert len(fs.get_hyperparameters()) == 1
 
 
 def test_nasbench201_config():
-    cs = Cifar10NasBench201Benchmark(rng=0).get_configuration_space(seed=0)
+    cs = Cifar10NasBench201Benchmark.get_configuration_space(seed=0)
     c = cs.sample_configuration()
     func = Cifar10NasBench201Benchmark.config_to_structure_func(4)
     struct = func(c)

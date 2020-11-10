@@ -1,3 +1,12 @@
+# 0.0.5
+  * Rename package to HPOBench
+  * Add BNN (pybnn) benchmark
+  * Update returned loss values for nasbench101 and tabular benchmarks
+  * Updat returned loss values for nasbench201 as well its data
+  * Nasbench201 is now 1 indexed instead of 0.
+  * Add MinMaxScaler to SVM Benchmark's preprocessing
+  * Add further tests
+  
 # 0.0.4
   * improve test coverage
   * update HowToAddANewBenchmark.md

@@ -14,7 +14,7 @@ except ImportError:
 
 
 def test_whitebox_without_container_xgb():
-    from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+    from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
     b = Benchmark(task_id=167199, rng=0)
     cs = b.get_configuration_space(seed=0)
 
@@ -39,7 +39,7 @@ def test_whitebox_without_container_xgb():
 
 @pytest.mark.skipif(skip_container_test, reason="Requires singularity and flask")
 def test_whitebox_with_container():
-    from hpolib.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+    from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
     b = Benchmark(container_name='xgboost_benchmark',
                   task_id=167199,
                   rng=0)
@@ -64,13 +64,13 @@ def test_whitebox_with_container():
 
 
 def test_cartpole():
-    from hpolib.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
+    from hpobench.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
     b = Benchmark(container_name='cartpole',
                   rng=1)
     cs = b.get_configuration_space(seed=1)
     print(cs.get_default_configuration())
 
-    from hpolib.container.benchmarks.rl.cartpole import CartpoleFull as Benchmark
+    from hpobench.container.benchmarks.rl.cartpole import CartpoleFull as Benchmark
     b = Benchmark(container_name='cartpole',
                   rng=1)
     cs = b.get_configuration_space(seed=1)

@@ -1,7 +1,7 @@
 import pytest
 
-from hpolib.container.benchmarks.ml.svm_benchmark import SupportVectorMachine
-from hpolib.util.openml_data_manager import get_openmlcc18_taskids
+from hpobench.container.benchmarks.ml.svm_benchmark import SupportVectorMachine
+from hpobench.util.openml_data_manager import get_openmlcc18_taskids
 
 task_ids = get_openmlcc18_taskids()
 
@@ -34,7 +34,3 @@ def test_svm_init():
     result = benchmark.objective_function_test(configuration=config)
     assert result['function_value'] == pytest.approx(0.4648, abs=0.1)
     assert result['cost'] is not None
-
-
-if __name__ == "__main__":
-    test_svm_init()

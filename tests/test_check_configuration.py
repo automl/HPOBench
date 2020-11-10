@@ -7,7 +7,7 @@ from ConfigSpace import ConfigurationSpace
 from ConfigSpace import UniformFloatHyperparameter, UniformIntegerHyperparameter, \
     CategoricalHyperparameter
 
-from hpolib.abstract_benchmark import AbstractBenchmark
+from hpobench.abstract_benchmark import AbstractBenchmark
 
 
 class TestCheckUnittest(unittest.TestCase):

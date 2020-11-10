@@ -6,9 +6,9 @@ logging.basicConfig(level=logging.DEBUG)
 
 import os
 
-os.environ['HPOLIB_DEBUG'] = 'true'
+os.environ['HPOBENCH_DEBUG'] = 'true'
 
-from hpolib.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark, \
+from hpobench.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark, \
     NavalPropulsionBenchmark, ParkinsonsTelemonitoringBenchmark, ProteinStructureBenchmark
 
 
@@ -42,6 +42,9 @@ def test_tabular_benchmark_wrong_input():
 
     with pytest.raises(ValueError):
         benchmark.objective_function(configuration=default_config, fidelity=dict(budget=101), run_index=3)
+
+    with pytest.raises((AssertionError, ValueError)):
+        benchmark.objective_function_test(configuration=default_config, fidelity=dict(budget=107))
 
     benchmark = None
 
@@ -121,14 +124,12 @@ def test_parkinson_benchmark():
     mean = 0.7425
     assert result['function_value'] == pytest.approx(mean, abs=0.0001)
 
-    runs = result['info']['valid_rmse_per_run']
-    calculated_mean = sum(runs) / len(runs)
-    assert calculated_mean == pytest.approx(mean, abs=0.0001)
+    with pytest.raises(AssertionError):
+        benchmark.objective_function_test(default_config, fidelity=dict(budget=1,))
 
-    runtime = 0.6272
+    result = benchmark.objective_function_test(configuration=default_config, fidelity=dict(budget=100))
+    assert pytest.approx(0.15010187, result['function_value'], abs=0.001)
+
+    runtime = 62.7268
     assert result['cost'] == pytest.approx(runtime, abs=0.0001)
-
-    runtimes = result['info']['runtime_per_run']
-    calculated_runtime = sum(runtimes) / len(runtimes)
-    assert calculated_runtime == pytest.approx(runtime, abs=0.0001)
     benchmark = None

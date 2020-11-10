@@ -3,7 +3,7 @@
 if [[ "$RUN_CODESTYLE" == "true" ]]; then
     echo "Performing codestyle checking"
 
-    test_codestyle=$(pycodestyle --max-line-length=120 ./hpolib)
+    test_codestyle=$(pycodestyle --max-line-length=120 ./hpobench)
     if [[ $test_codestyle ]]; then
       echo $test_codestyle
       exit 1
@@ -11,7 +11,7 @@ if [[ "$RUN_CODESTYLE" == "true" ]]; then
       echo "Codesytle: No errors found"
     fi
 
-    test_flake=$(flake8 --max-line-length=120 ./hpolib)
+    test_flake=$(flake8 --max-line-length=120 ./hpobench)
     if [[ $test_flake ]]; then
       echo $test_flake
       exit 1
