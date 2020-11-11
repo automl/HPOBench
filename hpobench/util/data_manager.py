@@ -554,13 +554,14 @@ class NASBench_101DataManager(DataManager):
         t = time()
 
         if not (self._save_dir / self.fname).exists():
+            self.logger.info('NasBench101DataManager: Data not found. Start downloading.')
             self._download()
         else:
-            self.logger.info('NasBench201DataManager: Data already available. Skip downloading.')
+            self.logger.info('NasBench101DataManager: Data already available. Skip downloading.')
 
         from nasbench import api
         data = api.NASBench(str(self._save_dir / self.fname))
-        self.logger.info(f'NasBench201DataManager: Data successfully loaded after {time() - t:.2f}')
+        self.logger.info(f'NasBench101DataManager: Data successfully loaded after {time() - t:.2f}')
 
         return data
 

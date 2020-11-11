@@ -47,6 +47,7 @@ export PATH=/Path/to/nasbench-1shot1-directory:$PATH
 
 from pathlib import Path
 from typing import Union, Dict, Any
+from ast import literal_eval
 
 import ConfigSpace as CS
 import numpy as np
@@ -97,6 +98,30 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
 
         return info
 
+    def _parse_configuration(self, configuration: Dict):
+        """
+        Since the categorical hyperparameters are stored as strings (otherwise they are not json serializable),
+        we need to cast them back to tuple.
+
+        In the original configuration space all hyperparameters are of either of type string or tuple.
+        In the modified, also the tuple hp are strings. A tuple hyperparameter is indicated here by a opening bracket.
+
+        Parameters
+        ----------
+        configuration : Dict.
+
+        Returns
+        -------
+        Dict - configuration with the correct types
+        """
+        # make sure that it is a dictionary and not a CS.Configuration.
+        if isinstance(configuration, CS.Configuration):
+            configuration = configuration.get_dictionary()
+
+        return {k: literal_eval(v) if isinstance(v, str) and v[0] == '(' else v
+                for k, v in configuration.items()}
+
+
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
@@ -134,6 +159,8 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
                 test_accuracy
                 fidelity : used fidelities in this evaluation
         """
+        configuration = self._parse_configuration(configuration)
+
         info = self._query_benchmark(configuration, fidelity)
 
         return {'function_value': 1 - info['validation_accuracy'],
@@ -177,6 +204,7 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
 
         assert fidelity['budget'] == 108, 'Only test data for the 108th epoch is available. '
 
+        configuration = self._parse_configuration(configuration)
         info = self._query_benchmark(configuration, fidelity)
 
         return {'function_value': 1 - info['test_accuracy'],
@@ -207,7 +235,21 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
     def _get_configuration_space(search_space: Any, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """ Helper function to pass a seed to the configuration space """
         seed = seed if seed is not None else np.random.randint(1, 100000)
-        cs = search_space.get_configuration_space()
+        original_cs = search_space.get_configuration_space()
+
+        # The categorical hyperparameter of this benchmark consist of some tuple(tuple(int, int)). This is not by
+        # json serializable with the configspace. Therefore, we cast it to a string.
+        hps = []
+        for hp in original_cs.get_hyperparameters():
+            # the configspaces of this benchmark have only categorical hp
+            # --> so they will all have the attribute 'default value'
+            if isinstance(hp.default_value, tuple):
+                hp = CS.CategoricalHyperparameter(hp.name,
+                                                  choices=[str(choice) for choice in hp.choices],
+                                                  default_value=str(hp.default_value))
+            hps.append(hp)
+        cs = CS.ConfigurationSpace()
+        cs.add_hyperparameters(hps)
         cs.seed(seed)
         return cs
 
