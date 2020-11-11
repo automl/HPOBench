@@ -1,6 +1,7 @@
 # 0.0.6
   * Add NasBench1shot1 Benchmark
-  
+  * Add info about incumbents for nasbench201 to its docstrings. 
+    
 # 0.0.5
   * Rename package to HPOBench
   * Add BNN (pybnn) benchmark
