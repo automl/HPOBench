@@ -42,7 +42,6 @@ To use the nasbench_analysis package, add the path to this folder to your PATH v
 ```
 export PATH=/Path/to/nasbench-1shot1-directory:$PATH
 ```
-
 """
 
 from pathlib import Path
@@ -120,7 +119,6 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
 
         return {k: literal_eval(v) if isinstance(v, str) and v[0] == '(' else v
                 for k, v in configuration.items()}
-
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
