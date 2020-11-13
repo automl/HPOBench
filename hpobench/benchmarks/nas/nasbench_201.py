@@ -102,7 +102,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
         Incumbents per dataset:
 
-        Datastet            Metric      Explanation                     (Index of Arch, Accuracy)
+        Dataset             Metric      Explanation                     (Index of Arch, Accuracy)
         -----------------------------------------------------------------------------------------
         cifar10-valid       ori-test    (test set)                      (1459, 91.52333333333333)
         cifar10             ori-test    (test set)                      (6111, 94.37333333333333)
