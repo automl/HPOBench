@@ -100,6 +100,15 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         |   				| x-test:  	199                |
         |-------------------|------------------------------|
 
+        Incumbents per dataset:
+
+        Dataset             Metric      Explanation                     (Index of Arch, Accuracy)
+        -----------------------------------------------------------------------------------------
+        cifar10-valid       ori-test    (test set)                      (1459, 91.52333333333333)
+        cifar10             ori-test    (test set)                      (6111, 94.37333333333333)
+        cifar100            x-test      (test set)                      (9930, 73.51333332112631)
+        ImageNet16-120      x-test      (test set)                      (857, 47.31111100599501)
+
         Parameters
         ----------
         dataset : str

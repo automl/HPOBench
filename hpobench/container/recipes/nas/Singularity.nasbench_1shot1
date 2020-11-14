@@ -1,0 +1,28 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+%labels
+MAINTAINER muelleph@cs.uni-freiburg.de
+VERSION v0.0.1
+
+%environment
+    export PYTHONPATH=/home/nasbench-1shot1:$PYTHONPATH
+
+%post
+    apt update -y
+    apt install build-essential git wget -y
+
+    cd /home \
+    && pip install tensorflow==1.15.0 \
+    && pip install git+https://github.com/google-research/nasbench.git@master \
+    && git clone https://github.com/automl/nasbench-1shot1.git \
+    && git clone https://github.com/automl/HPOBench.git \
+    && cd HPOBench \
+    && git checkout master \
+    && pip install .[nasbench_1shot1] \
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py nas.nasbench_1shot1 $@

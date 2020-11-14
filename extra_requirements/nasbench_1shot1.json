@@ -1,0 +1,3 @@
+{
+  "nasbench_1shot1": ["tensorflow==1.15.0","matplotlib","seaborn", "networkx", "tqdm"]
+}
