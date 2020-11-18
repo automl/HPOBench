@@ -7,7 +7,7 @@ VERSION v0.0.1
 
 %post
     apt update -y
-    apt install build-essential git wget curl -y
+    apt install build-essential git -y
 
     cd /home \
     && git clone https://github.com/automl/HPOBench.git \

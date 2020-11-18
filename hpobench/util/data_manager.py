@@ -574,7 +574,7 @@ class NASBench_101DataManager(DataManager):
 class ParamNetDataManager(DataManager):
     def __init__(self, dataset: str):
 
-        allowed_datasets = ["adult", "higgs", "letter", "mnist", "optdigits", "poker", "vehicle"]
+        allowed_datasets = ["adult", "higgs", "letter", "mnist", "optdigits", "poker"]
         assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
                                             f'{", ".join(allowed_datasets)}, but was {dataset}'
 

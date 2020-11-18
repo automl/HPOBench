@@ -205,7 +205,7 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
         lc = self.surrogate_objective.predict(config_array)[0]
         costs = self.surrogate_costs.predict(config_array)[0]
 
-        # If we can't afford a single epoch, return TODO.
+        # If we can't afford a single epoch, return 1.
         if (costs / self.n_epochs) > fidelity['budget']:
             y = 1
             return {'function_value': float(y),
@@ -376,17 +376,3 @@ class ParamNetPokerOnTimeBenchmark(_ParamnetOnTimeBenchmark):
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='poker', seed=seed)
-
-
-class ParamNetVehicleOnStepsBenchmark(_ParamnetOnStepsBenchmark):
-    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
-        super(ParamNetVehicleOnStepsBenchmark, self).__init__(dataset='vehicle', rng=rng)
-
-
-class ParamNetVehicleOnTimeBenchmark(_ParamnetOnTimeBenchmark):
-    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
-        super(ParamNetVehicleOnTimeBenchmark, self).__init__(dataset='vehicle', rng=rng)
-
-    @staticmethod
-    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='vehicle', seed=seed)
