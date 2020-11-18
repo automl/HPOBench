@@ -14,6 +14,8 @@ import gzip
 import logging
 import pickle
 import tarfile
+import requests
+
 from io import BytesIO
 from pathlib import Path
 from typing import Tuple, Dict, Any, Union
@@ -537,7 +539,6 @@ class NASBench_101DataManager(DataManager):
                             lock_path=f'{hpobench.config_file.cache_dir}/lock_nasbench_101_data', delay=0.5)
     def _download(self):
         from tqdm import tqdm
-        import requests
 
         r = requests.get(self.url, stream=True)
         with open(self.fname, 'wb') as f:
@@ -564,6 +565,76 @@ class NASBench_101DataManager(DataManager):
         self.logger.info(f'NasBench101DataManager: Data successfully loaded after {time() - t:.2f}')
 
         return data
+
+
+class ParamNetDataManager(DataManager):
+    def __init__(self, dataset: str):
+
+        allowed_datasets = ["adult", "higgs", "letter", "mnist", "optdigits", "poker"]
+        assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
+                                            f'{", ".join(allowed_datasets)}, but was {dataset}'
+
+        super(ParamNetDataManager, self).__init__()
+
+        self.url_source = 'https://www.automl.org/wp-content/uploads/2019/05/surrogates.tar.gz'
+        self.dataset = dataset
+        self.save_dir = hpobench.config_file.data_dir / "Paramnet"
+        self.compressed_data = self.save_dir / 'surrogates.tar.gz'
+
+    def load(self):
+        self.logger.info(f"Start to load the data from {self.save_dir} for dataset {self.dataset}")
+
+        obj_fn_file = self.save_dir / f'rf_surrogate_paramnet_{self.dataset}.pkl'
+        cost_file = self.save_dir / f'rf_cost_surrogate_paramnet_{self.dataset}.pkl'
+
+        # Check if the surrogate files are already available
+        if not (obj_fn_file.exists() or cost_file.exists()):
+            self.logger.info(f"One of the files {obj_fn_file} and {cost_file} not found.")
+
+            # If not, then check if we have to download the compressed data or if this file isn't already there,
+            # download it again.
+            self._check_availability_and_download()
+
+            # Extract the compressed data
+            self.logger.debug('Extract the compressed data')
+            with tarfile.open(self.compressed_data, 'r') as fh:
+                fh.extractall(self.save_dir)
+
+        self.logger.debug('Load the obj function values from file.')
+        with open(obj_fn_file, 'rb') as fh:
+            surrogate_objective = pickle.load(fh)
+
+        self.logger.debug('Load the cost values from file.')
+        with open(cost_file, 'rb') as fh:
+            surrogate_costs = pickle.load(fh)
+
+        self.logger.info(f'Finished loading the data for paramenet - dataset: {self.dataset}')
+        return surrogate_objective, surrogate_costs
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_paramnet_data', delay=0.5)
+    def _check_availability_and_download(self):
+
+        # Check if the compressed data file is already available. This check is moved in this function to ensure
+        # that no process can detect this file, when it is still in the process of downloading and
+        # think that it is already there.
+        if self.compressed_data.exists():
+            self.logger.info("Tar file found. Skip redownloading.")
+            return
+
+        self.logger.info("Tar file not found. Download the compressed data.")
+        self.compressed_data.parent.mkdir(parents=True, exist_ok=True)
+
+        from tqdm import tqdm
+        r = requests.get(self.url_source, stream=True)
+        with open(self.compressed_data, 'wb') as f:
+            total_length = int(r.headers.get('content-length'))
+            for chunk in tqdm(r.iter_content(chunk_size=1024),
+                              unit_divisor=1024, unit='kB', total=int(total_length / 1024) + 1):
+                if chunk:
+                    _ = f.write(chunk)
+                    f.flush()
+        self.logger.info("Finished downloading")
 
 
 class BostonHousingData(HoldoutDataManager):
