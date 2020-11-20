@@ -4,7 +4,7 @@ HPOBench is a library for hyperparameter optimization and black-box optimization
 
 **Note:** HPOBench is under active construction. Stay tuned for more benchmarks. Information on how to contribute a new benchmark will follow shortly.
 
-**Note:** "If you are looking for a different or older version of our benchmarking library, you might be looking for
+**Note:** If you are looking for a different or older version of our benchmarking library, you might be looking for
  [HPOlib1.5](https://github.com/automl/HPOlib1.5) 
 
 ## In 4 lines of code
