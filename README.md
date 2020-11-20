@@ -108,7 +108,7 @@ For crashes or when not properly shutting down containers, there might be socket
 
 #### OpenML data
 
-OpenML data additionally maintains it's own cache with is found at `~/.openml/`
+OpenML data additionally maintains it's own cache which is located at `~/.openml/`
 
 #### Singularity container
 
