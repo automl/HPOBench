@@ -8,7 +8,7 @@ import os
 
 os.environ['HPOBENCH_DEBUG'] = 'true'
 
-from hpobench.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark, \
+from hpobench.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark, \
     NavalPropulsionBenchmark, ParkinsonsTelemonitoringBenchmark, ProteinStructureBenchmark
 
 
