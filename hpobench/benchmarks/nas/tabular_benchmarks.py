@@ -112,10 +112,9 @@ class FCNetBaseBenchmark(AbstractBenchmark):
 
         valid_rmse_list, runtime_list = [], []
         for run_id in run_index:
-            valid_rmse, runtime = self.benchmark.\
-                objective_function_deterministic(config=configuration,
-                                                 budget=fidelity["budget"],
-                                                 index=run_id)
+            valid_rmse, runtime = self.benchmark.objective_function_deterministic(config=configuration,
+                                                                                  budget=fidelity["budget"],
+                                                                                  index=run_id)
             valid_rmse_list.append(float(valid_rmse))
             runtime_list.append(float(runtime))
 
@@ -232,17 +231,24 @@ class FCNetBaseBenchmark(AbstractBenchmark):
 
 class SliceLocalizationBenchmark(FCNetBaseBenchmark):
 
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+    def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        from hpobench import config_file
+        data_path = Path(data_path) if data_path is not None else config_file.data_dir / 'fcnet_tabular_benchmarks'
+
         from tabular_benchmarks import FCNetSliceLocalizationBenchmark
+
         benchmark = FCNetSliceLocalizationBenchmark(data_dir=str(data_path))
         super(SliceLocalizationBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
 
 
 class ProteinStructureBenchmark(FCNetBaseBenchmark):
 
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+    def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        from hpobench import config_file
+        data_path = Path(data_path) if data_path is not None else config_file.data_dir / 'fcnet_tabular_benchmarks'
+
         from tabular_benchmarks import FCNetProteinStructureBenchmark
         benchmark = FCNetProteinStructureBenchmark(data_dir=str(data_path))
         super(ProteinStructureBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
@@ -250,8 +256,11 @@ class ProteinStructureBenchmark(FCNetBaseBenchmark):
 
 class NavalPropulsionBenchmark(FCNetBaseBenchmark):
 
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+    def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        from hpobench import config_file
+        data_path = Path(data_path) if data_path is not None else config_file.data_dir / 'fcnet_tabular_benchmarks'
+
         from tabular_benchmarks import FCNetNavalPropulsionBenchmark
         benchmark = FCNetNavalPropulsionBenchmark(data_dir=str(data_path))
         super(NavalPropulsionBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
@@ -259,8 +268,11 @@ class NavalPropulsionBenchmark(FCNetBaseBenchmark):
 
 class ParkinsonsTelemonitoringBenchmark(FCNetBaseBenchmark):
 
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+    def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        from hpobench import config_file
+        data_path = Path(data_path) if data_path is not None else config_file.data_dir / 'fcnet_tabular_benchmarks'
+
         from tabular_benchmarks import FCNetParkinsonsTelemonitoringBenchmark
         benchmark = FCNetParkinsonsTelemonitoringBenchmark(data_dir=str(data_path))
         super(ParkinsonsTelemonitoringBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
