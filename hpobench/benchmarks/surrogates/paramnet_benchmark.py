@@ -12,14 +12,11 @@ __version__ = '0.0.1'
 logger = logging.getLogger('Paramnet')
 
 # TODO:
-#  - Vehicle
 #  - Return value in case of insufficient budget
-#  - get_fidelityspace is not static due to dataset
-#  - what limits to use
 #  - Logging.
 
 
-class ParamnetBenchmark(AbstractBenchmark):
+class _ParamnetBase(AbstractBenchmark):
 
     def __init__(self, dataset: str,
                  rng: Union[np.random.RandomState, int, None] = None):
@@ -34,12 +31,12 @@ class ParamnetBenchmark(AbstractBenchmark):
         self.dataset = dataset
         self.n_epochs = 50
 
-        super(ParamnetBenchmark, self).__init__(rng=rng)
+        super(_ParamnetBase, self).__init__(rng=rng)
 
-        # TODO: Vehicle should be also allowed --> what is the time limit for it?
-        allowed_datasets = ["adult", "higgs", "letter", "mnist", "optdigits", "poker"]
+        allowed_datasets = ["adult", "higgs", "letter", "mnist", "optdigits", "poker", "vehicle"]
         assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
                                             f'{", ".join(allowed_datasets)}, but was {dataset}'
+        logger.info(f'Start Benchmark on dataset {dataset}')
 
         dm = ParamNetDataManager(dataset=dataset)
         self.surrogate_objective, self.surrogate_costs = dm.load()
@@ -57,34 +54,6 @@ class ParamnetBenchmark(AbstractBenchmark):
         cfg_array[7] = configuration['dropout_1']
 
         return cfg_array.reshape((1, -1))
-
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None,
-                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-        cfg_array = self.convert_config_to_array(configuration)
-        lc = self.surrogate_objective.predict(cfg_array)[0]
-        c = self.surrogate_costs.predict(cfg_array)[0]
-
-        obj_value = lc[fidelity['step'] - 1]
-        cost = (c / self.n_epochs) * fidelity['step']
-
-        # return {'function_value': y, "cost": cost, "learning_curve": lc}
-        return {'function_value': obj_value,
-                "cost": cost,
-                'info': {'fidelity': fidelity}}
-
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
-    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None,
-                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-        assert fidelity['step'] == 50, f'Only querying a result for the 50. epoch is allowed, ' \
-                                       f'but was {fidelity["step"]}.'
-        return self.objective_function(configuration, fidelity={'step': 50}, rng=rng)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -119,6 +88,65 @@ class ParamnetBenchmark(AbstractBenchmark):
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        raise NotImplementedError()
+
+    @staticmethod
+    def get_meta_information():
+        """ Returns the meta information for the benchmark """
+        return {'name': 'ParamNet Benchmark',
+                'references': ['@InProceedings{falkner-icml-18,'
+                               'title     = {{BOHB}: Robust and Efficient Hyperparameter Optimization at Scale},'
+                               'url       = http://proceedings.mlr.press/v80/falkner18a.html'
+                               'author    = {Falkner, Stefan and Klein, Aaron and Hutter, Frank}, '
+                               'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
+                               'pages     = {1436 - -1445},'
+                               'year      = {2018}}'],
+                }
+
+
+class _ParamnetOnStepsBenchmark(_ParamnetBase):
+
+    def __init__(self, dataset: str,
+                 rng: Union[np.random.RandomState, int, None] = None):
+        """
+        Parameters
+        ----------
+        dataset : str
+            Name for the surrogate data. Must be one of ["adult", "higgs", "letter", "mnist", "optdigits", "poker"]
+        rng : np.random.RandomState, int, None
+        """
+        super(_ParamnetOnStepsBenchmark, self).__init__(rng=rng, dataset=dataset)
+
+    @AbstractBenchmark._configuration_as_dict
+    @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
+    def objective_function(self, configuration: Union[Dict, CS.Configuration],
+                           fidelity: Union[Dict, None] = None,
+                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        cfg_array = self.convert_config_to_array(configuration)
+        lc = self.surrogate_objective.predict(cfg_array)[0]
+        c = self.surrogate_costs.predict(cfg_array)[0]
+
+        obj_value = lc[fidelity['step'] - 1]
+        cost = (c / self.n_epochs) * fidelity['step']
+
+        # return {'function_value': y, "cost": cost, "learning_curve": lc}
+        return {'function_value': obj_value,
+                "cost": cost,
+                'info': {'fidelity': fidelity}}
+
+    @AbstractBenchmark._configuration_as_dict
+    @AbstractBenchmark._check_configuration
+    @AbstractBenchmark._check_fidelity
+    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                fidelity: Union[Dict, None] = None,
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        assert fidelity['step'] == 50, f'Only querying a result for the 50. epoch is allowed, ' \
+                                       f'but was {fidelity["step"]}.'
+        return self.objective_function(configuration, fidelity={'step': 50}, rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
         Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
         the SupportVector Benchmark
@@ -148,13 +176,12 @@ class ParamnetBenchmark(AbstractBenchmark):
     @staticmethod
     def get_meta_information():
         """ Returns the meta information for the benchmark """
-        return {'name': 'ParamNet Benchmark'}
+        meta_info = _ParamnetBase.get_meta_information()
+        meta_info.update({'info': 'This benchmark uses the epochs as fidelity.'})
+        return meta_info
 
 
-class ParamnetTimeBenchmark(ParamnetBenchmark):
-    def __init__(self, dataset: str,
-                 rng: Union[np.random.RandomState, int, None] = None):
-        super(ParamnetTimeBenchmark, self).__init__(dataset, rng)
+class _ParamnetOnTimeBenchmark(_ParamnetBase):
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
@@ -205,8 +232,8 @@ class ParamnetTimeBenchmark(ParamnetBenchmark):
                                        f'but was {fidelity["step"]}.'
         return self.objective_function(configuration, fidelity={'step': 50}, rng=rng)
 
-    # TODO: Actually, this function takes as input the data set name. Check how to handle it, if it is send via the pyro
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    @staticmethod
+    def _get_fidelity_space(dataset: str, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
         Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
         the SupportVector Benchmark
@@ -225,7 +252,7 @@ class ParamnetTimeBenchmark(ParamnetBenchmark):
         -------
         ConfigSpace.ConfigurationSpace
         """
-        budgets = {  # (min, max)-budget (seconds) for the different data sets
+        budgets = {  # .   (min, max)-budget (seconds) for the different data sets
                    'adult': (9, 243),
                    'higgs': (9, 243),
                    'letter': (3, 81),
@@ -233,7 +260,7 @@ class ParamnetTimeBenchmark(ParamnetBenchmark):
                    'optdigits': (1, 27),
                    'poker': (81, 2187),
         }
-        min_budget, max_budget = budgets[self.dataset]
+        min_budget, max_budget = budgets[dataset]
 
         seed = seed if seed is not None else np.random.randint(1, 100000)
         fidel_space = CS.ConfigurationSpace(seed=seed)
@@ -242,3 +269,112 @@ class ParamnetTimeBenchmark(ParamnetBenchmark):
             CS.UniformIntegerHyperparameter("budget", lower=min_budget, upper=max_budget, default_value=max_budget)
         ])
         return fidel_space
+
+    @staticmethod
+    def get_meta_information():
+        """ Returns the meta information for the benchmark """
+        meta_info = _ParamnetBase.get_meta_information()
+        meta_info.update(
+            {'note': 'This benchmark uses the training time as fidelity. '
+                     'The budgets are described in I.2 Table 2 on page 17. '
+                     'https://arxiv.org/pdf/1807.01774.pdf',
+             })
+        return meta_info
+
+
+class ParamNetAdultOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetAdultOnStepsBenchmark, self).__init__(dataset='adult', rng=rng)
+
+
+class ParamNetAdultOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetAdultOnTimeBenchmark, self).__init__(dataset='adult', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='adult', seed=seed)
+
+
+class ParamNetHiggsOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetHiggsOnStepsBenchmark, self).__init__(dataset='higgs', rng=rng)
+
+
+class ParamNetHiggsOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetHiggsOnTimeBenchmark, self).__init__(dataset='higgs', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='higgs', seed=seed)
+
+
+class ParamNetLetterOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetLetterOnStepsBenchmark, self).__init__(dataset='letter', rng=rng)
+
+
+class ParamNetLetterOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetLetterOnTimeBenchmark, self).__init__(dataset='letter', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='letter', seed=seed)
+
+
+class ParamNetMnistOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetMnistOnStepsBenchmark, self).__init__(dataset='mnist', rng=rng)
+
+
+class ParamNetMnistOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetMnistOnTimeBenchmark, self).__init__(dataset='mnist', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='mnist', seed=seed)
+
+
+class ParamNetOptdigitsOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetOptdigitsOnStepsBenchmark, self).__init__(dataset='optdigits', rng=rng)
+
+
+class ParamNetOptdigitsOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetOptdigitsOnTimeBenchmark, self).__init__(dataset='optdigits', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='optdigits', seed=seed)
+
+
+class ParamNetPokerOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetPokerOnStepsBenchmark, self).__init__(dataset='poker', rng=rng)
+
+
+class ParamNetPokerOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetPokerOnTimeBenchmark, self).__init__(dataset='poker', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='poker', seed=seed)
+
+
+class ParamNetVehicleOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetVehicleOnStepsBenchmark, self).__init__(dataset='vehicle', rng=rng)
+
+
+class ParamNetVehicleOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetVehicleOnTimeBenchmark, self).__init__(dataset='vehicle', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='vehicle', seed=seed)
