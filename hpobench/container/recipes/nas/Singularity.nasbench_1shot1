@@ -13,13 +13,12 @@ VERSION v0.0.1
     apt install build-essential git wget -y
 
     cd /home \
-    && git clone https://github.com/PhMueller/HPOlib2.git \
-    && mv ./HPOlib2 ./HPOBench \
     && pip install tensorflow==1.15.0 \
     && pip install git+https://github.com/google-research/nasbench.git@master \
     && git clone https://github.com/automl/nasbench-1shot1.git \
+    && git clone https://github.com/automl/HPOBench.git \
     && cd HPOBench \
-    && git checkout Fix#66-ReturnBySeed \
+    && git checkout master \
     && pip install .[nasbench_1shot1] \
     && cd / \
     && mkdir /var/lib/hpobench/ \
