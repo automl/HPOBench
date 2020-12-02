@@ -18,6 +18,8 @@ wget https://storage.googleapis.com/nasbench/nasbench_full.tfrecord
 Remark: it is important to select the full tf record and not the 'only_108' record to perform multi-fidelity
 optimization.
 
+NOTE: This benchmark download the data automatically.
+
 2. Clone and install
 ====================
 ```
@@ -46,18 +48,22 @@ from nasbench import api
 from nasbench.api import OutOfDomainError
 from nasbench.lib import graph_util
 
+from hpobench import config_file
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
+from hpobench.util.data_manager import NASBench_101DataManager
 
 __version__ = '0.0.2'
 logger = logging.getLogger('NasBench101')
 
 MAX_EDGES = 9
 VERTICES = 7
+DEFAULT_API_FILE = config_file.data_dir / "nasbench_101"
 
 
 class NASCifar10BaseBenchmark(AbstractBenchmark):
-    def __init__(self, benchmark: NASCifar10, data_path: Union[Path, str, None] = "./",
+    def __init__(self, benchmark: NASCifar10,
+                 data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         """
         Baseclass for the tabular benchmarks https://github.com/automl/nas_benchmarks/tree/master/tabular_benchmarks.
@@ -68,7 +74,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         benchmark : NASCifar10
             Type of the benchmark to use. Don't call this class directly. Instantiate via subclasses (see below).
         data_path : str, Path, None
-            Path to the folder, which contains the downloaded tabular benchmarks.
+            Path to the folder, which contains the downloaded file nasbench_full.tfrecord.
         rng : np.random.RandomState, int, None
             Random seed for the benchmarks
         """
@@ -250,10 +256,19 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
 
         return fidel_space
 
+    @staticmethod
+    def _try_download_api_file(save_to: Union[Path, str, None]):
+        data_manager = NASBench_101DataManager(save_to)
+        data_manager.download()
+        return data_manager.save_dir
+
 
 class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = './nasbench_full/',
+    def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+
+        data_path = self._try_download_api_file(data_path)
+
         from tabular_benchmarks.nas_cifar10 import NASCifar10A
         benchmark = NASCifar10A(data_dir=str(data_path), multi_fidelity=True)
         super(NASCifar10ABenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
@@ -327,10 +342,12 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
 
 
 class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = './nasbench_full/',
+    def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        from tabular_benchmarks.nas_cifar10 import NASCifar10B
 
+        data_path = self._try_download_api_file(data_path)
+
+        from tabular_benchmarks.nas_cifar10 import NASCifar10B
         benchmark = NASCifar10B(data_dir=str(data_path), multi_fidelity=True)
         super(NASCifar10BBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
 
@@ -405,8 +422,10 @@ class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
 
 
 class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = './nasbench_full/',
+    def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+
+        data_path = self._try_download_api_file(data_path)
 
         from tabular_benchmarks.nas_cifar10 import NASCifar10C
         benchmark = NASCifar10C(data_dir=str(data_path), multi_fidelity=True)

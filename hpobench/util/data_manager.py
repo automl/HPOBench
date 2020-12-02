@@ -524,23 +524,23 @@ class NASBench_201Data(DataManager):
 
 
 class NASBench_101DataManager(DataManager):
-    def __init__(self, data_path: Union[str, Path]):
+    def __init__(self, data_path: Union[str, Path, None] = None):
         super(NASBench_101DataManager, self).__init__()
 
-        self._save_dir = (hpobench.config_file.data_dir / "nasbench_101") if data_path is None else Path(data_path)
+        self.save_dir = (hpobench.config_file.data_dir / "nasbench_101") if data_path is None else Path(data_path)
         self.fname = 'nasbench_full.tfrecord'
         self.url = 'https://storage.googleapis.com/nasbench/' + self.fname
 
-        self.create_save_directory(self._save_dir)
+        self.create_save_directory(self.save_dir)
 
     @lockutils.synchronized('not_thread_process_safe', external=True,
                             lock_path=f'{hpobench.config_file.cache_dir}/lock_nasbench_101_data', delay=0.5)
-    def _download(self):
+    def _download(self, save_to: Path):
         from tqdm import tqdm
         import requests
 
         r = requests.get(self.url, stream=True)
-        with open(self.fname, 'wb') as f:
+        with save_to.open('wb') as f:
             total_length = int(r.headers.get('content-length'))
             for chunk in tqdm(r.iter_content(chunk_size=1024),
                               unit_divisor=1024, unit='kB', total=int(total_length / 1024) + 1):
@@ -548,21 +548,25 @@ class NASBench_101DataManager(DataManager):
                     _ = f.write(chunk)
                     f.flush()
 
+    def download(self) -> None:
+        """ This function downloads (if necessary) the api file. """
+        if not (self.save_dir / self.fname).exists():
+            self.logger.info(f'NasBench101DataManager: File {self.save_dir / self.fname} not found.'
+                             f' Start downloading.')
+            self._download(save_to=self.save_dir / self.fname)
+        else:
+            self.logger.info('NasBench101DataManager: Data already available. Skip downloading.')
+
     def load(self) -> Any:
         """ Loads data from data directory as defined in config_file.data_directory"""
         self.logger.debug('NasBench101DataManager: Starting to load data')
         t = time()
 
-        if not (self._save_dir / self.fname).exists():
-            self.logger.info('NasBench101DataManager: Data not found. Start downloading.')
-            self._download()
-        else:
-            self.logger.info('NasBench101DataManager: Data already available. Skip downloading.')
+        self.download()
 
         from nasbench import api
-        data = api.NASBench(str(self._save_dir / self.fname))
+        data = api.NASBench(str(self.save_dir / self.fname))
         self.logger.info(f'NasBench101DataManager: Data successfully loaded after {time() - t:.2f}')
-
         return data
 
 
