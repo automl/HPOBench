@@ -29,6 +29,7 @@ python setup.py install
 ```
 
 """
+import logging
 
 from pathlib import Path
 from typing import Union, Dict, Tuple
@@ -41,6 +42,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 
 __version__ = '0.0.2'
+logger = logging.getLogger('TabularBenchmark')
 
 
 class FCNetBaseBenchmark(AbstractBenchmark):
@@ -71,8 +73,9 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         run_index : int, Tuple, None
             The nas benchmark has for each configuration-budget-pair results from 4 different runs.
             If multiple `run_id`s are given, the benchmark returns the mean over the given runs.
-            By default all runs are used. A specific run can be chosen by setting the `run_id` to a
-            value from [0, 3].
+            By default (no parameter is specified) all runs are used. A specific run can be chosen by setting the
+            `run_id` to a value from [0, 3].
+            When this value is explicitly set to `None`, the function will use a random seed.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark. To prevent overfitting on a single seed, it is
             possible to pass a parameter ``rng`` as 'int' or 'np.random.RandomState' to this
@@ -99,6 +102,9 @@ class FCNetBaseBenchmark(AbstractBenchmark):
             assert len(run_index) != 0, 'run_index must not be empty'
             assert min(run_index) >= 0 and max(run_index) <= 3, \
                 f'all run_index values must be in [0, 3], but were {run_index}'
+        elif run_index is None:
+            logger.debug('The run index is explicitly set to None! A random seed will be selected.')
+            run_index = tuple(np.random.choice((0, 1, 2, 3), size=1))
         else:
             raise ValueError(f'run index must be one of Tuple or Int, but was {type(run_index)}')
 
