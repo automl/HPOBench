@@ -34,20 +34,23 @@ Benchmarks in NASBench101 only contain epochs 4, 12, 36 and 108.
 Querying another epoch, e.g. 5, raises an assertion.
 
 """
+import logging
 
 from pathlib import Path
-from typing import Union, Dict, Any
+from typing import Union, Dict, Any, Tuple
 
 import ConfigSpace as CS
 import numpy as np
 from tabular_benchmarks.nas_cifar10 import NASCifar10
 from nasbench import api
+from nasbench.api import OutOfDomainError
 from nasbench.lib import graph_util
 
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 
 __version__ = '0.0.2'
+logger = logging.getLogger('NasBench101')
 
 MAX_EDGES = 9
 VERTICES = 7
@@ -75,7 +78,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         self.benchmark = benchmark
         self.data_path = data_path
 
-    def _query_benchmark(self, config: Dict, budget: int = 108) -> Dict:
+    def _query_benchmark(self, config: Dict, run_index: int, budget: int = 108) -> Dict:
         raise NotImplementedError
 
     @AbstractBenchmark._configuration_as_dict
@@ -83,6 +86,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
     @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
+                           run_index: Union[int, Tuple, None] = (0, 1, 2),
                            rng: Union[np.random.RandomState, int, None] = None,
                            **kwargs) -> Dict:
         """
@@ -93,6 +97,14 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         configuration : Dict, CS.Configuration
         fidelity: Dict, None
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        run_index : int, Tuple, None
+            The nas benchmark has for each configuration-budget-pair results from 3 different runs.
+            If multiple `run_id`s are given as Tuple, the benchmark returns the mean over the given runs.
+            By default (no parameter is specified) all runs are used. A specific run can be chosen by setting the
+            `run_id` to a value from [0, 3]. While the performance is averaged across the `run_index`, the costs are
+            the sum of the runtime per `run_index`.
+
+            When this value is explicitly set to `None`, the function will use a random seed.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark.
 
@@ -109,17 +121,52 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
             info : Dict
                 fidelity : used fidelities in this evaluation
         """
+
+        if isinstance(run_index, int):
+            assert 0 <= run_index <= 2, f'run_index must be in [0, 2], not {run_index}'
+            run_index = (run_index, )
+        elif isinstance(run_index, tuple) or isinstance(run_index, list):
+            assert len(run_index) != 0, 'run_index must not be empty'
+            assert min(run_index) >= 0 and max(run_index) <= 2, \
+                f'all run_index values must be in [0, 2], but were {run_index}'
+        elif run_index is None:
+            logger.debug('The run index is explicitly set to None! A random seed will be selected.')
+            run_index = tuple(np.random.choice((0, 1, 2), size=1))
+        else:
+            raise ValueError(f'run index must be one of Tuple or Int, but was {type(run_index)}')
+
         self.benchmark.reset_tracker()
 
         self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
 
         # Returns (valid_accuracy: 0, runtime: 0) if it is invalid, e.g. config not valid or
         # budget not in 4 12 36 108
-        data = self._query_benchmark(config=configuration, budget=fidelity['budget'])
-        return {'function_value': 1 - data['validation_accuracy'],
-                'cost': data['training_time'],
+        train_accuracies = []
+        valid_accuracies = []
+        test_accuracies = []
+        training_times = []
+        additional = []
+
+        for run_id in run_index:
+            data = self._query_benchmark(config=configuration, budget=fidelity['budget'], run_index=run_id)
+            train_accuracies.append(data['train_accuracy'])
+            valid_accuracies.append(data['validation_accuracy'])
+            test_accuracies.append(data['test_accuracy'])
+            training_times.append(data['training_time'])
+
+            # Since those information are the same for all run ids, just store one of them.
+            additional = {'trainable_parameters': data['trainable_parameters'],
+                          'module_operations': data['module_operations']}
+
+        return {'function_value': float(1 - np.mean(valid_accuracies)),
+                'cost': float(np.sum(training_times)),
                 'info': {'fidelity': fidelity,
-                         'data': data}
+                         'train_accuracies': train_accuracies,
+                         'valid_accuracies': valid_accuracies,
+                         'test_accuracies': test_accuracies,
+                         'training_times': training_times,
+                         'data': additional
+                         }
                 }
 
     @AbstractBenchmark._configuration_as_dict
@@ -152,13 +199,10 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
                 fidelity : used fidelities in this evaluation
         """
 
-        data = self._query_benchmark(config=configuration, budget=fidelity['budget'])
+        result = self.objective_function(configuration=configuration, fidelity=fidelity, run_index=(0, 1, 2), rng=rng)
+        result['function_value'] = float(1 - np.mean(result['info']['test_accuracies']))
 
-        return {'function_value': 1 - data['test_accuracy'],
-                'cost': data['training_time'],
-                'info': {'fidelity': fidelity,
-                         'data': data}
-                }
+        return result
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -208,7 +252,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
 
 
 class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+    def __init__(self, data_path: Union[Path, str, None] = './nasbench_full/',
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         from tabular_benchmarks.nas_cifar10 import NASCifar10A
         benchmark = NASCifar10A(data_dir=str(data_path), multi_fidelity=True)
@@ -231,9 +275,9 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
         from tabular_benchmarks.nas_cifar10 import NASCifar10A
         return NASCifar10BBenchmark._get_configuration_space(NASCifar10A, seed)
 
-    def _query_benchmark(self, config: Dict, budget: int = 108) -> Dict:
+    def _query_benchmark(self, config: Dict, run_index: int, budget: int = 108) -> Dict:
         """
-        Copy of the 'objective_function' from nas_cifar10.py
+        Copied from the 'objective_function' from nas_cifar10.py
         We adapted the file in such a way, that the complete result is returned. The original implementation returns
         only the validation error. Now, it can also return the test loss for a given configuration.
 
@@ -269,7 +313,7 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
         labeling = ['input'] + list(labeling) + ['output']
         model_spec = api.ModelSpec(matrix, labeling)
         try:
-            data = self.benchmark.dataset.query(model_spec, epochs=budget)
+            data = modified_query(self.benchmark, run_index=run_index, model_spec=model_spec, epochs=budget)
         except api.OutOfDomainError:
             self.benchmark.record_invalid(config, 1, 1, 0)
             return failure
@@ -283,7 +327,7 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
 
 
 class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+    def __init__(self, data_path: Union[Path, str, None] = './nasbench_full/',
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         from tabular_benchmarks.nas_cifar10 import NASCifar10B
 
@@ -307,9 +351,9 @@ class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
         from tabular_benchmarks.nas_cifar10 import NASCifar10B
         return NASCifar10BBenchmark._get_configuration_space(NASCifar10B, seed)
 
-    def _query_benchmark(self, config: Dict, budget: int = 108) -> Dict:
+    def _query_benchmark(self, config: Dict, run_index: int, budget: int = 108) -> Dict:
         """
-        Copy of the 'objective_function' from nas_cifar10.py
+        Copied from the 'objective_function' from nas_cifar10.py
         We adapted the file in such a way, that the complete result is returned. The original implementation returns
         only the validation error. Now, it can also return the test loss for a given configuration.
 
@@ -361,7 +405,7 @@ class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
 
 
 class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
-    def __init__(self, data_path: Union[Path, str, None] = './fcnet_tabular_benchmarks/',
+    def __init__(self, data_path: Union[Path, str, None] = './nasbench_full/',
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
 
         from tabular_benchmarks.nas_cifar10 import NASCifar10C
@@ -385,9 +429,9 @@ class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
         from tabular_benchmarks.nas_cifar10 import NASCifar10C
         return NASCifar10BBenchmark._get_configuration_space(NASCifar10C, seed)
 
-    def _query_benchmark(self, config: Dict, budget: int = 108) -> Dict:
+    def _query_benchmark(self, config: Dict, run_index: int, budget: int = 108) -> Dict:
         """
-        Copy of the 'objective_function' from nas_cifar10.py
+        Copied from the 'objective_function' from nas_cifar10.py
         We adapted the file in such a way, that the complete result is returned. The original implementation returns
         only the validation error. Now, it can also return the test loss for a given configuration.
 
@@ -440,3 +484,74 @@ class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
         data.pop('module_adjacency')
 
         return data
+
+
+def modified_query(benchmark, model_spec, run_index: int, epochs=108, stop_halfway=False):
+    """
+    NOTE:
+    Copied from https://github.com/google-research/nasbench/blob/b94247037ee470418a3e56dcb83814e9be83f3a8/nasbench/api.py#L204-L263  # noqa
+    We changed the function in such a way that we now can specified the run index (index of the evaluation) which was
+    in the original code sampled randomly.
+
+    OLD DOCSTRING:
+    Fetch one of the evaluations for this model spec.
+
+    Each call will sample one of the config['num_repeats'] evaluations of the
+    model. This means that repeated queries of the same model (or isomorphic
+    models) may return identical metrics.
+
+    This function will increment the budget counters for benchmarking purposes.
+    See self.training_time_spent, and self.total_epochs_spent.
+
+    This function also allows querying the evaluation metrics at the halfway
+    point of training using stop_halfway. Using this option will increment the
+    budget counters only up to the halfway point.
+
+    Args:
+      model_spec: ModelSpec object.
+      epochs: number of epochs trained. Must be one of the evaluated number of
+        epochs, [4, 12, 36, 108] for the full dataset.
+      stop_halfway: if True, returned dict will only contain the training time
+        and accuracies at the halfway point of training (num_epochs/2).
+        Otherwise, returns the time and accuracies at the end of training
+        (num_epochs).
+
+    Returns:
+      dict containing the evaluated data for this object.
+
+    Raises:
+      OutOfDomainError: if model_spec or num_epochs is outside the search space.
+    """
+    if epochs not in benchmark.dataset.valid_epochs:
+        raise OutOfDomainError('invalid number of epochs, must be one of %s'
+                               % benchmark.dataset.valid_epochs)
+
+    fixed_stat, computed_stat = benchmark.dataset.get_metrics_from_spec(model_spec)
+
+    # MODIFICATION: Use the run index instead of the sampled one.
+    # sampled_index = random.randint(0, self.config['num_repeats'] - 1)
+    computed_stat = computed_stat[epochs][run_index]
+
+    data = {}
+    data['module_adjacency'] = fixed_stat['module_adjacency']
+    data['module_operations'] = fixed_stat['module_operations']
+    data['trainable_parameters'] = fixed_stat['trainable_parameters']
+
+    if stop_halfway:
+        data['training_time'] = computed_stat['halfway_training_time']
+        data['train_accuracy'] = computed_stat['halfway_train_accuracy']
+        data['validation_accuracy'] = computed_stat['halfway_validation_accuracy']
+        data['test_accuracy'] = computed_stat['halfway_test_accuracy']
+    else:
+        data['training_time'] = computed_stat['final_training_time']
+        data['train_accuracy'] = computed_stat['final_train_accuracy']
+        data['validation_accuracy'] = computed_stat['final_validation_accuracy']
+        data['test_accuracy'] = computed_stat['final_test_accuracy']
+
+    benchmark.dataset.training_time_spent += data['training_time']
+    if stop_halfway:
+        benchmark.dataset.total_epochs_spent += epochs // 2
+    else:
+        benchmark.dataset.total_epochs_spent += epochs
+
+    return data
