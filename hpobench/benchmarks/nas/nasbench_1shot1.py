@@ -24,6 +24,7 @@ wget https://storage.googleapis.com/nasbench/nasbench_full.tfrecord
 Remark: it is important to select the full tf record and not the 'only_108' record to perform multi-fidelity
 optimization.
 
+
 Recommend: ``Python >= 3.6.0``
 
 2. Clone and install

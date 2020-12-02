@@ -12,13 +12,18 @@ you need to perform the following steps.
 
 1. Download data
 ================
+
+The data will be downloaded automatically.
+Note: However, if you use the benchmark locally, you can specify also the data directory (path to the folder, where the
+nasbench_full.tfrecord is) by hand.
+
+In this case you can download the data with the following command.
+
 ```
 wget https://storage.googleapis.com/nasbench/nasbench_full.tfrecord
 ```
 Remark: it is important to select the full tf record and not the 'only_108' record to perform multi-fidelity
 optimization.
-
-NOTE: This benchmark download the data automatically.
 
 2. Clone and install
 ====================
