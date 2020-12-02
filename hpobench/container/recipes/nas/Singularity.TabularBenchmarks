@@ -14,12 +14,14 @@ VERSION v0.0.1
     && tar xf fcnet_tabular_benchmarks.tar.gz
 
     cd /home \
+    && git clone https://github.com/PhMueller/HPOlib2.git \
+    && mv ./HPOlib2 ./HPOBench \
+    && cd HPOBench \
+    && git checkout Fix#66-ReturnBySeed \
+    && cd /home \
+    && pip install .[tabular_benchmarks] \
     && pip install git+https://github.com/google-research/nasbench.git@master \
     && pip install git+https://github.com/automl/nas_benchmarks.git \
-    && git clone https://github.com/automl/HPOBench.git \
-    && cd HPOBench \
-    && git checkout master \
-    && pip install .[tabular_benchmarks] \
     && cd / \
     && mkdir /var/lib/hpobench/ \
     && chmod -R 777 /var/lib/hpobench/

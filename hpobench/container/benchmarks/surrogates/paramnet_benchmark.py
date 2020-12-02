@@ -62,6 +62,7 @@ class ParamNetMnistOnTimeBenchmark(AbstractBenchmarkClient):
         kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
         super(ParamNetMnistOnTimeBenchmark, self).__init__(**kwargs)
 
+
 class ParamNetOptdigitsOnStepsBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetOptdigitsOnStepsBenchmark')
