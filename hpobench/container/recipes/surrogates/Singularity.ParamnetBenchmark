@@ -1,0 +1,22 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+%labels
+MAINTAINER muelleph@cs.uni-freiburg.de
+VERSION v0.0.1
+
+%post
+    apt update -y
+
+    cd /home \
+    && git clone https://github.com/PhMueller/HPOlib2.git \
+    && mv ./HPOlib2 ./HPOBench \
+    && cd HPOBench \
+    && git checkout ParamNet \
+    && pip install --upgrade .[paramnet] \
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py nas.nasbench_1shot1 $@
