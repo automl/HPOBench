@@ -54,6 +54,7 @@ import numpy as np
 from nasbench import api
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.data_manager import NASBench_101DataManager
+from hpobench.util import rng_helper
 
 from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1  # noqa
 from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2  # noqa
@@ -158,6 +159,8 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
                 test_accuracy
                 fidelity : used fidelities in this evaluation
         """
+        self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
+
         configuration = self._parse_configuration(configuration)
 
         info = self._query_benchmark(configuration, fidelity)
@@ -200,6 +203,7 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
                 test_accuracy
                 fidelity : used fidelities in this evaluation
         """
+        self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
 
         assert fidelity['budget'] == 108, 'Only test data for the 108th epoch is available. '
 

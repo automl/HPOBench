@@ -32,7 +32,7 @@ python setup.py install
 import logging
 
 from pathlib import Path
-from typing import Union, Dict, Tuple
+from typing import Union, Dict, Tuple, List
 
 import ConfigSpace as CS
 import numpy as np
@@ -98,13 +98,16 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         if isinstance(run_index, int):
             assert 0 <= run_index <= 3, f'run_index must be in [0, 3], not {run_index}'
             run_index = (run_index, )
-        elif isinstance(run_index, tuple) or isinstance(run_index, list):
+        elif isinstance(run_index, (Tuple, List)):
             assert len(run_index) != 0, 'run_index must not be empty'
+            if len(set(run_index)) != len(run_index):
+                logger.debug(f'There are some values more than once in the run_index. We remove the redundant entries.')
+            run_index = tuple(set(run_index))
             assert min(run_index) >= 0 and max(run_index) <= 3, \
                 f'all run_index values must be in [0, 3], but were {run_index}'
         elif run_index is None:
             logger.debug('The run index is explicitly set to None! A random seed will be selected.')
-            run_index = tuple(np.random.choice((0, 1, 2, 3), size=1))
+            run_index = tuple(self.rng.choice((0, 1, 2, 3), size=1))
         else:
             raise ValueError(f'run index must be one of Tuple or Int, but was {type(run_index)}')
 
@@ -158,6 +161,8 @@ class FCNetBaseBenchmark(AbstractBenchmark):
                 runtime_per_run
                 fidelity : used fidelities in this evaluation
         """
+        self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
+
         default_fidelity = self.get_fidelity_space().get_default_configuration().get_dictionary()
         assert fidelity == default_fidelity, 'Test function works only on the highest budget.'
         result = self.benchmark.objective_function_test(configuration)

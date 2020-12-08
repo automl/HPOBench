@@ -44,7 +44,7 @@ Querying another epoch, e.g. 5, raises an assertion.
 import logging
 
 from pathlib import Path
-from typing import Union, Dict, Any, Tuple
+from typing import Union, Dict, Any, Tuple, List
 
 import ConfigSpace as CS
 import numpy as np
@@ -110,12 +110,11 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         run_index : int, Tuple, None
             The nas benchmark has for each configuration-budget-pair results from 3 different runs.
-            If multiple `run_id`s are given as Tuple, the benchmark returns the mean over the given runs.
-            By default (no parameter is specified) all runs are used. A specific run can be chosen by setting the
-            `run_id` to a value from [0, 3]. While the performance is averaged across the `run_index`, the costs are
-            the sum of the runtime per `run_index`.
-
-            When this value is explicitly set to `None`, the function will use a random seed.
+            - If multiple `run_id`s are given as Tuple, the benchmark returns the mean over the given runs.
+            - By default (no parameter is specified) all runs are used. A specific run can be chosen by setting the
+              `run_id` to a value from [0, 3]. While the performance is averaged across the `run_index`, the costs are
+              the sum of the runtime per `run_index`.
+            - When this value is explicitly set to `None`, the function will use a random seed.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark.
 
@@ -132,23 +131,25 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
             info : Dict
                 fidelity : used fidelities in this evaluation
         """
+        self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
 
         if isinstance(run_index, int):
             assert 0 <= run_index <= 2, f'run_index must be in [0, 2], not {run_index}'
             run_index = (run_index, )
-        elif isinstance(run_index, tuple) or isinstance(run_index, list):
-            assert len(run_index) != 0, 'run_index must not be empty'
+        elif isinstance(run_index, (Tuple, List)):
+            assert 0 < len(run_index) <= 3, 'run_index must not be empty'
             assert min(run_index) >= 0 and max(run_index) <= 2, \
                 f'all run_index values must be in [0, 2], but were {run_index}'
+            if len(set(run_index)) != len(run_index):
+                logger.debug(f'There are some values more than once in the run_index. We remove the redundant entries.')
+                run_index = tuple(set(run_index))
         elif run_index is None:
             logger.debug('The run index is explicitly set to None! A random seed will be selected.')
-            run_index = tuple(np.random.choice((0, 1, 2), size=1))
+            run_index = tuple(self.rng.choice((0, 1, 2), size=1))
         else:
             raise ValueError(f'run index must be one of Tuple or Int, but was {type(run_index)}')
 
         self.benchmark.reset_tracker()
-
-        self.rng = rng_helper.get_rng(rng, self_rng=self.rng)
 
         # Returns (valid_accuracy: 0, runtime: 0) if it is invalid, e.g. config not valid or
         # budget not in 4 12 36 108
