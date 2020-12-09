@@ -11,10 +11,6 @@ __version__ = '0.0.1'
 
 logger = logging.getLogger('Paramnet')
 
-# TODO:
-#  - Return value in case of insufficient budget
-#  - Logging.
-
 
 class _ParamnetBase(AbstractBenchmark):
 
@@ -72,7 +68,6 @@ class _ParamnetBase(AbstractBenchmark):
 
         seed = seed if seed is not None else np.random.randint(1, 100000)
         cs = CS.ConfigurationSpace(seed=seed)
-        # TODO: in origin benchmark: all uniform float and default is the mid value.
         cs.add_hyperparameters([
             CS.UniformFloatHyperparameter('initial_lr_log10', lower=-6, upper=-2, default_value=-6, log=False),
             CS.UniformFloatHyperparameter('batch_size_log2', lower=3, upper=8, default_value=3, log=False),
@@ -101,6 +96,8 @@ class _ParamnetBase(AbstractBenchmark):
                                'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
                                'pages     = {1436 - -1445},'
                                'year      = {2018}}'],
+                'original_implementation': 'https://github.com/automl/HPOlib1.5/blob/development/'
+                                           'hpolib/benchmarks/surrogates/paramnet.py'
                 }
 
 
@@ -204,8 +201,8 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
 
         learning_curves_cost = np.linspace(costs / self.n_epochs, costs, self.n_epochs)
 
-        if fidelity['budget'] < costs:
-            idx = np.where(learning_curves_cost < fidelity['budget'])[0][-1]
+        if fidelity['budget'] <= costs:
+            idx = np.where(learning_curves_cost <= fidelity['budget'])[0][-1]
             y = lc[idx]
             lc = lc[:idx]
 
@@ -277,7 +274,9 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
         meta_info.update(
             {'note': 'This benchmark uses the training time as fidelity. '
                      'The budgets are described in I.2 Table 2 on page 17. '
-                     'https://arxiv.org/pdf/1807.01774.pdf',
+                     'https://arxiv.org/pdf/1807.01774.pdf. '
+                     'Also, note that the code for extrapolating the learning curve, when the budget was higher than the'
+                     'total costs, was introduced in the original implemention in the HPOlib1.5',
              })
         return meta_info
 
