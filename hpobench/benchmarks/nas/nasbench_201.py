@@ -122,7 +122,6 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         data_manager = NASBench_201Data(dataset=dataset)
 
         self.data = data_manager.load()
-
         self.config_to_structure = NasBench201BaseBenchmark.config_to_structure_func(max_nodes=MAX_NODES)
 
     @AbstractBenchmark._configuration_as_dict
