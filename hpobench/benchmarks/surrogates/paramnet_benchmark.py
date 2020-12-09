@@ -39,9 +39,24 @@ class _ParamnetBase(AbstractBenchmark):
 
     @staticmethod
     def convert_config_to_array(configuration: Dict) -> np.ndarray:
+        """
+        This function transforms a configuration to a numpy array.
+        Since some of the values in the configuration space are in log space, cast it back to the original space.
+
+        Furthermore, we round the parameters ``batch size`` and ``average unit per layer`` to their next integer.
+        This is different to the original implementation of the paramnet benchmark from HPOlib1.5
+
+        Parameters
+        ----------
+        configuration : Dict
+
+        Returns
+        -------
+        np.ndarray - The configuration transformed back to its original space
+        """
         cfg_array = np.zeros(8)
         cfg_array[0] = 10 ** configuration['initial_lr_log10']
-        cfg_array[1] = round(2 ** configuration['batch_size_log2'])  # todo: round
+        cfg_array[1] = round(2 ** configuration['batch_size_log2'])
         cfg_array[2] = round(2 ** configuration['average_units_per_layer_log2'])
         cfg_array[3] = 10 ** configuration['final_lr_fraction_log2']
         cfg_array[4] = configuration['shape_parameter_1']
@@ -69,16 +84,15 @@ class _ParamnetBase(AbstractBenchmark):
         seed = seed if seed is not None else np.random.randint(1, 100000)
         cs = CS.ConfigurationSpace(seed=seed)
         cs.add_hyperparameters([
-            CS.UniformFloatHyperparameter('initial_lr_log10', lower=-6, upper=-2, default_value=-6, log=False),
-            CS.UniformFloatHyperparameter('batch_size_log2', lower=3, upper=8, default_value=3, log=False),
-            CS.UniformFloatHyperparameter('average_units_per_layer_log2', lower=4, upper=8, default_value=4, log=False),
-            CS.UniformFloatHyperparameter('final_lr_fraction_log2', lower=-4, upper=0, default_value=-4, log=False),
-            CS.UniformFloatHyperparameter('shape_parameter_1', lower=0., upper=1., default_value=0., log=False),
-            CS.UniformIntegerHyperparameter('num_layers', lower=1, upper=5, default_value=1, log=False),
-            CS.UniformFloatHyperparameter('dropout_0', lower=0., upper=0.5, default_value=0., log=False),
-            CS.UniformFloatHyperparameter('dropout_1', lower=0., upper=0.5, default_value=0., log=False),
+            CS.UniformFloatHyperparameter('initial_lr_log10', lower=-6, upper=-2, default_value=-4, log=False),
+            CS.UniformFloatHyperparameter('batch_size_log2', lower=3, upper=8, default_value=5.5, log=False),
+            CS.UniformFloatHyperparameter('average_units_per_layer_log2', lower=4, upper=8, default_value=6, log=False),
+            CS.UniformFloatHyperparameter('final_lr_fraction_log2', lower=-4, upper=0, default_value=-2, log=False),
+            CS.UniformFloatHyperparameter('shape_parameter_1', lower=0., upper=1., default_value=0.5, log=False),
+            CS.UniformIntegerHyperparameter('num_layers', lower=1, upper=5, default_value=3, log=False),
+            CS.UniformFloatHyperparameter('dropout_0', lower=0., upper=0.5, default_value=0.25, log=False),
+            CS.UniformFloatHyperparameter('dropout_1', lower=0., upper=0.5, default_value=0.25, log=False),
         ])
-        # cs.generate_all_continuous_from_bounds(SupportVectorMachine.get_meta_information()['bounds'])
         return cs
 
     @staticmethod
@@ -150,7 +164,7 @@ class _ParamnetOnStepsBenchmark(_ParamnetBase):
 
         Fidelities
         ----------
-        step: float - [1, 50]
+        step: int - [1, 50]
             Step, when to query the surrogate model
 
         Parameters
@@ -193,7 +207,6 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
 
         # If we can't afford a single epoch, return TODO.
         if (costs / self.n_epochs) > fidelity['budget']:
-            # TODO: Return random performance here instead
             y = 1
             return {'function_value': float(y),
                     'cost': fidelity['budget'],
