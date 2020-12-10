@@ -62,7 +62,7 @@ def test_slice_benchmark():
     calculated_mean = sum(runs) / len(runs)
     assert calculated_mean == pytest.approx(mean, abs=0.0001)
 
-    runtime = 5.7750
+    runtime = 23.1000
     assert result['cost'] == pytest.approx(runtime, abs=0.0001)
 
     runtimes = result['info']['runtime_per_run']
@@ -84,7 +84,7 @@ def test_naval_benchmark():
     calculated_mean = sum(runs) / len(runs)
     assert calculated_mean == pytest.approx(mean, abs=0.0001)
 
-    runtime = 1.3119
+    runtime = 5.2477
     assert result['cost'] == pytest.approx(runtime, abs=0.0001)
 
     runtimes = result['info']['runtime_per_run']
@@ -106,7 +106,7 @@ def test_protein_benchmark():
     calculated_mean = sum(runs) / len(runs)
     assert calculated_mean == pytest.approx(mean, abs=0.0001)
 
-    runtime = 4.8105
+    runtime = 19.242
     assert result['cost'] == pytest.approx(runtime, abs=0.0001)
 
     runtimes = result['info']['runtime_per_run']
