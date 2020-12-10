@@ -83,7 +83,7 @@ def test_naval_benchmark():
     calculated_mean = sum(runs) / len(runs)
     assert calculated_mean == pytest.approx(mean, abs=0.0001)
 
-    runtime = 1.3119
+    runtime = 5.2477
     assert result['cost'] == pytest.approx(runtime, abs=0.0001)
 
     runtimes = sum(result['info']['runtime_per_run'])
