@@ -288,8 +288,8 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
             {'note': 'This benchmark uses the training time as fidelity. '
                      'The budgets are described in I.2 Table 2 on page 17. '
                      'https://arxiv.org/pdf/1807.01774.pdf. '
-                     'Also, note that the code for extrapolating the learning curve, when the budget was higher than the'
-                     'total costs, was introduced in the original implemention in the HPOlib1.5',
+                     'Also, note that the code for extrapolating the learning curve, when the budget was higher than '
+                     'the total costs, was introduced in the original implemention in the HPOlib1.5',
              })
         return meta_info
 
