@@ -122,7 +122,6 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         data_manager = NASBench_201Data(dataset=dataset)
 
         self.data = data_manager.load()
-
         self.config_to_structure = NasBench201BaseBenchmark.config_to_structure_func(max_nodes=MAX_NODES)
 
     @AbstractBenchmark._configuration_as_dict
@@ -175,7 +174,9 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         data_seed : List, Tuple, None, int
             The nasbench_201 benchmark include for each run 3 different seeds: 777, 888, 999.
             The user can specify which seed to use. If more than one seed is given, the results are averaged
-            across the seeds but then the time needed for training is the sum of the costs per seed.
+            across the seeds but then the training time is the sum of the costs per seed.
+            When this value is explicitly set to `None`, the function will chose randomly one out of [777, 888, 999].
+
             Note:
                 For some architectures (configurations) no run was available. We've set missing values to an
                 available value from another seed. Therefore, it is possible that run results are exactly the same for
@@ -202,20 +203,25 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
                 fidelity : Dict
                     used fidelities in this evaluation
         """
-        # Check if the data set seeds are valid
-        assert isinstance(data_seed, List) or isinstance(data_seed, Tuple) or isinstance(data_seed, int), \
-            f'data seed has unknown data type {type(data_seed)}, but should be tuple or int (777,888,999)'
+        self.rng = rng_helper.get_rng(rng)
 
-        if isinstance(data_seed, List):
-            data_seed = tuple(data_seed)
-
-        if isinstance(data_seed, int):
+        if isinstance(data_seed, (List, Tuple)):
+            assert len(data_seed) != 0, 'data_seed must not be empty'
+            if len(set(data_seed)) != len(data_seed):
+                logger.debug('There are some values more than once in the run_index. We remove the redundant entries.')
+            data_seed = tuple(set(data_seed))
+        elif isinstance(data_seed, int):
             data_seed = (data_seed, )
+        elif data_seed is None:
+            logger.debug('The data seed is explicitly set to None! A random seed will be selected.')
+            data_seed = tuple(self.rng.choice((777, 888, 999), size=1))
+        # Check if the data set seeds are valid
+        else:
+            raise ValueError(f'data seed has unknown data type {type(data_seed)}, '
+                             f'but should be tuple or int (777,888,999)')
 
         assert len(set(data_seed) - {777, 888, 999}) == 0,\
             f'data seed can only contain the elements 777, 888, 999, but was {data_seed}'
-
-        self.rng = rng_helper.get_rng(rng)
 
         structure = self.config_to_structure(configuration)
         structure_str = structure.tostr()
