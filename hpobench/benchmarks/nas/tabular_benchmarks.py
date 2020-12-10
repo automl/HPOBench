@@ -101,7 +101,7 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         elif isinstance(run_index, (Tuple, List)):
             assert len(run_index) != 0, 'run_index must not be empty'
             if len(set(run_index)) != len(run_index):
-                logger.debug(f'There are some values more than once in the run_index. We remove the redundant entries.')
+                logger.debug('There are some values more than once in the run_index. We remove the redundant entries.')
             run_index = tuple(set(run_index))
             assert min(run_index) >= 0 and max(run_index) <= 3, \
                 f'all run_index values must be in [0, 3], but were {run_index}'

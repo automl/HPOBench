@@ -141,7 +141,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
             assert min(run_index) >= 0 and max(run_index) <= 2, \
                 f'all run_index values must be in [0, 2], but were {run_index}'
             if len(set(run_index)) != len(run_index):
-                logger.debug(f'There are some values more than once in the run_index. We remove the redundant entries.')
+                logger.debug('There are some values more than once in the run_index. We remove the redundant entries.')
                 run_index = tuple(set(run_index))
         elif run_index is None:
             logger.debug('The run index is explicitly set to None! A random seed will be selected.')

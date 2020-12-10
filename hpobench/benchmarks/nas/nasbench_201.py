@@ -208,7 +208,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         if isinstance(data_seed, (List, Tuple)):
             assert len(data_seed) != 0, 'data_seed must not be empty'
             if len(set(data_seed)) != len(data_seed):
-                logger.debug(f'There are some values more than once in the run_index. We remove the redundant entries.')
+                logger.debug('There are some values more than once in the run_index. We remove the redundant entries.')
             data_seed = tuple(set(data_seed))
         elif isinstance(data_seed, int):
             data_seed = (data_seed, )
