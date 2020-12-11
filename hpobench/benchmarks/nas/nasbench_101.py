@@ -314,7 +314,7 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
         """
 
         failure = {"test_accuracy": 0, "train_accuracy": 0, "validation_accuracy": 0, "training_time": 0,
-                   "info": "failure"}
+                   "info": "failure", "trainable_parameters": 0, "module_operations": 0}
 
         if self.benchmark.multi_fidelity is False:
             assert budget == 108
@@ -392,7 +392,7 @@ class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
         Dict
         """
         failure = {"test_accuracy": 0, "train_accuracy": 0, "validation_accuracy": 0, "training_time": 0,
-                   "info": "failure"}
+                   "info": "failure", "trainable_parameters": 0, "module_operations": 0}
 
         if self.benchmark.multi_fidelity is False:
             assert budget == 108
@@ -474,7 +474,7 @@ class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
         """
         # Unify the return value to a dictionary.
         failure = {"test_accuracy": 0, "train_accuracy": 0, "validation_accuracy": 0, "training_time": 0,
-                   "info": "failure"}
+                   "info": "failure", "trainable_parameters": 0, "module_operations": 0}
 
         if self.benchmark.multi_fidelity is False:
             assert budget == 108
