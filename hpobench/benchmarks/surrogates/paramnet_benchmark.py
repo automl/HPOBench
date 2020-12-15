@@ -207,8 +207,7 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
 
         # If we can't afford a single epoch, return 1.
         if (costs / self.n_epochs) > fidelity['budget']:
-            y = 1
-            return {'function_value': float(y),
+            return {'function_value': 1.0,
                     'cost': fidelity['budget'],
                     'info': {'state': 'Not enough budget'}}
 
