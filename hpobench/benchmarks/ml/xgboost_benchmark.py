@@ -124,7 +124,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         start = time.time()
 
-        train_idx = self.train_idx[:int(len(self.train_idx) * fidelity["subsample"])]
+        train_idx = self.train_idx[:int(len(self.train_idx) * fidelity["dataset_fraction"])]
 
         model = self._get_pipeline(n_estimators=fidelity["n_estimators"], **configuration)
         model.fit(X=self.X_train[train_idx], y=self.y_train[train_idx])
@@ -170,9 +170,9 @@ class XGBoostBenchmark(AbstractBenchmark):
             info : Dict
                 fidelity : used fidelities in this evaluation
         """
-        default_subsample = self.get_fidelity_space().get_hyperparameter('subsample').default_value
-        if fidelity['subsample'] != default_subsample:
-            raise NotImplementedError(f'Test error can not be computed for subsample <= {default_subsample:d}')
+        default_dataset_fraction = self.get_fidelity_space().get_hyperparameter('dataset_fraction').default_value
+        if fidelity['dataset_fraction'] != default_dataset_fraction:
+            raise NotImplementedError(f'Test error can not be computed for dataset_fraction <= {default_dataset_fraction:d}')
 
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
@@ -240,7 +240,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformFloatHyperparameter("subsample", lower=0.1, upper=1.0, default_value=1.0, log=False),
+            CS.UniformFloatHyperparameter("dataset_fraction", lower=0.0, upper=1.0, default_value=1.0, log=False),
             CS.UniformIntegerHyperparameter("n_estimators", lower=2, upper=128, default_value=128, log=False)
         ])
 
