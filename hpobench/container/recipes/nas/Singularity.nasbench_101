@@ -10,10 +10,6 @@ VERSION v0.0.1
     apt install build-essential git wget -y
 
     cd /home \
-    && mkdir data && cd data \
-    && wget https://storage.googleapis.com/nasbench/nasbench_full.tfrecord \
-
-    cd /home \
     && pip install git+https://github.com/google-research/nasbench.git@master \
     && pip install git+https://github.com/automl/nas_benchmarks.git \
     && git clone https://github.com/automl/HPOBench.git \

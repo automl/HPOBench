@@ -4,7 +4,7 @@ install_packages=""
 
 if [[ "$RUN_TESTS" == "true" ]]; then
     echo "Install tools for testing"
-    install_packages="${install_packages}xgboost,cartpole,pytest,test_paramnet"
+    install_packages="${install_packages}xgboost,cartpole,pytest,test_paramnet,"
     pip install codecov
 else
     echo "Skip installing tools for testing"

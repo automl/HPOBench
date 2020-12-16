@@ -62,7 +62,7 @@ def test_slice_benchmark():
     calculated_mean = sum(runs) / len(runs)
     assert calculated_mean == pytest.approx(mean, abs=0.0001)
 
-    runtime = 23.1000146484375
+    runtime = 23.1000
     assert result['cost'] == pytest.approx(runtime, abs=0.0001)
 
     runtimes = sum(result['info']['runtime_per_run'])
