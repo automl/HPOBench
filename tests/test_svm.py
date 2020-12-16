@@ -14,7 +14,7 @@ def test_svm_init():
 
     fs = benchmark.get_fidelity_space(seed=0)
     fidelity = fs.sample_configuration().get_dictionary()
-    assert fidelity['dataset_fraction'] == pytest.approx(0.5939, abs=0.001)
+    assert fidelity['dataset_fraction'] == pytest.approx(0.54881, abs=0.001)
 
     meta = benchmark.get_meta_information()
     assert meta is not None
