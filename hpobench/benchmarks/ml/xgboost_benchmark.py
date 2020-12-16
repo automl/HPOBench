@@ -172,7 +172,8 @@ class XGBoostBenchmark(AbstractBenchmark):
         """
         default_dataset_fraction = self.get_fidelity_space().get_hyperparameter('dataset_fraction').default_value
         if fidelity['dataset_fraction'] != default_dataset_fraction:
-            raise NotImplementedError(f'Test error can not be computed for dataset_fraction <= {default_dataset_fraction:d}')
+            raise NotImplementedError(f'Test error can not be computed for dataset_fraction <= '
+                                      f'{default_dataset_fraction:d}')
 
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
