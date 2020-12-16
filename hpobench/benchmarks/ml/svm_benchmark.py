@@ -302,7 +302,7 @@ class SupportVectorMachine(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformFloatHyperparameter("dataset_fraction", lower=0.1, upper=1.0, default_value=1.0, log=False),
+            CS.UniformFloatHyperparameter("dataset_fraction", lower=0.0, upper=1.0, default_value=1.0, log=False),
         ])
         return fidel_space
 
