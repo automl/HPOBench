@@ -379,16 +379,20 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         json_str = self.benchmark.get_meta_information()
         return json.loads(json_str)
 
-    def __call__(self, configuration: Dict, **kwargs) -> Dict:
-        """ Provides interface to use, e.g., SciPy optimizers """
-        return self.objective_function(configuration, **kwargs)['function_value']
-
-    def __del__(self):
+    def _shutdown(self):
+        """ Shutdown benchmark and stop container"""
         self.benchmark.shutdown()
         subprocess.run(f'singularity instance stop {self.socket_id}'.split())
         if (self.config.socket_dir / f'{self.socket_id}_unix.sock').exists():
             (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
         # self.benchmark._pyroRelease()
+
+    def __call__(self, configuration: Dict, **kwargs) -> Dict:
+        """ Provides interface to use, e.g., SciPy optimizers """
+        return self.objective_function(configuration, **kwargs)['function_value']
+
+    def __del__(self):
+        self._shutdown()
 
     @staticmethod
     def _id_generator() -> str:
