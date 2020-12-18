@@ -4,6 +4,10 @@ import json
 import numpy as np
 import enum
 
+from typing import Any, Union
+
+from hpobench.util.rng_helper import serialize_random_state, deserialize_random_state
+
 
 class BenchmarkEncoder(json.JSONEncoder):
     """ Json Encoder to save tuple and or numpy arrays | numpy floats / integer.
@@ -15,38 +19,48 @@ class BenchmarkEncoder(json.JSONEncoder):
         def hint(item):
             # Annotate the different item types
             if isinstance(item, tuple):
-                return {'__tuple__': True, 'items': [hint(e) for e in item]}
+                return {'__type__': 'tuple', '__items__': [hint(e) for e in item]}
             if isinstance(item, np.ndarray):
-                return {'__np.ndarray__': True, 'items': item}
+                return {'__type__': 'np.ndarray', '__items__': item}
             if isinstance(item, np.float):
-                return {'__np.float__': True, 'items': item}
+                return {'__type__': 'np.float', '__items__': item}
             if isinstance(item, np.ndarray):
-                return {'__np.int__': True, 'items': item}
+                return {'__type__': 'np.int','__items__': item}
             if isinstance(item, enum.Enum):
-                return str(obj)
+                return str(item)
+            if isinstance(item, np.random.RandomState):
+                rs = serialize_random_state(item)
+                return {'__type__': 'random_state','__items__': rs}
 
             # If it is a container data structure, go also through the items.
             if isinstance(item, list):
                 return [hint(e) for e in item]
             if isinstance(item, dict):
                 return {key: hint(value) for key, value in item.items()}
-
             return item
 
         return super(BenchmarkEncoder, self).encode(hint(obj))
 
 
-def decode_hinted_object(obj):
-    if '__tuple__' in obj:
-        return tuple(obj['items'])
-    if '__np.ndarray__' in obj:
-        return tuple(obj['items'])
-    if '__np.float__' in obj:
-        return tuple(obj['items'])
-    if '__np.int__' in obj:
-        return tuple(obj['items'])
+class BenchmarkDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
 
-    return obj
+    def object_hook(self, obj: Any) -> Union[Union[tuple, np.ndarray, float, float, int], Any]:
+        if '__type__' in obj:
+            __type = obj['__type__']
+
+            if __type == 'tuple':
+                return tuple(obj['__items__'])
+            if __type == 'np.ndarray':
+                return np.array(obj['__items__'])
+            if __type == 'np.float':
+                return np.float(obj['__items__'])
+            if __type == 'np.int':
+                return np.int(obj['__items__'])
+            if __type == 'random_state':
+                return deserialize_random_state(obj['__items__'])
+        return obj
 
 
 def __reload_module():

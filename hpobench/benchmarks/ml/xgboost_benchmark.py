@@ -247,11 +247,15 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         return fidel_space
 
-    @staticmethod
-    def get_meta_information() -> Dict:
+    def get_meta_information(self) -> Dict:
         """ Returns the meta information for the benchmark """
         return {'name': 'XGBoost',
                 'references': [],
+                'shape of train data': self.X_train.shape,
+                'shape of test data': self.X_test.shape,
+                'shape of valid data': self.X_valid.shape,
+                'initial random seed': self.rng,
+                'task_id': self.task_id
                 }
 
     def _get_pipeline(self, eta: float, min_child_weight: int, colsample_bytree: float, colsample_bylevel: float,

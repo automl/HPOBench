@@ -52,3 +52,17 @@ def _cast_int_to_random_state(rng: Union[int, np.random.RandomState]) -> np.rand
         return np.random.RandomState(np.abs(rng))
     else:
         raise ValueError(f"{rng} is neither a number nor a RandomState. Initializing RandomState failed")
+
+
+def serialize_random_state(random_state):
+    (rnd0, rnd1, rnd2, rnd3, rnd4) = random_state.get_state()
+    rnd1 = rnd1.tolist()
+    return rnd0, rnd1, rnd2, rnd3, rnd4
+
+
+def deserialize_random_state(random_state_str):
+    (rnd0, rnd1, rnd2, rnd3, rnd4) = random_state_str
+    rnd1 = [np.uint32(number) for number in rnd1]
+    random_state = np.random.RandomState()
+    random_state.set_state((rnd0, rnd1, rnd2, rnd3, rnd4))
+    return random_state

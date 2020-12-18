@@ -32,14 +32,7 @@ logger = logging.getLogger('BenchmarkServer')
 logger.setLevel(log_level)
 logger.addHandler(console)
 
-
-class BenchmarkEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        if isinstance(obj, enum.Enum):
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
+from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 
 
 @Pyro4.expose
@@ -63,16 +56,8 @@ class BenchmarkServer:
 
     def init_benchmark(self, kwargs_str):
         try:
-            if kwargs_str != "{}":
-                kwargs = json.loads(kwargs_str)
-                if 'rng' in kwargs and type(kwargs['rng']) == list:
-                    (rnd0, rnd1, rnd2, rnd3, rnd4) = kwargs['rng']
-                    rnd1 = [np.uint32(number) for number in rnd1]
-                    kwargs['rng'] = np.random.set_state((rnd0, rnd1, rnd2, rnd3, rnd4))
-                    logger.debug('Server: Rng works')
-                self.benchmark = Benchmark(**kwargs)  # noqa: F821
-            else:
-                self.benchmark = Benchmark()  # noqa: F821
+            kwargs = json.loads(kwargs_str, cls=BenchmarkDecoder)
+            self.benchmark = Benchmark(**kwargs)  # noqa: F821
             logger.info('Server: Connected Successfully')
         except Exception as e:
             logger.exception(e)
@@ -135,7 +120,7 @@ class BenchmarkServer:
 
     def get_meta_information(self):
         logger.debug('Server: get_meta_info called')
-        return json.dumps(self.benchmark.get_meta_information(), indent=None)
+        return json.dumps(self.benchmark.get_meta_information(), indent=None, cls=BenchmarkEncoder)
 
     @Pyro4.oneway   # in case call returns much later than daemon.shutdown
     def shutdown(self):

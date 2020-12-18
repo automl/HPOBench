@@ -306,8 +306,7 @@ class SupportVectorMachine(AbstractBenchmark):
         ])
         return fidel_space
 
-    @staticmethod
-    def get_meta_information():
+    def get_meta_information(self):
         """ Returns the meta information for the benchmark """
         return {'name': 'Support Vector Machine',
                 'references': ["@InProceedings{pmlr-v54-klein17a",
@@ -324,5 +323,10 @@ class SupportVectorMachine(AbstractBenchmark):
                                "publisher = {PMLR},"
                                "pdf = {http://proceedings.mlr.press/v54/klein17a/klein17a.pdf}, "
                                "url = {http://proceedings.mlr.press/v54/klein17a.html}, "
-                               ]
+                               ],
+                'shape of train data': self.X_train.shape,
+                'shape of test data': self.X_test.shape,
+                'shape of valid data': self.X_valid.shape,
+                'initial random seed': self.rng,
+                'task_id': self.task_id
                 }
