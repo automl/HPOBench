@@ -121,8 +121,15 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
         data_manager = NASBench_201Data(dataset=dataset)
 
+        self.dataset = dataset
         self.data = data_manager.load()
         self.config_to_structure = NasBench201BaseBenchmark.config_to_structure_func(max_nodes=MAX_NODES)
+
+    def dataset_mapping(self, dataset):
+        mapping = {'cifar10-valid': ('x-valid', 'ori-test'),
+                   'ImageNet16-120': ('ori-test', 'x-test'),
+                   'cifar100': ('ori-test', 'x-test')}
+        return mapping[dataset]
 
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
@@ -227,19 +234,24 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         structure_str = structure.tostr()
 
         epoch = fidelity['epoch'] - 1
+        data_seed = [str(seed) for seed in data_seed]
+        valid_key, test_key = self.dataset_mapping(self.dataset)
 
-        train_accuracies = [self.data[(seed, 'train_acc1es')][structure_str][epoch] for seed in data_seed]
-        train_losses = [self.data[(seed, 'train_losses')][structure_str][epoch] for seed in data_seed]
-        train_times = [np.sum(self.data[(seed, 'train_times')][structure_str][:epoch + 1]) for seed in data_seed]
+        train_accuracies = [self.data[seed][structure_str]['train_acc1es'][f'{epoch}'] for seed in data_seed]
+        train_losses = [self.data[seed][structure_str]['train_losses'][f'{epoch}'] for seed in data_seed]
+        train_times = [np.sum((self.data[seed][structure_str]['train_times'][f'{e}']) for e in range(1, epoch + 1))
+                       for seed in data_seed]
 
-        valid_accuracies = [self.data[(seed, 'valid_acc1es')][structure_str][epoch] for seed in data_seed]
-        valid_losses = [self.data[(seed, 'valid_losses')][structure_str][epoch] for seed in data_seed]
-        valid_times = [np.sum(self.data[(seed, 'valid_times')][structure_str][:epoch + 1]) for seed in data_seed]
+        valid_accuracies = [self.data[seed][structure_str]['eval_acc1es'][f'{valid_key}@{epoch}'] for seed in data_seed]
+        valid_losses = [self.data[seed][structure_str]['eval_losses'][f'{valid_key}@{epoch}'] for seed in data_seed]
+        valid_times = [np.sum((self.data[seed][structure_str]['eval_times'][f'{valid_key}@{e}'])
+                              for e in range(1, epoch + 1)) for seed in data_seed]
 
         # There is a single value for the eval data per seed. (only epoch 200)
-        test_accuracies = [self.data[(seed, 'test_acc1es')][structure_str] for seed in data_seed]
-        test_losses = [self.data[(seed, 'test_losses')][structure_str] for seed in data_seed]
-        test_times = [np.sum(self.data[(seed, 'test_times')][structure_str]) for seed in data_seed]
+        test_accuracies = [self.data[seed][structure_str]['eval_acc1es'][f'{valid_key}@{199}'] for seed in data_seed]
+        test_losses = [self.data[seed][structure_str]['eval_losses'][f'{valid_key}@{199}'] for seed in data_seed]
+        test_times = [np.sum((self.data[seed][structure_str]['eval_times'][f'{test_key}@{199}'])
+                              for e in range(1, epoch + 1)) for seed in data_seed]
 
         return {'function_value': float(100 - np.mean(valid_accuracies)),
                 'cost': float(np.sum(valid_times) + np.sum(train_times)),
@@ -443,12 +455,6 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
         def __getitem__(self, index):
             return self.nodes[index]
-
-
-class Cifar10NasBench201Benchmark(NasBench201BaseBenchmark):
-
-    def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        super(Cifar10NasBench201Benchmark, self).__init__(dataset='cifar10', rng=rng, **kwargs)
 
 
 class Cifar10ValidNasBench201Benchmark(NasBench201BaseBenchmark):

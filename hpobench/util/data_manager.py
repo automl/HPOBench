@@ -455,35 +455,19 @@ class NASBench_201Data(DataManager):
         dataset : str
             One of cifar10, cifar10-valid, cifar100, ImageNet16-120
         """
-        assert dataset in ['cifar10', 'cifar10-valid', 'cifar100', 'ImageNet16-120']
+        all_datasets = ['cifar10', 'cifar10-valid', 'cifar100', 'ImageNet16-120']
+        assert dataset in all_datasets
 
         super(NASBench_201Data, self).__init__()
 
-        self.files = self.get_files_per_dataset(dataset)
+        self.files = [f'NAS-Bench-201-v1_1-096897_{dataset}.pth' for dataset in all_datasets]
         self._save_dir = hpobench.config_file.data_dir / "nasbench_201"
+        self.filename = f'NAS-Bench-201-v1_1-096897_{dataset}.json'
+
         self._url_source = 'https://www.automl.org/wp-content/uploads/2020/08/nasbench_201_data_v1.2.zip'
         self.data = {}
 
         self.create_save_directory(self._save_dir)
-
-    @staticmethod
-    def get_seeds_metrics():
-        from itertools import product
-        seeds = [777, 888, 999]
-        metrics = NASBench_201Data.get_metrics()
-        return product(seeds, metrics)
-
-    @staticmethod
-    def get_metrics():
-        return ['train_acc1es', 'train_losses', 'train_times',
-                'valid_acc1es', 'valid_times', 'valid_losses',
-                'test_acc1es', 'test_times', 'test_losses']
-
-    @staticmethod
-    def get_files_per_dataset(dataset):
-        seeds_metrics = NASBench_201Data.get_seeds_metrics()
-        files = [f'nb201_{dataset}_{seed}_{metric}.pkl' for seed, metric in seeds_metrics]
-        return files
 
     @lockutils.synchronized('not_thread_process_safe', external=True,
                             lock_path=f'{hpobench.config_file.cache_dir}/lock_nasbench_201_data', delay=0.5)
@@ -504,12 +488,10 @@ class NASBench_201Data(DataManager):
 
     def _load(self) -> Dict:
         """ Load the data from the file system """
-        import pickle
-        data = {}
-        for (seed, metric_name), file in zip(NASBench_201Data.get_seeds_metrics(), self.files):
-            with (self._save_dir / file).open('rb') as fh:
-                metric = pickle.load(fh)
-                data[(seed, metric_name)] = metric
+        import json
+
+        with (self._save_dir / self.filename).open('rb') as fh:
+               data = json.load(fh)
 
         return data
 
