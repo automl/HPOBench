@@ -157,10 +157,11 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         valid_accuracies = []
         test_accuracies = []
         training_times = []
-        additional = []
+        additional = {}
 
         for run_id in run_index:
             data = self._query_benchmark(config=configuration, budget=fidelity['budget'], run_index=run_id)
+
             train_accuracies.append(data['train_accuracy'])
             valid_accuracies.append(data['validation_accuracy'])
             test_accuracies.append(data['test_accuracy'])
@@ -305,6 +306,8 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
         Parameters
         ----------
         config : Dict
+        run_index : int
+            Specifies the seed to use. Can be one of 0, 1, 2.
         budget : int
             The number of epochs. Must be one of: 4 12 36 108. Otherwise a accuracy of 0 is returned.
 
@@ -334,6 +337,7 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
         labeling = [config["op_node_%d" % i] for i in range(5)]
         labeling = ['input'] + list(labeling) + ['output']
         model_spec = api.ModelSpec(matrix, labeling)
+
         try:
             data = modified_query(self.benchmark, run_index=run_index, model_spec=model_spec, epochs=budget)
         except api.OutOfDomainError:
@@ -416,7 +420,7 @@ class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
         labeling = ['input'] + list(labeling) + ['output']
         model_spec = api.ModelSpec(matrix, labeling)
         try:
-            data = self.benchmark.dataset.query(model_spec, epochs=budget)
+            data = modified_query(self.benchmark, run_index=run_index, model_spec=model_spec, epochs=budget)
         except api.OutOfDomainError:
             self.benchmark.record_invalid(config, 1, 1, 0)
             return failure
@@ -501,7 +505,7 @@ class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
         labeling = ['input'] + list(labeling) + ['output']
         model_spec = api.ModelSpec(matrix, labeling)
         try:
-            data = self.benchmark.dataset.query(model_spec, epochs=budget)
+            data = modified_query(self.benchmark, run_index=run_index, model_spec=model_spec, epochs=budget)
         except api.OutOfDomainError:
             self.benchmark.record_invalid(config, 1, 1, 0)
             return failure

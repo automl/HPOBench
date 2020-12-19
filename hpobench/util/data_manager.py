@@ -456,7 +456,7 @@ class NASBench_201Data(DataManager):
             One of cifar10, cifar10-valid, cifar100, ImageNet16-120
         """
         all_datasets = ['cifar10', 'cifar10-valid', 'cifar100', 'ImageNet16-120']
-        assert dataset in all_datasets
+        assert dataset in all_datasets, f'data set {dataset} unknown'
 
         super(NASBench_201Data, self).__init__()
 
@@ -464,7 +464,7 @@ class NASBench_201Data(DataManager):
         self._save_dir = hpobench.config_file.data_dir / "nasbench_201"
         self.filename = f'NAS-Bench-201-v1_1-096897_{dataset}.json'
 
-        self._url_source = 'https://www.automl.org/wp-content/uploads/2020/08/nasbench_201_data_v1.2.zip'
+        self._url_source = 'https://www.automl.org/wp-content/uploads/2020/08/nasbench_201_data_v1.3.zip'
         self.data = {}
 
         self.create_save_directory(self._save_dir)
@@ -491,7 +491,7 @@ class NASBench_201Data(DataManager):
         import json
 
         with (self._save_dir / self.filename).open('rb') as fh:
-               data = json.load(fh)
+            data = json.load(fh)
 
         return data
 

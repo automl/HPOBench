@@ -14,26 +14,11 @@ def test_nasbench_201_load_thread_safe():
         pool.map(function, [])
 
 
-def test_nasbench_201_get_files():
-
-    files = NASBench_201Data.get_files_per_dataset(dataset='cifar10')
-    assert len(files) == 27
-    assert all([file.startswith('nb201_cifar10') for file in files])
-
-
-def test_nasbench_201_get_metrics():
-
-    metrics = NASBench_201Data.get_metrics()
-    assert metrics == ['train_acc1es', 'train_losses', 'train_times',
-                       'valid_acc1es', 'valid_times', 'valid_losses',
-                       'test_acc1es', 'test_times', 'test_losses']
-
-
 def test_nasbench_201_init():
 
     data_manager = NASBench_201Data(dataset='cifar100')
-    assert len(data_manager.files) == 27
-    assert all([file.startswith('nb201_cifar10') for file in data_manager.files])
+    assert len(data_manager.files) == 4
+    assert all([file.startswith('NAS-Bench') for file in data_manager.files])
 
     with pytest.raises(AssertionError):
         NASBench_201Data(dataset='Non_existing_dataset')
@@ -49,17 +34,16 @@ def test_nasbench_201_load():
     data_manager = NASBench_201Data(dataset='cifar100')
     data = data_manager.load()
 
-    assert len(data) == len(list(NASBench_201Data.get_seeds_metrics()))
-    assert len(data) == 3 * len(NASBench_201Data.get_metrics())
+    assert len(data) == 3
     assert (hpobench.config_file.data_dir / "nasbench_201").exists()
-    assert len(list((hpobench.config_file.data_dir / "nasbench_201").glob('*.pkl'))) == 108
-    assert not (hpobench.config_file.data_dir / "nasbench_201_data_v1.2.zip").exists()
+    assert len(list((hpobench.config_file.data_dir / "nasbench_201").glob('*.json'))) == 4
+    assert not (hpobench.config_file.data_dir / "nasbench_201_data_v1.3.zip").exists()
 
     data_manager.data = None
 
     data_manager = NASBench_201Data(dataset='cifar100')
     data = data_manager.load()
-    assert len(data) == 3 * len(NASBench_201Data.get_metrics())
+    assert len(data) == 3
 
 
 def test_year_prediction_msd_data():
