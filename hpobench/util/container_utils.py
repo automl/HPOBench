@@ -25,12 +25,12 @@ class BenchmarkEncoder(json.JSONEncoder):
             if isinstance(item, np.float):
                 return {'__type__': 'np.float', '__items__': item}
             if isinstance(item, np.ndarray):
-                return {'__type__': 'np.int','__items__': item}
+                return {'__type__': 'np.int', '__items__': item}
             if isinstance(item, enum.Enum):
                 return str(item)
             if isinstance(item, np.random.RandomState):
                 rs = serialize_random_state(item)
-                return {'__type__': 'random_state','__items__': rs}
+                return {'__type__': 'random_state', '__items__': rs}
 
             # If it is a container data structure, go also through the items.
             if isinstance(item, list):

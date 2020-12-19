@@ -10,16 +10,15 @@ that all payloads are json-serializable.
 """
 
 import argparse
-import enum
 import json
 import logging
 import os
 
 import Pyro4
-import numpy as np
 from ConfigSpace.read_and_write import json as csjson
 
 from hpobench.config import HPOBenchConfig
+from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 
 # Read in the verbosity level from the environment variable HPOBENCH_DEBUG
 log_level_str = os.environ.get('HPOBENCH_DEBUG', 'false')
@@ -31,8 +30,6 @@ console.setLevel(log_level)
 logger = logging.getLogger('BenchmarkServer')
 logger.setLevel(log_level)
 logger.addHandler(console)
-
-from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 
 
 @Pyro4.expose

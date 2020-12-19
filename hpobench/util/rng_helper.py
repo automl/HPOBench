@@ -1,5 +1,5 @@
 """ Helper functions to easily obtain randomState """
-from typing import Union
+from typing import Union, Tuple, List
 
 import numpy as np
 
@@ -54,14 +54,14 @@ def _cast_int_to_random_state(rng: Union[int, np.random.RandomState]) -> np.rand
         raise ValueError(f"{rng} is neither a number nor a RandomState. Initializing RandomState failed")
 
 
-def serialize_random_state(random_state):
+def serialize_random_state(random_state: np.random.RandomState) -> Tuple[int, List, int, int, int]:
     (rnd0, rnd1, rnd2, rnd3, rnd4) = random_state.get_state()
     rnd1 = rnd1.tolist()
     return rnd0, rnd1, rnd2, rnd3, rnd4
 
 
-def deserialize_random_state(random_state_str):
-    (rnd0, rnd1, rnd2, rnd3, rnd4) = random_state_str
+def deserialize_random_state(random_state: Tuple[int, List, int, int, int]) -> np.random.RandomState:
+    (rnd0, rnd1, rnd2, rnd3, rnd4) = random_state
     rnd1 = [np.uint32(number) for number in rnd1]
     random_state = np.random.RandomState()
     random_state.set_state((rnd0, rnd1, rnd2, rnd3, rnd4))
