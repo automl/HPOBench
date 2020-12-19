@@ -143,5 +143,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # pylint: disable=logging-fstring-interpolation
-    exec(f"from hpolib.benchmarks.{args.importBase} import {args.benchmark} as Benchmark")
+    exec(f"from hpobench.benchmarks.{args.importBase} import {args.benchmark} as Benchmark")
     bp = BenchmarkServer(args.socket_id)

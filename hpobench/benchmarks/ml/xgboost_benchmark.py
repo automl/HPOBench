@@ -133,9 +133,9 @@ class XGBoostBenchmark(AbstractBenchmark):
         val_loss = 1 - self.accuracy_scorer(model, self.x_valid, self.y_valid)
         cost = time.time() - start
 
-        return {'function_value': val_loss,
+        return {'function_value': float(val_loss),
                 'cost': cost,
-                'info': {'train_loss': train_loss,
+                'info': {'train_loss': float(train_loss),
                          'fidelity': fidelity}
                 }
 
