@@ -54,11 +54,12 @@ class FCNetBaseBenchmark(AbstractBenchmark):
         self.benchmark = benchmark
         self.data_path = data_path
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
-                           fidelity: Union[Dict, None] = None,
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            run_index: Union[int, Tuple, None] = (0, 1, 2, 3),
                            rng: Union[np.random.RandomState, int, None] = None,
                            **kwargs) -> Dict:

@@ -33,6 +33,7 @@ class HPOBenchConfig:
         self.container_dir = None
         self.container_source = None
         self.use_global_data = None
+        self.pyro_connect_max_wait = None
 
         self.defaults = {'verbosity': 0,
                          'data_dir': self.config_base_dir,
@@ -79,15 +80,12 @@ class HPOBenchConfig:
 
     def __create_config_file(self):
         """ Create the configuration file. """
-        try:
-            self.logger.debug(f'Create a new config file here: {self.config_file}')
-            self.__check_dir(self.config_file.parent)
-            fh = self.config_file.open('w', encoding='utf-8')
-            for k in self.defaults:
-                fh.write(f'{k}={self.defaults[k]}\n')
-            fh.close()
-        except (IOError, OSError):
-            raise
+        self.logger.debug(f'Create a new config file here: {self.config_file}')
+        self.__check_dir(self.config_file.parent)
+        fh = self.config_file.open('w', encoding='utf-8')
+        for k in self.defaults:
+            fh.write(f'{k}={self.defaults[k]}\n')
+        fh.close()
 
     def __parse_config(self):
         """ Parse the config file """

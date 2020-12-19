@@ -27,10 +27,9 @@ def get_rng(rng: Union[int, np.random.RandomState, None] = None,
 
     if rng is not None:
         return _cast_int_to_random_state(rng)
-    elif rng is None and self_rng is not None:
+    if rng is None and self_rng is not None:
         return _cast_int_to_random_state(self_rng)
-    else:
-        return np.random.RandomState()
+    return np.random.RandomState()
 
 
 def _cast_int_to_random_state(rng: Union[int, np.random.RandomState]) -> np.random.RandomState:
@@ -47,11 +46,10 @@ def _cast_int_to_random_state(rng: Union[int, np.random.RandomState]) -> np.rand
     """
     if isinstance(rng, np.random.RandomState):
         return rng
-    elif int(rng) == rng:
+    if int(rng) == rng:
         # As seed is sometimes -1 (e.g. if SMAC optimizes a deterministic function) -> use abs()
         return np.random.RandomState(np.abs(rng))
-    else:
-        raise ValueError(f"{rng} is neither a number nor a RandomState. Initializing RandomState failed")
+    raise ValueError(f"{rng} is neither a number nor a RandomState. Initializing RandomState failed")
 
 
 def serialize_random_state(random_state: np.random.RandomState) -> Tuple[int, List, int, int, int]:

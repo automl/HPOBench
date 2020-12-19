@@ -45,7 +45,7 @@ class SupportVectorMachine(AbstractBenchmark):
         self.cache_size = 200  # Cache for the SVC in MB
         self.accuracy_scorer = make_scorer(accuracy_score)
 
-        self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test, variable_types = \
+        self.x_train, self.y_train, self.x_valid, self.y_valid, self.x_test, self.y_test, variable_types = \
             self.get_data()
         self.categorical_data = np.array([var_type == 'categorical' for var_type in variable_types])
 
@@ -54,25 +54,25 @@ class SupportVectorMachine(AbstractBenchmark):
         continuous_idx = np.argwhere(~self.categorical_data)
         sorting = np.concatenate([categorical_idx, continuous_idx]).squeeze()
         self.categorical_data = self.categorical_data[sorting]
-        self.X_train = self.X_train[:, sorting]
-        self.X_valid = self.X_valid[:, sorting]
-        self.X_test = self.X_test[:, sorting]
+        self.x_train = self.x_train[:, sorting]
+        self.x_valid = self.x_valid[:, sorting]
+        self.x_test = self.x_test[:, sorting]
 
-        nan_columns = np.all(np.isnan(self.X_train), axis=0)
+        nan_columns = np.all(np.isnan(self.x_train), axis=0)
         self.categorical_data = self.categorical_data[~nan_columns]
-        self.X_train, self.X_valid, self.X_test, self.categories = \
-            OpenMLHoldoutDataManager.replace_nans_in_cat_columns(self.X_train, self.X_valid, self.X_test,
+        self.x_train, self.x_valid, self.x_test, self.categories = \
+            OpenMLHoldoutDataManager.replace_nans_in_cat_columns(self.x_train, self.x_valid, self.x_test,
                                                                  is_categorical=self.categorical_data)
 
-        self.train_idx = self.rng.choice(a=np.arange(len(self.X_train)),
-                                         size=len(self.X_train),
+        self.train_idx = self.rng.choice(a=np.arange(len(self.x_train)),
+                                         size=len(self.x_train),
                                          replace=False)
 
         # Similar to [Fast Bayesian Optimization of Machine Learning Hyperparameters on Large Datasets]
         # (https://arxiv.org/pdf/1605.07079.pdf),
         # use 10 time the number of classes as lower bound for the dataset fraction
         n_classes = np.unique(self.y_train).shape[0]
-        self.lower_bound_train_size = int((10 * n_classes) / self.X_train.shape[0])
+        self.lower_bound_train_size = int((10 * n_classes) / self.x_train.shape[0])
 
     def get_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, List]:
         """ Loads the data given a task or another source. """
@@ -80,10 +80,10 @@ class SupportVectorMachine(AbstractBenchmark):
         assert self.task_id is not None, NotImplementedError('No task-id given. Please either specify a task-id or '
                                                              'overwrite the get_data method.')
 
-        dm = OpenMLHoldoutDataManager(openml_task_id=self.task_id, rng=self.rng)
-        X_train, y_train, X_val, y_val, X_test, y_test = dm.load()
+        data_manager = OpenMLHoldoutDataManager(openml_task_id=self.task_id, rng=self.rng)
+        x_train, y_train, x_val, y_val, x_test, y_test = data_manager.load()
 
-        return X_train, y_train, X_val, y_val, X_test, y_test, dm.variable_types
+        return x_train, y_train, x_val, y_val, x_test, y_test, data_manager.variable_types
 
     def shuffle_data(self, rng=None):
         """ Reshuffle the training data. If 'rng' is None, the training idx are shuffled according to the
@@ -91,11 +91,12 @@ class SupportVectorMachine(AbstractBenchmark):
         random_state = rng_helper.get_rng(rng, self.rng)
         random_state.shuffle(self.train_idx)
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None,
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            shuffle: bool = False,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
@@ -153,11 +154,11 @@ class SupportVectorMachine(AbstractBenchmark):
 
         # Train support vector machine
         model = self.get_pipeline(hp_c, hp_gamma)
-        model.fit(self.X_train[train_idx], self.y_train[train_idx])
+        model.fit(self.x_train[train_idx], self.y_train[train_idx])
 
         # Compute validation error
-        train_loss = 1 - self.accuracy_scorer(model, self.X_train[train_idx], self.y_train[train_idx])
-        val_loss = 1 - self.accuracy_scorer(model, self.X_valid, self.y_valid)
+        train_loss = 1 - self.accuracy_scorer(model, self.x_train[train_idx], self.y_train[train_idx])
+        val_loss = 1 - self.accuracy_scorer(model, self.x_valid, self.y_valid)
 
         cost = time.time() - start_time
 
@@ -166,11 +167,13 @@ class SupportVectorMachine(AbstractBenchmark):
                 'info': {'train_loss': train_loss,
                          'fidelity': fidelity}}
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None, shuffle: bool = False,
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
+                                shuffle: bool = False,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Trains a SVM model with a given configuration on both the X_train
@@ -182,6 +185,9 @@ class SupportVectorMachine(AbstractBenchmark):
             Configuration for the SVM Model
         fidelity: Dict, None
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        shuffle : bool
+            If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
+            Defaults to ``False``.
         rng : np.random.RandomState, int, None,
             Random seed for benchmark. By default the class level random seed.
             To prevent overfitting on a single seed, it is possible to pass a
@@ -203,13 +209,16 @@ class SupportVectorMachine(AbstractBenchmark):
 
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
+        if shuffle:
+            self.shuffle_data(self.rng)
+
         start_time = time.time()
 
         # Concatenate training and validation dataset
-        if isinstance(self.X_train, sparse.csr.csr_matrix) or isinstance(self.X_valid, sparse.csr.csr_matrix):
-            data = sparse.vstack((self.X_train, self.X_valid))
+        if isinstance(self.x_train, sparse.csr.csr_matrix) or isinstance(self.x_valid, sparse.csr.csr_matrix):
+            data = sparse.vstack((self.x_train, self.x_valid))
         else:
-            data = np.concatenate((self.X_train, self.X_valid))
+            data = np.concatenate((self.x_train, self.x_valid))
         targets = np.concatenate((self.y_train, self.y_valid))
 
         # Transform hyperparameters to linear scale
@@ -223,7 +232,7 @@ class SupportVectorMachine(AbstractBenchmark):
         train_valid_loss = 1 - self.accuracy_scorer(model, data, targets)
 
         # Compute test error
-        test_loss = 1 - self.accuracy_scorer(model, self.X_test, self.y_test)
+        test_loss = 1 - self.accuracy_scorer(model, self.x_test, self.y_test)
 
         cost = time.time() - start_time
 
@@ -324,9 +333,9 @@ class SupportVectorMachine(AbstractBenchmark):
                                "pdf = {http://proceedings.mlr.press/v54/klein17a/klein17a.pdf}, "
                                "url = {http://proceedings.mlr.press/v54/klein17a.html}, "
                                ],
-                'shape of train data': self.X_train.shape,
-                'shape of test data': self.X_test.shape,
-                'shape of valid data': self.X_valid.shape,
+                'shape of train data': self.x_train.shape,
+                'shape of test data': self.x_test.shape,
+                'shape of valid data': self.x_valid.shape,
                 'initial random seed': self.rng,
                 'task_id': self.task_id
                 }

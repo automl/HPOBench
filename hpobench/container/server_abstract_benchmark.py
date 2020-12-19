@@ -22,13 +22,13 @@ from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 
 # Read in the verbosity level from the environment variable HPOBENCH_DEBUG
 log_level_str = os.environ.get('HPOBENCH_DEBUG', 'false')
-log_level = logging.DEBUG if log_level_str == 'true' else logging.INFO
+LOG_LEVEL = logging.DEBUG if log_level_str == 'true' else logging.INFO
 
 console = logging.StreamHandler()
-console.setLevel(log_level)
+console.setLevel(LOG_LEVEL)
 
 logger = logging.getLogger('BenchmarkServer')
-logger.setLevel(log_level)
+logger.setLevel(LOG_LEVEL)
 logger.addHandler(console)
 
 
@@ -36,7 +36,7 @@ logger.addHandler(console)
 @Pyro4.behavior(instance_mode="single")
 class BenchmarkServer:
     def __init__(self, socket_id):
-        self.pyroRunning = True
+        self.pyro_running = True
         config = HPOBenchConfig()
         self.benchmark = None
 
@@ -49,7 +49,7 @@ class BenchmarkServer:
         _ = self.daemon.register(self, self.socket_id + ".unixsock")
 
         # start the event loop of the server to wait for calls
-        self.daemon.requestLoop(loopCondition=lambda: self.pyroRunning)
+        self.daemon.requestLoop(loopCondition=lambda: self.pyro_running)
 
     def init_benchmark(self, kwargs_str):
         try:
@@ -123,7 +123,7 @@ class BenchmarkServer:
     def shutdown(self):
         logger.debug('Server: Shutting down...')
         Pyro4.config.COMMTIMEOUT = 0.5
-        self.pyroRunning = False
+        self.pyro_running = False
         self.daemon.shutdown()
 
 
@@ -142,5 +142,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    exec(f"from hpobench.benchmarks.{args.importBase} import {args.benchmark} as Benchmark")
+    # pylint: disable=logging-fstring-interpolation
+    exec(f"from hpolib.benchmarks.{args.importBase} import {args.benchmark} as Benchmark")
     bp = BenchmarkServer(args.socket_id)

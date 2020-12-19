@@ -138,11 +138,12 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
                    'cifar100': ('ori-test', 'x-test')}
         return mapping[dataset]
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
-                           fidelity: Union[Dict, None] = None,
+                           fidelity: Union[Dict, CS.Configuration, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
                            data_seed: Union[List, Tuple, int, None] = (777, 888, 999),
                            **kwargs) -> Dict:
@@ -318,8 +319,10 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
     @staticmethod
     def config_to_structure_func(max_nodes: int):
-        # From https://github.com/D-X-Y/AutoDL-Projects/blob/master/exps/algos/BOHB.py
-        # Author: https://github.com/D-X-Y [Xuanyi.Dong@student.uts.edu.au]
+        """
+        From https://github.com/D-X-Y/AutoDL-Projects/blob/master/exps/algos/BOHB.py
+        Author: https://github.com/D-X-Y [Xuanyi.Dong@student.uts.edu.au]
+        """
         def config_to_structure(config):
             genotypes = []
             for i in range(1, max_nodes):
@@ -334,9 +337,11 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
     @staticmethod
     def get_search_spaces(xtype: str, name: str) -> List[Text]:
-        # obtain the search space, i.e., a dict mapping the operation name into a python-function for this op
-        # From https://github.com/D-X-Y/AutoDL-Projects/blob/master/lib/models/__init__.py
-        # Author: https://github.com/D-X-Y [Xuanyi.Dong@student.uts.edu.au]
+        """ obtain the search space, i.e., a dict mapping the operation name into a python-function for this op
+        From https://github.com/D-X-Y/AutoDL-Projects/blob/master/lib/models/__init__.py
+        Author: https://github.com/D-X-Y [Xuanyi.Dong@student.uts.edu.au]
+        """
+        # pylint: disable=no-else-return
         if xtype == 'cell':
             NAS_BENCH_201 = ['none', 'skip_connect', 'nor_conv_1x1', 'nor_conv_3x3', 'avg_pool_3x3']
             SearchSpaceNames = {'nas-bench-201': NAS_BENCH_201}
@@ -410,25 +415,21 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
     class _Structure:
         def __init__(self, genotype):
-            assert isinstance(genotype, list) or isinstance(genotype, tuple), 'invalid class of genotype : {:}'.format(
-                type(genotype))
+            assert isinstance(genotype, (list, tuple)), 'invalid class of genotype : {:}'.format(type(genotype))
             self.node_num = len(genotype) + 1
             self.nodes = []
             self.node_N = []
             for idx, node_info in enumerate(genotype):
-                assert isinstance(node_info, list) or isinstance(node_info,
-                                                                 tuple), 'invalid class of node_info : {:}'.format(
-                    type(node_info))
+                assert isinstance(node_info, (list, tuple)), 'invalid class of node_info : {:}'.format(type(node_info))
                 assert len(node_info) >= 1, 'invalid length : {:}'.format(len(node_info))
                 for node_in in node_info:
-                    assert isinstance(node_in, list) or isinstance(node_in,
-                                                                   tuple), 'invalid class of in-node : {:}'.format(
-                        type(node_in))
+                    assert isinstance(node_in, (list, tuple)), 'invalid class of in-node : {:}'.format(type(node_in))
                     assert len(node_in) == 2 and node_in[1] <= idx, 'invalid in-node : {:}'.format(node_in)
                 self.node_N.append(len(node_info))
                 self.nodes.append(tuple(deepcopy(node_info)))
 
         def tostr(self):
+            """ Helper function: Create a string representation of the configuration """
             strings = []
             for node_info in self.nodes:
                 string = '|'.join([x[0] + '~{:}'.format(x[1]) for x in node_info])

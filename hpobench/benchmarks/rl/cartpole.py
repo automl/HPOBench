@@ -21,6 +21,8 @@ class CartpoleBase(AbstractBenchmark):
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, defaults: Union[Dict, None] = None,
                  max_episodes: Union[int, None] = 3000):
         """
+        Base benchmark for "cartpole" benchmark. In this benchmark a PPO agent tries to solve the cartpole task.
+
         Parameters
         ----------
         rng : int,None,np.RandomState
@@ -94,8 +96,10 @@ class CartpoleBase(AbstractBenchmark):
     @AbstractBenchmark._configuration_as_dict
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
-    def objective_function(self, configuration: Union[Dict, CS.Configuration], fidelity: Union[Dict, None] = None,
-                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+    def objective_function(self, configuration: Union[Dict, CS.Configuration],
+                           fidelity: Union[Dict, CS.Configuration, None] = None,
+                           rng: Union[np.random.RandomState, int, None] = None,
+                           **kwargs) -> Dict:
         """
         Trains a Tensorforce RL agent on the cartpole experiment. This benchmark was used in the experiments for the
         BOHB-paper (see references). A more detailed explanations can be found there.
@@ -130,9 +134,9 @@ class CartpoleBase(AbstractBenchmark):
         np.random.seed(self.rng.randint(1, 100000))
 
         # fill in missing entries with default values for 'incomplete/reduced' configspaces
-        c = self.defaults
-        c.update(configuration)
-        configuration = c
+        new_config = self.defaults
+        new_config.update(configuration)
+        configuration = new_config
 
         start_time = time.time()
 
@@ -145,7 +149,7 @@ class CartpoleBase(AbstractBenchmark):
 
         converged_episodes = []
 
-        for i in range(fidelity["budget"]):
+        for _ in range(fidelity["budget"]):
             agent = PPOAgent(states=self.env.states,
                              actions=self.env.actions,
                              network=network_spec,
@@ -166,9 +170,9 @@ class CartpoleBase(AbstractBenchmark):
                              likelihood_ratio_clipping=configuration["likelihood_ratio_clipping"]
                              )
 
-            def episode_finished(r):
+            def episode_finished(record):
                 # Check if we have converged
-                return np.mean(r.episode_rewards[-self.avg_n_episodes:]) != 200
+                return np.mean(record.episode_rewards[-self.avg_n_episodes:]) != 200
 
             runner = Runner(agent=agent, environment=self.env)
             runner.run(episodes=self.max_episodes, max_episode_timesteps=200, episode_finished=episode_finished)
@@ -187,8 +191,9 @@ class CartpoleBase(AbstractBenchmark):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._check_fidelity
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None,
-                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+                                fidelity: Union[Dict, CS.Configuration, None] = None,
+                                rng: Union[np.random.RandomState, int, None] = None,
+                                **kwargs) -> Dict:
         """
         Validate a configuration on the cartpole benchmark. Use the full budget.
         Parameters

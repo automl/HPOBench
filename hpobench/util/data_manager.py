@@ -9,6 +9,8 @@ For OpenML data sets (defined by task id or similar) please use the
 hpobench.util.openml_data_manager.
 """
 
+# pylint: disable=logging-fstring-interpolation,invalid-name
+
 import abc
 import gzip
 import logging
@@ -33,7 +35,7 @@ except ImportError:
 import hpobench
 
 
-class DataManager(object, metaclass=abc.ABCMeta):
+class DataManager(abc.ABC, metaclass=abc.ABCMeta):
     """ Base Class for loading and managing the data.
 
     Attributes
@@ -72,8 +74,8 @@ class HoldoutDataManager(DataManager):
     ----------
     X_train : np.ndarray
     y_train : np.ndarray
-    X_val : np.ndarray
-    y_val : np.ndarray
+    X_valid : np.ndarray
+    y_valid : np.ndarray
     X_test : np.ndarray
     y_test : np.ndarray
     """
@@ -83,8 +85,8 @@ class HoldoutDataManager(DataManager):
 
         self.X_train = None
         self.y_train = None
-        self.X_val = None
-        self.y_val = None
+        self.X_valid = None
+        self.y_valid = None
         self.X_test = None
         self.y_test = None
 
@@ -421,6 +423,7 @@ class SVHNData(DataManager):
             else:
                 self.logger.debug(f"Load data {save_fl}")
 
+            # pylint: disable=import-outside-toplevel
             from scipy.io import loadmat
             data = loadmat(save_fl)
 

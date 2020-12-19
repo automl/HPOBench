@@ -12,7 +12,7 @@ fi
 
 if [[ "$RUN_CODESTYLE" == "true" ]]; then
     echo "Install tools for codestyle checking"
-    install_packages="${install_packages}codestyle,"
+    install_packages="${install_packages}codestyle,pylint,"
 else
     echo "Skip installing tools for codestyle checking"
 fi

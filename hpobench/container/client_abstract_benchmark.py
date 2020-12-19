@@ -37,16 +37,19 @@ import hpobench.config
 
 # Read in the verbosity level from the environment variable HPOBENCH_DEBUG
 log_level_str = os.environ.get('HPOBENCH_DEBUG', 'false')
-log_level = logging.DEBUG if log_level_str == 'true' else logging.INFO
+LOG_LEVEL = logging.DEBUG if log_level_str == 'true' else logging.INFO
 
 root = logging.getLogger()
-root.setLevel(level=log_level)
+root.setLevel(level=LOG_LEVEL)
 
 logger = logging.getLogger("BenchmarkClient")
-logger.setLevel(level=log_level)
+logger.setLevel(level=LOG_LEVEL)
 
 # This option improves the quality of stacktraces if a container crashes
 sys.excepthook = Pyro4.util.excepthook
+
+# Number of tries to connect to server
+MAX_TRIES = 5
 
 
 class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
@@ -128,7 +131,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                     cmd = f"singularity pull --dir {self.config.container_dir} " \
                           f"--name {container_name} {container_source}/{container_name.lower()}"
                     logger.debug(cmd)
-                    subprocess.run(cmd, shell=True)
+                    subprocess.run(cmd, shell=True, check=True)
                     time.sleep(1)
                 else:
                     logger.debug('Skipping downloading the container. It is already downloaded.')
@@ -173,14 +176,15 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             if self.socket_id in out:
                 break
-            else:
-                logger.debug(f'Could not start instance: Try {num_tries + 1}|{MAX_TRIES}')
-                if num_tries + 1 == MAX_TRIES:
-                    raise SystemError(f'Could not start a instance of the benchmark. Retried {MAX_TRIES:d} times'
-                                      f'\nStdout: {output} \nStderr: {err}')
-            st = np.random.randint(1, 60)
-            logger.critical(f'[{num_tries + 1}/{MAX_TRIES}] Could not start instance, sleeping for {st} seconds')
-            time.sleep(st)
+
+            logger.debug(f'Could not start instance: Try {num_tries + 1}|{MAX_TRIES}')
+            if num_tries + 1 == MAX_TRIES:
+                raise SystemError(f'Could not start a instance of the benchmark. Retried {MAX_TRIES:d} times'
+                                  f'\nStdout: {output} \nStderr: {err}')
+
+            sleep_for = np.random.randint(1, 60)
+            logger.critical(f'[{num_tries + 1}/{MAX_TRIES}] Could not start instance, sleeping for {sleep_for} seconds')
+            time.sleep(sleep_for)
 
         # Give each instance a little bit time to start
         time.sleep(1)
@@ -214,9 +218,9 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                 wait += 5
                 if wait < self.config.pyro_connect_max_wait:
                     continue
-                else:
-                    logger.debug('Waiting time exceeded. To increase, adjust config option pyro_connect_max_wait.')
-                    raise
+                logger.debug('Waiting time exceeded. To increase, adjust config option pyro_connect_max_wait.')
+                raise TimeoutError()
+
             break
         logger.debug('Connected to container')
 
@@ -228,13 +232,14 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         kwargs_str = json.dumps(kwargs, indent=None)
         return kwargs_str
 
-    def _parse_fidelities(self, fidelity: Union[CS.Configuration, Dict, None] = None):
+    @staticmethod
+    def _parse_fidelities(fidelity: Union[CS.Configuration, Dict, None] = None):
         if fidelity is None:
             fidelity = {}
         elif isinstance(fidelity, CS.Configuration):
             fidelity = fidelity.get_dictionary()
         elif isinstance(fidelity, dict):
-            fidelity = fidelity
+            pass
         else:
             raise ValueError(f'Type of fidelity not understood: {type(fidelity)}')
         f_str = json.dumps(fidelity, indent=None)
@@ -271,7 +276,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             c_str = json.dumps(configuration, indent=None)
             json_str = self.benchmark.objective_function_list(c_str, f_str, kwargs_str)
             return json.loads(json_str)
-        elif isinstance(configuration, CS.Configuration):
+
+        if isinstance(configuration, CS.Configuration):
             c_str = json.dumps(configuration.get_dictionary(), indent=None)
         elif isinstance(configuration, dict):
             c_str = json.dumps(configuration, indent=None)
@@ -312,7 +318,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             c_str = json.dumps(configuration, indent=None)
             json_str = self.benchmark.objective_function_test_list(c_str, f_str, kwargs_str)
             return json.loads(json_str)
-        elif isinstance(configuration, CS.Configuration):
+
+        if isinstance(configuration, CS.Configuration):
             c_str = json.dumps(configuration.get_dictionary(), indent=None)
         elif isinstance(configuration, dict):
             c_str = json.dumps(configuration, indent=None)
@@ -368,11 +375,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         logger.debug(f'Client: seed_dict {seed_dict}')
         json_str = self.benchmark.get_fidelity_space(seed_dict)
 
-        fs = csjson.read(json_str)
+        fidelity_space = csjson.read(json_str)
         if seed is not None:
-            fs.seed(seed)
+            fidelity_space.seed(seed)
 
-        return fs
+        return fidelity_space
 
     def get_meta_information(self) -> Dict:
         """ Return the information about the benchmark. """
@@ -382,7 +389,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
     def _shutdown(self):
         """ Shutdown benchmark and stop container"""
         self.benchmark.shutdown()
-        subprocess.run(f'singularity instance stop {self.socket_id}'.split())
+        subprocess.run(f'singularity instance stop {self.socket_id}'.split(), check=False)
         if (self.config.socket_dir / f'{self.socket_id}_unix.sock').exists():
             (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
         # self.benchmark._pyroRelease()
