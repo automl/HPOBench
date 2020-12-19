@@ -17,15 +17,17 @@ class BenchmarkEncoder(json.JSONEncoder):
     """
     def encode(self, obj):
         def hint(item):
+            # TODO: Currently basic python int and floats are casted to numpy ints and floats!!
+
             # Annotate the different item types
             if isinstance(item, tuple):
                 return {'__type__': 'tuple', '__items__': [hint(e) for e in item]}
             if isinstance(item, np.ndarray):
-                return {'__type__': 'np.ndarray', '__items__': item}
+                return {'__type__': 'np.ndarray', '__items__': int(item)}
             if isinstance(item, np.float):
-                return {'__type__': 'np.float', '__items__': item}
+                return {'__type__': 'np.float', '__items__': float(item)}
             if isinstance(item, np.ndarray):
-                return {'__type__': 'np.int', '__items__': item}
+                return {'__type__': 'np.int', '__items__': item.tolist()}
             if isinstance(item, enum.Enum):
                 return str(item)
             if isinstance(item, np.random.RandomState):
