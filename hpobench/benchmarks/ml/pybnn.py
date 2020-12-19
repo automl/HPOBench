@@ -78,7 +78,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
         configuration : Dict, CS.Configuration
             Configuration for the pyBNN model
         fidelity: Dict, None
-            budget : int [100 - 10000]
+            budget : int [500 - 10000]
                 number of epochs to train the model
             Fidelity parameters for the pyBNN model, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None,
@@ -149,7 +149,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
         configuration : Dict, CS.Configuration
             Configuration for the pyBNN model
         fidelity: Dict, None
-            budget : int [100 - 10000]
+            budget : int [500 - 10000]
                 number of epochs to train the model
             Fidelity parameters for the pyBNN model, check get_fidelity_space(). Uses default (max) value if None.
 
@@ -245,7 +245,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
         Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for pyBNN benchmark.
         Fidelities
         ----------
-        budget : int : [100, 10000]
+        budget : int : [500, 10000]
             number of epochs to train the network
 
         Parameters
