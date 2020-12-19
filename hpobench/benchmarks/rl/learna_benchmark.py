@@ -171,16 +171,14 @@ class BaseLearna(AbstractBenchmark):
 
         return config, network_config, agent_config, env_config
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
+    @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """ Interface for the objective function. """
         raise NotImplementedError()
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
+    @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -293,9 +291,7 @@ class Learna(BaseLearna):
     def __init__(self, data_path: Union[str, Path], rng: Union[np.random.RandomState, int, None] = None):
         super(Learna, self).__init__(data_path=data_path, rng=rng)
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -348,9 +344,7 @@ class Learna(BaseLearna):
                          }
                 }
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -412,8 +406,7 @@ class MetaLearna(BaseLearna):
 
         return fidel_space
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
+    @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -475,8 +468,7 @@ class MetaLearna(BaseLearna):
                          'fidelity': fidelity},
                 }
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
+    @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:

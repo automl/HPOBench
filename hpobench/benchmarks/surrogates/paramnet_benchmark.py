@@ -128,9 +128,7 @@ class _ParamnetOnStepsBenchmark(_ParamnetBase):
         """
         super(_ParamnetOnStepsBenchmark, self).__init__(rng=rng, dataset=dataset)
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
                            fidelity: Union[Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -146,9 +144,7 @@ class _ParamnetOnStepsBenchmark(_ParamnetBase):
                 "cost": cost,
                 'info': {'fidelity': fidelity}}
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 fidelity: Union[Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -194,9 +190,7 @@ class _ParamnetOnStepsBenchmark(_ParamnetBase):
 
 class _ParamnetOnTimeBenchmark(_ParamnetBase):
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
                            fidelity: Union[Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -230,9 +224,7 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
                 'info': {'learning_curve': lc.tolist(),
                          'observed_epochs': len(lc)}}
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 fidelity: Union[Dict, None] = None, shuffle: bool = False,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:

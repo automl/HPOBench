@@ -93,9 +93,7 @@ class CartpoleBase(AbstractBenchmark):
 
         return fidel_space
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[Dict, CS.Configuration],
                            fidelity: Union[Dict, CS.Configuration, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
@@ -188,8 +186,7 @@ class CartpoleBase(AbstractBenchmark):
                          }
                 }
 
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 fidelity: Union[Dict, CS.Configuration, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,

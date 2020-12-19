@@ -92,9 +92,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
     def _query_benchmark(self, config: Dict, run_index: int, budget: int = 108) -> Dict:
         raise NotImplementedError
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            run_index: Union[int, Tuple, None] = (0, 1, 2),
@@ -182,9 +180,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
                          }
                 }
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,

@@ -92,9 +92,7 @@ class SupportVectorMachine(AbstractBenchmark):
         random_state.shuffle(self.train_idx)
 
     # pylint: disable=arguments-differ
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            shuffle: bool = False,
@@ -168,9 +166,7 @@ class SupportVectorMachine(AbstractBenchmark):
                          'fidelity': fidelity}}
 
     # pylint: disable=arguments-differ
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
                                 shuffle: bool = False,

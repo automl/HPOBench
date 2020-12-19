@@ -87,9 +87,7 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
         self.api = data_manager.load()
         self.search_space = None
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            run_index: Union[int, Tuple, List, None] = (0, 1, 2),
@@ -167,9 +165,7 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
                          }
                 }
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
