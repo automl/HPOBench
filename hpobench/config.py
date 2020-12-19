@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import yaml
+from yaml.parser import ParserError
 
 from hpobench import __version__
 
@@ -105,14 +106,19 @@ class HPOBenchConfig:
 
     def __parse_config(self):
         """ Parse the config file """
-        with self.config_file.open('r') as fh:
-            read_config = yaml.load(fh, Loader=yaml.FullLoader)
+        failure_msg = 'The hpobenchrc can not be parsed. This is likely due to a change in the hpobenchrc format.'\
+                      f' Please remove the old hpobenchrc and restart the procedure. ' \
+                      f'The hpobenchrc file is in {self.config_file}'
+        try:
+            with self.config_file.open('r') as fh:
+                read_config = yaml.load(fh, Loader=yaml.FullLoader)
+        except ParserError as e:
+            raise ParserError(failure_msg)
 
         # The old hpolibrc was parsed with the configparser. But this required to use fake sections, etc. We moved to
         # pyyaml. Yaml returns a string if the rc file is not in yaml format.
         if isinstance(read_config, str):
-            logging.warning('The hpobenchrc can not be parsed. This is likely due to a change in the hpobenchrc format.'
-                            f' Please remove the old hpobenchrc. The hpobenchrc file is in {self.config_file}')
+            raise ParserError(failure_msg)
 
         self.config_version = read_config.get('version')
         self._check_version()
