@@ -24,12 +24,12 @@ from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 log_level_str = os.environ.get('HPOBENCH_DEBUG', 'false')
 LOG_LEVEL = logging.DEBUG if log_level_str == 'true' else logging.INFO
 
-console = logging.StreamHandler()
-console.setLevel(LOG_LEVEL)
+# console = logging.StreamHandler()
+# console.setLevel(LOG_LEVEL)
 
 logger = logging.getLogger('BenchmarkServer')
 logger.setLevel(LOG_LEVEL)
-logger.addHandler(console)
+# logger.addHandler(console)
 
 
 @Pyro4.expose
