@@ -458,12 +458,12 @@ class NASBench_201Data(DataManager):
         dataset : str
             One of cifar10, cifar10-valid, cifar100, ImageNet16-120
         """
-        all_datasets = ['cifar10', 'cifar10-valid', 'cifar100', 'ImageNet16-120']
+        all_datasets = ['cifar10-valid', 'cifar100', 'ImageNet16-120']
         assert dataset in all_datasets, f'data set {dataset} unknown'
 
         super(NASBench_201Data, self).__init__()
 
-        self.files = [f'NAS-Bench-201-v1_1-096897_{dataset}.pth' for dataset in all_datasets]
+        self.files = [f'NAS-Bench-201-v1_1-096897_{dataset}.json' for dataset in all_datasets]
         self._save_dir = hpobench.config_file.data_dir / "nasbench_201"
         self.filename = f'NAS-Bench-201-v1_1-096897_{dataset}.json'
 
