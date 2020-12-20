@@ -23,10 +23,10 @@ class BenchmarkEncoder(json.JSONEncoder):
             if isinstance(item, tuple):
                 return {'__type__': 'tuple', '__items__': [hint(e) for e in item]}
             if isinstance(item, np.ndarray):
-                return {'__type__': 'np.ndarray', '__items__': int(item)}
-            if isinstance(item, np.float):
+                return {'__type__': 'np.ndarray', '__items__': item.tolist()}
+            if isinstance(item, np.floating):
                 return {'__type__': 'np.float', '__items__': float(item)}
-            if isinstance(item, np.ndarray):
+            if isinstance(item, np.integer):
                 return {'__type__': 'np.int', '__items__': item.tolist()}
             if isinstance(item, enum.Enum):
                 return str(item)
