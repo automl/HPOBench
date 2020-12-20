@@ -23,7 +23,7 @@ import subprocess
 import time
 from pathlib import Path
 from typing import Optional
-from typing import Union, Dict, List
+from typing import Union, Dict
 from uuid import uuid1
 
 import ConfigSpace as CS

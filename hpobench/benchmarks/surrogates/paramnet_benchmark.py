@@ -226,7 +226,7 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
 
     @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
-                                fidelity: Union[CS.Configuration, Dict, None]  = None,
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
 
         assert fidelity['step'] == 50, f'Only querying a result for the 50. epoch is allowed, ' \

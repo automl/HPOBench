@@ -19,6 +19,7 @@ __version__ = '0.0.1'
 
 logger = logging.getLogger('XGBBenchmark')
 
+
 class XGBoostBenchmark(AbstractBenchmark):
 
     def __init__(self, task_id: Union[int, None] = None, n_threads: int = 1,

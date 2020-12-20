@@ -32,8 +32,8 @@ class HPOBenchConfig:
 
         # The configuration file should have the same version as the hpobench. Raise a warning if there is a version
         # mismatch. We want to make sure that the configuration file is up to date with the hpobench, because it is
-        # possible that something in the configuration has changed but the old hpobenchrc file is still there and prohibit
-        # the changes. Ignore the dev tag if available.
+        # possible that something in the configuration has changed but the old hpobenchrc file is still there and
+        # prohibit the changes. Ignore the dev tag if available.
         self.config_version = __version__.rstrip('dev')
 
         # Set the default logging level.
@@ -112,7 +112,7 @@ class HPOBenchConfig:
         try:
             with self.config_file.open('r') as fh:
                 read_config = yaml.load(fh, Loader=yaml.FullLoader)
-        except ParserError as e:
+        except ParserError:
             raise ParserError(failure_msg)
 
         # The old hpolibrc was parsed with the configparser. But this required to use fake sections, etc. We moved to

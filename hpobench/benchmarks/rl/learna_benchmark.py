@@ -381,7 +381,7 @@ class Learna(BaseLearna):
 class MetaLearna(BaseLearna):
     def __init__(self, data_path: Union[str, Path], rng: Union[np.random.RandomState, int, None] = None):
         super(MetaLearna, self).__init__(data_path=data_path, rng=rng)
-        self.config = hpolib.config.config_file
+        self.config = hpobench.config.config_file
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
