@@ -116,51 +116,69 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
         def wrapper(self, configuration: Union[ConfigSpace.Configuration, Dict],
                     fidelity: Union[Dict, ConfigSpace.Configuration, None] = None, **kwargs):
 
-            # First, try to cast the configuration into a ConfigSpace.Configuration to test if the configuration is in
-            # the defined boundaries.
-            if isinstance(configuration, (np.ndarray, List)):
-                config_dict = {k: configuration[i] for (i, k) in enumerate(self.configuration_space)}
-                configuration = ConfigSpace.Configuration(self.configuration_space, config_dict)
-            elif isinstance(configuration, dict):
-                configuration = ConfigSpace.Configuration(self.configuration_space, configuration)
-            elif isinstance(configuration, ConfigSpace.Configuration):
-                configuration = configuration
-            else:
-                raise TypeError(
-                    f'Configuration has to be from type List, np.ndarray, dict, or ConfigSpace.Configuration but '
-                    f'was {type(configuration)}')
-            self.configuration_space.check_configuration(configuration)
+            configuration = self._check_and_cast_configuration(configuration)
 
             # Second, evaluate the given fidelities.
             # Sanity check that there are no fidelities in **kwargs
-            for f in self.fidelity_space.get_hyperparameters():
-                if f.name in kwargs:
-                    raise ValueError(f'Fidelity parameter {f.name} should not be part of kwargs\n'
-                                     f'Fidelity: {fidelity}\n Kwargs: {kwargs}')
-
-            default_fidelities = self.fidelity_space.get_default_configuration()
-            if fidelity is None:
-                fidelity = default_fidelities
-            if isinstance(fidelity, dict):
-                default_fidelities_cfg = default_fidelities.get_dictionary()
-                fidelity_copy = fidelity.copy()
-                fidelity = {k: fidelity_copy.pop(k, v) for k, v in default_fidelities_cfg.items()}
-                assert len(fidelity_copy) == 0, 'Provided fidelity dict contained unknown fidelity ' \
-                                                f'values: {fidelity_copy.keys()}'
-
-                fidelity = ConfigSpace.Configuration(self.fidelity_space, fidelity)
-            elif isinstance(fidelity, ConfigSpace.Configuration):
-                fidelity = fidelity
-            else:
-                raise TypeError(f'Fidelity has to be an instance of type None, dict, or '
-                                f'ConfigSpace.Configuration but was {type(configuration)}')
-            # Ensure that the extracted fidelity values play well with the defined fidelity space
-            self.fidelity_space.check_configuration(fidelity)
+            fidelity = self._check_and_cast_fidelity(configuration, fidelity, **kwargs)
 
             # All benchmarks should work on dictionaries. Cast the both objects to dictionaries.
             return wrapped_function(self, configuration.get_dictionary(), fidelity.get_dictionary(), **kwargs)
         return wrapper
 
+    def _check_and_cast_configuration(self, configuration: Union[Dict, ConfigSpace.Configuration]) \
+            -> ConfigSpace.Configuration:
+        """ Helper-function to evaluate the given configuration.
+            Cast it to a ConfigSpace.Configuration and evaluate if it violates some boundaries.
+        """
+
+        if isinstance(configuration, dict):
+            configuration = ConfigSpace.Configuration(self.configuration_space, configuration)
+        elif isinstance(configuration, ConfigSpace.Configuration):
+            configuration = configuration
+        else:
+            raise TypeError(f'Configuration has to be from type List, np.ndarray, dict, or '
+                            f'ConfigSpace.Configuration but was {type(configuration)}')
+        self.configuration_space.check_configuration(configuration)
+        return configuration
+
+    def _check_and_cast_fidelity(self, fidelity: Union[dict, ConfigSpace.Configuration], **kwargs) \
+            -> ConfigSpace.Configuration:
+        """ Helper-function to evaluate the given fidelity object.
+            Similar to the checking and casting from above, we validate the fidelity object. To do so, we cast it to a
+            ConfigSpace.Configuration object.
+            If the fidelity is not specified (None), then we use the default fidelity of the benchmark.
+            If the benchmark is a multi-multi-fidelity benchmark and only a subset of the available fidelities is
+            specified, we fill the missing ones with their default values.
+        """
+        # Make a check, that no fidelities are in the kwargs.
+        f_in_kwargs = []
+        for f in self.fidelity_space.get_hyperparameters():
+            if f.name in kwargs:
+                f_in_kwargs.append(f.name)
+        if len(f_in_kwargs) != 0:
+            raise ValueError(f'Fidelity parameters {", ".join(f_in_kwargs)} should not be part of kwargs\n'
+                             f'Fidelity: {fidelity}\n Kwargs: {kwargs}')
+
+        default_fidelities = self.fidelity_space.get_default_configuration()
+
+        if fidelity is None:
+            fidelity = default_fidelities
+        if isinstance(fidelity, dict):
+            default_fidelities_cfg = default_fidelities.get_dictionary()
+            fidelity_copy = fidelity.copy()
+            fidelity = {k: fidelity_copy.pop(k, v) for k, v in default_fidelities_cfg.items()}
+            assert len(fidelity_copy) == 0, 'Provided fidelity dict contained unknown fidelity ' \
+                                            f'values: {fidelity_copy.keys()}'
+            fidelity = ConfigSpace.Configuration(self.fidelity_space, fidelity)
+        elif isinstance(fidelity, ConfigSpace.Configuration):
+            fidelity = fidelity
+        else:
+            raise TypeError(f'Fidelity has to be an instance of type None, dict, or '
+                            f'ConfigSpace.Configuration but was {type(fidelity)}')
+        # Ensure that the extracted fidelity values play well with the defined fidelity space
+        self.fidelity_space.check_configuration(fidelity)
+        return fidelity
 
     def __call__(self, configuration: Dict, **kwargs) -> float:
         """ Provides interface to use, e.g., SciPy optimizers """
