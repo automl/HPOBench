@@ -72,7 +72,7 @@ class SupportVectorMachine(AbstractBenchmark):
         # (https://arxiv.org/pdf/1605.07079.pdf),
         # use 10 time the number of classes as lower bound for the dataset fraction
         n_classes = np.unique(self.y_train).shape[0]
-        self.lower_bound_train_size = int((10 * n_classes) / self.x_train.shape[0])
+        self.lower_bound_train_size = (10 * n_classes) / self.x_train.shape[0]
 
     def get_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, List]:
         """ Loads the data given a task or another source. """
@@ -138,8 +138,8 @@ class SupportVectorMachine(AbstractBenchmark):
         if self.lower_bound_train_size > fidelity['dataset_fraction']:
             train_size = self.lower_bound_train_size
             logger.warning(f'The given data set fraction is lower than the lower bound (10 * number of classes.) '
-                           f'Increase the fidelity from {fidelity["dataset_fraction"]:.2f} to '
-                           f'{self.lower_bound_train_size:.2f}')
+                           f'Increase the fidelity from {fidelity["dataset_fraction"]:.8f} to '
+                           f'{self.lower_bound_train_size:.8f}')
         else:
             train_size = fidelity['dataset_fraction']
 
@@ -160,9 +160,9 @@ class SupportVectorMachine(AbstractBenchmark):
 
         cost = time.time() - start_time
 
-        return {'function_value': val_loss,
+        return {'function_value': float(val_loss),
                 "cost": cost,
-                'info': {'train_loss': train_loss,
+                'info': {'train_loss': float(train_loss),
                          'fidelity': fidelity}}
 
     # pylint: disable=arguments-differ
@@ -232,9 +232,9 @@ class SupportVectorMachine(AbstractBenchmark):
 
         cost = time.time() - start_time
 
-        return {'function_value': test_loss,
+        return {'function_value': float(test_loss),
                 "cost": cost,
-                'info': {'train_valid_loss': train_valid_loss,
+                'info': {'train_valid_loss': float(train_valid_loss),
                          'fidelity': fidelity}}
 
     def get_pipeline(self, C: float, gamma: float) -> pipeline.Pipeline:

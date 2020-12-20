@@ -1,3 +1,4 @@
+import logging
 import time
 from typing import Union, Tuple, Dict, List
 
@@ -16,6 +17,7 @@ from hpobench.util.openml_data_manager import OpenMLHoldoutDataManager
 
 __version__ = '0.0.1'
 
+logger = logging.getLogger('XGBBenchmark')
 
 class XGBoostBenchmark(AbstractBenchmark):
 
@@ -63,6 +65,12 @@ class XGBoostBenchmark(AbstractBenchmark):
         self.train_idx = self.rng.choice(a=np.arange(len(self.x_train)),
                                          size=len(self.x_train),
                                          replace=False)
+
+        # Similar to [Fast Bayesian Optimization of Machine Learning Hyperparameters on Large Datasets]
+        # (https://arxiv.org/pdf/1605.07079.pdf),
+        # use 10 time the number of classes as lower bound for the dataset fraction
+        n_classes = np.unique(self.y_train).shape[0]
+        self.lower_bound_train_size = (10 * n_classes) / self.x_train.shape[0]
 
     def get_data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, List]:
         """ Loads the data given a task or another source. """
@@ -124,7 +132,15 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         start = time.time()
 
-        train_idx = self.train_idx[:int(len(self.train_idx) * fidelity["dataset_fraction"])]
+        if self.lower_bound_train_size > fidelity['dataset_fraction']:
+            train_data_fraction = self.lower_bound_train_size
+            logger.warning(f'The given data set fraction is lower than the lower bound (10 * number of classes.) '
+                           f'Increase the fidelity from {fidelity["dataset_fraction"]:.8f} to '
+                           f'{self.lower_bound_train_size:.8f}')
+        else:
+            train_data_fraction = fidelity['dataset_fraction']
+
+        train_idx = self.train_idx[:int(len(self.train_idx) * train_data_fraction)]
 
         model = self._get_pipeline(n_estimators=fidelity["n_estimators"], **configuration)
         model.fit(X=self.x_train[train_idx], y=self.y_train[train_idx])
@@ -195,7 +211,7 @@ class XGBoostBenchmark(AbstractBenchmark):
         test_loss = 1 - self.accuracy_scorer(model, self.x_test, self.y_test)
         cost = time.time() - start
 
-        return {'function_value': test_loss,
+        return {'function_value': float(test_loss),
                 'cost': cost,
                 'info': {'fidelity': fidelity}}
 
