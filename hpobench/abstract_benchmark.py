@@ -120,7 +120,7 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
 
             # Second, evaluate the given fidelities.
             # Sanity check that there are no fidelities in **kwargs
-            fidelity = self._check_and_cast_fidelity(configuration, fidelity, **kwargs)
+            fidelity = self._check_and_cast_fidelity(fidelity, **kwargs)
 
             # All benchmarks should work on dictionaries. Cast the both objects to dictionaries.
             return wrapped_function(self, configuration.get_dictionary(), fidelity.get_dictionary(), **kwargs)
