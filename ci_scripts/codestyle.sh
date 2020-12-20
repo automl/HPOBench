@@ -20,7 +20,7 @@ if [[ "$RUN_CODESTYLE" == "true" ]]; then
     fi
 
     # Enable the error W0221: Parameters differ from overridden method (arguments-differ)
-    test_pylint=$(pylint --disable=all --enable=W0221 ./hpolib)
+    test_pylint=$(pylint --disable=all --enable=W0221 ./hpobench)
     if [[ $test_pylint ]]; then
       echo $test_pylint
       exit 1

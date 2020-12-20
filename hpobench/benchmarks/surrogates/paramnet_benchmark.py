@@ -129,8 +129,8 @@ class _ParamnetOnStepsBenchmark(_ParamnetBase):
         super(_ParamnetOnStepsBenchmark, self).__init__(rng=rng, dataset=dataset)
 
     @AbstractBenchmark.check_parameters
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None,
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         cfg_array = self.convert_config_to_array(configuration)
         lc = self.surrogate_objective.predict(cfg_array)[0]
@@ -145,8 +145,8 @@ class _ParamnetOnStepsBenchmark(_ParamnetBase):
                 'info': {'fidelity': fidelity}}
 
     @AbstractBenchmark.check_parameters
-    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None,
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         assert fidelity['step'] == 50, f'Only querying a result for the 50. epoch is allowed, ' \
                                        f'but was {fidelity["step"]}.'
@@ -191,8 +191,8 @@ class _ParamnetOnStepsBenchmark(_ParamnetBase):
 class _ParamnetOnTimeBenchmark(_ParamnetBase):
 
     @AbstractBenchmark.check_parameters
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None,
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
 
         config_array = self.convert_config_to_array(configuration)
@@ -225,8 +225,8 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
                          'observed_epochs': len(lc)}}
 
     @AbstractBenchmark.check_parameters
-    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None, shuffle: bool = False,
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None]  = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
 
         assert fidelity['step'] == 50, f'Only querying a result for the 50. epoch is allowed, ' \

@@ -15,10 +15,9 @@ class BenchmarkEncoder(json.JSONEncoder):
 
     Serializing tuple/numpy array may not work. We need to annotate those types, to reconstruct them correctly.
     """
+    # pylint: disable=arguments-differ
     def encode(self, obj):
         def hint(item):
-            # TODO: Currently basic python int and floats are casted to numpy ints and floats!!
-
             # Annotate the different item types
             if isinstance(item, tuple):
                 return {'__type__': 'tuple', '__items__': [hint(e) for e in item]}

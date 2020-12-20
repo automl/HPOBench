@@ -92,6 +92,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
     def _query_benchmark(self, config: Dict, run_index: int, budget: int = 108) -> Dict:
         raise NotImplementedError
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,

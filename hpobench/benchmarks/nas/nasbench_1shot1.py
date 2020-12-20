@@ -87,6 +87,7 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
         self.api = data_manager.load()
         self.search_space = None
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
