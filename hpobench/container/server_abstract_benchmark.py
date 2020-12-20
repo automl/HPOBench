@@ -62,7 +62,7 @@ class BenchmarkServer:
     def get_configuration_space(self, kwargs_str: str) -> str:
         logger.debug(f'Server: get_config_space: kwargs_str: {kwargs_str}')
 
-        kwargs = json.loads(kwargs_str)
+        kwargs = json.loads(kwargs_str, cls=BenchmarkDecoder)
         seed = kwargs.get('seed', None)
 
         result = self.benchmark.get_configuration_space(seed=seed)
@@ -72,35 +72,19 @@ class BenchmarkServer:
     def get_fidelity_space(self, kwargs_str: str) -> str:
         logger.debug(f'Server: get_fidelity_space: kwargs_str: {kwargs_str}')
 
-        kwargs = json.loads(kwargs_str)
+        kwargs = json.loads(kwargs_str, cls=BenchmarkDecoder)
         seed = kwargs.get('seed', None)
 
         result = self.benchmark.get_fidelity_space(seed=seed)
         logger.debug(f'Server: Fidelity Space: {result}')
         return csjson.write(result, indent=None)
 
-    def objective_function_list(self, c_str: str, f_str: str, kwargs_str: str) -> str:
-        configuration = json.loads(c_str)
-        fidelity = json.loads(f_str)
-        kwargs = json.loads(kwargs_str)
-
-        result = self.benchmark.objective_function(configuration=configuration, fidelity=fidelity, **kwargs)
-        return json.dumps(result, indent=None, cls=BenchmarkEncoder)
-
-    def objective_function_test_list(self, c_str: str, f_str: str, kwargs_str: str) -> str:
-        configuration = json.loads(c_str)
-        fidelity = json.loads(f_str)
-        kwargs = json.loads(kwargs_str)
-
-        result = self.benchmark.objective_function_test(configuration=configuration, fidelity=fidelity, **kwargs)
-        return json.dumps(result, indent=None, cls=BenchmarkEncoder)
-
     def objective_function(self, c_str: str, f_str: str, kwargs_str: str) -> str:
         logger.debug(f'Server: objective_function: c_str: {c_str} f_str: {f_str} kwargs_str: {kwargs_str}')
 
-        configuration = json.loads(c_str)
-        fidelity = json.loads(f_str)
-        kwargs = json.loads(kwargs_str)
+        configuration = json.loads(c_str, cls=BenchmarkDecoder)
+        fidelity = json.loads(f_str, cls=BenchmarkDecoder)
+        kwargs = json.loads(kwargs_str, cls=BenchmarkDecoder)
 
         result = self.benchmark.objective_function(configuration=configuration, fidelity=fidelity, **kwargs)
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
@@ -108,9 +92,9 @@ class BenchmarkServer:
     def objective_function_test(self, c_str: str, f_str: str, kwargs_str: str) -> str:
         logger.debug(f'Server: objective_function: c_str: {c_str} f_str: {f_str} kwargs_str: {kwargs_str}')
 
-        configuration = json.loads(c_str)
-        fidelity = json.loads(f_str)
-        kwargs = json.loads(kwargs_str)
+        configuration = json.loads(c_str, cls=BenchmarkDecoder)
+        fidelity = json.loads(f_str, cls=BenchmarkDecoder)
+        kwargs = json.loads(kwargs_str, cls=BenchmarkDecoder)
 
         result = self.benchmark.objective_function_test(configuration=configuration, fidelity=fidelity, **kwargs)
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
