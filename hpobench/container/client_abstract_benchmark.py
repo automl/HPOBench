@@ -355,8 +355,13 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
     def _shutdown(self):
         """ Shutdown benchmark and stop container"""
-        self.benchmark.shutdown()
+        try:
+            self.benchmark.shutdown()
+        except TypeError:
+            pass
+
         subprocess.run(f'singularity instance stop {self.socket_id}'.split(), check=False)
+
         if (self.config.socket_dir / f'{self.socket_id}_unix.sock').exists():
             (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
         # self.benchmark._pyroRelease()
