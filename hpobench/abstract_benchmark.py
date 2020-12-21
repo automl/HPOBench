@@ -142,7 +142,7 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
         self.configuration_space.check_configuration(configuration)
         return configuration
 
-    def _check_and_cast_fidelity(self, fidelity: Union[dict, ConfigSpace.Configuration], **kwargs) \
+    def _check_and_cast_fidelity(self, fidelity: Union[dict, ConfigSpace.Configuration, None], **kwargs) \
             -> ConfigSpace.Configuration:
         """ Helper-function to evaluate the given fidelity object.
             Similar to the checking and casting from above, we validate the fidelity object. To do so, we cast it to a

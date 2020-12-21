@@ -1,6 +1,5 @@
 {
-  "codestyle": ["pycodestyle","flake8"],
+  "codestyle": ["pycodestyle","flake8","pylint"],
   "pytest": ["pytest>=4.6","pytest-cov"],
-  "pylint": ["pylint"],
   "test_paramnet": ["tqdm"]
 }
