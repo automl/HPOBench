@@ -3,7 +3,7 @@ from typing import Dict, Union
 
 import numpy as np
 import pytest
-from ConfigSpace import ConfigurationSpace
+from ConfigSpace import ConfigurationSpace, Configuration
 from ConfigSpace import UniformFloatHyperparameter, UniformIntegerHyperparameter, \
     CategoricalHyperparameter
 
@@ -13,7 +13,7 @@ from hpobench.abstract_benchmark import AbstractBenchmark
 class TestCheckUnittest(unittest.TestCase):
 
     def setUp(self):
-        class Dummy():
+        class Dummy:
             configuration_space = ConfigurationSpace(seed=1)
             flt = UniformFloatHyperparameter("flt", lower=0.0, upper=1.0)
             cat = CategoricalHyperparameter("cat", choices=(1, "a"))
@@ -29,18 +29,21 @@ class TestCheckUnittest(unittest.TestCase):
             def get_fidelity_space(self):
                 return self.fidelity_space
 
+            _check_and_cast_configuration = AbstractBenchmark._check_and_cast_configuration
+            _check_and_cast_fidelity = AbstractBenchmark._check_and_cast_fidelity
+
         self.foo = Dummy()
 
     def test_config_decorator(self):
-        @AbstractBenchmark._configuration_as_dict
-        def tmp(_, configuration: Dict, **kwargs):
+        @AbstractBenchmark.check_parameters
+        def tmp(_, configuration: Dict, fidelity: Dict, **kwargs):
             return configuration
 
         ret = tmp(self=self.foo, configuration=self.foo.configuration_space.sample_configuration())
         self.assertIsInstance(ret, Dict)
 
-        @AbstractBenchmark._check_configuration
-        def tmp(_, configuration: Dict, **kwargs):
+        @AbstractBenchmark.check_parameters
+        def tmp(_, configuration: Dict, fidelity: Dict, **kwargs):
             return configuration
 
         tmp(self=self.foo, configuration={"flt": 0.2, "cat": 1, "itg": 1})
@@ -51,7 +54,7 @@ class TestCheckUnittest(unittest.TestCase):
         self.assertRaises(Exception, tmp, {"self": self.foo, "configuration": [0.2, 1]})
 
     def test_fidel_decorator(self):
-        @AbstractBenchmark._check_fidelity
+        @AbstractBenchmark.check_parameters
         def tmp(_, configuration: Dict, fidelity: Dict, **kwargs):
             return configuration, fidelity, kwargs
 
@@ -87,6 +90,7 @@ class TestCheckUnittest(unittest.TestCase):
 class TestCheckUnittest2(unittest.TestCase):
 
     def setUp(self):
+        from hpobench.abstract_benchmark import AbstractBenchmark
         class Dummy():
             configuration_space = ConfigurationSpace(seed=1)
             hp1 = UniformFloatHyperparameter("hp1", lower=0.0, upper=0.5, default_value=0.5)
@@ -94,21 +98,23 @@ class TestCheckUnittest2(unittest.TestCase):
             hp3 = UniformFloatHyperparameter("hp3", lower=2.0, upper=2.5, default_value=2.5)
             configuration_space.add_hyperparameters([hp1, hp2, hp3])
 
+            _check_and_cast_configuration = AbstractBenchmark._check_and_cast_configuration
+            _check_and_cast_fidelity = AbstractBenchmark._check_and_cast_fidelity
+
+            fidelity_space = ConfigurationSpace(seed=1)
+            fidelity_space.add_hyperparameter(UniformFloatHyperparameter('fidelity1', lower=0., upper=1., default_value=1.))
         self.foo = Dummy()
 
     def test_config_decorator(self):
-        @AbstractBenchmark._check_configuration
-        def tmp(_, configuration: Union[Dict, np.ndarray], **kwargs):
-            return configuration
+        @AbstractBenchmark.check_parameters
+        def tmp(_, configuration: Union[Dict, np.ndarray], fidelity: Dict, **kwargs):
+            return configuration, fidelity
 
-        tmp(self=self.foo, configuration=np.array([0.25, 1.25, 2.25]))
+        hps = dict(hp1=0.25, hp2=1.25, hp3=2.25)
+        configuration = Configuration(self.foo.configuration_space, hps)
+        config, fidel = tmp(self=self.foo, configuration=configuration, fidelity=None)
 
-        @AbstractBenchmark._configuration_as_array
-        def tmp(_, configuration: Dict, **kwargs):
-            return configuration
+        assert isinstance(config, Dict)
+        assert isinstance(fidel, Dict)
+        assert fidel['fidelity1'] == 1.0
 
-        result = tmp(self=self.foo, configuration=self.foo.configuration_space.get_default_configuration())
-        assert np.array_equal(result, np.array([0.5, 1.5, 2.5]))
-
-        result = tmp(self=self.foo, configuration=np.array([0.5, 1.5, 2.5]))
-        assert np.array_equal(result, np.array([0.5, 1.5, 2.5]))

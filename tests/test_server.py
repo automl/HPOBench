@@ -11,12 +11,12 @@ def set_log_level(debug):
 
 def test_debug_env_variable_1():
     set_log_level(False)
-    from hpobench.container.client_abstract_benchmark import log_level
-    assert log_level == logging.INFO
+    from hpobench.container.client_abstract_benchmark import LOG_LEVEL
+    assert LOG_LEVEL == logging.INFO
 
     set_log_level(True)
-    from hpobench.container.client_abstract_benchmark import log_level
-    assert log_level == logging.DEBUG
+    from hpobench.container.client_abstract_benchmark import LOG_LEVEL
+    assert LOG_LEVEL == logging.DEBUG
 
 
 def test_debug_container():
@@ -36,29 +36,3 @@ def test_debug_container():
     assert cs is not None
 
     set_log_level(False)
-
-
-def test_benchmark_encoder():
-    from enum import Enum
-    class test_enum(Enum):
-        obj = 'name'
-
-        def __str__(self):
-            return str(self.value)
-
-    from hpobench.container.server_abstract_benchmark import BenchmarkEncoder
-    import json
-    import numpy as np
-
-    enum_obj = test_enum.obj
-    enum_obj_str = json.dumps(enum_obj, cls=BenchmarkEncoder)
-    assert enum_obj_str == '"name"'
-
-    array = np.array([1, 2, 3, 4])
-    array_str = json.dumps(array, cls=BenchmarkEncoder)
-    assert array_str == '[1, 2, 3, 4]'
-
-
-if __name__ == '__main__':
-    test_debug_env_variable_1()
-    test_debug_container()

@@ -63,10 +63,8 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
     def get_data(self):
         raise NotImplementedError()
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
+    @AbstractBenchmark.check_parameters
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[Dict, CS.Configuration, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
@@ -78,7 +76,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
         configuration : Dict, CS.Configuration
             Configuration for the pyBNN model
         fidelity: Dict, None
-            budget : int [100 - 10000]
+            budget : int [500 - 10000]
                 number of epochs to train the model
             Fidelity parameters for the pyBNN model, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None,
@@ -134,9 +132,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
                 'cost': cost,
                 'info': {'fidelity': fidelity}}
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 fidelity: Union[Dict, CS.Configuration, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -149,7 +145,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
         configuration : Dict, CS.Configuration
             Configuration for the pyBNN model
         fidelity: Dict, None
-            budget : int [100 - 10000]
+            budget : int [500 - 10000]
                 number of epochs to train the model
             Fidelity parameters for the pyBNN model, check get_fidelity_space(). Uses default (max) value if None.
 
@@ -245,7 +241,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
         Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for pyBNN benchmark.
         Fidelities
         ----------
-        budget : int : [100, 10000]
+        budget : int : [500, 10000]
             number of epochs to train the network
 
         Parameters
@@ -308,36 +304,36 @@ class BNNOnToyFunction(BayesianNeuralNetworkBenchmark):
     def get_data(self):
         rng = np.random.RandomState(42)
 
-        def f(x):
+        def toy_function(x):
             eps = rng.normal() * 0.02
             y = x + 0.3 * np.sin(2 * np.pi * (x + eps)) + 0.3 * np.sin(4 * np.pi * (x + eps)) + eps
             return y
 
-        X = rng.rand(1000, 1)
-        y = np.array([f(xi) for xi in X])[:, 0]
+        data_x = rng.rand(1000, 1)
+        data_y = np.array([toy_function(xi) for xi in data_x])[:, 0]
 
-        train = X[:600]
-        train_targets = y[:600]
-        valid = X[600:800]
-        valid_targets = y[600:800]
-        test = X[800:]
-        test_targets = y[800:]
+        train = data_x[:600]
+        train_targets = data_y[:600]
+        valid = data_x[600:800]
+        valid_targets = data_y[600:800]
+        test = data_x[800:]
+        test_targets = data_y[800:]
         return train, train_targets, valid, valid_targets, test, test_targets
 
 
 class BNNOnBostonHousing(BayesianNeuralNetworkBenchmark):
     def get_data(self):
-        dm = BostonHousingData()
-        return dm.load()
+        data_manager = BostonHousingData()
+        return data_manager.load()
 
 
 class BNNOnProteinStructure(BayesianNeuralNetworkBenchmark):
     def get_data(self):
-        dm = ProteinStructureData()
-        return dm.load()
+        data_manager = ProteinStructureData()
+        return data_manager.load()
 
 
 class BNNOnYearPrediction(BayesianNeuralNetworkBenchmark):
     def get_data(self):
-        dm = YearPredictionMSDData()
-        return dm.load()
+        data_manager = YearPredictionMSDData()
+        return data_manager.load()

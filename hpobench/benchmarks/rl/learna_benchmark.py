@@ -67,7 +67,7 @@ import hpobench.config
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util import rng_helper
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 logger = logging.getLogger('LearnaBenchmark')
 
@@ -125,12 +125,12 @@ class BaseLearna(AbstractBenchmark):
         evaluation_sum_of_first_distances = 0
         evaluation_num_solved = 0
 
-        for r in evaluation_results:
+        for result in evaluation_results:
             # sequence_id = r[0].target_id
-            r.sort(key=lambda e: e.time)
+            result.sort(key=lambda e: e.time)
 
             # times = np.array(list(map(lambda e: e.time, r)))
-            dists = np.array(list(map(lambda e: e.normalized_hamming_distance, r)))
+            dists = np.array(list(map(lambda e: e.normalized_hamming_distance, result)))
 
             evaluation_sum_of_min_distances += np.min(dists)
             evaluation_sum_of_first_distances += dists[0]
@@ -171,18 +171,16 @@ class BaseLearna(AbstractBenchmark):
 
         return config, network_config, agent_config, env_config
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None,
+    @AbstractBenchmark.check_parameters
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-        """ Interface for the obejctive function. """
+        """ Interface for the objective function. """
         raise NotImplementedError()
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None,
+    @AbstractBenchmark.check_parameters
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """ Interface for the test obejctive function. """
         raise NotImplementedError()
@@ -293,11 +291,9 @@ class Learna(BaseLearna):
     def __init__(self, data_path: Union[str, Path], rng: Union[np.random.RandomState, int, None] = None):
         super(Learna, self).__init__(data_path=data_path, rng=rng)
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None,
+    @AbstractBenchmark.check_parameters
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Start the learna experiment. Dont train a RL agent. Just optimize on the sequences.
@@ -348,11 +344,9 @@ class Learna(BaseLearna):
                          }
                 }
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
-    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None,
+    @AbstractBenchmark.check_parameters
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate the Learna experiment.
@@ -412,10 +406,9 @@ class MetaLearna(BaseLearna):
 
         return fidel_space
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    def objective_function(self, configuration: Union[Dict, CS.Configuration],
-                           fidelity: Union[Dict, None] = None,
+    @AbstractBenchmark.check_parameters
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         MetaLearna trains an RL agent for 1 hour on the given training set and then tries to solve the sequences.
@@ -475,10 +468,9 @@ class MetaLearna(BaseLearna):
                          'fidelity': fidelity},
                 }
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
-                                fidelity: Union[Dict, None] = None,
+    @AbstractBenchmark.check_parameters
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Validate the MetaLearna experiment.
@@ -550,11 +542,11 @@ class MetaLearna(BaseLearna):
         train_sum_of_last_distances = 0
         train_num_solved = 0
 
-        for r in train_results.values():
+        for result in train_results.values():
             # sequence_id = r[0].target_id
-            r.sort(key=lambda e: e.time)
+            result.sort(key=lambda e: e.time)
 
-            dists = np.array(list(map(lambda e: e.normalized_hamming_distance, r)))
+            dists = np.array(list(map(lambda e: e.normalized_hamming_distance, result)))
 
             train_sum_of_min_distances += np.min(dists)
             train_sum_of_last_distances += dists[-1]
@@ -578,11 +570,11 @@ class MetaLearna(BaseLearna):
     def _process_train_results(train_results: List) -> Dict:
         """ Helper function to extract results into dictionary """
         results_by_sequence = {}
-        for r in train_results:
-            for s in r:
-                if s.target_id not in results_by_sequence:
-                    results_by_sequence[s.target_id] = [s]
+        for result in train_results:
+            for seq in result:
+                if seq.target_id not in results_by_sequence:
+                    results_by_sequence[seq.target_id] = [seq]
                 else:
-                    results_by_sequence[s.target_id].append(s)
+                    results_by_sequence[seq.target_id].append(seq)
 
         return results_by_sequence

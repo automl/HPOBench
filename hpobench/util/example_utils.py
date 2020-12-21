@@ -3,14 +3,14 @@ from pathlib import Path
 from typing import Dict
 
 
-def get_travis_settings(type: str) -> Dict:
+def get_travis_settings(optimizer_type: str) -> Dict:
     """ Helper function to reduce time consumption for test runs on travis.ci"""
-    if type == 'smac':
+    if optimizer_type == 'smac':
         return {"runcount-limit": 5, 'wallclock-limit': 50, 'cutoff': 50, 'memory_limit': 10000, 'output_dir': '.'}
-    elif type == 'bohb':
+    if optimizer_type == 'bohb':
         return {'max_budget': 2, 'num_iterations': 1, 'output_dir': Path('./')}
-    else:
-        raise ValueError(f'Unknown type {type}. Must be one of [smac, bohb]')
+
+    raise ValueError(f'Unknown type {optimizer_type}. Must be one of [smac, bohb]')
 
 
 def set_env_variables_to_use_only_one_core():

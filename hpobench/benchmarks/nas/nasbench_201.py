@@ -60,54 +60,61 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         'train_acc1es', 'train_losses', 'train_times', 'eval_acc1es', 'eval_times', 'eval_losses' are available.
         However, the data sets report them on different data splits (train, train + valid, test, valid or test+valid).
 
+        We summarize all information about the data sets in the following tables.
+
+        Datastet        Metric      Avail.Epochs    Explanation             returned by HPOBENCH
+        ----------------------------------------------------------------------------------------
+        cifar10-valid   train       [0-199]         training set
+        cifar10-valid   x-valid     [0-199]         validation set          objective function
+        cifar10-valid   x-test
+        cifar10-valid   ori-test    199             test set                objective function test
+
+        cifar100        train       [0-199]         training set
+        cifar100        x-valid     199             validation set
+        cifar100        x-test      199             test set                objective function test
+        cifar100        ori-test    [0-199]         validation + test set   objective function
+
+        ImageNet16-120  train       [0-199]         training set
+        ImageNet16-120  x-valid     199             validation set
+        ImageNet16-120  x-test      199             test set                objective function test
+        ImageNet16-120  ori-test    [0-199]         validation + test set   objective function
+
+
+        We have also extracted the incumbents per split. We report the incumbent accuracy and loss performance
+        i) by taking the maximum value across all seeds and configurations
+        ii) averaged across the three available seeds
+
+                                    i) The best possible incumbents (NO AVG!)                       ii) The "average" incumbent
+        Datastet        Metric      (Index of Arch, Accuracy)       (Index, Loss)                   (Index of Arch, Accuracy)       (Index, Loss)
+        ----------------------------------------------------------------------------------------------------------------------------------------------------------
+        cifar10-valid   train       (258, 100.0)                    (2778, 0.001179278278425336)    (10154, 100)                    (2778, 0.0013082386429297428)
+        cifar10-valid   x-valid     (6111, 91.71999999023437)       (14443, 0.3837750501537323)     (6111, 91.60666665039064)       (3888, 0.3894046771335602)
+        cifar10-valid   x-test
+        cifar10-valid   ori-test    (14174, 91.65)                  (3385, 0.3850496160507202)      (1459, 91.52333333333333)       (3385, 0.3995230517864227)
+
+        cifar100        train       (9930, 99.948)                  (9930, 0.012630240231156348)    (9930, 99.93733333333334)       (9930, 0.012843489621082942)
+        cifar100        x-valid     (13714, 73.71999998779297)      (13934, 1.1490126512527465)     (9930, 73.4933333577474)        (7361, 1.1600867895126343)
+        cifar100        x-test      (1459, 74.28000004882813)       (15383, 1.1427113876342774)     (9930, 73.51333332112631)       (7337, 1.1747569534301758)
+        cifar100        ori-test    (9930, 73.88)                   (13706, 1.1610547459602356)     (9930, 73.50333333333333)       (7361, 1.1696554500579834)
+
+        ImageNet16-120  train       (9930, 73.2524719841793)        (9930, 0.9490517352046979)      (9930, 73.22918040138735)       (9930, 0.9524298415108582)
+        ImageNet16-120  x-valid     (13778, 47.39999985758463)      (10721, 2.0826991437276203)     (10676, 46.73333327229818)      (10721, 2.0915397168795264)
+        ImageNet16-120  x-test      (857, 48.03333317057292)        (12887, 2.0940088628133138)     (857, 47.31111100599501)        (11882, 2.106453532218933)
+        ImageNet16-120  ori-test    (857, 47.083333353678384)       (11882, 2.0950548852284747)     (857, 46.8444444647895)         (11882, 2.1028235816955565)
+
+
         Note:
         - The parameter epoch is 0 indexed!
         - In the original data, the training splits are always marked with the key 'train' but they use different
           identifiers to refer to the available evaluation splits. We report them also in the table below.
+        - We exclude the data set cifar10 from this benchmark.
 
-        The table in the following shows the mapping from data set and metric to used split.
-
-        |-------------------|---------------|-----------------------------------|
-        | Data set          | train_*       | eval_*        (key in orig. data) |
-        |-------------------|---------------|-----------------------------------|
-        | 'cifar10-valid'   | train         | valid         (x-valid)           |
-        | 'cifar10'         | train + valid | test          (ori-test)          |
-        | 'cifar100'        | train         | valid + test  (ori-test)          |
-        | 'ImageNet16-120'  | train         | valid + test  (ori-test)          |
-        |-------------------|---------------|-----------------------------------|
-
-
-        Some further remarks:
+         Some further remarks:
         - cifar10-valid is trained on the train split and tested on the validation split.
-        - cifar10 is trained on the train *and* validation split and tested on the test split.
         - The train metrics are dictionaries with epochs (e.g. 0, 1, 2) as key and the metric as value.
           The evaluation metrics, however, have as key the identifiers, e.g. ori-test@0, with 0 indicating the epoch.
-          Also, each data set (except for cifar10) reports values for all 200 epochs for a metric on the specified
-          split (see first table) and a single value on the 200th epoch for the other splits.
-          Table 3 shows the available identifiers for each data set.
-
-        |-------------------|------------------------------|
-        | Data set          | eval*:   values for epochs   |
-        |-------------------|------------------------------|
-        | 'cifar10-valid'   | x-valid:	0-199	           |
-        |		     		| ori-test:	199		           |
-        | 'cifar10'         | ori-test:	0-199	           |
-        | 'cifar100'        | ori-test:	0-199	           |
-        |					| x-valid:	199		           |
-        |   				| x-test:   199                |
-        | 'ImageNet16-120'  | ori-test:	0-199	           |
-        |					| x-valid:	199		           |
-        |   				| x-test:  	199                |
-        |-------------------|------------------------------|
-
-        Incumbents per dataset:
-
-        Dataset             Metric      Explanation                     (Index of Arch, Accuracy)
-        -----------------------------------------------------------------------------------------
-        cifar10-valid       ori-test    (test set)                      (1459, 91.52333333333333)
-        cifar10             ori-test    (test set)                      (6111, 94.37333333333333)
-        cifar100            x-test      (test set)                      (9930, 73.51333332112631)
-        ImageNet16-120      x-test      (test set)                      (857, 47.31111100599501)
+          Also, each data set reports values for all 200 epochs for a metric on the specified split
+          and a single value on the 200th epoch for the other splits.
 
         Parameters
         ----------
@@ -115,46 +122,36 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
             One of cifar10-valid, cifar10, cifar100, ImageNet16-120.
         rng : np.random.RandomState, int, None
             Random seed for the benchmark's random state.
-        """
+        """  # noqa: E501
 
         super(NasBench201BaseBenchmark, self).__init__(rng=rng)
 
         data_manager = NASBench_201Data(dataset=dataset)
 
+        self.dataset = dataset
         self.data = data_manager.load()
         self.config_to_structure = NasBench201BaseBenchmark.config_to_structure_func(max_nodes=MAX_NODES)
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    def dataset_mapping(self, dataset):
+        mapping = {'cifar10-valid': ('x-valid', 'ori-test'),
+                   'ImageNet16-120': ('ori-test', 'x-test'),
+                   'cifar100': ('ori-test', 'x-test')}
+        return mapping[dataset]
+
+    # pylint: disable=arguments-differ
+    @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
-                           fidelity: Union[Dict, None] = None,
+                           fidelity: Union[Dict, CS.Configuration, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
                            data_seed: Union[List, Tuple, int, None] = (777, 888, 999),
                            **kwargs) -> Dict:
         """
         Objective function for the NASBench201 benchmark.
         This functions sends a query to NASBench201 and evaluates the configuration.
-        As already explained in the class definition, different data sets are trained on different splits. For example
-        cifar10 is trained on the train and validation split and tested on the test split. Therefore, different entries
-        are returned from the NASBench201 result.
+        As already explained in the class definition, different data sets are trained on different splits.
 
-        Overview of the used splits for training and testing and which are returned in the objective_function and
-        which in the objective_function_test.
-
-        |-------------------|-----------------------|---------------------------|
-        |                   | Returned by           | Returned by               |
-        |                   |   objective_function  |   objective_function_test |
-        | Data set          | train_*               | eval_*                    |
-        |-------------------|-----------------------|---------------------------|
-        | 'cifar10-valid'   | train                 | valid                     |
-        | 'cifar10'         | train + valid         | test                      |
-        | 'cifar100'        | train                 | valid + test              |
-        | 'ImageNet16-120'  | train                 | valid + test              |
-        |-------------------|-----------------------|---------------------------|
-
-        Legend:
-        * = [losses, acc1es, times]
+        The table above gives a detailed summary over the available splits, epochs, and which identifier are used per
+        dataset.
 
         Parameters
         ----------
@@ -227,19 +224,24 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         structure_str = structure.tostr()
 
         epoch = fidelity['epoch'] - 1
+        data_seed = [str(seed) for seed in data_seed]
+        valid_key, test_key = self.dataset_mapping(self.dataset)
 
-        train_accuracies = [self.data[(seed, 'train_acc1es')][structure_str][epoch] for seed in data_seed]
-        train_losses = [self.data[(seed, 'train_losses')][structure_str][epoch] for seed in data_seed]
-        train_times = [np.sum(self.data[(seed, 'train_times')][structure_str][:epoch + 1]) for seed in data_seed]
+        train_accuracies = [self.data[seed][structure_str]['train_acc1es'][f'{epoch}'] for seed in data_seed]
+        train_losses = [self.data[seed][structure_str]['train_losses'][f'{epoch}'] for seed in data_seed]
+        train_times = [np.sum((self.data[seed][structure_str]['train_times'][f'{e}']) for e in range(1, epoch + 1))
+                       for seed in data_seed]
 
-        valid_accuracies = [self.data[(seed, 'valid_acc1es')][structure_str][epoch] for seed in data_seed]
-        valid_losses = [self.data[(seed, 'valid_losses')][structure_str][epoch] for seed in data_seed]
-        valid_times = [np.sum(self.data[(seed, 'valid_times')][structure_str][:epoch + 1]) for seed in data_seed]
+        valid_accuracies = [self.data[seed][structure_str]['eval_acc1es'][f'{valid_key}@{epoch}'] for seed in data_seed]
+        valid_losses = [self.data[seed][structure_str]['eval_losses'][f'{valid_key}@{epoch}'] for seed in data_seed]
+        valid_times = [np.sum((self.data[seed][structure_str]['eval_times'][f'{valid_key}@{e}'])
+                              for e in range(1, epoch + 1)) for seed in data_seed]
 
         # There is a single value for the eval data per seed. (only epoch 200)
-        test_accuracies = [self.data[(seed, 'test_acc1es')][structure_str] for seed in data_seed]
-        test_losses = [self.data[(seed, 'test_losses')][structure_str] for seed in data_seed]
-        test_times = [np.sum(self.data[(seed, 'test_times')][structure_str]) for seed in data_seed]
+        test_accuracies = [self.data[seed][structure_str]['eval_acc1es'][f'{valid_key}@{199}'] for seed in data_seed]
+        test_losses = [self.data[seed][structure_str]['eval_losses'][f'{valid_key}@{199}'] for seed in data_seed]
+        test_times = [np.sum((self.data[seed][structure_str]['eval_times'][f'{test_key}@{199}'])
+                             for e in range(1, epoch + 1)) for seed in data_seed]
 
         return {'function_value': float(100 - np.mean(valid_accuracies)),
                 'cost': float(np.sum(valid_times) + np.sum(train_times)),
@@ -256,9 +258,7 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
                          }
                 }
 
-    @AbstractBenchmark._configuration_as_dict
-    @AbstractBenchmark._check_configuration
-    @AbstractBenchmark._check_fidelity
+    @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
@@ -315,8 +315,10 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
     @staticmethod
     def config_to_structure_func(max_nodes: int):
-        # From https://github.com/D-X-Y/AutoDL-Projects/blob/master/exps/algos/BOHB.py
-        # Author: https://github.com/D-X-Y [Xuanyi.Dong@student.uts.edu.au]
+        """
+        From https://github.com/D-X-Y/AutoDL-Projects/blob/master/exps/algos/BOHB.py
+        Author: https://github.com/D-X-Y [Xuanyi.Dong@student.uts.edu.au]
+        """
         def config_to_structure(config):
             genotypes = []
             for i in range(1, max_nodes):
@@ -331,9 +333,11 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
     @staticmethod
     def get_search_spaces(xtype: str, name: str) -> List[Text]:
-        # obtain the search space, i.e., a dict mapping the operation name into a python-function for this op
-        # From https://github.com/D-X-Y/AutoDL-Projects/blob/master/lib/models/__init__.py
-        # Author: https://github.com/D-X-Y [Xuanyi.Dong@student.uts.edu.au]
+        """ obtain the search space, i.e., a dict mapping the operation name into a python-function for this op
+        From https://github.com/D-X-Y/AutoDL-Projects/blob/master/lib/models/__init__.py
+        Author: https://github.com/D-X-Y [Xuanyi.Dong@student.uts.edu.au]
+        """
+        # pylint: disable=no-else-return
         if xtype == 'cell':
             NAS_BENCH_201 = ['none', 'skip_connect', 'nor_conv_1x1', 'nor_conv_3x3', 'avg_pool_3x3']
             SearchSpaceNames = {'nas-bench-201': NAS_BENCH_201}
@@ -407,25 +411,21 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
     class _Structure:
         def __init__(self, genotype):
-            assert isinstance(genotype, list) or isinstance(genotype, tuple), 'invalid class of genotype : {:}'.format(
-                type(genotype))
+            assert isinstance(genotype, (list, tuple)), 'invalid class of genotype : {:}'.format(type(genotype))
             self.node_num = len(genotype) + 1
             self.nodes = []
             self.node_N = []
             for idx, node_info in enumerate(genotype):
-                assert isinstance(node_info, list) or isinstance(node_info,
-                                                                 tuple), 'invalid class of node_info : {:}'.format(
-                    type(node_info))
+                assert isinstance(node_info, (list, tuple)), 'invalid class of node_info : {:}'.format(type(node_info))
                 assert len(node_info) >= 1, 'invalid length : {:}'.format(len(node_info))
                 for node_in in node_info:
-                    assert isinstance(node_in, list) or isinstance(node_in,
-                                                                   tuple), 'invalid class of in-node : {:}'.format(
-                        type(node_in))
+                    assert isinstance(node_in, (list, tuple)), 'invalid class of in-node : {:}'.format(type(node_in))
                     assert len(node_in) == 2 and node_in[1] <= idx, 'invalid in-node : {:}'.format(node_in)
                 self.node_N.append(len(node_info))
                 self.nodes.append(tuple(deepcopy(node_info)))
 
         def tostr(self):
+            """ Helper function: Create a string representation of the configuration """
             strings = []
             for node_info in self.nodes:
                 string = '|'.join([x[0] + '~{:}'.format(x[1]) for x in node_info])
@@ -443,12 +443,6 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
 
         def __getitem__(self, index):
             return self.nodes[index]
-
-
-class Cifar10NasBench201Benchmark(NasBench201BaseBenchmark):
-
-    def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        super(Cifar10NasBench201Benchmark, self).__init__(dataset='cifar10', rng=rng, **kwargs)
 
 
 class Cifar10ValidNasBench201Benchmark(NasBench201BaseBenchmark):

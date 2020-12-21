@@ -10,43 +10,33 @@ that all payloads are json-serializable.
 """
 
 import argparse
-import enum
 import json
 import logging
 import os
 
 import Pyro4
-import numpy as np
 from ConfigSpace.read_and_write import json as csjson
 
 from hpobench.config import HPOBenchConfig
+from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 
 # Read in the verbosity level from the environment variable HPOBENCH_DEBUG
 log_level_str = os.environ.get('HPOBENCH_DEBUG', 'false')
-log_level = logging.DEBUG if log_level_str == 'true' else logging.INFO
+LOG_LEVEL = logging.DEBUG if log_level_str == 'true' else logging.INFO
 
-console = logging.StreamHandler()
-console.setLevel(log_level)
+# console = logging.StreamHandler()
+# console.setLevel(LOG_LEVEL)
 
 logger = logging.getLogger('BenchmarkServer')
-logger.setLevel(log_level)
-logger.addHandler(console)
-
-
-class BenchmarkEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        if isinstance(obj, enum.Enum):
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
+logger.setLevel(LOG_LEVEL)
+# logger.addHandler(console)
 
 
 @Pyro4.expose
 @Pyro4.behavior(instance_mode="single")
 class BenchmarkServer:
     def __init__(self, socket_id):
-        self.pyroRunning = True
+        self.pyro_running = True
         config = HPOBenchConfig()
         self.benchmark = None
 
@@ -59,20 +49,12 @@ class BenchmarkServer:
         _ = self.daemon.register(self, self.socket_id + ".unixsock")
 
         # start the event loop of the server to wait for calls
-        self.daemon.requestLoop(loopCondition=lambda: self.pyroRunning)
+        self.daemon.requestLoop(loopCondition=lambda: self.pyro_running)
 
     def init_benchmark(self, kwargs_str):
         try:
-            if kwargs_str != "{}":
-                kwargs = json.loads(kwargs_str)
-                if 'rng' in kwargs and type(kwargs['rng']) == list:
-                    (rnd0, rnd1, rnd2, rnd3, rnd4) = kwargs['rng']
-                    rnd1 = [np.uint32(number) for number in rnd1]
-                    kwargs['rng'] = np.random.set_state((rnd0, rnd1, rnd2, rnd3, rnd4))
-                    logger.debug('Server: Rng works')
-                self.benchmark = Benchmark(**kwargs)  # noqa: F821
-            else:
-                self.benchmark = Benchmark()  # noqa: F821
+            kwargs = json.loads(kwargs_str, cls=BenchmarkDecoder)
+            self.benchmark = Benchmark(**kwargs)  # noqa: F821
             logger.info('Server: Connected Successfully')
         except Exception as e:
             logger.exception(e)
@@ -80,7 +62,7 @@ class BenchmarkServer:
     def get_configuration_space(self, kwargs_str: str) -> str:
         logger.debug(f'Server: get_config_space: kwargs_str: {kwargs_str}')
 
-        kwargs = json.loads(kwargs_str)
+        kwargs = json.loads(kwargs_str, cls=BenchmarkDecoder)
         seed = kwargs.get('seed', None)
 
         result = self.benchmark.get_configuration_space(seed=seed)
@@ -90,35 +72,19 @@ class BenchmarkServer:
     def get_fidelity_space(self, kwargs_str: str) -> str:
         logger.debug(f'Server: get_fidelity_space: kwargs_str: {kwargs_str}')
 
-        kwargs = json.loads(kwargs_str)
+        kwargs = json.loads(kwargs_str, cls=BenchmarkDecoder)
         seed = kwargs.get('seed', None)
 
         result = self.benchmark.get_fidelity_space(seed=seed)
         logger.debug(f'Server: Fidelity Space: {result}')
         return csjson.write(result, indent=None)
 
-    def objective_function_list(self, c_str: str, f_str: str, kwargs_str: str) -> str:
-        configuration = json.loads(c_str)
-        fidelity = json.loads(f_str)
-        kwargs = json.loads(kwargs_str)
-
-        result = self.benchmark.objective_function(configuration=configuration, fidelity=fidelity, **kwargs)
-        return json.dumps(result, indent=None, cls=BenchmarkEncoder)
-
-    def objective_function_test_list(self, c_str: str, f_str: str, kwargs_str: str) -> str:
-        configuration = json.loads(c_str)
-        fidelity = json.loads(f_str)
-        kwargs = json.loads(kwargs_str)
-
-        result = self.benchmark.objective_function_test(configuration=configuration, fidelity=fidelity, **kwargs)
-        return json.dumps(result, indent=None, cls=BenchmarkEncoder)
-
     def objective_function(self, c_str: str, f_str: str, kwargs_str: str) -> str:
         logger.debug(f'Server: objective_function: c_str: {c_str} f_str: {f_str} kwargs_str: {kwargs_str}')
 
-        configuration = json.loads(c_str)
-        fidelity = json.loads(f_str)
-        kwargs = json.loads(kwargs_str)
+        configuration = json.loads(c_str, cls=BenchmarkDecoder)
+        fidelity = json.loads(f_str, cls=BenchmarkDecoder)
+        kwargs = json.loads(kwargs_str, cls=BenchmarkDecoder)
 
         result = self.benchmark.objective_function(configuration=configuration, fidelity=fidelity, **kwargs)
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
@@ -126,22 +92,22 @@ class BenchmarkServer:
     def objective_function_test(self, c_str: str, f_str: str, kwargs_str: str) -> str:
         logger.debug(f'Server: objective_function: c_str: {c_str} f_str: {f_str} kwargs_str: {kwargs_str}')
 
-        configuration = json.loads(c_str)
-        fidelity = json.loads(f_str)
-        kwargs = json.loads(kwargs_str)
+        configuration = json.loads(c_str, cls=BenchmarkDecoder)
+        fidelity = json.loads(f_str, cls=BenchmarkDecoder)
+        kwargs = json.loads(kwargs_str, cls=BenchmarkDecoder)
 
         result = self.benchmark.objective_function_test(configuration=configuration, fidelity=fidelity, **kwargs)
         return json.dumps(result, indent=None, cls=BenchmarkEncoder)
 
     def get_meta_information(self):
         logger.debug('Server: get_meta_info called')
-        return json.dumps(self.benchmark.get_meta_information(), indent=None)
+        return json.dumps(self.benchmark.get_meta_information(), indent=None, cls=BenchmarkEncoder)
 
     @Pyro4.oneway   # in case call returns much later than daemon.shutdown
     def shutdown(self):
         logger.debug('Server: Shutting down...')
         Pyro4.config.COMMTIMEOUT = 0.5
-        self.pyroRunning = False
+        self.pyro_running = False
         self.daemon.shutdown()
 
 
@@ -160,5 +126,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # pylint: disable=logging-fstring-interpolation
     exec(f"from hpobench.benchmarks.{args.importBase} import {args.benchmark} as Benchmark")
     bp = BenchmarkServer(args.socket_id)
