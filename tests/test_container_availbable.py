@@ -17,21 +17,25 @@ def search_container(container_name):
 
 def test_availability():
     container_names = ['pybnn',
+                       'paramnet',
                        'svm_benchmark',
                        'xgboost_benchmark',
                        'nasbench_101',
                        'nasbench_201',
+                       'nasbench_1shot1',
                        'tabular_benchmarks',
                        'cartpole',
                        'learna_benchmark'
                        ]
 
     all_available = True
+    not_available = []
     for container in container_names:
         container_available = search_container(container)
 
         if not container_available:
             logging.warning(f'Container for {container} is not found in {library}')
             all_available = False
+            not_available.append(container)
 
-    assert all_available, 'Some containers are not online available'
+    assert all_available, f'Some containers are not online available. {not_available}'

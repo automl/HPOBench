@@ -52,6 +52,52 @@ def test_rng_helper_2():
     assert rng == old_rng
 
 
+def test_rng_serialization():
+    from hpobench.util.rng_helper import deserialize_random_state, serialize_random_state
+    rs_old = np.random.RandomState(1)
+    r_str = serialize_random_state(rs_old)
+    rs_new = deserialize_random_state(r_str)
+
+    assert np.array_equiv(rs_old.random_sample(10), rs_new.random_sample(10))
+
+
+def test_rng_serialization_xgb():
+    import json
+    from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
+    from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
+
+    b = XGBoostBenchmark(task_id=167149, rng=0)
+    meta = b.get_meta_information()
+
+    meta_str = json.dumps(meta, indent=None, cls=BenchmarkEncoder)
+    meta_new = json.loads(meta_str, cls=BenchmarkDecoder)
+
+    assert isinstance(meta_new['initial random seed'], np.random.RandomState)
+    assert pytest.approx(0.81063947, 0.001) == meta['initial random seed'].random(10)[0]
+    assert np.array_equiv(meta['initial random seed'].random(10), meta_new['initial random seed'].random(10))
+
+
+def test_benchmark_encoder():
+    from enum import Enum
+    class test_enum(Enum):
+        obj = 'name'
+
+        def __str__(self):
+            return str(self.value)
+
+    from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
+    import json
+    import numpy as np
+
+    enum_obj = test_enum.obj
+    enum_obj_str = json.dumps(enum_obj, cls=BenchmarkEncoder)
+    assert enum_obj_str == '"name"'
+
+    array = np.array([1, 2, 3, 4])
+    array_str = json.dumps(array, cls=BenchmarkEncoder)
+    array_ = json.loads(array_str, cls=BenchmarkDecoder)
+    assert np.array_equiv(array, array_)
+
 def test_debug_level():
     from hpobench.util.container_utils import enable_container_debug, disable_container_debug
     import os

@@ -32,6 +32,7 @@ class CustomWorker(Worker):
         self.seed = seed
         self.max_budget = max_budget
 
+    # pylint: disable=arguments-differ
     def compute(self, config, budget, **kwargs):
         b = Benchmark(rng=self.seed)
         # Old API ---- NO LONGER SUPPORTED ---- This will simply ignore the fidelities

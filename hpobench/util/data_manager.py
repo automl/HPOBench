@@ -9,14 +9,18 @@ For OpenML data sets (defined by task id or similar) please use the
 hpobench.util.openml_data_manager.
 """
 
+# pylint: disable=logging-fstring-interpolation,invalid-name
+
 import abc
 import gzip
 import logging
 import pickle
 import tarfile
+import requests
+
 from io import BytesIO
 from pathlib import Path
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Any, Union
 from urllib.request import urlretrieve, urlopen
 from zipfile import ZipFile
 from time import time
@@ -31,7 +35,7 @@ except ImportError:
 import hpobench
 
 
-class DataManager(object, metaclass=abc.ABCMeta):
+class DataManager(abc.ABC, metaclass=abc.ABCMeta):
     """ Base Class for loading and managing the data.
 
     Attributes
@@ -70,8 +74,8 @@ class HoldoutDataManager(DataManager):
     ----------
     X_train : np.ndarray
     y_train : np.ndarray
-    X_val : np.ndarray
-    y_val : np.ndarray
+    X_valid : np.ndarray
+    y_valid : np.ndarray
     X_test : np.ndarray
     y_test : np.ndarray
     """
@@ -81,8 +85,8 @@ class HoldoutDataManager(DataManager):
 
         self.X_train = None
         self.y_train = None
-        self.X_val = None
-        self.y_val = None
+        self.X_valid = None
+        self.y_valid = None
         self.X_test = None
         self.y_test = None
 
@@ -419,6 +423,7 @@ class SVHNData(DataManager):
             else:
                 self.logger.debug(f"Load data {save_fl}")
 
+            # pylint: disable=import-outside-toplevel
             from scipy.io import loadmat
             data = loadmat(save_fl)
 
@@ -453,35 +458,19 @@ class NASBench_201Data(DataManager):
         dataset : str
             One of cifar10, cifar10-valid, cifar100, ImageNet16-120
         """
-        assert dataset in ['cifar10', 'cifar10-valid', 'cifar100', 'ImageNet16-120']
+        all_datasets = ['cifar10-valid', 'cifar100', 'ImageNet16-120']
+        assert dataset in all_datasets, f'data set {dataset} unknown'
 
         super(NASBench_201Data, self).__init__()
 
-        self.files = self.get_files_per_dataset(dataset)
+        self.files = [f'NAS-Bench-201-v1_1-096897_{dataset}.json' for dataset in all_datasets]
         self._save_dir = hpobench.config_file.data_dir / "nasbench_201"
-        self._url_source = 'https://www.automl.org/wp-content/uploads/2020/08/nasbench_201_data_v1.2.zip'
+        self.filename = f'NAS-Bench-201-v1_1-096897_{dataset}.json'
+
+        self._url_source = 'https://www.automl.org/wp-content/uploads/2020/08/nasbench_201_data_v1.3.zip'
         self.data = {}
 
         self.create_save_directory(self._save_dir)
-
-    @staticmethod
-    def get_seeds_metrics():
-        from itertools import product
-        seeds = [777, 888, 999]
-        metrics = NASBench_201Data.get_metrics()
-        return product(seeds, metrics)
-
-    @staticmethod
-    def get_metrics():
-        return ['train_acc1es', 'train_losses', 'train_times',
-                'valid_acc1es', 'valid_times', 'valid_losses',
-                'test_acc1es', 'test_times', 'test_losses']
-
-    @staticmethod
-    def get_files_per_dataset(dataset):
-        seeds_metrics = NASBench_201Data.get_seeds_metrics()
-        files = [f'nb201_{dataset}_{seed}_{metric}.pkl' for seed, metric in seeds_metrics]
-        return files
 
     @lockutils.synchronized('not_thread_process_safe', external=True,
                             lock_path=f'{hpobench.config_file.cache_dir}/lock_nasbench_201_data', delay=0.5)
@@ -502,12 +491,10 @@ class NASBench_201Data(DataManager):
 
     def _load(self) -> Dict:
         """ Load the data from the file system """
-        import pickle
-        data = {}
-        for (seed, metric_name), file in zip(NASBench_201Data.get_seeds_metrics(), self.files):
-            with (self._save_dir / file).open('rb') as fh:
-                metric = pickle.load(fh)
-                data[(seed, metric_name)] = metric
+        import json
+
+        with (self._save_dir / self.filename).open('rb') as fh:
+            data = json.load(fh)
 
         return data
 
@@ -521,6 +508,122 @@ class NASBench_201Data(DataManager):
         self.logger.info(f'NasBench201DataManager: Data successfully loaded after {time() - t:.2f}')
 
         return self.data
+
+
+class NASBench_101DataManager(DataManager):
+    def __init__(self, data_path: Union[str, Path, None] = None):
+        super(NASBench_101DataManager, self).__init__()
+
+        self.save_dir = (hpobench.config_file.data_dir / "nasbench_101") if data_path is None else Path(data_path)
+        self.fname = 'nasbench_full.tfrecord'
+        self.url = 'https://storage.googleapis.com/nasbench/' + self.fname
+
+        self.create_save_directory(self.save_dir)
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_nasbench_101_data', delay=0.5)
+    def _download(self, save_to: Path):
+        from tqdm import tqdm
+
+        r = requests.get(self.url, stream=True)
+        with save_to.open('wb') as f:
+            total_length = int(r.headers.get('content-length'))
+            for chunk in tqdm(r.iter_content(chunk_size=1024),
+                              unit_divisor=1024, unit='kB', total=int(total_length / 1024) + 1):
+                if chunk:
+                    _ = f.write(chunk)
+                    f.flush()
+
+    def download(self) -> None:
+        """ This function downloads (if necessary) the api file. """
+        if not (self.save_dir / self.fname).exists():
+            self.logger.info(f'NasBench101DataManager: File {self.save_dir / self.fname} not found.'
+                             f' Start downloading.')
+            self._download(save_to=self.save_dir / self.fname)
+        else:
+            self.logger.info('NasBench101DataManager: Data already available. Skip downloading.')
+
+    def load(self) -> Any:
+        """ Loads data from data directory as defined in config_file.data_directory"""
+        self.logger.debug('NasBench101DataManager: Starting to load data')
+        t = time()
+
+        self.download()
+
+        from nasbench import api
+        data = api.NASBench(str(self.save_dir / self.fname))
+        self.logger.info(f'NasBench101DataManager: Data successfully loaded after {time() - t:.2f}')
+        return data
+
+
+class ParamNetDataManager(DataManager):
+    def __init__(self, dataset: str):
+
+        allowed_datasets = ["adult", "higgs", "letter", "mnist", "optdigits", "poker"]
+        assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
+                                            f'{", ".join(allowed_datasets)}, but was {dataset}'
+
+        super(ParamNetDataManager, self).__init__()
+
+        self.url_source = 'https://www.automl.org/wp-content/uploads/2019/05/surrogates.tar.gz'
+        self.dataset = dataset
+        self.save_dir = hpobench.config_file.data_dir / "Paramnet"
+        self.compressed_data = self.save_dir / 'surrogates.tar.gz'
+
+    def load(self):
+        self.logger.info(f"Start to load the data from {self.save_dir} for dataset {self.dataset}")
+
+        obj_fn_file = self.save_dir / f'rf_surrogate_paramnet_{self.dataset}.pkl'
+        cost_file = self.save_dir / f'rf_cost_surrogate_paramnet_{self.dataset}.pkl'
+
+        # Check if the surrogate files are already available
+        if not (obj_fn_file.exists() or cost_file.exists()):
+            self.logger.info(f"One of the files {obj_fn_file} and {cost_file} not found.")
+
+            # If not, then check if we have to download the compressed data or if this file isn't already there,
+            # download it again.
+            self._check_availability_and_download()
+
+            # Extract the compressed data
+            self.logger.debug('Extract the compressed data')
+            with tarfile.open(self.compressed_data, 'r') as fh:
+                fh.extractall(self.save_dir)
+
+        self.logger.debug('Load the obj function values from file.')
+        with open(obj_fn_file, 'rb') as fh:
+            surrogate_objective = pickle.load(fh)
+
+        self.logger.debug('Load the cost values from file.')
+        with open(cost_file, 'rb') as fh:
+            surrogate_costs = pickle.load(fh)
+
+        self.logger.info(f'Finished loading the data for paramenet - dataset: {self.dataset}')
+        return surrogate_objective, surrogate_costs
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_paramnet_data', delay=0.5)
+    def _check_availability_and_download(self):
+
+        # Check if the compressed data file is already available. This check is moved in this function to ensure
+        # that no process can detect this file, when it is still in the process of downloading and
+        # think that it is already there.
+        if self.compressed_data.exists():
+            self.logger.info("Tar file found. Skip redownloading.")
+            return
+
+        self.logger.info("Tar file not found. Download the compressed data.")
+        self.compressed_data.parent.mkdir(parents=True, exist_ok=True)
+
+        from tqdm import tqdm
+        r = requests.get(self.url_source, stream=True)
+        with open(self.compressed_data, 'wb') as f:
+            total_length = int(r.headers.get('content-length'))
+            for chunk in tqdm(r.iter_content(chunk_size=1024),
+                              unit_divisor=1024, unit='kB', total=int(total_length / 1024) + 1):
+                if chunk:
+                    _ = f.write(chunk)
+                    f.flush()
+        self.logger.info("Finished downloading")
 
 
 class BostonHousingData(HoldoutDataManager):

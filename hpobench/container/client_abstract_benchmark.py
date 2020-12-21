@@ -23,7 +23,7 @@ import subprocess
 import time
 from pathlib import Path
 from typing import Optional
-from typing import Union, Dict, List
+from typing import Union, Dict
 from uuid import uuid1
 
 import ConfigSpace as CS
@@ -34,19 +34,23 @@ from ConfigSpace.read_and_write import json as csjson
 from oslo_concurrency import lockutils
 
 import hpobench.config
+from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 
 # Read in the verbosity level from the environment variable HPOBENCH_DEBUG
 log_level_str = os.environ.get('HPOBENCH_DEBUG', 'false')
-log_level = logging.DEBUG if log_level_str == 'true' else logging.INFO
+LOG_LEVEL = logging.DEBUG if log_level_str == 'true' else logging.INFO
 
 root = logging.getLogger()
-root.setLevel(level=log_level)
+root.setLevel(level=LOG_LEVEL)
 
 logger = logging.getLogger("BenchmarkClient")
-logger.setLevel(level=log_level)
+logger.setLevel(level=LOG_LEVEL)
 
 # This option improves the quality of stacktraces if a container crashes
 sys.excepthook = Pyro4.util.excepthook
+
+# Number of tries to connect to server
+MAX_TRIES = 5
 
 
 class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
@@ -60,14 +64,10 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                  gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
 
         self.socket_id = self._id_generator()
-
-        if rng is not None:
-            kwargs['rng'] = rng
-
-        self._setup(benchmark_name, container_name, container_source, gpu, **kwargs)
+        self._setup(benchmark_name, container_name, container_source, gpu, rng, **kwargs)
 
     def _setup(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
-               gpu: bool = False, **kwargs):
+               gpu: bool = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         """ Initialization of the benchmark using container.
 
         This setup function downloads the container from a defined source. The source is defined either in the
@@ -128,7 +128,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                     cmd = f"singularity pull --dir {self.config.container_dir} " \
                           f"--name {container_name} {container_source}/{container_name.lower()}"
                     logger.debug(cmd)
-                    subprocess.run(cmd, shell=True)
+                    subprocess.run(cmd, shell=True, check=True)
                     time.sleep(1)
                 else:
                     logger.debug('Skipping downloading the container. It is already downloaded.')
@@ -156,7 +156,6 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         cmd = f'{log_str} singularity instance start {bind_options}{gpu_opt}{container_options} {self.socket_id}'
         logger.debug(cmd)
 
-        MAX_TRIES = 5
         for num_tries in range(MAX_TRIES):
             p = subprocess.Popen(cmd,
                                  stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -173,14 +172,15 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             if self.socket_id in out:
                 break
-            else:
-                logger.debug(f'Could not start instance: Try {num_tries + 1}|{MAX_TRIES}')
-                if num_tries + 1 == MAX_TRIES:
-                    raise SystemError(f'Could not start a instance of the benchmark. Retried {MAX_TRIES:d} times'
-                                      f'\nStdout: {output} \nStderr: {err}')
-            st = np.random.randint(1, 60)
-            logger.critical(f'[{num_tries + 1}/{MAX_TRIES}] Could not start instance, sleeping for {st} seconds')
-            time.sleep(st)
+
+            logger.debug(f'Could not start instance: Try {num_tries + 1}|{MAX_TRIES}')
+            if num_tries + 1 == MAX_TRIES:
+                raise SystemError(f'Could not start a instance of the benchmark. Retried {MAX_TRIES:d} times'
+                                  f'\nStdout: {output} \nStderr: {err}')
+
+            sleep_for = np.random.randint(1, 60)
+            logger.critical(f'[{num_tries + 1}/{MAX_TRIES}] Could not start instance, sleeping for {sleep_for} seconds')
+            time.sleep(sleep_for)
 
         # Give each instance a little bit time to start
         time.sleep(1)
@@ -196,11 +196,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         self.benchmark = Pyro4.Proxy(self.uri)
 
         # Handle rng and other optional benchmark arguments
-        if 'rng' in kwargs and isinstance(kwargs['rng'], np.random.RandomState):
-            (rnd0, rnd1, rnd2, rnd3, rnd4) = kwargs['rng'].get_state()
-            rnd1 = [int(number) for number in rnd1]
-            kwargs['rng'] = (rnd0, rnd1, rnd2, rnd3, rnd4)
-        kwargs_str = json.dumps(kwargs)
+        kwargs_str = self._parse_kwargs(rng, **kwargs)
 
         # Try to connect to server calling benchmark constructor via RPC. There exists a time limit
         logger.debug('Check connection to container and init benchmark')
@@ -214,19 +210,28 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                 wait += 5
                 if wait < self.config.pyro_connect_max_wait:
                     continue
-                else:
-                    logger.debug('Waiting time exceeded. To increase, adjust config option pyro_connect_max_wait.')
-                    raise
+                logger.debug('Waiting time exceeded. To increase, adjust config option pyro_connect_max_wait.')
+                raise TimeoutError()
+
             break
         logger.debug('Connected to container')
 
     def _parse_kwargs(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         """ Helper function to parse the named keyword arguments to json str. """
         if rng is not None:
-            rng = self._cast_random_state_to_int(rng)
             kwargs['rng'] = rng
-        kwargs_str = json.dumps(kwargs, indent=None)
+        kwargs_str = json.dumps(kwargs, indent=None, cls=BenchmarkEncoder)
         return kwargs_str
+
+    def _parse_configuration(self, configuration: Union[CS.Configuration, Dict]) -> str:
+        if isinstance(configuration, CS.Configuration):
+            configuration = configuration.get_dictionary()
+        elif isinstance(configuration, dict):
+            configuration = configuration
+        else:
+            raise ValueError(f'Type of config not understood: {type(configuration)}')
+        c_str = json.dumps(configuration, indent=None, cls=BenchmarkEncoder)
+        return c_str
 
     def _parse_fidelities(self, fidelity: Union[CS.Configuration, Dict, None] = None):
         if fidelity is None:
@@ -237,11 +242,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             fidelity = fidelity
         else:
             raise ValueError(f'Type of fidelity not understood: {type(fidelity)}')
-        f_str = json.dumps(fidelity, indent=None)
+        f_str = json.dumps(fidelity, indent=None, cls=BenchmarkEncoder)
         return f_str
 
-    def objective_function(self, configuration: Union[np.ndarray, List, CS.Configuration, Dict],
-                           fidelity: Union[CS.Configuration, Dict, None] = None,
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[Dict, CS.Configuration, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Run a given configuration for a given fidelity on the containerized benchmark.
@@ -251,7 +256,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
         Parameters
         ----------
-        configuration : np.ndarray, List, CS.Configuration, Dict
+        configuration :CS.Configuration, Dict
         fidelity : CS.Configuration, Dict, None
         rng : np.random.RandomState, int, None
         kwargs : Dict
@@ -260,29 +265,15 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         -------
         Dict
         """
-
-        kwargs_str = self._parse_kwargs(rng, **kwargs)
+        c_str = self._parse_configuration(configuration)
         f_str = self._parse_fidelities(fidelity)
-
-        if isinstance(configuration, np.ndarray):
-            configuration = configuration.tolist()
-
-        if isinstance(configuration, list):
-            c_str = json.dumps(configuration, indent=None)
-            json_str = self.benchmark.objective_function_list(c_str, f_str, kwargs_str)
-            return json.loads(json_str)
-        elif isinstance(configuration, CS.Configuration):
-            c_str = json.dumps(configuration.get_dictionary(), indent=None)
-        elif isinstance(configuration, dict):
-            c_str = json.dumps(configuration, indent=None)
-        else:
-            raise ValueError(f'Type of config not understood: {type(configuration)}')
+        kwargs_str = self._parse_kwargs(rng, **kwargs)
 
         json_str = self.benchmark.objective_function(c_str, f_str, kwargs_str)
-        return json.loads(json_str)
+        return json.loads(json_str, cls=BenchmarkDecoder)
 
-    def objective_function_test(self, configuration: Union[np.ndarray, List, CS.Configuration, Dict],
-                                fidelity: Union[CS.Configuration, Dict, None] = None,
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[Dict, CS.Configuration, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
         Run a given configuration for a given fidelity on the test function of the containerized  benchmark.
@@ -292,7 +283,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
         Parameters
         ----------
-        configuration : np.ndarray, List, CS.Configuration, Dict
+        configuration : CS.Configuration, Dict
         fidelity : CS.Configuration, Dict, None
         rng : np.random.RandomState, int, None
         kwargs : Dict
@@ -302,26 +293,12 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         Dict
         """
 
-        kwargs_str = self._parse_kwargs(rng=rng, **kwargs)
+        c_str = self._parse_configuration(configuration)
         f_str = self._parse_fidelities(fidelity)
-
-        if isinstance(configuration, np.ndarray):
-            configuration = configuration.tolist()
-
-        if isinstance(configuration, list):
-            c_str = json.dumps(configuration, indent=None)
-            json_str = self.benchmark.objective_function_test_list(c_str, f_str, kwargs_str)
-            return json.loads(json_str)
-        elif isinstance(configuration, CS.Configuration):
-            c_str = json.dumps(configuration.get_dictionary(), indent=None)
-        elif isinstance(configuration, dict):
-            c_str = json.dumps(configuration, indent=None)
-
-        else:
-            raise ValueError(f'Type of config not understood: {type(configuration)}')
+        kwargs_str = self._parse_kwargs(rng=rng, **kwargs)
 
         json_str = self.benchmark.objective_function_test(c_str, f_str, kwargs_str)
-        return json.loads(json_str)
+        return json.loads(json_str, cls=BenchmarkDecoder)
 
     def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
@@ -336,16 +313,15 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         -------
             CS.ConfigurationSpace
         """
-        seed_dict = {}
-        if seed is not None:
-            seed_dict['seed'] = seed
-        seed_dict = json.dumps(seed_dict, indent=None)
+        seed_dict = json.dumps({'seed': seed}, indent=None, cls=BenchmarkEncoder)
         logger.debug(f'Client: seed_dict {seed_dict}')
         json_str = self.benchmark.get_configuration_space(seed_dict)
 
         config_space = csjson.read(json_str)
+
         if seed is not None:
             config_space.seed(seed)
+
         return config_space
 
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -361,14 +337,12 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         -------
             CS.ConfigurationSpace
         """
-        seed_dict = {}
-        if seed is not None:
-            seed_dict['seed'] = seed
-        seed_dict = json.dumps(seed_dict, indent=None)
+        seed_dict = json.dumps({'seed': seed}, indent=None, cls=BenchmarkEncoder)
         logger.debug(f'Client: seed_dict {seed_dict}')
         json_str = self.benchmark.get_fidelity_space(seed_dict)
 
         fs = csjson.read(json_str)
+
         if seed is not None:
             fs.seed(seed)
 
@@ -377,26 +351,29 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
     def get_meta_information(self) -> Dict:
         """ Return the information about the benchmark. """
         json_str = self.benchmark.get_meta_information()
-        return json.loads(json_str)
+        return json.loads(json_str, cls=BenchmarkDecoder)
+
+    def _shutdown(self):
+        """ Shutdown benchmark and stop container"""
+        try:
+            self.benchmark.shutdown()
+        except TypeError:
+            pass
+
+        subprocess.run(f'singularity instance stop {self.socket_id}'.split(), check=False)
+
+        if (self.config.socket_dir / f'{self.socket_id}_unix.sock').exists():
+            (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
+        # self.benchmark._pyroRelease()
 
     def __call__(self, configuration: Dict, **kwargs) -> Dict:
         """ Provides interface to use, e.g., SciPy optimizers """
         return self.objective_function(configuration, **kwargs)['function_value']
 
     def __del__(self):
-        self.benchmark.shutdown()
-        subprocess.run(f'singularity instance stop {self.socket_id}'.split())
-        if (self.config.socket_dir / f'{self.socket_id}_unix.sock').exists():
-            (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
-        # self.benchmark._pyroRelease()
+        self._shutdown()
 
     @staticmethod
     def _id_generator() -> str:
         """ Helper function: Creates unique socket ids for the benchmark server """
         return str(uuid1())
-
-    @staticmethod
-    def _cast_random_state_to_int(rng: [int, np.random.RandomState]) -> int:
-        if isinstance(rng, np.random.RandomState):
-            rng = rng.randint(0, 100000)
-        return rng

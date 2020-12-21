@@ -2,6 +2,7 @@
 
 import abc
 from typing import Union, Dict
+import functools
 
 import logging
 import ConfigSpace
@@ -12,9 +13,9 @@ from hpobench.util import rng_helper
 logger = logging.getLogger('AbstractBenchmark')
 
 
-class AbstractBenchmark(object, metaclass=abc.ABCMeta):
+class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
 
-    def __init__(self, rng: Union[int, np.random.RandomState, None] = None):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
         """
         Interface for benchmarks.
 
@@ -38,9 +39,10 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         self.fidelity_space = self.get_fidelity_space()
 
     @abc.abstractmethod
-    def objective_function(self, configuration: Dict, fidelity: Union[Dict, None] = None,
+    def objective_function(self, configuration: Union[ConfigSpace.Configuration, Dict],
+                           fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
-                           *args, **kwargs) -> dict:
+                           **kwargs) -> Dict:
         """
         Objective function.
 
@@ -67,12 +69,13 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Dict
             Must contain at least the key `function_value` and `cost`.
         """
-        pass
+        NotImplementedError()
 
     @abc.abstractmethod
-    def objective_function_test(self, configuration: Dict, fidelity: Union[Dict, None] = None,
+    def objective_function_test(self, configuration: Union[ConfigSpace.Configuration, Dict],
+                                fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
-                                *args, **kwargs) -> Dict:
+                                **kwargs) -> Dict:
         """
         If there is a different objective function for offline testing, e.g
         testing a machine learning on a hold extra test set instead
@@ -91,132 +94,95 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
         Dict
             Must contain at least the key `function_value` and `cost`.
         """
-        pass
+        NotImplementedError()
 
     @staticmethod
-    def _check_configuration(foo):
+    def check_parameters(wrapped_function):
         """
-        Decorator to enable checking the input configuration and, if given, fidelity parameters.
+        Wrapper for the objective_function and objective_function_test.
+        This function verifies the correctness of the input configuration and the given fidelity.
 
-        Uses the check_configuration of the ConfigSpace class to ensure
-        that all specified values are valid, and no conditionals are violated
+        It ensures that both, configuration and fidelity, don't contain any wrong parameters or any conditions are
+        violated.
 
-        Can be combined with the _configuration_as_array decorator.
+        If the argument 'fidelity' is not specified or a single parameter is missing, then the corresponding default
+        fidelities are filled in.
+
+        We cast them to a ConfigSpace.Configuration object to ensure that no conditions are violated.
         """
-        def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict], **kwargs):
 
-            try:
-                if isinstance(configuration, np.ndarray):
-                    config_dict = {k: configuration[i] for (i, k) in enumerate(self.configuration_space)}
-                    config = ConfigSpace.Configuration(self.configuration_space, config_dict)
-                elif isinstance(configuration, dict):
-                    config = ConfigSpace.Configuration(self.configuration_space, configuration)
-                elif isinstance(configuration, ConfigSpace.Configuration):
-                    config = configuration
-                else:
-                    config = None
-            except Exception as e:
-                logger.error('Error during the conversion of the provided configuration '
-                             'into a ConfigSpace.Configuration object')
-                raise e
-
-            if config is None:
-                raise TypeError(f'Configuration has to be from type np.ndarray, dict, or ConfigSpace.Configuration but '
-                                f'was {type(configuration)}')
-
-            self.configuration_space.check_configuration(config)
-            return foo(self, configuration, **kwargs)
-        return wrapper
-
-    @staticmethod
-    def _check_fidelity(foo):
-        """
-        Decorator to enable checking the input fidelity parameters, if any. Wrapped functions are expected to contain
-        an optional 'fidelity':keyword argument, which would in turn contain a dictionary of the requested fidelity
-        parameters. If any specific parameter is missing or the entire argument is missing, the corresponding default
-        values are filled in.
-
-        Uses the check_configuration of the ConfigSpace class to ensure that all specified values are valid, and no
-        conditionals are violated.
-
-        Order independent from the _check_configuration decorator, but it does forward all fidelity parameters,
-        regardless of input, as a dictionary in the 'fidelity' keyword argument.
-        """
-        def wrapper(self, configuration: Union[np.ndarray, ConfigSpace.Configuration, Dict],
+        # Copy all documentation from the underlying function except the annotations.
+        @functools.wraps(wrapped=wrapped_function, assigned=('__module__', '__name__', '__qualname__', '__doc__',))
+        def wrapper(self, configuration: Union[ConfigSpace.Configuration, Dict],
                     fidelity: Union[Dict, ConfigSpace.Configuration, None] = None, **kwargs):
 
+            configuration = AbstractBenchmark._check_and_cast_configuration(configuration, self.configuration_space)
+
+            # Second, evaluate the given fidelities.
             # Sanity check that there are no fidelities in **kwargs
-            for f in self.fidelity_space.get_hyperparameters():
-                if f.name in kwargs:
-                    raise ValueError(f'Fidelity parameter {f.name} should not be part of kwargs\n'
-                                     f'Fidelity: {fidelity}\n Kwargs: {kwargs}')
+            fidelity = AbstractBenchmark._check_and_cast_fidelity(fidelity, self.fidelity_space, **kwargs)
 
-            # If kwargs contains the 'fidelity' arg, extract any fidelity parameters it contains and fill in
-            # default values for the rest.
-            default_fidelities = self.fidelity_space.get_default_configuration()
-            try:
-                if fidelity is None:
-                    fidelity = default_fidelities
-                if isinstance(fidelity, dict):
-                    default_fidelities_cfg = default_fidelities.get_dictionary()
-                    fidelity = {k: fidelity.get(k, v) for k, v in default_fidelities_cfg.items()}
-                    fidelity = ConfigSpace.Configuration(self.fidelity_space, fidelity)
-                elif isinstance(fidelity, ConfigSpace.Configuration):
-                    fidelity = fidelity
-                else:
-                    fidelity = None
-            except Exception as e:
-                logger.error('Error during the conversion of the provided fidelities '
-                             'into a FidelitySpace (ConfigSpace.Configuration) object')
-                raise e
-
-            if fidelity is None:
-                raise TypeError(f'Configuration has to be from type np.ndarray, dict, or ConfigSpace.Configuration but '
-                                f'was {type(configuration)}')
-
-            # Ensure that the extracted fidelity values play well with the defined fidelity space
-            self.fidelity_space.check_configuration(fidelity)
-
-            # All benchmarks should work on dictionaries. Cast the fidelity space object to a dictionary.
-            fidelity = fidelity.get_dictionary()
-
-            return foo(self, configuration, fidelity=fidelity, **kwargs)
+            # All benchmarks should work on dictionaries. Cast the both objects to dictionaries.
+            return wrapped_function(self, configuration.get_dictionary(), fidelity.get_dictionary(), **kwargs)
         return wrapper
 
     @staticmethod
-    def _configuration_as_array(foo, data_type=np.float):
+    def _check_and_cast_configuration(configuration: Union[Dict, ConfigSpace.Configuration],
+                                      configuration_space: ConfigSpace.ConfigurationSpace) \
+            -> ConfigSpace.Configuration:
+        """ Helper-function to evaluate the given configuration.
+            Cast it to a ConfigSpace.Configuration and evaluate if it violates some boundaries.
         """
-        Decorator to allow the first input argument to 'objective_function' to
-        be an array.
 
-        For all continuous benchmarks it is often required that the input to
-        the benchmark can be a (NumPy) array. By adding this to the objective
-        function, both inputs types, ConfigSpace.Configuration and array,
-        are possible.
-
-        Can be combined with the _check_configuration decorator.
-        """
-        def wrapper(self, configuration, **kwargs):
-            if isinstance(configuration, ConfigSpace.Configuration):
-                config_array = np.array([configuration[k] for k in configuration], dtype=data_type)
-            else:
-                config_array = configuration
-            return foo(self, config_array, **kwargs)
-        return wrapper
+        if isinstance(configuration, dict):
+            configuration = ConfigSpace.Configuration(configuration_space, configuration)
+        elif isinstance(configuration, ConfigSpace.Configuration):
+            configuration = configuration
+        else:
+            raise TypeError(f'Configuration has to be from type List, np.ndarray, dict, or '
+                            f'ConfigSpace.Configuration but was {type(configuration)}')
+        configuration_space.check_configuration(configuration)
+        return configuration
 
     @staticmethod
-    def _configuration_as_dict(foo):
+    def _check_and_cast_fidelity(fidelity: Union[dict, ConfigSpace.Configuration, None],
+                                 fidelity_space: ConfigSpace.ConfigurationSpace, **kwargs) \
+            -> ConfigSpace.Configuration:
+        """ Helper-function to evaluate the given fidelity object.
+            Similar to the checking and casting from above, we validate the fidelity object. To do so, we cast it to a
+            ConfigSpace.Configuration object.
+            If the fidelity is not specified (None), then we use the default fidelity of the benchmark.
+            If the benchmark is a multi-multi-fidelity benchmark and only a subset of the available fidelities is
+            specified, we fill the missing ones with their default values.
         """
-        Decorator to cast the ConfigSpace.configuration to a dictionary. This allows the first argument of
-        objective_function and objective_function_test to be a ConfigSpace.configuration.
+        # Make a check, that no fidelities are in the kwargs.
+        f_in_kwargs = []
+        for f in fidelity_space.get_hyperparameters():
+            if f.name in kwargs:
+                f_in_kwargs.append(f.name)
+        if len(f_in_kwargs) != 0:
+            raise ValueError(f'Fidelity parameters {", ".join(f_in_kwargs)} should not be part of kwargs\n'
+                             f'Fidelity: {fidelity}\n Kwargs: {kwargs}')
 
-        Can be combined with the _check_configuration decorator.
-        """
-        def wrapper(self, configuration, **kwargs):
-            if isinstance(configuration, ConfigSpace.Configuration):
-                configuration = configuration.get_dictionary()
-            return foo(self, configuration, **kwargs)
-        return wrapper
+        default_fidelities = fidelity_space.get_default_configuration()
+
+        if fidelity is None:
+            fidelity = default_fidelities
+        if isinstance(fidelity, dict):
+            default_fidelities_cfg = default_fidelities.get_dictionary()
+            fidelity_copy = fidelity.copy()
+            fidelity = {k: fidelity_copy.pop(k, v) for k, v in default_fidelities_cfg.items()}
+            assert len(fidelity_copy) == 0, 'Provided fidelity dict contained unknown fidelity ' \
+                                            f'values: {fidelity_copy.keys()}'
+            fidelity = ConfigSpace.Configuration(fidelity_space, fidelity)
+        elif isinstance(fidelity, ConfigSpace.Configuration):
+            fidelity = fidelity
+        else:
+            raise TypeError(f'Fidelity has to be an instance of type None, dict, or '
+                            f'ConfigSpace.Configuration but was {type(fidelity)}')
+        # Ensure that the extracted fidelity values play well with the defined fidelity space
+        fidelity_space.check_configuration(fidelity)
+        return fidelity
 
     def __call__(self, configuration: Dict, **kwargs) -> float:
         """ Provides interface to use, e.g., SciPy optimizers """
@@ -240,9 +206,12 @@ class AbstractBenchmark(object, metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def get_fidelity_space() -> ConfigSpace.ConfigurationSpace:
+    def get_fidelity_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
         """ Defines the available fidelity parameters as a "fidelity space" for each benchmark.
-
+        Parameters
+        ----------
+        seed: int, None
+            Seed for the fidelity space.
         Returns
         -------
         ConfigSpace.ConfigurationSpace
