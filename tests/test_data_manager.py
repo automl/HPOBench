@@ -17,7 +17,7 @@ def test_nasbench_201_load_thread_safe():
 def test_nasbench_201_init():
 
     data_manager = NASBench_201Data(dataset='cifar100')
-    assert len(data_manager.files) == 4
+    assert len(data_manager.files) == 3
     assert all([file.startswith('NAS-Bench') for file in data_manager.files])
 
     with pytest.raises(AssertionError):
@@ -36,7 +36,7 @@ def test_nasbench_201_load():
 
     assert len(data) == 3
     assert (hpobench.config_file.data_dir / "nasbench_201").exists()
-    assert len(list((hpobench.config_file.data_dir / "nasbench_201").glob('*.json'))) == 4
+    assert len(list((hpobench.config_file.data_dir / "nasbench_201").glob('*.json'))) == 3
     assert not (hpobench.config_file.data_dir / "nasbench_201_data_v1.3.zip").exists()
 
     data_manager.data = None

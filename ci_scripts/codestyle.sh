@@ -20,17 +20,14 @@ if [[ "$RUN_CODESTYLE" == "true" ]]; then
     fi
 
     # Enable the error W0221: Parameters differ from overridden method (arguments-differ)
-    test_pylint=$(pylint --disable=all --enable=W0221 ./hpobench)
-    if [[ $test_pylint ]]; then
-      echo $test_pylint
-      exit 1
+    pylint --disable=all --enable=W0221 ./hpobench
+    exit_code=$?
+    if [[ "$exit_code" -eq 0 ]]; then
+        echo "Pylint: No signature errors found"
     else
-      echo "Pylint: No signature errors found"
+        echo "Pylint: Signature Failure!"
+        exit 1
     fi
-
-    # Just print the pylint output without throwing an error.
-    pylint --exit-zero --rcfile=./pylint.rc ./hpolib
-
 else
     echo "Skip code style checking"
 fi
