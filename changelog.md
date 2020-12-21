@@ -1,3 +1,5 @@
+# 0.0.7
+
 # 0.0.6
   * Add NasBench1shot1 Benchmark
   * Add info about incumbents for nasbench201 to its docstrings. 
