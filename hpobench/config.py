@@ -124,7 +124,8 @@ class HPOBenchConfig:
         self._check_version()
 
         self.verbosity = read_config.get('verbosity', self.verbosity)
-        logging.basicConfig(level=self.verbosity)
+        # logging.basicConfig(level=self.verbosity)  # TODO: This statement causes some trouble.
+        #                                                    (Container-Logger is always set to debug)
 
         self.cache_dir = Path(read_config.get('cache_dir', self.cache_dir))
         self.data_dir = Path(read_config.get('data_dir', self.data_dir))
