@@ -77,6 +77,27 @@ def test_rng_serialization_xgb():
     assert np.array_equiv(meta['initial random seed'].random(10), meta_new['initial random seed'].random(10))
 
 
+def test_benchmark_encoder():
+    from enum import Enum
+    class test_enum(Enum):
+        obj = 'name'
+
+        def __str__(self):
+            return str(self.value)
+
+    from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
+    import json
+    import numpy as np
+
+    enum_obj = test_enum.obj
+    enum_obj_str = json.dumps(enum_obj, cls=BenchmarkEncoder)
+    assert enum_obj_str == '"name"'
+
+    array = np.array([1, 2, 3, 4])
+    array_str = json.dumps(array, cls=BenchmarkEncoder)
+    array_ = json.loads(array_str, cls=BenchmarkDecoder)
+    assert np.array_equiv(array, array_)
+
 def test_debug_level():
     from hpobench.util.container_utils import enable_container_debug, disable_container_debug
     import os
