@@ -1,3 +1,51 @@
+"""
+How to use this benchmark:
+--------------------------
+
+We recommend using the containerized version of this benchmark.
+If you want to use this benchmark locally (without running it via the corresponding container),
+you need to perform the following steps.
+
+Prerequisites:
+==============
+Conda environment in which the HPOBench is installed (pip install .). Activate your environment.
+```
+conda activate <Name_of_Conda_HPOBench_environment>
+```
+
+1. Download data:
+=================
+The data will be downloaded automatically.
+
+If you want to download the data on your own, you can download the data with the following command and then link the
+hpobench-config's data-path to it.
+
+```
+wget https://www.automl.org/wp-content/uploads/2019/05/surrogates.tar.gz
+```
+
+The data consist of surrogates for different data sets. Each surrogate is a pickled scikit-learn forest. Thus, we have
+a hard requirement of scikit-learn==0.23.x.
+
+
+1. Clone from github:
+=====================
+Clone the learna tool and install it to your Conda environment.
+```
+git clone --single-branch --branch development https://github.com/PhMueller/learna.git
+cd learna
+pip install .
+```
+
+2. Clone and install
+====================
+```
+cd /path/to/HPOBench
+pip install .[paramnet]
+
+```
+"""
+
 import logging
 from typing import Union, Dict
 

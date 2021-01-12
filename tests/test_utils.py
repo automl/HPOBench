@@ -71,9 +71,7 @@ def test_rng_serialization_xgb():
 
     meta_str = json.dumps(meta, indent=None, cls=BenchmarkEncoder)
     meta_new = json.loads(meta_str, cls=BenchmarkDecoder)
-
     assert isinstance(meta_new['initial random seed'], np.random.RandomState)
-    assert pytest.approx(0.81063947, 0.001) == meta['initial random seed'].random(10)[0]
     assert np.array_equiv(meta['initial random seed'].random(10), meta_new['initial random seed'].random(10))
 
 
@@ -97,6 +95,7 @@ def test_benchmark_encoder():
     array_str = json.dumps(array, cls=BenchmarkEncoder)
     array_ = json.loads(array_str, cls=BenchmarkDecoder)
     assert np.array_equiv(array, array_)
+
 
 def test_debug_level():
     from hpobench.util.container_utils import enable_container_debug, disable_container_debug
