@@ -24,7 +24,7 @@ def test_whitebox_without_container_xgb():
 
     n_estimator = 32
     subsample = 1
-    result_dict = b.objective_function(configuration, fidelity=dict(n_estimators=n_estimator, subsample=subsample),
+    result_dict = b.objective_function(configuration, fidelity=dict(n_estimators=n_estimator, dataset_fraction=subsample),
                                        rng=0)
     valid_loss = result_dict['function_value']
     train_loss = result_dict['info']['train_loss']
@@ -51,7 +51,8 @@ def test_whitebox_with_container():
 
     n_estimator = 32
     subsample = 1
-    result_dict = b.objective_function(configuration, fidelity=dict(n_estimators=n_estimator, subsample=subsample))
+    result_dict = b.objective_function(configuration, fidelity=dict(n_estimators=n_estimator,
+                                                                    dataset_fraction=subsample))
     valid_loss = result_dict['function_value']
     train_loss = result_dict['info']['train_loss']
     result_dict = b.objective_function_test(configuration, fidelity=dict(n_estimators=n_estimator))
