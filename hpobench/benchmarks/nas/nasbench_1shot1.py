@@ -270,7 +270,12 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
     def _query_benchmark(self, config: Dict, fidelity: Dict, run_index: int) -> Dict:
 
         adjacency_matrix, node_list = self.search_space.convert_config_to_nasbench_format(config)
-        node_list = [INPUT, *node_list, CONV1X1, OUTPUT]
+
+        if isinstance(self, NASBench1shot1SearchSpace3Benchmark):
+            node_list = [INPUT, *node_list, OUTPUT]
+        else:
+            node_list = [INPUT, *node_list, CONV1X1, OUTPUT]
+
         adjacency_list = adjacency_matrix.astype(np.int).tolist()
         model_spec = api.ModelSpec(matrix=adjacency_list, ops=node_list)
 
