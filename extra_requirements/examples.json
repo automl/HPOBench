@@ -4,5 +4,5 @@
                          "smac==0.12.2","hpbandster==0.7.4"],
     "nasbench_101_example": ["torch>=1.2.0,<=1.5.1","torchvision>=0.4.0",
                              "nasbench@git+https://github.com/google-research/nasbench#egg=nasbench-0",
-                             "nas_benchmarks@git+https://github.com/automl/nas_benchmarksh#egg=nas_benchmarks-0.0.1"]
+                             "nas_benchmarks@git+https://github.com/automl/nas_benchmarks#egg=nas_benchmarks-0.0.1"]
 }
