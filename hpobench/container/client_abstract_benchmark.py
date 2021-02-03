@@ -29,6 +29,7 @@ from uuid import uuid1
 import ConfigSpace as CS
 import Pyro4
 import Pyro4.util
+import Pyro4.errors
 import numpy as np
 from ConfigSpace.read_and_write import json as csjson
 from oslo_concurrency import lockutils
@@ -357,14 +358,16 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         """ Shutdown benchmark and stop container"""
         try:
             self.benchmark.shutdown()
-        except TypeError:
+        except (ConnectionRefusedError, Pyro4.errors.CommunicationError, Pyro4.errors.ConnectionClosedError):
             pass
 
-        subprocess.run(f'singularity instance stop {self.socket_id}'.split(), check=False)
+        # If the container is already closed, we dont want a error message here (-> DEVNULL)
+        subprocess.run(f'singularity instance stop {self.socket_id}'.split(), check=False, stdout=subprocess.DEVNULL)
 
         if (self.config.socket_dir / f'{self.socket_id}_unix.sock').exists():
             (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
         # self.benchmark._pyroRelease()
+        logger.info('Benchmark is successfully shut down.')
 
     def __call__(self, configuration: Dict, **kwargs) -> Dict:
         """ Provides interface to use, e.g., SciPy optimizers """
