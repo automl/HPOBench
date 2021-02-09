@@ -100,6 +100,19 @@ pip install .
 
 ## Further Notes
 
+### Configure the HPOBench
+
+All of HPOBench's settings are stored in a file, the `hpobenchrc`-file. 
+It is a yaml file, which is automatically generated at the first use of HPOBench. 
+By default, it is placed in `$XDG_CONFIG_HOME`. If `$XDG_CONFIG_HOME` is not set, then the
+`hpobenchrc`-file is saved to `'~/.config/hpobench'`.
+Make sure to have write permissions in this directory. 
+
+In the `hpobenchrc`, you can specify for example the directory, in that the benchmark-containers are
+downloaded. We encourage you to take a look into the `hpobenchrc`, to find out more about all
+possible settings. 
+
+
 ### How to build a container locally
 
 With singularity installed run the following to built the xgboost container
@@ -153,11 +166,9 @@ See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that
 ## Status
 
 Status for Master Branch: 
-
-[![Build Status](https://travis-ci.org/automl/HPOBench.svg?branch=master)](https://travis-ci.org/automl/HPOBench)
+[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=master)](https://https://github.com/automl/HPOBench/actions)
 [![codecov](https://codecov.io/gh/automl/HPOBench/branch/master/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)
 
 Status for Development Branch: 
-
-[![Build Status](https://travis-ci.org/automl/HPOBench.svg?branch=development)](https://travis-ci.org/automl/HPOBench)
+[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=development)](https://https://github.com/automl/HPOBench/actions)
 [![codecov](https://codecov.io/gh/automl/HPOBench/branch/development/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)
