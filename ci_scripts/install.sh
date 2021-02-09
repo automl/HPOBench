@@ -42,8 +42,6 @@ fi
 
 if [[ "$USE_SINGULARITY" == "true" ]]; then
     echo "Install Singularity"
-    gimme force 1.14
-    eval "$(gimme 1.14)"
 
     sudo apt-get update && sudo apt-get install -y \
       build-essential \
