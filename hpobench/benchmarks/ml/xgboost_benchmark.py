@@ -1,3 +1,24 @@
+"""
+
+Changelog:
+==========
+
+0.0.2:
+* Changed the search space definiton to match the paper: (https://arxiv.org/pdf/1802.09596.pdf)
+    eta:                [1e-5, 1] (def: 0.3)    ->  [2**-10, 1] (def: 0.3)
+    min_child_weight:   [0,05, 10] (def: 1)     ->  [1, 2**7] (def: 1)
+    colsample_bytree:   [0,05, 1] (def: 1)      ->  [0.05, 1] (def: 1)
+    colsample_bylevel:  [0,05, 1] (def: 1)      ->  [0.05, 1] (def: 1)
+    reg_lambda:         [1e-5, 2] (def: 1)      ->  [2**-10, 2**10] (def: 1)
+    reg_alpha:          [1e-5, 2] (def: 1e-5)   ->  [2**-10, 2**10] (def: 1)
+    max_depth:          -                       ->  [1, 15] (def: 6)
+
+0.0.1:
+* First implementation of a XGBoost Benchmark.
+
+
+"""
+
 import logging
 import time
 from typing import Union, Tuple, Dict, List
@@ -15,7 +36,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.openml_data_manager import OpenMLHoldoutDataManager
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 logger = logging.getLogger('XGBBenchmark')
 
@@ -235,12 +256,13 @@ class XGBoostBenchmark(AbstractBenchmark):
         cs = CS.ConfigurationSpace(seed=seed)
 
         cs.add_hyperparameters([
-            CS.UniformFloatHyperparameter('eta', lower=1e-5, upper=1, default_value=0.3, log=True),
-            CS.UniformFloatHyperparameter('min_child_weight', lower=0.05, upper=10., default_value=1., log=True),
+            CS.UniformFloatHyperparameter('eta', lower=2**-10, upper=1., default_value=0.3, log=True),
+            CS.UniformIntegerHyperparameter('max_depth', lower=1, upper=15, default_value=6, log=False),
+            CS.UniformFloatHyperparameter('min_child_weight', lower=1., upper=2**7., default_value=1., log=True),
             CS.UniformFloatHyperparameter('colsample_bytree', lower=0.05, upper=1., default_value=1.),
             CS.UniformFloatHyperparameter('colsample_bylevel', lower=0.05, upper=1., default_value=1.),
-            CS.UniformFloatHyperparameter('reg_lambda', lower=1e-5, upper=2, default_value=1, log=True),
-            CS.UniformFloatHyperparameter('reg_alpha', lower=1e-5, upper=2, default_value=1e-5, log=True)
+            CS.UniformFloatHyperparameter('reg_lambda', lower=2**-10, upper=2**10, default_value=1, log=True),
+            CS.UniformFloatHyperparameter('reg_alpha', lower=2**-10, upper=2**10, default_value=1, log=True)
         ])
 
         return cs
@@ -273,7 +295,15 @@ class XGBoostBenchmark(AbstractBenchmark):
     def get_meta_information(self) -> Dict:
         """ Returns the meta information for the benchmark """
         return {'name': 'XGBoost',
-                'references': [],
+                'references': ['@article{probst2019tunability,'
+                               'title={Tunability: Importance of hyperparameters of machine learning algorithms.},'
+                               'author={Probst, Philipp and Boulesteix, Anne-Laure and Bischl, Bernd},'
+                               'journal={J. Mach. Learn. Res.},'
+                               'volume={20},'
+                               'number={53},'
+                               'pages={1--32},'
+                               'year={2019}'
+                               '}'],
                 'shape of train data': self.x_train.shape,
                 'shape of test data': self.x_test.shape,
                 'shape of valid data': self.x_valid.shape,
@@ -281,8 +311,9 @@ class XGBoostBenchmark(AbstractBenchmark):
                 'task_id': self.task_id
                 }
 
-    def _get_pipeline(self, eta: float, min_child_weight: int, colsample_bytree: float, colsample_bylevel: float,
-                      reg_lambda: int, reg_alpha: int, n_estimators: int) -> pipeline.Pipeline:
+    def _get_pipeline(self, max_depth: int, eta: float, min_child_weight: int, colsample_bytree: float,
+                      colsample_bylevel: float, reg_lambda: int, reg_alpha: int, n_estimators: int) \
+            -> pipeline.Pipeline:
         """ Create the scikit-learn (training-)pipeline """
         objective = 'binary:logistic' if self.num_class <= 2 else 'multi:softmax'
 
@@ -297,6 +328,7 @@ class XGBoostBenchmark(AbstractBenchmark):
                  ("continuous", "passthrough", ~self.categorical_data)])),
             ('xgb',
              xgb.XGBClassifier(
+                 max_depth=max_depth,
                  learning_rate=eta,
                  min_child_weight=min_child_weight,
                  colsample_bytree=colsample_bytree,
