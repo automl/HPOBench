@@ -62,12 +62,14 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
     socket_id : str
     """
     def __init__(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
-                 gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+                 container_tag: str = 'latest', gpu: Optional[bool] = False,
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
 
         self.socket_id = self._id_generator()
-        self._setup(benchmark_name, container_name, container_source, gpu, rng, **kwargs)
+        self._setup(benchmark_name, container_name, container_tag, container_source, gpu, rng, **kwargs)
 
-    def _setup(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
+    def _setup(self, benchmark_name: str, container_name: str, container_tag: str,
+               container_source: Optional[str] = None,
                gpu: bool = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         """ Initialization of the benchmark using container.
 
@@ -84,6 +86,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         container_source : Optional[str]
             Path to the container. Either local path or url to a hosting
             platform, e.g. singularity hub.
+        container_tag : str
+            Singularity containers are specified by an address as well as a container tag. We use the tag as a version
+            number. By default the tag is set to `latest`, which then pulls the latest container from the container
+            source. The tag-versioning allows the users to rerun an experiment, which was performed with an older
+            container version. Take a look in the container_source to find the right tag to use.
         container_name : str
             name of the container. E.g. xgboost_benchmark. Specifying different container could be
             useful to have multiple container for the same benchmark, if a tool like auto-sklearn is updated to a newer
@@ -100,6 +107,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # We can point to a different container source. See below.
         container_source = container_source or self.config.container_source
         container_dir = Path(self.config.container_dir)
+
+        container_name = f'{container_name}:{container_tag}'
 
         logger.debug(f'Use benchmark {benchmark_name} from container {container_source}/{container_name}. \n'
                      f'And container directory {self.config.container_dir}')
