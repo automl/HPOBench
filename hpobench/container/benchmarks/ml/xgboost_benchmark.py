@@ -12,3 +12,11 @@ class XGBoostBenchmark(AbstractBenchmarkClient):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'xgboost_benchmark')
         super(XGBoostBenchmark, self).__init__(**kwargs)
+
+
+class XGBoostBoosterBenchmark(AbstractBenchmarkClient):
+    def __init__(self, task_id: int, **kwargs):
+        kwargs['task_id'] = task_id
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostBoosterBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'xgboost_benchmark')
+        super(XGBoostBoosterBenchmark, self).__init__(**kwargs)
