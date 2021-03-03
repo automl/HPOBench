@@ -4,14 +4,24 @@ Changelog:
 ==========
 
 0.0.2:
-* Changed the search space definiton to match the paper: (https://arxiv.org/pdf/1802.09596.pdf)
+* Change the search space definiton to match the paper: (https://arxiv.org/pdf/1802.09596.pdf)
     eta:                [1e-5, 1] (def: 0.3)    ->  [2**-10, 1] (def: 0.3)
     min_child_weight:   [0,05, 10] (def: 1)     ->  [1, 2**7] (def: 1)
-    colsample_bytree:   [0,05, 1] (def: 1)      ->  [0.05, 1] (def: 1)
-    colsample_bylevel:  [0,05, 1] (def: 1)      ->  [0.05, 1] (def: 1)
+    colsample_bytree:   [0,05, 1] (def: 1)      ->  [0.01, 1] (def: 1)
+    colsample_bylevel:  [0,05, 1] (def: 1)      ->  [0.01, 1] (def: 1)
     reg_lambda:         [1e-5, 2] (def: 1)      ->  [2**-10, 2**10] (def: 1)
     reg_alpha:          [1e-5, 2] (def: 1e-5)   ->  [2**-10, 2**10] (def: 1)
     max_depth:          -                       ->  [1, 15] (def: 6)
+    subsample_per_it:   -                       ->  [0.01, 1] (def: 1)
+    [booster:            -                       ->  [gbtree, gblinear, dart] (def: gbtree)] *)
+
+    *) This parameter is only in the XGBoostBoosterBenchmark. Not in the XGBoostBenchmark class.
+
+
+* Add class to optimize booster method: (gbtree, gblinear or dart)
+    We have introduced a new class, which adds the used booster as parameter to the configuration space. To read more
+    about booster, please take a look in the official XGBoost-documentation (https://xgboost.readthedocs.io/en/latest).
+
 
 0.0.1:
 * First implementation of a XGBoost Benchmark.
@@ -259,10 +269,11 @@ class XGBoostBenchmark(AbstractBenchmark):
             CS.UniformFloatHyperparameter('eta', lower=2**-10, upper=1., default_value=0.3, log=True),
             CS.UniformIntegerHyperparameter('max_depth', lower=1, upper=15, default_value=6, log=False),
             CS.UniformFloatHyperparameter('min_child_weight', lower=1., upper=2**7., default_value=1., log=True),
-            CS.UniformFloatHyperparameter('colsample_bytree', lower=0.05, upper=1., default_value=1.),
-            CS.UniformFloatHyperparameter('colsample_bylevel', lower=0.05, upper=1., default_value=1.),
+            CS.UniformFloatHyperparameter('colsample_bytree', lower=0.01, upper=1., default_value=1.),
+            CS.UniformFloatHyperparameter('colsample_bylevel', lower=0.01, upper=1., default_value=1.),
             CS.UniformFloatHyperparameter('reg_lambda', lower=2**-10, upper=2**10, default_value=1, log=True),
-            CS.UniformFloatHyperparameter('reg_alpha', lower=2**-10, upper=2**10, default_value=1, log=True)
+            CS.UniformFloatHyperparameter('reg_alpha', lower=2**-10, upper=2**10, default_value=1, log=True),
+            CS.UniformFloatHyperparameter('subsample_per_it', lower=0.01, upper=1, default_value=1, log=False)
         ])
 
         return cs
@@ -287,7 +298,7 @@ class XGBoostBenchmark(AbstractBenchmark):
 
         fidel_space.add_hyperparameters([
             CS.UniformFloatHyperparameter("dataset_fraction", lower=0.0, upper=1.0, default_value=1.0, log=False),
-            CS.UniformIntegerHyperparameter("n_estimators", lower=2, upper=128, default_value=128, log=False)
+            CS.UniformIntegerHyperparameter("n_estimators", lower=1, upper=256, default_value=256, log=False)
         ])
 
         return fidel_space
@@ -311,8 +322,9 @@ class XGBoostBenchmark(AbstractBenchmark):
                 'task_id': self.task_id
                 }
 
-    def _get_pipeline(self, max_depth: int, eta: float, min_child_weight: int, colsample_bytree: float,
-                      colsample_bylevel: float, reg_lambda: int, reg_alpha: int, n_estimators: int) \
+    def _get_pipeline(self, max_depth: int, eta: float, min_child_weight: int,
+                      colsample_bytree: float, colsample_bylevel: float, reg_lambda: int, reg_alpha: int,
+                      n_estimators: int, subsample_per_it: float) \
             -> pipeline.Pipeline:
         """ Create the scikit-learn (training-)pipeline """
         objective = 'binary:logistic' if self.num_class <= 2 else 'multi:softmax'
@@ -339,6 +351,69 @@ class XGBoostBenchmark(AbstractBenchmark):
                  objective=objective,
                  n_jobs=self.n_threads,
                  random_state=self.rng.randint(1, 100000),
-                 num_class=self.num_class))
+                 num_class=self.num_class,
+                 subsample=subsample_per_it))
             ])
+        return clf
+
+
+class XGBoostBoosterBenchmark(XGBoostBenchmark):
+    """
+    Similar to XGBoostBenchmark but enables also the optimization of the used booster.
+    """
+
+    def __init__(self, task_id: Union[int, None] = None, n_threads: int = 1,
+                 rng: Union[np.random.RandomState, int, None] = None):
+        super(XGBoostBoosterBenchmark, self).__init__(task_id=task_id, n_threads=n_threads, rng=rng)
+
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        cs = XGBoostBenchmark.get_configuration_space(seed)
+
+        cs.add_hyperparameter(CS.CategoricalHyperparameter('booster', choices=['gbtree', 'gblinear', 'dart'],
+                                                           default_value='gbtree'))
+        return cs
+
+    # noinspection PyMethodOverriding
+    # pylint: disable=arguments-differ
+    def _get_pipeline(self, booster: str, max_depth: int, eta: float, min_child_weight: int,
+                      colsample_bytree: float, colsample_bylevel: float, reg_lambda: int, reg_alpha: int,
+                      n_estimators: int, subsample_per_it: float) \
+            -> pipeline.Pipeline:
+        """ Create the scikit-learn (training-)pipeline """
+        objective = 'binary:logistic' if self.num_class <= 2 else 'multi:softmax'
+
+        configuration = dict(booster=booster,
+                             max_depth=max_depth,
+                             learning_rate=eta,
+                             min_child_weight=min_child_weight,
+                             colsample_bytree=colsample_bytree,
+                             colsample_bylevel=colsample_bylevel,
+                             reg_alpha=reg_alpha,
+                             reg_lambda=reg_lambda,
+                             n_estimators=n_estimators,
+                             objective=objective,
+                             n_jobs=self.n_threads,
+                             random_state=self.rng.randint(1, 100000),
+                             num_class=self.num_class,
+                             subsample=subsample_per_it)
+
+        # Some booster methods dont support all parameter. Delete them from the configuration to remove a xgb-warning.
+        if booster == 'gblinear':
+            for unused in ['colsample_bylevel', 'colsample_bytree', 'max_depth', 'min_child_weight', 'subsample']:
+                del configuration[unused]
+
+        print('test')
+        clf = pipeline.Pipeline([
+            ('preprocess_impute',
+             ColumnTransformer([
+                 ("categorical", "passthrough", self.categorical_data),
+                 ("continuous", SimpleImputer(strategy="mean"), ~self.categorical_data)])),
+            ('preprocess_one_hot',
+             ColumnTransformer([
+                 ("categorical", OneHotEncoder(categories=self.categories, sparse=False), self.categorical_data),
+                 ("continuous", "passthrough", ~self.categorical_data)])),
+            ('xgb',
+             xgb.XGBClassifier(**configuration))
+        ])
         return clf
