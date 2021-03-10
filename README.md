@@ -60,7 +60,7 @@ pip install .
 | Benchmark Name                    | Container Name     | Container Source                     | Hosted at | Additional Info                      |
 | :-------------------------------- | ------------------ | ------------------------------------ | ----------|-------------------------------------- |
 | XGBoostBenchmark                  | xgboost_benchmark  | library://phmueller/automl/xgboost_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids |
-| XGBoostBoosterBenchmark           | xgboost_benchmark  | library://phmueller/automl/xgboost_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids + Contains Additional Parameter `Booster |
+| XGBoostExtendedBenchmark           | xgboost_benchmark  | library://phmueller/automl/xgboost_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids + Contains Additional Parameter `Booster |
 | SupportVectorMachine              | svm_benchmark      | library://phmueller/automl/svm_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids |
 | BNNOnToyFunction                  | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
 | BNNOnBostonHousing                | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
