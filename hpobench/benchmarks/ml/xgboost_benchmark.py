@@ -14,7 +14,7 @@ Changelog:
     subsample_per_it:   -                       ->  [0.01, 1] (def: 1)
     [booster:            -                      ->  [gbtree, gblinear, dart] (def: gbtree)]  *)
 
-    *) This parameter is only in the XGBoostBoosterBenchmark. Not in the XGBoostBenchmark class.
+    *) This parameter is only in the XGBoostExtendedBenchmark. Not in the XGBoostBenchmark class.
 
 * Increase the fidelity `n_estimators`
     n_estimators        [2, 128] (def: 128)     ->  [1, 256] (def: 256)
@@ -358,14 +358,14 @@ class XGBoostBenchmark(AbstractBenchmark):
         return clf
 
 
-class XGBoostBoosterBenchmark(XGBoostBenchmark):
+class XGBoostExtendedBenchmark(XGBoostBenchmark):
     """
     Similar to XGBoostBenchmark but enables also the optimization of the used booster.
     """
 
     def __init__(self, task_id: Union[int, None] = None, n_threads: int = 1,
                  rng: Union[np.random.RandomState, int, None] = None):
-        super(XGBoostBoosterBenchmark, self).__init__(task_id=task_id, n_threads=n_threads, rng=rng)
+        super(XGBoostExtendedBenchmark, self).__init__(task_id=task_id, n_threads=n_threads, rng=rng)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:

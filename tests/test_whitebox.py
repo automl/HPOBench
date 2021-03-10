@@ -20,7 +20,7 @@ def test_whitebox_without_container_xgb():
 
     configuration = cs.get_default_configuration()
     assert configuration['colsample_bylevel'] == 1.0
-    assert len(configuration.keys()) == 6
+    assert len(configuration.keys()) == 8
 
     n_estimator = 32
     subsample = 1
@@ -32,9 +32,9 @@ def test_whitebox_without_container_xgb():
     result_dict = b.objective_function_test(configuration, fidelity=dict(n_estimators=n_estimator), rng=0)
     test_loss = result_dict['function_value']
 
-    assert np.isclose(train_loss, 0.1071, atol=0.001)
-    assert np.isclose(valid_loss, 0.3873, atol=0.001)
-    assert np.isclose(test_loss, 0.38181, atol=0.001)
+    assert np.isclose(train_loss, 0.0223, atol=0.001)
+    assert np.isclose(valid_loss, 0.4234, atol=0.001)
+    assert np.isclose(test_loss, 0.43636, atol=0.001)
 
 
 @pytest.mark.skipif(skip_container_test, reason="Requires singularity and flask")
@@ -47,7 +47,7 @@ def test_whitebox_with_container():
     cs = b.get_configuration_space()
     configuration = cs.get_default_configuration()
     assert configuration['colsample_bylevel'] == 1.0
-    assert len(configuration.keys()) == 6
+    assert len(configuration.keys()) == 8
 
     n_estimator = 32
     subsample = 1
@@ -58,10 +58,9 @@ def test_whitebox_with_container():
     result_dict = b.objective_function_test(configuration, fidelity=dict(n_estimators=n_estimator))
     test_loss = result_dict['function_value']
 
-    print(train_loss, valid_loss, test_loss)
-    assert np.isclose(train_loss, 0.1071, atol=0.001)
-    assert np.isclose(valid_loss, 0.3873, atol=0.001)
-    assert np.isclose(test_loss, 0.38181, atol=0.001)
+    assert np.isclose(train_loss, 0.02232, atol=0.001)
+    assert np.isclose(valid_loss, 0.4234, atol=0.001)
+    assert np.isclose(test_loss, 0.43636, atol=0.001)
 
 
 def test_cartpole():
