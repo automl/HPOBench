@@ -2,7 +2,6 @@
 
 Changelog:
 ==========
-
 0.0.2:
 * Change the search space definiton to match the paper: (https://arxiv.org/pdf/1802.09596.pdf)
     eta:                [1e-5, 1] (def: 0.3)    ->  [2**-10, 1] (def: 0.3)
@@ -13,12 +12,14 @@ Changelog:
     reg_alpha:          [1e-5, 2] (def: 1e-5)   ->  [2**-10, 2**10] (def: 1)
     max_depth:          -                       ->  [1, 15] (def: 6)
     subsample_per_it:   -                       ->  [0.01, 1] (def: 1)
-    [booster:            -                       ->  [gbtree, gblinear, dart] (def: gbtree)] *)
+    [booster:            -                      ->  [gbtree, gblinear, dart] (def: gbtree)]  *)
 
     *) This parameter is only in the XGBoostBoosterBenchmark. Not in the XGBoostBenchmark class.
 
+* Increase the fidelity `n_estimators`
+    n_estimators        [2, 128] (def: 128)     ->  [1, 256] (def: 256)
 
-* Add class to optimize booster method: (gbtree, gblinear or dart)
+* Add class to optimize also the used booster method: (gbtree, gblinear or dart)
     We have introduced a new class, which adds the used booster as parameter to the configuration space. To read more
     about booster, please take a look in the official XGBoost-documentation (https://xgboost.readthedocs.io/en/latest).
 
@@ -273,7 +274,7 @@ class XGBoostBenchmark(AbstractBenchmark):
             CS.UniformFloatHyperparameter('colsample_bylevel', lower=0.01, upper=1., default_value=1.),
             CS.UniformFloatHyperparameter('reg_lambda', lower=2**-10, upper=2**10, default_value=1, log=True),
             CS.UniformFloatHyperparameter('reg_alpha', lower=2**-10, upper=2**10, default_value=1, log=True),
-            CS.UniformFloatHyperparameter('subsample_per_it', lower=0.01, upper=1, default_value=1, log=False)
+            CS.UniformFloatHyperparameter('subsample_per_it', lower=0.1, upper=1, default_value=1, log=False)
         ])
 
         return cs
