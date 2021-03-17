@@ -157,7 +157,7 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
         inactive_hps = all_hps - active_hps
 
         if len(inactive_hps) != 0:
-            logger.debug(f'There are inactive {len(inactive_hps)} hyperparameter: {inactive_hps}' 
+            logger.debug(f'There are inactive {len(inactive_hps)} hyperparameter: {inactive_hps}'
                          'Going to remove them from the configuration.')
 
         configuration = deactivate_inactive_hyperparameters(configuration, configuration_space)
