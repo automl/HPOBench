@@ -243,6 +243,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         """ Helper function to parse the named keyword arguments to json str. """
         if rng is not None:
             kwargs['rng'] = rng
+        if 'latest' in kwargs:
+            del kwargs['latest']
         kwargs_str = json.dumps(kwargs, indent=None, cls=BenchmarkEncoder)
         return kwargs_str
 
