@@ -107,8 +107,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # We can point to a different container source. See below.
         container_source = container_source or self.config.container_source
         container_dir = Path(self.config.container_dir)
-
-        container_name = f'{container_name}:{container_tag}'
+        container_name_with_tag = f'{container_name}_{container_tag}'
 
         logger.debug(f'Use benchmark {benchmark_name} from container {container_source}/{container_name}. \n'
                      f'And container directory {self.config.container_dir}')
@@ -131,12 +130,24 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             @lockutils.synchronized('not_thread_process_safe', external=True,
                                     lock_path=f'{self.config.cache_dir}/lock_{container_name}', delay=5)
             def download_container(container_dir, container_name, container_source):
-                if not (container_dir / container_name).exists():
+                if not (container_dir / container_name_with_tag).exists():
                     logger.debug('Going to pull the container from an online source.')
 
                     container_dir.mkdir(parents=True, exist_ok=True)
-                    cmd = f"singularity pull --dir {self.config.container_dir} " \
-                          f"--name {container_name} {container_source}/{container_name.lower()}"
+
+                    cmd = f'singularity pull --dir {self.config.container_dir} ' \
+                          f'--name {container_name_with_tag} '
+
+                    # Currently, we can't see the available container tags on gitlab. Therefore, we create for each
+                    # "tag" a new entry in the registry. This might change in the future. But as long as we don't have
+                    # a fix for this, we need to map the container tag differently.
+                    if container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry'):
+                        cmd += f'{container_source}/{container_name.lower()}/{container_tag}:latest'
+                    else:
+                        cmd += f'{container_source}/{container_name.lower()}:{container_tag}'
+
+                    logger.info(f'Start downloading the container {container_name_with_tag} from {container_source}. '
+                                'This may take several minutes.')
                     logger.debug(cmd)
                     subprocess.run(cmd, shell=True, check=True)
                     time.sleep(1)
@@ -150,8 +161,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             # Make sure that the container can be found locally.
             container_dir = Path(container_source)
-            assert (container_dir / container_name).exists(), f'Local container not found in ' \
-                                                              f'{container_dir / container_name}'
+            assert (container_dir / container_name_with_tag).exists(), \
+                f'Local container not found in {container_dir / container_name_with_tag}'
             logger.debug('Image found on the local file system.')
 
         bind_options = f'--bind /var/lib/,{self.config.global_data_dir}:/var/lib/,{self.config.container_dir}'
@@ -160,7 +171,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         bind_options += ' '
 
         gpu_opt = '--nv ' if gpu else ''  # Option for enabling GPU support
-        container_options = f'{container_dir / container_name}'
+        container_options = f'{container_dir / container_name_with_tag}'
 
         log_str = f'SINGULARITYENV_HPOBENCH_DEBUG={log_level_str}'
         cmd = f'{log_str} singularity instance start {bind_options}{gpu_opt}{container_options} {self.socket_id}'
