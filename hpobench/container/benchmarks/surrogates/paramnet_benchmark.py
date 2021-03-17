@@ -89,17 +89,3 @@ class ParamNetPokerOnTimeBenchmark(AbstractBenchmarkClient):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetPokerOnTimeBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
         super(ParamNetPokerOnTimeBenchmark, self).__init__(**kwargs)
-
-
-class ParamNetVehicleOnStepsBenchmark(AbstractBenchmarkClient):
-    def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetVehicleOnStepsBenchmark')
-        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
-        super(ParamNetVehicleOnStepsBenchmark, self).__init__(**kwargs)
-
-
-class ParamNetVehicleOnTimeBenchmark(AbstractBenchmarkClient):
-    def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetVehicleOnTimeBenchmark')
-        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
-        super(ParamNetVehicleOnTimeBenchmark, self).__init__(**kwargs)
