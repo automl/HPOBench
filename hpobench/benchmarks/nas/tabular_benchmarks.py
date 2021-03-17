@@ -28,6 +28,18 @@ cd nas_benchmarks
 python setup.py install
 ```
 
+Changelog:
+==========
+0.0.3:
+* Standardize the structure of the meta information
+
+0.0.2:
+* The objective function takes as input now the parameter run_index. Allowed values are Tuple(0-3), 0, 1, 2, 3, None.
+  This value specifies which seeds are used. The user can specify a single index or a tuple with indices.
+  If the user wants to use a randomly drawn run_index, they can simply set the value explicitly to None.
+
+0.0.1:
+* First implementation
 """
 import logging
 
@@ -41,7 +53,7 @@ from tabular_benchmarks.fcnet_benchmark import FCNetBenchmark
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 logger = logging.getLogger('TabularBenchmark')
 
 

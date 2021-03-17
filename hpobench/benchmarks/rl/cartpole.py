@@ -1,3 +1,14 @@
+"""
+Changelog:
+==========
+0.0.2:
+* Standardize the structure of the meta information
+* Suppress unnecessary tensorforce logging messages
+
+0.0.1:
+* First implementation
+"""
+
 import logging
 import time
 from typing import Union, Dict
@@ -12,7 +23,7 @@ from tensorforce.execution import Runner
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util import rng_helper
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 logger = logging.getLogger('CartpoleBenchmark')
 

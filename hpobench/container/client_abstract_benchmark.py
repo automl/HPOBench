@@ -129,7 +129,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             # See: https://docs.openstack.org/oslo.concurrency/latest/admin/index.html
             @lockutils.synchronized('not_thread_process_safe', external=True,
                                     lock_path=f'{self.config.cache_dir}/lock_{container_name}', delay=5)
-            def download_container(container_dir, container_name, container_source):
+            def download_container(container_dir, container_name, container_source, container_tag):
                 if not (container_dir / container_name_with_tag).exists():
                     logger.debug('Going to pull the container from an online source.')
 
@@ -142,6 +142,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                     # "tag" a new entry in the registry. This might change in the future. But as long as we don't have
                     # a fix for this, we need to map the container tag differently.
                     if container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry'):
+                        if container_tag == 'latest':
+                            container_tag = kwargs['latest']
                         cmd += f'{container_source}/{container_name.lower()}/{container_tag}:latest'
                     else:
                         cmd += f'{container_source}/{container_name.lower()}:{container_tag}'
@@ -154,7 +156,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                 else:
                     logger.debug('Skipping downloading the container. It is already downloaded.')
 
-            download_container(container_dir, container_name, container_source)
+            download_container(container_dir, container_name, container_source, container_tag)
         else:
             logger.debug(f'Looking on the local filesystem for the container file, since container source was '
                          f'either \'None\' or not a known address. Image Source: {container_source}')
