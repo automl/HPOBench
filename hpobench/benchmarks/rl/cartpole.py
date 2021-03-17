@@ -15,17 +15,21 @@ from typing import Union, Dict
 
 import ConfigSpace as CS
 import numpy as np
-import tensorflow as tf
-from tensorforce.agents import PPOAgent
-from tensorforce.contrib.openai_gym import OpenAIGym
-from tensorforce.execution import Runner
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-from hpobench.abstract_benchmark import AbstractBenchmark
-from hpobench.util import rng_helper
+import tensorflow as tf  # noqa: E402
+from tensorforce.agents import PPOAgent  # noqa: E402
+from tensorforce.contrib.openai_gym import OpenAIGym  # noqa: E402
+from tensorforce.execution import Runner  # noqa: E402
+
+from hpobench.abstract_benchmark import AbstractBenchmark  # noqa: E402
+from hpobench.util import rng_helper  # noqa: E402
 
 __version__ = '0.0.2'
 
 logger = logging.getLogger('CartpoleBenchmark')
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 
 class CartpoleBase(AbstractBenchmark):
