@@ -417,7 +417,8 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
         """ Returns the meta information for the benchmark """
         return {'name': 'NAS-Bench-201: Extending the Scope of Reproducible Neural Architecture Search',
                 'references': ['@article{dong2020bench,'
-                               'title   = {Nas-bench-201: Extending the scope of reproducible neural architecture search},'
+                               'title   = {Nas-bench-201: Extending the scope of reproducible neural '
+                               '           architecture search},'
                                'author  = {Dong, Xuanyi and Yang, Yi},'
                                'journal = {arXiv preprint arXiv:2001.00326},'
                                'year    = {2020}}',
