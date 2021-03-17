@@ -48,6 +48,14 @@ pip install .[paramnet]
 Changelog:
 ==========
 0.0.2:
+* Standardize the structure of the meta information
+
+0.0.1:
+* First implementation
+
+Changelog:
+==========
+0.0.2:
 * Fix OnTime Test function:
   The `objective_test_function` of the OnTime Benchmarks now checks if the budget is the right maximum budget.
 * Standardize the structure of the meta information

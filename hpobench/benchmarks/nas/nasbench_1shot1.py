@@ -43,6 +43,19 @@ To use the nasbench_analysis package, add the path to this folder to your PATH v
 ```
 export PATH=/Path/to/nasbench-1shot1:$PATH
 ```
+
+Changelog:
+==========
+0.0.3:
+* Standardize the structure of the meta information
+
+0.0.2:
+* The objective function takes as input now the parameter run_index. Allowed values are Tuple(0-2), 0, 1, 2, None.
+  This value specifies which seeds are used. The user can specify a single index or a tuple with indices.
+
+0.0.1:
+* First implementation
+
 """
 import logging
 
@@ -64,7 +77,7 @@ from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2  # noqa
 from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3  # noqa
 from nasbench_analysis.utils import INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3  # noqa
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 logger = logging.getLogger('NasBench1shot1')
 
 

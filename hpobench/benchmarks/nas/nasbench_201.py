@@ -24,6 +24,19 @@ pip install .
 
 For more info about the nasbench201, please have a look at
 https://github.com/D-X-Y/AutoDL-Projects/blob/master/docs/NAS-Bench-201.md
+
+Changelog:
+==========
+0.0.3:
+* Standardize the structure of the meta information
+
+0.0.2:
+* Use the new data format. The authors have evaluated each configuration on 3 different seeds.
+  The objective function supports now to specify a seed. Possible values are 777, 888, 999, None.
+  Explicitly setting the value to None means drawing a random seed.
+
+0.0.1:
+* First implementation
 """
 import logging
 from typing import Union, Dict, List, Text, Tuple
@@ -36,7 +49,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.data_manager import NASBench_201Data
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 MAX_NODES = 4
 
 logger = logging.getLogger('NASBENCH201')
