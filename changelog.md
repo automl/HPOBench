@@ -1,6 +1,8 @@
 # 0.0.7
   * Fix an error in the NASBench1shot1 Benchmark (SearchSpace3).
   * Improve the behavior when a benchmark container is shut down.
+  * Fix an error in ParamNetOnTime Benchmarks:
+    The maximum budget was not properly determined. 
   
 # 0.0.6
   * Add NasBench1shot1 Benchmark
