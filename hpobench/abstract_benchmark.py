@@ -8,6 +8,7 @@ import logging
 import ConfigSpace
 import numpy as np
 
+from ConfigSpace.util import deactivate_inactive_hyperparameters
 from hpobench.util import rng_helper
 
 logger = logging.getLogger('AbstractBenchmark')
@@ -131,17 +132,29 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
                                       configuration_space: ConfigSpace.ConfigurationSpace) \
             -> ConfigSpace.Configuration:
         """ Helper-function to evaluate the given configuration.
-            Cast it to a ConfigSpace.Configuration and evaluate if it violates some boundaries.
+            Cast it to a ConfigSpace.Configuration and evaluate if it violates its boundaries.
+
+            Note:
+                We remove inactive parameters from the configuration. Inactive parameters are parameters that are not
+                allowed by a ConfigSpace.Condition implemented in the benchmarks configuration space.
+                Some tuner are not able to sample correctly from the ConfigSpace and it might happen that inactive
+                hyperparameter are present in the configuration. Since the author of the benchmark removed those
+                parameters explicitly, they should also handle the cases that inactive parameters are not present in the
+                input-configuration.
         """
 
         if isinstance(configuration, dict):
-            configuration = ConfigSpace.Configuration(configuration_space, configuration)
+            configuration = ConfigSpace.Configuration(configuration_space, configuration,
+                                                      allow_inactive_with_values=True)
         elif isinstance(configuration, ConfigSpace.Configuration):
             configuration = configuration
         else:
             raise TypeError(f'Configuration has to be from type List, np.ndarray, dict, or '
                             f'ConfigSpace.Configuration but was {type(configuration)}')
+
+        configuration = deactivate_inactive_hyperparameters(configuration, configuration_space)
         configuration_space.check_configuration(configuration)
+
         return configuration
 
     @staticmethod
