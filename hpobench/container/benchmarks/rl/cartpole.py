@@ -10,6 +10,7 @@ class CartpoleReduced(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'CartpoleReduced')
         kwargs['container_name'] = kwargs.get('container_name', 'cartpole')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.2')
         super(CartpoleReduced, self).__init__(**kwargs)
 
 
@@ -17,4 +18,5 @@ class CartpoleFull(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'CartpoleFull')
         kwargs['container_name'] = kwargs.get('container_name', 'cartpole')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.2')
         super(CartpoleFull, self).__init__(**kwargs)

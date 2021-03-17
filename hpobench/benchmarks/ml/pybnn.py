@@ -8,6 +8,13 @@ you need to install the following packages besides installing the hpobench with
 
 ```pip install .[pybnn]```
 
+Changelog:
+==========
+0.0.2:
+* Standardize the structure of the meta information
+
+0.0.1:
+* First implementation
 """
 from functools import partial
 import logging

@@ -46,7 +46,16 @@ python -m python -m learna.data.download_and_build_eterna ./learna/data/secondar
     && rm -rf data/rfam_learn \
     && chmod -R 755 data/
 ```
+
+Changelog:
+==========
+0.0.3:
+* Standardize the structure of the meta information
+
+0.0.1:
+* First implementation
 """
+
 import logging
 import multiprocessing
 import shutil
@@ -67,7 +76,7 @@ import hpobench.config
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util import rng_helper
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 logger = logging.getLogger('LearnaBenchmark')
 

@@ -10,6 +10,7 @@ class NASBench1shot1SearchSpace1Benchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NASBench1shot1SearchSpace1Benchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'nasbench_1shot1')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
         super(NASBench1shot1SearchSpace1Benchmark, self).__init__(**kwargs)
 
 
@@ -17,6 +18,7 @@ class NASBench1shot1SearchSpace2Benchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NASBench1shot1SearchSpace2Benchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'nasbench_1shot1')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
         super(NASBench1shot1SearchSpace2Benchmark, self).__init__(**kwargs)
 
 
@@ -24,4 +26,5 @@ class NASBench1shot1SearchSpace3Benchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NASBench1shot1SearchSpace3Benchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'nasbench_1shot1')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
         super(NASBench1shot1SearchSpace3Benchmark, self).__init__(**kwargs)
