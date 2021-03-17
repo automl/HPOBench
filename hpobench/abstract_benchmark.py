@@ -152,6 +152,14 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
             raise TypeError(f'Configuration has to be from type List, np.ndarray, dict, or '
                             f'ConfigSpace.Configuration but was {type(configuration)}')
 
+        all_hps = set(configuration_space.get_hyperparameter_names())
+        active_hps = configuration_space.get_active_hyperparameters(configuration)
+        inactive_hps = all_hps - active_hps
+
+        if len(inactive_hps) != 0:
+            logger.debug(f'There are inactive {len(inactive_hps)} hyperparameter: {inactive_hps}' 
+                         'Going to remove them from the configuration.')
+
         configuration = deactivate_inactive_hyperparameters(configuration, configuration_space)
         configuration_space.check_configuration(configuration)
 
