@@ -372,16 +372,24 @@ class XGBoostExtendedBenchmark(XGBoostBenchmark):
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         cs = XGBoostBenchmark.get_configuration_space(seed)
+        hp_booster = CS.CategoricalHyperparameter('booster', choices=['gbtree', 'gblinear', 'dart'],
+                                                  default_value='gbtree')
+        cs.add_hyperparameter(hp_booster)
 
-        cs.add_hyperparameter(CS.CategoricalHyperparameter('booster', choices=['gbtree', 'gblinear', 'dart'],
-                                                           default_value='gbtree'))
+        # XGBoost with 'gblinear' can not use some
+        # parameters. Exclude them from the configuration space by introducing a condition.
+        hps = ['colsample_bylevel', 'colsample_bytree', 'max_depth',  'min_child_weight', 'subsample_per_it']
+
+        # The NotEqualsCondition means: "Make parameter X active if hp_booster is not equal to gblinear."
+        conditions = [CS.NotEqualsCondition(cs.get_hyperparameter(hp), hp_booster, 'gblinear') for hp in hps]
+        cs.add_conditions(conditions)
         return cs
 
     # noinspection PyMethodOverriding
     # pylint: disable=arguments-differ
-    def _get_pipeline(self, booster: str, max_depth: int, eta: float, min_child_weight: int,
-                      colsample_bytree: float, colsample_bylevel: float, reg_lambda: int, reg_alpha: int,
-                      n_estimators: int, subsample_per_it: float) \
+    def _get_pipeline(self, n_estimators: int, booster: str, reg_lambda: int, reg_alpha: int, eta: float,
+                      min_child_weight: int = None, max_depth: int = None, colsample_bytree: float = None,
+                      colsample_bylevel: float = None, subsample_per_it: float = None) \
             -> pipeline.Pipeline:
         """ Create the scikit-learn (training-)pipeline """
         objective = 'binary:logistic' if self.num_class <= 2 else 'multi:softmax'
@@ -401,12 +409,8 @@ class XGBoostExtendedBenchmark(XGBoostBenchmark):
                              num_class=self.num_class,
                              subsample=subsample_per_it)
 
-        # Some booster methods dont support all parameter. Delete them from the configuration to remove a xgb-warning.
-        if booster == 'gblinear':
-            for unused in ['colsample_bylevel', 'colsample_bytree', 'max_depth', 'min_child_weight', 'subsample']:
-                del configuration[unused]
+        configuration = {k: v for k, v in configuration.items() if v is not None}
 
-        print('test')
         clf = pipeline.Pipeline([
             ('preprocess_impute',
              ColumnTransformer([
