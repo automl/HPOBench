@@ -1,21 +1,3 @@
-"""
-Changelog:
-==========
-0.0.7:
-* Update the version check:  Instead of requesting the same version, we check if the configuration file version and the
-  hpobench version are in the same partition. Each hpobench version that has a compatible configuration file definition
-  is in the same distribution.
-
-0.0.6:
-* Rewrote the configuration (=hpobenchrc) file: We are now using a yaml structure.
-* Check if the hpobenchrc file is created with a the same hpobench version.
-
-0.0.1:
-* Configuration file based on configparser
-
-"""
-
-
 import ast
 import logging
 import os
@@ -167,8 +149,8 @@ class HPOBenchConfig:
         """ Check if the version of the configuration file matches the hpobench version.
             Ignore the `dev` tag at the end.
 
-            It may happen that the configuration file changes with a new version of the hpobench. In this case,
-            we want to raise a warning to show the user that there could be potential error.
+            It may happen that the configuration file changes with a new version of the hpobench.
+            In this case, we will raise a warning to indicate potential errors.
 
             But since the configuration file does not change every new hpobench version, we group versions together that
             have similar configuration files. If the current version is equal to a version from the same partition, then
