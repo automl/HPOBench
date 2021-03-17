@@ -316,6 +316,8 @@ class XGBoostBenchmark(AbstractBenchmark):
                                'pages={1--32},'
                                'year={2019}'
                                '}'],
+                'code': 'https://github.com/automl/HPOlib1.5/blob/development/hpolib/benchmarks/ml/'
+                        'xgboost_benchmark.py',
                 'shape of train data': self.x_train.shape,
                 'shape of test data': self.x_test.shape,
                 'shape of valid data': self.x_valid.shape,

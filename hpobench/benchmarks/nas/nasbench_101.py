@@ -222,10 +222,14 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
     def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
         return {'name': 'Tabular Benchmarks for Hyperparameter Optimization and Neural Architecture Search',
-                'references': ['Aaron Klein, Frank Hutter',
-                               'Tabular Benchmarks for Joint Architecture and Hyperparameter Optimization',
+                'references': ['@article{klein2019tabular,'
+                               'title   = {Tabular benchmarks for joint architecture and hyperparameter optimization},'
+                               'author  = {Klein, Aaron and Hutter, Frank},'
+                               'journal = {arXiv preprint arXiv:1905.04970},'
+                               'year    = {2019}}',
                                'https://arxiv.org/abs/1905.04970',
-                               'https://github.com/automl/nas_benchmarks'],
+                               ],
+                'code': 'https://github.com/automl/nas_benchmarks',
                 }
 
     @staticmethod

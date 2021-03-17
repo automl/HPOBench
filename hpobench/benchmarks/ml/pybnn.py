@@ -272,6 +272,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
                                'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
                                'pages     = {1436 - -1445},'
                                'year      = {2018}}'],
+                'code': 'https://github.com/automl/HPOlib1.5/blob/container/hpolib/benchmarks/ml/bnn_benchmark.py'
                 }
 
 

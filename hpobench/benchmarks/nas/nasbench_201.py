@@ -402,11 +402,15 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
     @staticmethod
     def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
-        return {'name': 'NAS-Bench-201',
-                'references': ['Xuanyi Dong, Yi Yang',
-                               'NAS-Bench-201: Extending the Scope of Reproducible Neural Architecture Search',
+        return {'name': 'NAS-Bench-201: Extending the Scope of Reproducible Neural Architecture Search',
+                'references': ['@article{dong2020bench,'
+                               'title   = {Nas-bench-201: Extending the scope of reproducible neural architecture search},'
+                               'author  = {Dong, Xuanyi and Yang, Yi},'
+                               'journal = {arXiv preprint arXiv:2001.00326},'
+                               'year    = {2020}}',
                                'https://openreview.net/forum?id=HJxyZkBKDr',
-                               'https://github.com/D-X-Y/AutoDL-Projects'],
+                               ],
+                'code': 'https://github.com/D-X-Y/AutoDL-Projects',
                 }
 
     class _Structure:
