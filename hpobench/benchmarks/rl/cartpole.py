@@ -229,6 +229,7 @@ class CartpoleBase(AbstractBenchmark):
                                'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
                                'pages     = {1436 - -1445},'
                                'year      = {2018}}'],
+                'code': 'https://github.com/automl/HPOlib1.5/blob/development/hpolib/benchmarks/rl/cartpole.py',
                 'note': 'This benchmark is not deterministic, since the gym environment is not deterministic.'
                         ' Also, often the benchmark is already converged after 1000 episodes.'
                         ' Increasing the budget \"max_episodes\" may lead to the same results.'}

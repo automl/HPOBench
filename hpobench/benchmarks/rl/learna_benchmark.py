@@ -188,9 +188,13 @@ class BaseLearna(AbstractBenchmark):
     @staticmethod
     def get_meta_information() -> Dict:
         return {'name': 'Learna',
-                'references': ['Frederic Runge and Danny Stoll and Stefan Falkner and Frank Hutter',
-                               'Learning to Design {RNA} (ICLR) 2019',
+                'references': ['@inproceedings{runge2019learning,'
+                               'title     = {Learning to Design {RNA}},'
+                               'author    = {Frederic Runge and Danny Stoll and Stefan Falkner and Frank Hutter},'
+                               'booktitle = {International Conference on Learning Representations},'
+                               'year      = {2019},}',
                                'https://ml.informatik.uni-freiburg.de/papers/19-ICLR-Learning-Design-RNA.pdf'],
+                'code': 'https://github.com/automl/learna',
                 'note': 'This benchmark is not deterministic, since tensorforce is not deterministic in this version.'
                 }
 

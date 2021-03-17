@@ -156,10 +156,10 @@ class _ParamnetBase(AbstractBenchmark):
                                'url       = http://proceedings.mlr.press/v80/falkner18a.html'
                                'author    = {Falkner, Stefan and Klein, Aaron and Hutter, Frank}, '
                                'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
-                               'pages     = {1436 - -1445},'
+                               'pages     = {1436 - 1445},'
                                'year      = {2018}}'],
-                'original_implementation': 'https://github.com/automl/HPOlib1.5/blob/development/'
-                                           'hpolib/benchmarks/surrogates/paramnet.py'
+                'code': 'https://github.com/automl/HPOlib1.5/blob/development/'
+                        'hpolib/benchmarks/surrogates/paramnet.py'
                 }
 
 

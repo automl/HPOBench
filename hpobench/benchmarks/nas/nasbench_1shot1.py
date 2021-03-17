@@ -234,17 +234,16 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
     @staticmethod
     def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
-        return {'name': '',
-                'references': ['Arber Zela and Julien Siems and Frank Hutter',
-                               'NAS-Bench-1Shot1: Benchmarking and Dissecting One-shot Neural Architecture Search',
-                               '@inproceedings{Zela2020NAS-Bench-1Shot1:, '
-                               'title={NAS-Bench-1Shot1: '
-                               '       Benchmarking and Dissecting One-shot Neural Architecture Search},'
-                               'author={Arber Zela and Julien Siems and Frank Hutter},'
-                               'booktitle={International Conference on Learning Representations},'
-                               'year={2020},'
-                               'url={https://openreview.net/forum?id=SJx9ngStPH}}'
-                               'https://github.com/automl/nasbench-1shot1'],
+        return {'name': 'NAS-Bench-1Shot1: Benchmarking and Dissecting One-shot Neural Architecture Search',
+                'references': ['@inproceedings{Zela2020NAS-Bench-1Shot1:, '
+                               'title     = {NAS-Bench-1Shot1: '
+                               '             Benchmarking and Dissecting One-shot Neural Architecture Search},'
+                               'author    = {Arber Zela and Julien Siems and Frank Hutter},'
+                               'booktitle = {International Conference on Learning Representations},'
+                               'year      = {2020},'
+                               'url       = {https://openreview.net/forum?id=SJx9ngStPH}}',
+                               ],
+                'code': 'https://github.com/automl/nasbench-1shot1',
                 }
 
     def _check_run_index(self, run_index):
