@@ -329,6 +329,7 @@ class SupportVectorMachine(AbstractBenchmark):
                                "pdf = {http://proceedings.mlr.press/v54/klein17a/klein17a.pdf}, "
                                "url = {http://proceedings.mlr.press/v54/klein17a.html}, "
                                ],
+                'code': 'https://github.com/automl/HPOlib1.5/blob/container/hpolib/benchmarks/ml/svm_benchmark.py',
                 'shape of train data': self.x_train.shape,
                 'shape of test data': self.x_test.shape,
                 'shape of valid data': self.x_valid.shape,
