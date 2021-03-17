@@ -1,4 +1,6 @@
-# 0.0.8
+# 0.0.7
+  * Fix an error in the NASBench1shot1 Benchmark (SearchSpace3).
+  * Improve the behavior when a benchmark container is shut down.
   * Move Container to Gitlab:
     Add support for communicating with the gitlab registry. We host the container now on \
     https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry
@@ -9,10 +11,6 @@
   * New Parameter Container Tag:
     The container-benchmark interface takes now as input an optional container tag. The user can now specify (if available)
     which container version they like to use. 
-
-# 0.0.7
-  * Fix an error in the NASBench1shot1 Benchmark (SearchSpace3).
-  * Improve the behavior when a benchmark container is shut down.
   
 # 0.0.6
   * Add NasBench1shot1 Benchmark
