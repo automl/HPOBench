@@ -175,7 +175,8 @@ class HPOBenchConfig:
             no problem can occur.
         """
         version_partitions = [['0.0.0', '0.0.5'],
-                              ['0.0.6', '999.999.999']]
+                              ['0.0.6', '0.0.7'],
+                              ['0.0.8', '999.999.999']]
 
         mismatch = False
 
@@ -183,6 +184,8 @@ class HPOBenchConfig:
             mismatch = True
         else:
             def __int_representation(version_number: str):
+                # Convert a string with the format 'xxx.xxx.xxx' to a comparable number.
+                # Multiply each part from left to right with 10^6, 10^3, 10^0.
                 # we allow here 1000 versions until a next release (*) has to happen. This should be more than enough.
                 # *) new release means increase of a more left number: e.g. 0.0.2 --> 0.1.0
                 version_number = version_number.replace('_', '').replace('dev', '')
