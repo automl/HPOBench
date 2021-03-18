@@ -107,6 +107,15 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # We can point to a different container source. See below.
         container_source = container_source or self.config.container_source
         container_dir = Path(self.config.container_dir)
+
+        if (container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry')
+                and container_tag == 'latest'):
+            assert 'latest' in kwargs, 'If the container is hosted on the gitlab registry, make sure that in the ' \
+                                       'container init, the field \'latest\' is set.'
+
+            container_tag = kwargs['latest']
+            logger.debug(f'Replace the tag \'latest\' with \'{container_tag}\'.')
+
         container_name_with_tag = f'{container_name}_{container_tag}'
 
         logger.debug(f'Use benchmark {benchmark_name} from container {container_source}/{container_name}. \n'
@@ -142,8 +151,6 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                     # "tag" a new entry in the registry. This might change in the future. But as long as we don't have
                     # a fix for this, we need to map the container tag differently.
                     if container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry'):
-                        if container_tag == 'latest':
-                            container_tag = kwargs['latest']
                         cmd += f'{container_source}/{container_name.lower()}/{container_tag}:latest'
                     else:
                         cmd += f'{container_source}/{container_name.lower()}:{container_tag}'
