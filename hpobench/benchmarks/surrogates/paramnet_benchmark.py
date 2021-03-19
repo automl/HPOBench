@@ -48,6 +48,8 @@ pip install .[paramnet]
 Changelog:
 ==========
 0.0.2:
+* Fix OnTime Test function:
+  The `objective_test_function` of the OnTime Benchmarks now checks if the budget is the right maximum budget.
 * Standardize the structure of the meta information
 
 0.0.1:
@@ -269,7 +271,9 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
         if (costs / self.n_epochs) > fidelity['budget']:
             return {'function_value': 1.0,
                     'cost': fidelity['budget'],
-                    'info': {'state': 'Not enough budget'}}
+                    'info': {'fidelity': fidelity,
+                             'predicted_costs': float(costs),
+                             'state': 'Not enough budget'}}
 
         learning_curves_cost = np.linspace(costs / self.n_epochs, costs, self.n_epochs)
 
@@ -287,8 +291,10 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
 
         return {'function_value': float(y),
                 'cost': fidelity['budget'],
-                'info': {'learning_curve': lc.tolist(),
-                         'observed_epochs': len(lc)}}
+                'info': {'fidelity': fidelity['budget'],
+                         'learning_curve': lc.tolist(),
+                         'observed_epochs': len(lc),
+                         'predicted_costs': float(costs)}}
 
     @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
