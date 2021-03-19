@@ -12,7 +12,7 @@
   * Introduce a new version of the XGBoostBenchmark: A benchmark with an additional parameter, `booster`.
   * New Parameter Container Tag:
     The container-benchmark interface takes now as input an optional container tag. The user can now specify (if available)
-    which container version they like to use. 
+    which container version they like to use.
     
 # 0.0.6
   * Add NasBench1shot1 Benchmark
@@ -24,7 +24,6 @@
   * Nas1shot1 and Nas101 take as as input parameter now a seed.
   * The config file is now based on yaml. Also, it automatically raises a warning if the configuration file-version 
     does not match the HPOBench-version.
-
     
 # 0.0.5
   * Rename package to HPOBench
