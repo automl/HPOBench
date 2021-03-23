@@ -135,12 +135,11 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
             Cast it to a ConfigSpace.Configuration and evaluate if it violates its boundaries.
 
             Note:
-                We remove inactive parameters from the configuration. Inactive parameters are parameters that are not
-                allowed by a ConfigSpace.Condition implemented in the benchmarks configuration space.
-                Some tuner are not able to sample correctly from the ConfigSpace and it might happen that inactive
-                hyperparameter are present in the configuration. Since the author of the benchmark removed those
-                parameters explicitly, they should also handle the cases that inactive parameters are not present in the
-                input-configuration.
+                We remove inactive hyperparameters from the given configuration. Inactive hyperparameters are
+                hyperparameters that are not relevant for a configuration, e.g. hyperparameter A is only relevant if
+                hyperparameter B=1 and if B!=1 then A is inactive and will be removed from the configuration.
+                Since the authors of the benchmark removed those parameters explicitly, they should also handle the
+                cases that inactive parameters are not present in the input-configuration.
         """
 
         if isinstance(configuration, dict):
