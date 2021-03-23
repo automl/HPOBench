@@ -1,6 +1,8 @@
 # 0.0.7
   * Fix an error in the NASBench1shot1 Benchmark (SearchSpace3).
   * Improve the behavior when a benchmark container is shut down.
+  * Fix an error in PyBnn Benchmark:
+    Set the minimum number of steps to burn to 1. 
   * Fix an error in ParamNetOnTime Benchmarks:
     The maximum budget was not properly determined.
   * Move Container to Gitlab:
