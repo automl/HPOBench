@@ -13,8 +13,12 @@
     is in the same distribution.
   * Introduce a new version of the XGBoostBenchmark: A benchmark with an additional parameter, `booster`.
   * New Parameter Container Tag:
-    The container-benchmark interface takes now as input an optional container tag. The user can now specify (if available)
-    which container version they like to use. 
+    The container-benchmark interface takes as input an optional container tag. by specifying this parameter, 
+    different container are downloaded from the registry.
+  * Improve the procedure to find a container on the local filesystem:
+    If a container_source is given, we check if it is either the direct address of a container on the filesystem 
+    or a directory. In case, it is a directory, we try to find the correct container in this directory by appending the 
+    container_tag to the container_name. (<container_source>/<container_name_<container_tag>)
     
 # 0.0.6
   * Add NasBench1shot1 Benchmark

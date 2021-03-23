@@ -170,8 +170,28 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             # Make sure that the container can be found locally.
             container_dir = Path(container_source)
-            assert (container_dir / container_name_with_tag).exists(), \
-                f'Local container not found in {container_dir / container_name_with_tag}'
+
+            if not container_dir.exists():
+                raise FileNotFoundError(f'Could not find the container on the local filesystem. The path '
+                                        f'{container_source} does not exist.'
+                                        'Please either specify the full path to the container '
+                                        'or the directory in which the container is, as well as '
+                                        'the benchmark name and the container tag (default: latest).')
+
+            # if the container source is the path to the container itself, we are going to use this container directly.
+            if container_dir.is_file():
+               container_dir = container_dir.parent
+               container_name_with_tag = container_dir.name
+
+            # If the user specifies a container directory, search for the container name with (!) tag in it.
+            elif container_dir.is_dir():
+                assert (container_dir / container_name_with_tag).exists(), \
+                    f'Local container not found in {container_dir / container_name_with_tag}'
+
+            else:
+                raise FileNotFoundError('The container source is neither a file nor a directory.'
+                                        f'container_source: {container_dir}')
+
             logger.debug('Image found on the local file system.')
 
         bind_options = f'--bind /var/lib/,{self.config.global_data_dir}:/var/lib/,{self.config.container_dir}'
