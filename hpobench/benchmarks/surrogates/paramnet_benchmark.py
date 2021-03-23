@@ -54,16 +54,6 @@ Changelog:
 
 0.0.1:
 * First implementation
-
-Changelog:
-==========
-0.0.2:
-* Fix OnTime Test function:
-  The `objective_test_function` of the OnTime Benchmarks now checks if the budget is the right maximum budget.
-* Standardize the structure of the meta information
-
-0.0.1:
-* First implementation
 """
 
 import logging
@@ -272,6 +262,8 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
             return {'function_value': 1.0,
                     'cost': fidelity['budget'],
                     'info': {'fidelity': fidelity,
+                             'learning_curve': [],
+                             'observed_epochs': 0,
                              'predicted_costs': float(costs),
                              'state': 'Not enough budget'}}
 
@@ -291,7 +283,7 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
 
         return {'function_value': float(y),
                 'cost': fidelity['budget'],
-                'info': {'fidelity': fidelity['budget'],
+                'info': {'fidelity': fidelity,
                          'learning_curve': lc.tolist(),
                          'observed_epochs': len(lc),
                          'predicted_costs': float(costs)}}
