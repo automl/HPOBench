@@ -54,7 +54,7 @@ class HPOBenchConfig:
         # Find all hosted container on: https://cloud.sylabs.io/library/phmueller/automl
         self.socket_dir = Path('/tmp')
         self.container_dir = self.cache_dir / f'hpobench-{os.getuid()}'
-        self.container_source = 'library://phmueller/automl'
+        self.container_source = 'oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry'
         self.pyro_connect_max_wait = 400
 
         # Read in the hpobenchrc file and set the default values if not specified
@@ -121,7 +121,7 @@ class HPOBenchConfig:
             raise ParserError(failure_msg)
 
         self.config_version = read_config.get('version')
-        self._check_version()
+        self._check_version(self.config_version, __version__)
 
         self.verbosity = read_config.get('verbosity', self.verbosity)
         # logging.basicConfig(level=self.verbosity)  # TODO: This statement causes some trouble.
@@ -144,15 +144,60 @@ class HPOBenchConfig:
         self.pyro_connect_max_wait = int(read_config.get('pyro_connect_max_wait',
                                                          self.pyro_connect_max_wait))
 
-    def _check_version(self):
+    @staticmethod
+    def _check_version(config_version, hpobench_version):
         """ Check if the version of the configuration file matches the hpobench version.
             Ignore the `dev` tag at the end.
+
+            It may happen that the configuration file changes with a new version of the hpobench.
+            In this case, we will raise a warning to indicate potential errors.
+
+            But since the configuration file does not change every new hpobench version, we group versions together that
+            have similar configuration files. If the current version is equal to a version from the same partition, then
+            no problem can occur.
         """
-        if self.config_version is None or not __version__.startswith(self.config_version):
-            self.config_version = self.config_version if not None else 'None'
+        version_partitions = [['0.0.0', '0.0.5'],
+                              ['0.0.6', '0.0.7'],
+                              ['0.0.8', '999.999.999']]
+
+        mismatch = False
+
+        if config_version is None:
+            mismatch = True
+        else:
+            def __int_representation(version_number: str):
+                # Convert a string with the format 'xxx.xxx.xxx' to a comparable number.
+                # Multiply each part from left to right with 10^6, 10^3, 10^0.
+                # we allow here 1000 versions until a next release (*) has to happen. This should be more than enough.
+                # *) new release means increase of a more left number: e.g. 0.0.2 --> 0.1.0
+                version_number = version_number.replace('_', '').replace('dev', '')
+
+                value = [int(v) for v in version_number.split('.')]
+                return value[0] * 10**6 + value[1] * 10**3 + value[2]
+
+            config_version_ = __int_representation(config_version)
+            hpobench_version_ = __int_representation(hpobench_version)
+
+            for lower, upper in version_partitions:
+                # Test if the configuration version and the hpobench version are in the same partition.
+                # We test here by converting the version number to an ordinal number scale. Then, we can compare the
+                # version numbers with range comparisons.
+
+                lower = __int_representation(lower)
+                upper = __int_representation(upper)
+
+                if lower <= config_version_ <= upper and lower <= hpobench_version_ <= upper:
+                    break
+            else:
+                mismatch = True
+
+        if mismatch:
+            config_version = config_version if not None else 'None'
             logging.warning(f'The hpobenchrc file was created with another version of the hpobench. '
-                            f'Current version of the hpobenchrc file: {self.config_version}.\n'
-                            f'Current version of the hpobench: {__version__}')
+                            f'Current version of the hpobenchrc file: {config_version}.\n'
+                            f'Current version of the hpobench: {hpobench_version}')
+
+        return not mismatch
 
     def __check_dir(self, path: Path):
         """ Check whether dir exists and if not create it"""

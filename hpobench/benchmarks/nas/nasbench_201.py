@@ -24,6 +24,19 @@ pip install .
 
 For more info about the nasbench201, please have a look at
 https://github.com/D-X-Y/AutoDL-Projects/blob/master/docs/NAS-Bench-201.md
+
+Changelog:
+==========
+0.0.3:
+* Standardize the structure of the meta information
+
+0.0.2:
+* Use the new data format. The authors have evaluated each configuration on 3 different seeds.
+  The objective function supports now to specify a seed. Possible values are 777, 888, 999, None.
+  Explicitly setting the value to None means drawing a random seed.
+
+0.0.1:
+* First implementation
 """
 import logging
 from typing import Union, Dict, List, Text, Tuple
@@ -36,7 +49,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.data_manager import NASBench_201Data
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 MAX_NODES = 4
 
 logger = logging.getLogger('NASBENCH201')
@@ -402,11 +415,16 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
     @staticmethod
     def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
-        return {'name': 'NAS-Bench-201',
-                'references': ['Xuanyi Dong, Yi Yang',
-                               'NAS-Bench-201: Extending the Scope of Reproducible Neural Architecture Search',
+        return {'name': 'NAS-Bench-201: Extending the Scope of Reproducible Neural Architecture Search',
+                'references': ['@article{dong2020bench,'
+                               'title   = {Nas-bench-201: Extending the scope of reproducible neural '
+                               '           architecture search},'
+                               'author  = {Dong, Xuanyi and Yang, Yi},'
+                               'journal = {arXiv preprint arXiv:2001.00326},'
+                               'year    = {2020}}',
                                'https://openreview.net/forum?id=HJxyZkBKDr',
-                               'https://github.com/D-X-Y/AutoDL-Projects'],
+                               ],
+                'code': 'https://github.com/D-X-Y/AutoDL-Projects',
                 }
 
     class _Structure:

@@ -46,7 +46,16 @@ python -m python -m learna.data.download_and_build_eterna ./learna/data/secondar
     && rm -rf data/rfam_learn \
     && chmod -R 755 data/
 ```
+
+Changelog:
+==========
+0.0.3:
+* Standardize the structure of the meta information
+
+0.0.1:
+* First implementation
 """
+
 import logging
 import multiprocessing
 import shutil
@@ -67,7 +76,7 @@ import hpobench.config
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util import rng_helper
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 logger = logging.getLogger('LearnaBenchmark')
 
@@ -188,9 +197,13 @@ class BaseLearna(AbstractBenchmark):
     @staticmethod
     def get_meta_information() -> Dict:
         return {'name': 'Learna',
-                'references': ['Frederic Runge and Danny Stoll and Stefan Falkner and Frank Hutter',
-                               'Learning to Design {RNA} (ICLR) 2019',
+                'references': ['@inproceedings{runge2019learning,'
+                               'title     = {Learning to Design {RNA}},'
+                               'author    = {Frederic Runge and Danny Stoll and Stefan Falkner and Frank Hutter},'
+                               'booktitle = {International Conference on Learning Representations},'
+                               'year      = {2019},}',
                                'https://ml.informatik.uni-freiburg.de/papers/19-ICLR-Learning-Design-RNA.pdf'],
+                'code': 'https://github.com/automl/learna',
                 'note': 'This benchmark is not deterministic, since tensorforce is not deterministic in this version.'
                 }
 

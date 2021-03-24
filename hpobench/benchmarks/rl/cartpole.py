@@ -1,20 +1,35 @@
+"""
+Changelog:
+==========
+0.0.2:
+* Standardize the structure of the meta information
+* Suppress unnecessary tensorforce logging messages
+
+0.0.1:
+* First implementation
+"""
+
 import logging
 import time
 from typing import Union, Dict
 
 import ConfigSpace as CS
 import numpy as np
-import tensorflow as tf
-from tensorforce.agents import PPOAgent
-from tensorforce.contrib.openai_gym import OpenAIGym
-from tensorforce.execution import Runner
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-from hpobench.abstract_benchmark import AbstractBenchmark
-from hpobench.util import rng_helper
+import tensorflow as tf  # noqa: E402
+from tensorforce.agents import PPOAgent  # noqa: E402
+from tensorforce.contrib.openai_gym import OpenAIGym  # noqa: E402
+from tensorforce.execution import Runner  # noqa: E402
 
-__version__ = '0.0.1'
+from hpobench.abstract_benchmark import AbstractBenchmark  # noqa: E402
+from hpobench.util import rng_helper  # noqa: E402
+
+__version__ = '0.0.2'
 
 logger = logging.getLogger('CartpoleBenchmark')
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 
 class CartpoleBase(AbstractBenchmark):
@@ -229,6 +244,7 @@ class CartpoleBase(AbstractBenchmark):
                                'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
                                'pages     = {1436 - -1445},'
                                'year      = {2018}}'],
+                'code': 'https://github.com/automl/HPOlib1.5/blob/development/hpolib/benchmarks/rl/cartpole.py',
                 'note': 'This benchmark is not deterministic, since the gym environment is not deterministic.'
                         ' Also, often the benchmark is already converged after 1000 episodes.'
                         ' Increasing the budget \"max_episodes\" may lead to the same results.'}

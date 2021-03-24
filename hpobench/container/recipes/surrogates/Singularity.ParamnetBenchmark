@@ -12,6 +12,7 @@ VERSION v0.0.1
     cd /home \
     && git clone https://github.com/automl/HPOBench.git \
     && cd HPOBench \
+    && git checkout master \
     && pip install --upgrade .[paramnet] \
     && cd / \
     && mkdir /var/lib/hpobench/ \

@@ -8,6 +8,15 @@ you need to install the following packages besides installing the hpobench with
 
 ```pip install .[pybnn]```
 
+Changelog:
+==========
+0.0.2:
+* Standardize the structure of the meta information
+* The minimum number of burn in steps was allowed to be 0. But then Theano throws an RunTimeError. Limit the number of
+  `burnin_steps` to be at least 1.
+
+0.0.1:
+* First implementation
 """
 from functools import partial
 import logging
@@ -100,7 +109,8 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
         np.random.seed(self.rng.randint(1, 10000))
 
-        burn_in_steps = int(configuration['burn_in'] * fidelity['budget'])
+        # See comment in objective function test
+        burn_in_steps = max(1, int(configuration['burn_in'] * fidelity['budget']))
 
         net = partial(_get_net,
                       n_units_1=configuration['n_units_1'],
@@ -172,7 +182,9 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
         np.random.seed(self.rng.randint(1, 10000))
 
-        burn_in_steps = int(configuration['burn_in'] * fidelity['budget'])
+        # `burn_in_steps` must be at least 1, otherwise, theano will raise an RuntimeError. (Actually, the definition of
+        # the config space allows as lower limit a zero. In this case, set the number of steps to 1.)
+        burn_in_steps = max(1, int(configuration['burn_in'] * fidelity['budget']))
 
         net = partial(_get_net,
                       n_units_1=configuration['n_units_1'],
@@ -272,6 +284,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
                                'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
                                'pages     = {1436 - -1445},'
                                'year      = {2018}}'],
+                'code': 'https://github.com/automl/HPOlib1.5/blob/container/hpolib/benchmarks/ml/bnn_benchmark.py'
                 }
 
 

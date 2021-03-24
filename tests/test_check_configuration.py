@@ -3,9 +3,11 @@ from typing import Dict, Union
 
 import numpy as np
 import pytest
-from ConfigSpace import ConfigurationSpace, Configuration
-from ConfigSpace import UniformFloatHyperparameter, UniformIntegerHyperparameter, \
-    CategoricalHyperparameter
+import ConfigSpace as CS
+
+from ConfigSpace import ConfigurationSpace, Configuration, \
+    UniformFloatHyperparameter, UniformIntegerHyperparameter, \
+    CategoricalHyperparameter, NotEqualsCondition
 
 from hpobench.abstract_benchmark import AbstractBenchmark
 
@@ -86,7 +88,6 @@ class TestCheckUnittest(unittest.TestCase):
                                            "configuration": self.foo.configuration_space.sample_configuration(),
                                            "fidelity": [0.1]})
 
-
 class TestCheckUnittest2(unittest.TestCase):
 
     def setUp(self):
@@ -118,3 +119,38 @@ class TestCheckUnittest2(unittest.TestCase):
         assert isinstance(fidel, Dict)
         assert fidel['fidelity1'] == 1.0
 
+
+def test_remove_inactive_parameter():
+    configuration_space = ConfigurationSpace(seed=1)
+    hp1 = CategoricalHyperparameter("hp1", choices=[0, 1])
+    hp2 = CategoricalHyperparameter("hp2", choices=['a'])
+    hp3 = UniformIntegerHyperparameter("hp3", lower=0, upper=5, default_value=5)
+    configuration_space.add_hyperparameters([hp1, hp2, hp3])
+
+    # If hp1 = 0, then don't allow hp2
+    not_condition = NotEqualsCondition(hp2, hp1, 0)
+    configuration_space.add_condition(not_condition)
+
+    allowed_cfg = Configuration(configuration_space, {'hp1': 1, 'hp2': 'a', 'hp3': 5})
+    not_allowed = {'hp1': 0, 'hp2': 'a', 'hp3': 5}
+
+    with pytest.raises(ValueError):
+        Configuration(configuration_space, not_allowed)
+
+    # No inactive hp - case: config is CS.configuration
+    transformed = AbstractBenchmark._check_and_cast_configuration(allowed_cfg, configuration_space)
+    assert transformed.get_dictionary() == {'hp1': 1, 'hp2': 'a', 'hp3': 5}
+
+    # No inactive hp - case: config is dict
+    transformed = AbstractBenchmark._check_and_cast_configuration(allowed_cfg.get_dictionary(), configuration_space)
+    assert transformed.get_dictionary() == {'hp1': 1, 'hp2': 'a', 'hp3': 5}
+
+    # Remove inactive: - case: config is CS.configuration
+    not_allowed_cs = Configuration(configuration_space, {'hp1': 0, 'hp2': 'a', 'hp3': 5},
+                                   allow_inactive_with_values=True)
+    transformed = AbstractBenchmark._check_and_cast_configuration(not_allowed_cs, configuration_space)
+    assert transformed.get_dictionary() == {'hp1': 0, 'hp3': 5}
+
+    # Remove inactive: - case: config is dict
+    transformed = AbstractBenchmark._check_and_cast_configuration(not_allowed, configuration_space)
+    assert transformed.get_dictionary() == {'hp1': 0, 'hp3': 5}

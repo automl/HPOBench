@@ -1,3 +1,15 @@
+"""
+
+Changelog:
+==========
+0.0.2:
+* Standardize the structure of the meta information
+
+0.0.1:
+* First implementation
+
+"""
+
 import logging
 import time
 from typing import Union, Tuple, Dict, List
@@ -16,7 +28,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.openml_data_manager import OpenMLHoldoutDataManager
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 logger = logging.getLogger('SVMBenchmark')
 
@@ -329,6 +341,7 @@ class SupportVectorMachine(AbstractBenchmark):
                                "pdf = {http://proceedings.mlr.press/v54/klein17a/klein17a.pdf}, "
                                "url = {http://proceedings.mlr.press/v54/klein17a.html}, "
                                ],
+                'code': 'https://github.com/automl/HPOlib1.5/blob/container/hpolib/benchmarks/ml/svm_benchmark.py',
                 'shape of train data': self.x_train.shape,
                 'shape of test data': self.x_test.shape,
                 'shape of valid data': self.x_valid.shape,

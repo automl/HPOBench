@@ -14,7 +14,7 @@ Run a random configuration within a singularity container
 from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl', rng=1)
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "subsample": 0.5}, rng=1)
+result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5}, rng=1)
 ```
 
 All benchmarks can also be queried with fewer or no fidelities:
@@ -39,7 +39,7 @@ A simple example is the XGBoost benchmark which can be installed with `pip insta
 from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149)
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "subsample": 0.5}, rng=1)
+result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5}, rng=1)
 
 ```
 
@@ -60,6 +60,7 @@ pip install .
 | Benchmark Name                    | Container Name     | Container Source                     | Hosted at | Additional Info                      |
 | :-------------------------------- | ------------------ | ------------------------------------ | ----------|-------------------------------------- |
 | XGBoostBenchmark                  | xgboost_benchmark  | library://phmueller/automl/xgboost_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids |
+| XGBoostExtendedBenchmark           | xgboost_benchmark  | library://phmueller/automl/xgboost_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids + Contains Additional Parameter `Booster |
 | SupportVectorMachine              | svm_benchmark      | library://phmueller/automl/svm_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids |
 | BNNOnToyFunction                  | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
 | BNNOnBostonHousing                | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
@@ -129,7 +130,7 @@ from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_name="xgboost_benchmark", 
                      container_source='./') # path to hpobench/container/recipes/ml
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "subsample": 0.5})
+result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5})
 ```
 
 ### Remove all caches
