@@ -57,47 +57,27 @@ pip install .
 
 ## Available Containerized Benchmarks
 
-| Benchmark Name                    | Container Name     | Container Source                     | Hosted at | Additional Info                      |
-| :-------------------------------- | ------------------ | ------------------------------------ | ----------|-------------------------------------- |
-| XGBoostBenchmark                  | xgboost_benchmark  | library://phmueller/automl/xgboost_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids |
-| XGBoostExtendedBenchmark           | xgboost_benchmark  | library://phmueller/automl/xgboost_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids + Contains Additional Parameter `Booster |
-| SupportVectorMachine              | svm_benchmark      | library://phmueller/automl/svm_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids |
-| BNNOnToyFunction                  | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
-| BNNOnBostonHousing                | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
-| BNNOnProteinStructure             | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
-| BNNOnYearPrediction               | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
-| CartpoleFull                      | cartpole           | library://phmueller/automl/cartpole  | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Not deterministic                    |
-| CartpoleReduced                   | cartpole           | library://phmueller/automl/cartpole  | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Not deterministic                    |
-| Learna                            | learna_benchmark   | library://phmueller/automl/learna_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Not deterministic                    |
-| MetaLearna                        | learna_benchmark   | library://phmueller/automl/learna_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Not deterministic                    |
-| SliceLocalizationBenchmark        | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| ProteinStructureBenchmark         | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| NavalPropulsionBenchmark          | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| ParkinsonsTelemonitoringBenchmark | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| NASCifar10ABenchmark              | nasbench_101       | library://phmueller/automl/nasbench_101 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| NASCifar10BBenchmark              | nasbench_101       | library://phmueller/automl/nasbench_101 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| NASCifar10CBenchmark              | nasbench_101       | library://phmueller/automl/nasbench_101 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| Cifar10NasBench201Benchmark       | nasbench_201       | library://phmueller/automl/nasbench_201 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| Cifar100NasBench201Benchmark      | nasbench_201       | library://phmueller/automl/nasbench_201 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| Cifar10ValidNasBench201Benchmark  | nasbench_201       | library://phmueller/automl/nasbench_201 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| ImageNetNasBench201Benchmark      | nasbench_201       | library://phmueller/automl/nasbench_201 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| NASBench1shot1SearchSpace1Benchmark | nasbench_1shot1  | library://phmueller/automl/nasbench_1shot1 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| NASBench1shot1SearchSpace2Benchmark | nasbench_1shot1  | library://phmueller/automl/nasbench_1shot1 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| NASBench1shot1SearchSpace3Benchmark | nasbench_1shot1  | library://phmueller/automl/nasbench_1shot1 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| ParamNetAdultOnStepsBenchmark       | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetAdultOnTimeBenchmark        | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetHiggsOnStepsBenchmark       | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetHiggsOnTimeBenchmark        | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetLetterOnStepsBenchmark      | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetLetterOnTimeBenchmark       | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetMnistOnStepsBenchmark       | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetMnistOnTimeBenchmark        | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetOptdigitsOnStepsBenchmark   | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetOptdigitsOnTimeBenchmark    | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetPokerOnStepsBenchmark       | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetPokerOnTimeBenchmark        | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetVehicleOnStepsBenchmark     | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetVehicleOnTimeBenchmark      | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
+| Benchmark Name                    | Container Name     | Additional Info                      |
+| :-------------------------------- | ------------------ | ------------------------------------ |
+| BNNOn*                            | pybnn              | There are 4 benchmark in total (ToyFunction, BostonHousing, ProteinStructure, YearPrediction) |
+| CartpoleFull                      | cartpole           | Not deterministic.                    |
+| CartpoleReduced                   | cartpole           | Not deterministic.                    |
+| SliceLocalizationBenchmark        | tabular_benchmarks | Loading may take several minutes.     |
+| ProteinStructureBenchmark         | tabular_benchmarks | Loading may take several minutes.     |
+| NavalPropulsionBenchmark          | tabular_benchmarks | Loading may take several minutes.     |
+| ParkinsonsTelemonitoringBenchmark | tabular_benchmarks | Loading may take several minutes.     |
+| NASCifar10*Benchmark              | nasbench_101       | Loading may take several minutes. There are 3 benchmark in total (A, B, C) |
+| *NasBench201Benchmark             | nasbench_201       | Loading may take several minutes. There are 3 benchmarks in total (Cifar10Valid, Cifar100, ImageNet)    |
+| NASBench1shot1SearchSpace*Benchmark | nasbench_1shot1  | Loading may take several minutes. There are 3 benchmarks in total (1,2,3) |
+| ParamNet*OnStepsBenchmark       | paramnet         | There are 6 benchmarks in total (Adult, Higgs, Letter, Mnist, Optdigits, Poker) |
+| ParamNet*OnTimeBenchmark        | paramnet         | There are 6 benchmarks in total (Adult, Higgs, Letter, Mnist, Optdigits, Poker) |
+| Learna⁺                            | learna_benchmark   | Not deterministic.                    |
+| MetaLearna⁺                        | learna_benchmark   | Not deterministic.                    |
+| XGBoostBenchmark⁺                  | xgboost_benchmark  | Works with OpenML task ids. |
+| XGBoostExtendedBenchmark⁺          | xgboost_benchmark  | Works with OpenML task ids + Contains Additional Parameter `Booster |
+| SupportVectorMachine⁺              | svm_benchmark      | Works with OpenML task ids. |
+
+**Note:** All containers are uploaded [here](https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry)
 
 ## Further Notes
 
