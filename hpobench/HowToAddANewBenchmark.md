@@ -49,7 +49,7 @@ Now, you can create a PR marked as [WIP] and proceed with building a containeriz
   3. Modify the recipe and add your **additional Python** and **non-Python** dependencies collected above. 
   3. Test your container locally (see below)
 
-Now, you can update your PR and let us know, so we can upload the container to Sylabs. Thanks.
+Now, you can update your PR and let us know, so we can upload the container. Thanks.
   
 ## How to test your container locally
 

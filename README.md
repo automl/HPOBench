@@ -14,7 +14,7 @@ Run a random configuration within a singularity container
 from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl', rng=1)
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "subsample": 0.5}, rng=1)
+result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5}, rng=1)
 ```
 
 All benchmarks can also be queried with fewer or no fidelities:
@@ -39,7 +39,7 @@ A simple example is the XGBoost benchmark which can be installed with `pip insta
 from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149)
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "subsample": 0.5}, rng=1)
+result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5}, rng=1)
 
 ```
 
@@ -57,48 +57,44 @@ pip install .
 
 ## Available Containerized Benchmarks
 
-| Benchmark Name                    | Container Name     | Container Source                     | Hosted at | Additional Info                      |
-| :-------------------------------- | ------------------ | ------------------------------------ | ----------|-------------------------------------- |
-| XGBoostBenchmark                  | xgboost_benchmark  | library://phmueller/automl/xgboost_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids |
-| SupportVectorMachine              | svm_benchmark      | library://phmueller/automl/svm_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Works with OpenML task ids |
-| BNNOnToyFunction                  | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
-| BNNOnBostonHousing                | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
-| BNNOnProteinStructure             | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
-| BNNOnYearPrediction               | pybnn              | library://phmueller/automl/pybnn     | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |  |
-| CartpoleFull                      | cartpole           | library://phmueller/automl/cartpole  | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Not deterministic                    |
-| CartpoleReduced                   | cartpole           | library://phmueller/automl/cartpole  | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Not deterministic                    |
-| Learna                            | learna_benchmark   | library://phmueller/automl/learna_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Not deterministic                    |
-| MetaLearna                        | learna_benchmark   | library://phmueller/automl/learna_benchmark | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Not deterministic                    |
-| SliceLocalizationBenchmark        | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| ProteinStructureBenchmark         | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| NavalPropulsionBenchmark          | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| ParkinsonsTelemonitoringBenchmark | tabular_benchmarks | library://phmueller/automl/tabular_benchmarks | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| NASCifar10ABenchmark              | nasbench_101       | library://phmueller/automl/nasbench_101 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| NASCifar10BBenchmark              | nasbench_101       | library://phmueller/automl/nasbench_101 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| NASCifar10CBenchmark              | nasbench_101       | library://phmueller/automl/nasbench_101 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes     |
-| Cifar10NasBench201Benchmark       | nasbench_201       | library://phmueller/automl/nasbench_201 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| Cifar100NasBench201Benchmark      | nasbench_201       | library://phmueller/automl/nasbench_201 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| Cifar10ValidNasBench201Benchmark  | nasbench_201       | library://phmueller/automl/nasbench_201 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| ImageNetNasBench201Benchmark      | nasbench_201       | library://phmueller/automl/nasbench_201 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| NASBench1shot1SearchSpace1Benchmark | nasbench_1shot1  | library://phmueller/automl/nasbench_1shot1 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| NASBench1shot1SearchSpace2Benchmark | nasbench_1shot1  | library://phmueller/automl/nasbench_1shot1 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| NASBench1shot1SearchSpace3Benchmark | nasbench_1shot1  | library://phmueller/automl/nasbench_1shot1 | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) | Loading may take several minutes    |
-| ParamNetAdultOnStepsBenchmark       | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetAdultOnTimeBenchmark        | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetHiggsOnStepsBenchmark       | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetHiggsOnTimeBenchmark        | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetLetterOnStepsBenchmark      | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetLetterOnTimeBenchmark       | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetMnistOnStepsBenchmark       | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetMnistOnTimeBenchmark        | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetOptdigitsOnStepsBenchmark   | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetOptdigitsOnTimeBenchmark    | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetPokerOnStepsBenchmark       | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetPokerOnTimeBenchmark        | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetVehicleOnStepsBenchmark     | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
-| ParamNetVehicleOnTimeBenchmark      | paramnet         | library://phmueller/automl/paramnet | [Sylabs](https://cloud.sylabs.io/library/phmueller/automl) |     |
+| Benchmark Name                    | Container Name     | Additional Info                      |
+| :-------------------------------- | ------------------ | ------------------------------------ |
+| BNNOn*                            | pybnn              | There are 4 benchmark in total (ToyFunction, BostonHousing, ProteinStructure, YearPrediction) |
+| CartpoleFull                      | cartpole           | Not deterministic.                    |
+| CartpoleReduced                   | cartpole           | Not deterministic.                    |
+| SliceLocalizationBenchmark        | tabular_benchmarks | Loading may take several minutes.     |
+| ProteinStructureBenchmark         | tabular_benchmarks | Loading may take several minutes.     |
+| NavalPropulsionBenchmark          | tabular_benchmarks | Loading may take several minutes.     |
+| ParkinsonsTelemonitoringBenchmark | tabular_benchmarks | Loading may take several minutes.     |
+| NASCifar10*Benchmark              | nasbench_101       | Loading may take several minutes. There are 3 benchmark in total (A, B, C) |
+| *NasBench201Benchmark             | nasbench_201       | Loading may take several minutes. There are 3 benchmarks in total (Cifar10Valid, Cifar100, ImageNet)    |
+| NASBench1shot1SearchSpace*Benchmark | nasbench_1shot1  | Loading may take several minutes. There are 3 benchmarks in total (1,2,3) |
+| ParamNet*OnStepsBenchmark       | paramnet         | There are 6 benchmarks in total (Adult, Higgs, Letter, Mnist, Optdigits, Poker) |
+| ParamNet*OnTimeBenchmark        | paramnet         | There are 6 benchmarks in total (Adult, Higgs, Letter, Mnist, Optdigits, Poker) |
+| Learna⁺                            | learna_benchmark   | Not deterministic.                    |
+| MetaLearna⁺                        | learna_benchmark   | Not deterministic.                    |
+| XGBoostBenchmark⁺                  | xgboost_benchmark  | Works with OpenML task ids. |
+| XGBoostExtendedBenchmark⁺          | xgboost_benchmark  | Works with OpenML task ids + Contains Additional Parameter `Booster |
+| SupportVectorMachine⁺              | svm_benchmark      | Works with OpenML task ids. |
+
+⁺ these benchmarks are not yet final and might change
+
+**Note:** All containers are uploaded [here](https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry)
 
 ## Further Notes
+
+### Configure the HPOBench
+
+All of HPOBench's settings are stored in a file, the `hpobenchrc`-file. 
+It is a yaml file, which is automatically generated at the first use of HPOBench. 
+By default, it is placed in `$XDG_CONFIG_HOME`. If `$XDG_CONFIG_HOME` is not set, then the
+`hpobenchrc`-file is saved to `'~/.config/hpobench'`.
+Make sure to have write permissions in this directory. 
+
+In the `hpobenchrc`, you can specify for example the directory, in that the benchmark-containers are
+downloaded. We encourage you to take a look into the `hpobenchrc`, to find out more about all
+possible settings. 
+
 
 ### How to build a container locally
 
@@ -116,7 +112,7 @@ from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_name="xgboost_benchmark", 
                      container_source='./') # path to hpobench/container/recipes/ml
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "subsample": 0.5})
+result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5})
 ```
 
 ### Remove all caches
@@ -153,11 +149,9 @@ See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that
 ## Status
 
 Status for Master Branch: 
-
-[![Build Status](https://travis-ci.org/automl/HPOBench.svg?branch=master)](https://travis-ci.org/automl/HPOBench)
+[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=master)](https://https://github.com/automl/HPOBench/actions)
 [![codecov](https://codecov.io/gh/automl/HPOBench/branch/master/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)
 
 Status for Development Branch: 
-
-[![Build Status](https://travis-ci.org/automl/HPOBench.svg?branch=development)](https://travis-ci.org/automl/HPOBench)
+[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=development)](https://https://github.com/automl/HPOBench/actions)
 [![codecov](https://codecov.io/gh/automl/HPOBench/branch/development/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)

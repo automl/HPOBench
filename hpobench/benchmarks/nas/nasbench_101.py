@@ -40,6 +40,21 @@ Notes:
 Benchmarks in NASBench101 only contain epochs 4, 12, 36 and 108.
 Querying another epoch, e.g. 5, raises an assertion.
 
+Changelog:
+==========
+0.0.3:
+* Standardize the structure of the meta information
+
+0.0.2:
+* The objective function takes as input now the parameter run_index. Allowed values are Tuple(0-2), 0, 1, 2, None.
+  This value specifies which seeds are used. The user can specify a single index or a tuple with indices.
+  If the user wants to use a randomly drawn run_index, they can simply set the value explicitly to None.
+* Fix a bug in NASCifar10CBenchmark
+
+0.0.1:
+* First implementation
+
+
 """
 import logging
 
@@ -58,7 +73,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.data_manager import NASBench_101DataManager
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 logger = logging.getLogger('NasBench101')
 
 MAX_EDGES = 9
@@ -222,10 +237,14 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
     def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
         return {'name': 'Tabular Benchmarks for Hyperparameter Optimization and Neural Architecture Search',
-                'references': ['Aaron Klein, Frank Hutter',
-                               'Tabular Benchmarks for Joint Architecture and Hyperparameter Optimization',
+                'references': ['@article{klein2019tabular,'
+                               'title   = {Tabular benchmarks for joint architecture and hyperparameter optimization},'
+                               'author  = {Klein, Aaron and Hutter, Frank},'
+                               'journal = {arXiv preprint arXiv:1905.04970},'
+                               'year    = {2019}}',
                                'https://arxiv.org/abs/1905.04970',
-                               'https://github.com/automl/nas_benchmarks'],
+                               ],
+                'code': 'https://github.com/automl/nas_benchmarks',
                 }
 
     @staticmethod

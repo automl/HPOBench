@@ -11,4 +11,5 @@ class SupportVectorMachine(AbstractBenchmarkClient):
         kwargs['task_id'] = task_id
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SupportVectorMachine')
         kwargs['container_name'] = kwargs.get('container_name', 'svm_benchmark')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.2')
         super(SupportVectorMachine, self).__init__(**kwargs)

@@ -29,6 +29,7 @@ from uuid import uuid1
 import ConfigSpace as CS
 import Pyro4
 import Pyro4.util
+import Pyro4.errors
 import numpy as np
 from ConfigSpace.read_and_write import json as csjson
 from oslo_concurrency import lockutils
@@ -61,12 +62,14 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
     socket_id : str
     """
     def __init__(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
-                 gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+                 container_tag: str = 'latest', gpu: Optional[bool] = False,
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
 
         self.socket_id = self._id_generator()
-        self._setup(benchmark_name, container_name, container_source, gpu, rng, **kwargs)
+        self._setup(benchmark_name, container_name, container_tag, container_source, gpu, rng, **kwargs)
 
-    def _setup(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
+    def _setup(self, benchmark_name: str, container_name: str, container_tag: str,
+               container_source: Optional[str] = None,
                gpu: bool = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         """ Initialization of the benchmark using container.
 
@@ -83,6 +86,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         container_source : Optional[str]
             Path to the container. Either local path or url to a hosting
             platform, e.g. singularity hub.
+        container_tag : str
+            Singularity containers are specified by an address as well as a container tag. We use the tag as a version
+            number. By default the tag is set to `latest`, which then pulls the latest container from the container
+            source. The tag-versioning allows the users to rerun an experiment, which was performed with an older
+            container version. Take a look in the container_source to find the right tag to use.
         container_name : str
             name of the container. E.g. xgboost_benchmark. Specifying different container could be
             useful to have multiple container for the same benchmark, if a tool like auto-sklearn is updated to a newer
@@ -99,6 +107,16 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # We can point to a different container source. See below.
         container_source = container_source or self.config.container_source
         container_dir = Path(self.config.container_dir)
+
+        if (container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry')
+                and container_tag == 'latest'):
+            assert 'latest' in kwargs, 'If the container is hosted on the gitlab registry, make sure that in the ' \
+                                       'container init, the field \'latest\' is set.'
+
+            container_tag = kwargs['latest']
+            logger.debug(f'Replace the tag \'latest\' with \'{container_tag}\'.')
+
+        container_name_with_tag = f'{container_name}_{container_tag}'
 
         logger.debug(f'Use benchmark {benchmark_name} from container {container_source}/{container_name}. \n'
                      f'And container directory {self.config.container_dir}')
@@ -120,28 +138,60 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             # See: https://docs.openstack.org/oslo.concurrency/latest/admin/index.html
             @lockutils.synchronized('not_thread_process_safe', external=True,
                                     lock_path=f'{self.config.cache_dir}/lock_{container_name}', delay=5)
-            def download_container(container_dir, container_name, container_source):
-                if not (container_dir / container_name).exists():
+            def download_container(container_dir, container_name, container_source, container_tag):
+                if not (container_dir / container_name_with_tag).exists():
                     logger.debug('Going to pull the container from an online source.')
 
                     container_dir.mkdir(parents=True, exist_ok=True)
-                    cmd = f"singularity pull --dir {self.config.container_dir} " \
-                          f"--name {container_name} {container_source}/{container_name.lower()}"
+
+                    cmd = f'singularity pull --dir {self.config.container_dir} ' \
+                          f'--name {container_name_with_tag} '
+
+                    # Currently, we can't see the available container tags on gitlab. Therefore, we create for each
+                    # "tag" a new entry in the registry. This might change in the future. But as long as we don't have
+                    # a fix for this, we need to map the container tag differently.
+                    if container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry'):
+                        cmd += f'{container_source}/{container_name.lower()}/{container_tag}:latest'
+                    else:
+                        cmd += f'{container_source}/{container_name.lower()}:{container_tag}'
+
+                    logger.info(f'Start downloading the container {container_name_with_tag} from {container_source}. '
+                                'This may take several minutes.')
                     logger.debug(cmd)
                     subprocess.run(cmd, shell=True, check=True)
                     time.sleep(1)
                 else:
                     logger.debug('Skipping downloading the container. It is already downloaded.')
 
-            download_container(container_dir, container_name, container_source)
+            download_container(container_dir, container_name, container_source, container_tag)
         else:
             logger.debug(f'Looking on the local filesystem for the container file, since container source was '
                          f'either \'None\' or not a known address. Image Source: {container_source}')
 
             # Make sure that the container can be found locally.
             container_dir = Path(container_source)
-            assert (container_dir / container_name).exists(), f'Local container not found in ' \
-                                                              f'{container_dir / container_name}'
+
+            if not container_dir.exists():
+                raise FileNotFoundError(f'Could not find the container on the local filesystem. The path '
+                                        f'{container_source} does not exist.'
+                                        'Please either specify the full path to the container '
+                                        'or the directory in which the container is, as well as '
+                                        'the benchmark name and the container tag (default: latest).')
+
+            # if the container source is the path to the container itself, we are going to use this container directly.
+            if container_dir.is_file():
+                container_dir = container_dir.parent
+                container_name_with_tag = container_dir.name
+
+            # If the user specifies a container directory, search for the container name with (!) tag in it.
+            elif container_dir.is_dir():
+                assert (container_dir / container_name_with_tag).exists(), \
+                    f'Local container not found in {container_dir / container_name_with_tag}'
+
+            else:
+                raise FileNotFoundError('The container source is neither a file nor a directory.'
+                                        f'container_source: {container_dir}')
+
             logger.debug('Image found on the local file system.')
 
         bind_options = f'--bind /var/lib/,{self.config.global_data_dir}:/var/lib/,{self.config.container_dir}'
@@ -150,7 +200,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         bind_options += ' '
 
         gpu_opt = '--nv ' if gpu else ''  # Option for enabling GPU support
-        container_options = f'{container_dir / container_name}'
+        container_options = f'{container_dir / container_name_with_tag}'
 
         log_str = f'SINGULARITYENV_HPOBENCH_DEBUG={log_level_str}'
         cmd = f'{log_str} singularity instance start {bind_options}{gpu_opt}{container_options} {self.socket_id}'
@@ -220,6 +270,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         """ Helper function to parse the named keyword arguments to json str. """
         if rng is not None:
             kwargs['rng'] = rng
+        if 'latest' in kwargs:
+            del kwargs['latest']
         kwargs_str = json.dumps(kwargs, indent=None, cls=BenchmarkEncoder)
         return kwargs_str
 
@@ -357,14 +409,16 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         """ Shutdown benchmark and stop container"""
         try:
             self.benchmark.shutdown()
-        except TypeError:
+        except (ConnectionRefusedError, Pyro4.errors.CommunicationError, Pyro4.errors.ConnectionClosedError):
             pass
 
-        subprocess.run(f'singularity instance stop {self.socket_id}'.split(), check=False)
+        # If the container is already closed, we dont want a error message here (-> DEVNULL)
+        subprocess.run(f'singularity instance stop {self.socket_id}'.split(), check=False, stdout=subprocess.DEVNULL)
 
         if (self.config.socket_dir / f'{self.socket_id}_unix.sock').exists():
             (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
         # self.benchmark._pyroRelease()
+        logger.info('Benchmark is successfully shut down.')
 
     def __call__(self, configuration: Dict, **kwargs) -> Dict:
         """ Provides interface to use, e.g., SciPy optimizers """

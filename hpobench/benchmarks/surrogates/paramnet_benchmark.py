@@ -1,3 +1,61 @@
+"""
+How to use this benchmark:
+--------------------------
+
+We recommend using the containerized version of this benchmark.
+If you want to use this benchmark locally (without running it via the corresponding container),
+you need to perform the following steps.
+
+Prerequisites:
+==============
+Conda environment in which the HPOBench is installed (pip install .). Activate your environment.
+```
+conda activate <Name_of_Conda_HPOBench_environment>
+```
+
+1. Download data:
+=================
+The data will be downloaded automatically.
+
+If you want to download the data on your own, you can download the data with the following command and then link the
+hpobench-config's data-path to it.
+
+```
+wget https://www.automl.org/wp-content/uploads/2019/05/surrogates.tar.gz
+```
+
+The data consist of surrogates for different data sets. Each surrogate is a pickled scikit-learn forest. Thus, we have
+a hard requirement of scikit-learn==0.23.x.
+
+
+1. Clone from github:
+=====================
+Clone the learna tool and install it to your Conda environment.
+```
+git clone --single-branch --branch development https://github.com/PhMueller/learna.git
+cd learna
+pip install .
+```
+
+2. Clone and install
+====================
+```
+cd /path/to/HPOBench
+pip install .[paramnet]
+
+```
+
+Changelog:
+==========
+0.0.2:
+* Fix OnTime Test function:
+  The `objective_test_function` of the OnTime Benchmarks now checks if the budget is the right maximum budget.
+* Standardize the structure of the meta information
+
+0.0.1:
+* First implementation
+"""
+
 import logging
 from typing import Union, Dict
 
@@ -7,7 +65,7 @@ import numpy as np
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.data_manager import ParamNetDataManager
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 logger = logging.getLogger('Paramnet')
 
@@ -108,10 +166,10 @@ class _ParamnetBase(AbstractBenchmark):
                                'url       = http://proceedings.mlr.press/v80/falkner18a.html'
                                'author    = {Falkner, Stefan and Klein, Aaron and Hutter, Frank}, '
                                'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
-                               'pages     = {1436 - -1445},'
+                               'pages     = {1436 - 1445},'
                                'year      = {2018}}'],
-                'original_implementation': 'https://github.com/automl/HPOlib1.5/blob/development/'
-                                           'hpolib/benchmarks/surrogates/paramnet.py'
+                'code': 'https://github.com/automl/HPOlib1.5/blob/development/'
+                        'hpolib/benchmarks/surrogates/paramnet.py'
                 }
 
 
@@ -203,7 +261,11 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
         if (costs / self.n_epochs) > fidelity['budget']:
             return {'function_value': 1.0,
                     'cost': fidelity['budget'],
-                    'info': {'state': 'Not enough budget'}}
+                    'info': {'fidelity': fidelity,
+                             'learning_curve': [],
+                             'observed_epochs': 0,
+                             'predicted_costs': float(costs),
+                             'state': 'Not enough budget'}}
 
         learning_curves_cost = np.linspace(costs / self.n_epochs, costs, self.n_epochs)
 
@@ -221,17 +283,22 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
 
         return {'function_value': float(y),
                 'cost': fidelity['budget'],
-                'info': {'learning_curve': lc.tolist(),
-                         'observed_epochs': len(lc)}}
+                'info': {'fidelity': fidelity,
+                         'learning_curve': lc.tolist(),
+                         'observed_epochs': len(lc),
+                         'predicted_costs': float(costs)}}
 
     @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        # Get the maximum fidelity for this benchmark.
+        fidelity_space = self.get_fidelity_space()
+        max_budget = fidelity_space.get_hyperparameter('budget').upper
 
-        assert fidelity['step'] == 50, f'Only querying a result for the 50. epoch is allowed, ' \
-                                       f'but was {fidelity["step"]}.'
-        return self.objective_function(configuration, fidelity={'step': 50}, rng=rng)
+        assert fidelity['budget'] == max_budget, f'Only querying a result for a budget of {max_budget} is allowed, ' \
+                                                 f'but was {fidelity["budget"]}.'
+        return self.objective_function(configuration, fidelity={'budget': max_budget}, rng=rng)
 
     @staticmethod
     def _get_fidelity_space(dataset: str, seed: Union[int, None] = None) -> CS.ConfigurationSpace:

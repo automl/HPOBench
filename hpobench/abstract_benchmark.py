@@ -8,6 +8,7 @@ import logging
 import ConfigSpace
 import numpy as np
 
+from ConfigSpace.util import deactivate_inactive_hyperparameters
 from hpobench.util import rng_helper
 
 logger = logging.getLogger('AbstractBenchmark')
@@ -131,17 +132,36 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
                                       configuration_space: ConfigSpace.ConfigurationSpace) \
             -> ConfigSpace.Configuration:
         """ Helper-function to evaluate the given configuration.
-            Cast it to a ConfigSpace.Configuration and evaluate if it violates some boundaries.
+            Cast it to a ConfigSpace.Configuration and evaluate if it violates its boundaries.
+
+            Note:
+                We remove inactive hyperparameters from the given configuration. Inactive hyperparameters are
+                hyperparameters that are not relevant for a configuration, e.g. hyperparameter A is only relevant if
+                hyperparameter B=1 and if B!=1 then A is inactive and will be removed from the configuration.
+                Since the authors of the benchmark removed those parameters explicitly, they should also handle the
+                cases that inactive parameters are not present in the input-configuration.
         """
 
         if isinstance(configuration, dict):
-            configuration = ConfigSpace.Configuration(configuration_space, configuration)
+            configuration = ConfigSpace.Configuration(configuration_space, configuration,
+                                                      allow_inactive_with_values=True)
         elif isinstance(configuration, ConfigSpace.Configuration):
             configuration = configuration
         else:
             raise TypeError(f'Configuration has to be from type List, np.ndarray, dict, or '
                             f'ConfigSpace.Configuration but was {type(configuration)}')
+
+        all_hps = set(configuration_space.get_hyperparameter_names())
+        active_hps = configuration_space.get_active_hyperparameters(configuration)
+        inactive_hps = all_hps - active_hps
+
+        if len(inactive_hps) != 0:
+            logger.debug(f'There are inactive {len(inactive_hps)} hyperparameter: {inactive_hps}'
+                         'Going to remove them from the configuration.')
+
+        configuration = deactivate_inactive_hyperparameters(configuration, configuration_space)
         configuration_space.check_configuration(configuration)
+
         return configuration
 
     @staticmethod

@@ -6,6 +6,12 @@ if [[ "$RUN_TESTS" == "true" ]]; then
     echo "Install tools for testing"
     install_packages="${install_packages}xgboost,cartpole,pytest,test_paramnet,"
     pip install codecov
+
+    # The param net benchmark does not work with a scikit-learn version != 0.23.2. (See notes in the benchmark)
+    # To make sure that no newer version is installed, we install it before the other requirements.
+    # Since we are not using a "--upgrade" option later on, pip skips to install another scikit-learn version.
+    echo "Install the right scikit-learn function for the param net tests."
+    pip install --upgrade scikit-learn==0.23.2
 else
     echo "Skip installing tools for testing"
 fi
@@ -36,8 +42,6 @@ fi
 
 if [[ "$USE_SINGULARITY" == "true" ]]; then
     echo "Install Singularity"
-    gimme force 1.14
-    eval "$(gimme 1.14)"
 
     sudo apt-get update && sudo apt-get install -y \
       build-essential \
