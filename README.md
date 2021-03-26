@@ -77,6 +77,8 @@ pip install .
 | XGBoostExtendedBenchmark⁺          | xgboost_benchmark  | Works with OpenML task ids + Contains Additional Parameter `Booster |
 | SupportVectorMachine⁺              | svm_benchmark      | Works with OpenML task ids. |
 
+⁺ these benchmarks are not yet final and might change
+
 **Note:** All containers are uploaded [here](https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry)
 
 ## Further Notes
