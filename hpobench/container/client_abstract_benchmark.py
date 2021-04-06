@@ -62,14 +62,15 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
     socket_id : str
     """
     def __init__(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
-                 container_tag: str = 'latest', gpu: Optional[bool] = False,
-                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+                 container_tag: str = 'latest', env_str: Optional[str] = '', bind_str: Optional[str] = '',
+                 gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
 
         self.socket_id = self._id_generator()
-        self._setup(benchmark_name, container_name, container_tag, container_source, gpu, rng, **kwargs)
+        self._setup(benchmark_name, container_name, container_tag, container_source, env_str, bind_str, gpu, rng,
+                    **kwargs)
 
     def _setup(self, benchmark_name: str, container_name: str, container_tag: str,
-               container_source: Optional[str] = None,
+               container_source: Optional[str] = None, env_str: Optional[str] = '', bind_str: Optional[str] = '',
                gpu: bool = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         """ Initialization of the benchmark using container.
 
@@ -97,6 +98,15 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             version, and you want to compare its performance across its versions.
             Also, a container can contain multiple benchmarks. Therefore, we have to define for each benchmark the
             corresponding container name.
+        bind_str : Optional[str]
+            Defaults to ''. You can bind further directories into the container.
+            This string have the form src[:dest[:opts]].
+            For more information, see https://sylabs.io/guides/3.7/user-guide/bind_paths_and_mounts.html
+        env_str : Optional[str]
+            Defaults to ''. Sometimes you want to pass a parameter to your container. You can do this by setting some
+            environmental variables. The list should follow the form [name=value].
+            For more information, see
+            https://sylabs.io/guides/3.7/user-guide/environment_and_metadata.html#environment-overview
         gpu : bool
             If True, the container has access to the local cuda-drivers.
             (Not tested)
@@ -180,8 +190,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             # if the container source is the path to the container itself, we are going to use this container directly.
             if container_dir.is_file():
-                container_dir = container_dir.parent
                 container_name_with_tag = container_dir.name
+                container_dir = container_dir.parent
 
             # If the user specifies a container directory, search for the container name with (!) tag in it.
             elif container_dir.is_dir():
@@ -194,16 +204,21 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             logger.debug('Image found on the local file system.')
 
-        bind_options = f'--bind /var/lib/,{self.config.global_data_dir}:/var/lib/,{self.config.container_dir}'
-        if self.config.global_data_dir != self.config.data_dir:
-            bind_options += f',{self.config.data_dir}:/var/lib/'
-        bind_options += ' '
+        env_vars = '--env SINGULARITYENV_HPOBENCH_DEBUG={log_level_str}'
+        if env_str.strip() != '':
+            env_vars += ',' + env_str.strip()
+
+        bind_options = f'--bind ' \
+                       f'{self.config.cache_dir}:{self.config._cache_dir_container},' \
+                       f'{self.config.data_dir}:{self.config._data_dir_container},' \
+                       f'{self.config.socket_dir}:{self.config._socket_dir_container}'
+        if bind_str.strip() != '':
+            bind_options += ',' + bind_str.strip()
 
         gpu_opt = '--nv ' if gpu else ''  # Option for enabling GPU support
-        container_options = f'{container_dir / container_name_with_tag}'
 
-        log_str = f'SINGULARITYENV_HPOBENCH_DEBUG={log_level_str}'
-        cmd = f'{log_str} singularity instance start {bind_options}{gpu_opt}{container_options} {self.socket_id}'
+        cmd = f'singularity instance start {bind_options} {gpu_opt}' \
+              f'{container_dir / container_name_with_tag} {self.socket_id}'
         logger.debug(cmd)
 
         for num_tries in range(MAX_TRIES):
@@ -235,7 +250,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # Give each instance a little bit time to start
         time.sleep(1)
 
-        cmd = f'singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
+        cmd = f'singularity run {env_vars} {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
         logger.debug(cmd)
         subprocess.Popen(cmd.split())
 
