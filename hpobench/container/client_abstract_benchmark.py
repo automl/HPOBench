@@ -101,12 +101,12 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         bind_str : Optional[str]
             Defaults to ''. You can bind further directories into the container.
             This string have the form src[:dest[:opts]].
-            For more information, see https://sylabs.io/guides/3.7/user-guide/bind_paths_and_mounts.html
+            For more information, see https://sylabs.io/guides/3.5/user-guide/bind_paths_and_mounts.html
         env_str : Optional[str]
             Defaults to ''. Sometimes you want to pass a parameter to your container. You can do this by setting some
-            environmental variables. The list should follow the form [name=value].
+            environmental variables. The list should follow the form VAR1=VALUE1,VAR2=VALUE2,..
             For more information, see
-            https://sylabs.io/guides/3.7/user-guide/environment_and_metadata.html#environment-overview
+            https://sylabs.io/guides/3.5/user-guide/environment_and_metadata.html#environment-overview
         gpu : bool
             If True, the container has access to the local cuda-drivers.
             (Not tested)
@@ -204,9 +204,12 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             logger.debug('Image found on the local file system.')
 
-        env_vars = '--env SINGULARITYENV_HPOBENCH_DEBUG={log_level_str}'
+        env_vars = 'HPOBENCH_DEBUG={log_level_str} '
         if env_str.strip() != '':
-            env_vars += ',' + env_str.strip()
+            # Following the documentation of singularity, actually all env variables should have a
+            # 'SINGULARITYENV_'-prefix. However, it works also without it. We want as environmental variables input
+            # a string of form VAR1=VAL1,VAR2=VAL2,...
+            env_vars += env_str.replace(' ', '').replace(',', ' ') + ' '
 
         bind_options = f'--bind ' \
                        f'{self.config.cache_dir}:{self.config._cache_dir_container},' \
@@ -250,7 +253,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # Give each instance a little bit time to start
         time.sleep(1)
 
-        cmd = f'singularity run {env_vars} {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
+        cmd = f'{env_vars} singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
         logger.debug(cmd)
         subprocess.Popen(cmd.split())
 
