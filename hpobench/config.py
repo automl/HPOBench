@@ -39,27 +39,29 @@ class HPOBenchConfig:
         # Constant paths in the container
         self._cache_dir_container = '/var/lib/hpobench/cache'
         self._data_dir_container = '/var/lib/hpobench/data'
-        self._socket_dir_container = '/tmp/hpobench_socket/'
+        self._socket_dir_container = '/var/lib/socket'
 
         # According to https://github.com/openml/openml-python/issues/884, try to set default directories.
         self.config_base_dir = Path(os.environ.get('XDG_CONFIG_HOME', '~/.config/hpobench')).expanduser().absolute()
 
         # The path to the hpobenchrc file. This file stores the settings defined by the user
-        self.config_file = (self.config_base_dir / '.hpobenchrc').expanduser().absolute()
+        self.config_file = (self.config_base_dir / '.hpobenchrc')
 
         # The cache dir contains the lock files, etc.
         if not self._is_container:
             self.cache_dir = os.environ.get('XDG_CACHE_HOME', '~/.cache/hpobench')
             self.data_dir = os.environ.get('XDG_DATA_HOME', '~/.local/share/hpobench')
+            self.socket_dir = os.environ.get('TMPDIR', '/tmp/hpobench_socket/')
         else:
             self.cache_dir = self._cache_dir_container
             self.data_dir = self._data_dir_container
+            self.socket_dir = self._socket_dir_container
 
         self.cache_dir = Path(self.cache_dir).expanduser().absolute()
         self.data_dir = Path(self.data_dir).expanduser().absolute()
 
         # Options for the singularity container
-        self.socket_dir = Path('/tmp/hpobench_socket/')
+        self.socket_dir = Path(self.socket_dir).expanduser().absolute()
         self.container_dir = self.cache_dir / f'hpobench-{os.getuid()}'
         self.container_source = 'oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry'
         self.pyro_connect_max_wait = 400
