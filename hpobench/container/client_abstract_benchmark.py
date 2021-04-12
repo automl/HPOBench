@@ -66,12 +66,13 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                  gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
 
         self.socket_id = self._id_generator()
-        self._setup(benchmark_name, container_name, container_tag, container_source, env_str, bind_str, gpu, rng,
+        self._setup(benchmark_name, container_name, container_source, container_tag, env_str, bind_str, gpu, rng,
                     **kwargs)
 
-    def _setup(self, benchmark_name: str, container_name: str, container_tag: str,
-               container_source: Optional[str] = None, env_str: Optional[str] = '', bind_str: Optional[str] = '',
-               gpu: bool = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+    def _setup(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
+               container_tag: str = 'latest', env_str: Optional[str] = '', bind_str: Optional[str] = '',
+               gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+
         """ Initialization of the benchmark using container.
 
         This setup function downloads the container from a defined source. The source is defined either in the
