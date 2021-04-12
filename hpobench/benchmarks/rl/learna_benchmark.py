@@ -49,6 +49,10 @@ python -m python -m learna.data.download_and_build_eterna ./learna/data/secondar
 
 Changelog:
 ==========
+0.0.4
+* New container release due to a general change in the communication between container and HPOBench.
+  Works with HPOBench >= v0.0.8
+
 0.0.3:
 * Standardize the structure of the meta information
 
@@ -76,7 +80,7 @@ import hpobench.config
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util import rng_helper
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 logger = logging.getLogger('LearnaBenchmark')
 

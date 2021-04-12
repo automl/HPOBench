@@ -47,6 +47,10 @@ pip install .[paramnet]
 
 Changelog:
 ==========
+0.0.3
+* New container release due to a general change in the communication between container and HPOBench.
+  Works with HPOBench >= v0.0.8
+
 0.0.2:
 * Fix OnTime Test function:
   The `objective_test_function` of the OnTime Benchmarks now checks if the budget is the right maximum budget.
@@ -65,7 +69,7 @@ import numpy as np
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.data_manager import ParamNetDataManager
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 logger = logging.getLogger('Paramnet')
 

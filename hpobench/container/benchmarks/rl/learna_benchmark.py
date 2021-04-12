@@ -11,7 +11,7 @@ class Learna(AbstractBenchmarkClient):
         kwargs['data_path'] = '/home/learna/data'
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'Learna')
         kwargs['container_name'] = kwargs.get('container_name', 'learna_benchmark')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
         super(Learna, self).__init__(**kwargs)
 
 
@@ -20,5 +20,5 @@ class MetaLearna(AbstractBenchmarkClient):
         kwargs['data_path'] = '/home/learna/data'
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'MetaLearna')
         kwargs['container_name'] = kwargs.get('container_name', 'learna_benchmark')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
         super(MetaLearna, self).__init__(**kwargs)

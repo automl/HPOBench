@@ -2,6 +2,10 @@
 
 Changelog:
 ==========
+0.0.3
+* New container release due to a general change in the communication between container and HPOBench.
+  Works with HPOBench >= v0.0.8
+
 0.0.2:
 * Standardize the structure of the meta information
 
@@ -28,7 +32,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.openml_data_manager import OpenMLHoldoutDataManager
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 logger = logging.getLogger('SVMBenchmark')
 

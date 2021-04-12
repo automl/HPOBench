@@ -11,7 +11,7 @@ class SliceLocalizationBenchmark(AbstractBenchmarkClient):
         kwargs['data_path'] = '/home/fcnet_tabular_benchmarks'
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SliceLocalizationBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'tabular_benchmarks')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
         super(SliceLocalizationBenchmark, self).__init__(**kwargs)
 
 
@@ -20,7 +20,7 @@ class ProteinStructureBenchmark(AbstractBenchmarkClient):
         kwargs['data_path'] = '/home/fcnet_tabular_benchmarks'
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ProteinStructureBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'tabular_benchmarks')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
         super(ProteinStructureBenchmark, self).__init__(**kwargs)
 
 
@@ -29,7 +29,7 @@ class NavalPropulsionBenchmark(AbstractBenchmarkClient):
         kwargs['data_path'] = '/home/fcnet_tabular_benchmarks'
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NavalPropulsionBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'tabular_benchmarks')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
         super(NavalPropulsionBenchmark, self).__init__(**kwargs)
 
 
@@ -38,5 +38,5 @@ class ParkinsonsTelemonitoringBenchmark(AbstractBenchmarkClient):
         kwargs['data_path'] = '/home/fcnet_tabular_benchmarks'
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParkinsonsTelemonitoringBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'tabular_benchmarks')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
         super(ParkinsonsTelemonitoringBenchmark, self).__init__(**kwargs)
