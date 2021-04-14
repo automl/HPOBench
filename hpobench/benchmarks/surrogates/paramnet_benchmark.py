@@ -30,11 +30,8 @@ a hard requirement of scikit-learn==0.23.x.
 
 1. Clone from github:
 =====================
-Clone the learna tool and install it to your Conda environment.
 ```
-git clone --single-branch --branch development https://github.com/PhMueller/learna.git
-cd learna
-pip install .
+git clone HPOBench
 ```
 
 2. Clone and install
