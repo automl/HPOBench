@@ -644,8 +644,8 @@ class ParamNetDataManager(SurrogateDataManger):
 class SurrogateSVMDataManager(SurrogateDataManger):
     def __init__(self):
         super(SurrogateSVMDataManager, self).__init__(dataset='svm')
-        self.obj_fn_file = self.save_dir / f'rf_surrogate_svm.pkl'
-        self.cost_file = self.save_dir / f'rf_cost_surrogate_svm.pkl'
+        self.obj_fn_file = self.save_dir / 'rf_surrogate_svm.pkl'
+        self.cost_file = self.save_dir / 'rf_cost_surrogate_svm.pkl'
 
 
 class BostonHousingData(HoldoutDataManager):
