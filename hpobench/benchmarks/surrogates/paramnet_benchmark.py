@@ -47,9 +47,13 @@ pip install .[paramnet]
 
 Changelog:
 ==========
-0.0.3
+0.0.4
 * New container release due to a general change in the communication between container and HPOBench.
   Works with HPOBench >= v0.0.8
+
+0.0.3:
+* Fix returned dictionary from Objective Function for ParamNetOnTime Benchmarks.
+* Suppress Warning (Surrogate was created with scikit-learn version 0.18.1 and current is 0.23.2)
 
 0.0.2:
 * Fix OnTime Test function:
