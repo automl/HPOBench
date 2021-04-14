@@ -47,6 +47,10 @@ pip install .[paramnet]
 
 Changelog:
 ==========
+0.0.3:
+* Fix returned dictionary from Objective Function for ParamNetOnTime Benchmarks.
+* Suppress Warning (Surrogate was created with scikit-learn version 0.18.1 and current is 0.23.2)
+
 0.0.2:
 * Fix OnTime Test function:
   The `objective_test_function` of the OnTime Benchmarks now checks if the budget is the right maximum budget.
@@ -55,7 +59,7 @@ Changelog:
 0.0.1:
 * First implementation
 """
-
+import warnings
 import logging
 from typing import Union, Dict
 
@@ -65,7 +69,7 @@ import numpy as np
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.data_manager import ParamNetDataManager
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 logger = logging.getLogger('Paramnet')
 
@@ -91,9 +95,10 @@ class _ParamnetBase(AbstractBenchmark):
         assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
                                             f'{", ".join(allowed_datasets)}, but was {dataset}'
         logger.info(f'Start Benchmark on dataset {dataset}')
-
-        dm = ParamNetDataManager(dataset=dataset)
-        self.surrogate_objective, self.surrogate_costs = dm.load()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Trying to unpickle")
+            dm = ParamNetDataManager(dataset=dataset)
+            self.surrogate_objective, self.surrogate_costs = dm.load()
 
     @staticmethod
     def convert_config_to_array(configuration: Dict) -> np.ndarray:
