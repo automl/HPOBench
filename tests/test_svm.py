@@ -26,7 +26,7 @@ def test_svm_init():
 
     result = benchmark.objective_function(configuration=config, fidelity=fidelity)
     assert result['function_value'] == pytest.approx(0.4837, abs=0.1)
-    assert result['cost'] == pytest.approx(0.323, abs=0.1)
+    assert result['cost'] is not None
 
     with pytest.raises(AssertionError):
         result = benchmark.objective_function_test(configuration=config, fidelity=fidelity)
