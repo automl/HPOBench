@@ -63,7 +63,7 @@ Changelog:
 0.0.1:
 * First implementation
 """
-
+import warnings
 import logging
 from typing import Union, Dict
 
@@ -99,9 +99,10 @@ class _ParamnetBase(AbstractBenchmark):
         assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
                                             f'{", ".join(allowed_datasets)}, but was {dataset}'
         logger.info(f'Start Benchmark on dataset {dataset}')
-
-        dm = ParamNetDataManager(dataset=dataset)
-        self.surrogate_objective, self.surrogate_costs = dm.load()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Trying to unpickle")
+            dm = ParamNetDataManager(dataset=dataset)
+            self.surrogate_objective, self.surrogate_costs = dm.load()
 
     @staticmethod
     def convert_config_to_array(configuration: Dict) -> np.ndarray:
