@@ -45,7 +45,7 @@ pip install .[paramnet]
 Changelog:
 ==========
 0.0.1:
-* First implementation
+* Initial implementation
 """
 
 import logging
@@ -72,9 +72,8 @@ class SurrogateSVMBenchmark(AbstractBenchmark):
         """
 
         # TODO: What is the minimal data set fraction? What was the original dataset size the surrogate was trained on?
+        # define the minimal dataset fraction following Klein et al.
         self.s_min = 100 / 50000.
-        # In ml/svm: maybe similar?
-        # self.lower_bound_train_size = (10 * n_classes) / self.x_train.shape[0]
 
         dm = SurrogateSVMDataManager()
         self.surrogate_objective, self.surrogate_costs = dm.load()
@@ -134,12 +133,21 @@ class SurrogateSVMBenchmark(AbstractBenchmark):
         """ Returns the meta information for the benchmark """
         return {'name': 'ParamNet Benchmark',
                 'references': ['@InProceedings{falkner-icml-18,'
-                               'title     = {{BOHB}: Robust and Efficient Hyperparameter Optimization at Scale},'
-                               'url       = http://proceedings.mlr.press/v80/falkner18a.html'
-                               'author    = {Falkner, Stefan and Klein, Aaron and Hutter, Frank}, '
-                               'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
-                               'pages     = {1436 - 1445},'
-                               'year      = {2018}}'],
+                               'title       = {{BOHB}: Robust and Efficient Hyperparameter Optimization at Scale},'
+                               'url         = http://proceedings.mlr.press/v80/falkner18a.html'
+                               'author      = {Falkner, Stefan and Klein, Aaron and Hutter, Frank}, '
+                               'booktitle   = {Proceedings of the 35th International Conference on Machine Learning},'
+                               'pages       = {1436 - 1445},'
+                               'year        = {2018}}',
+                               '@inproceedings{klein2017fast,'
+                               'title       = {Fast bayesian optimization of machine learning hyperparameters on '
+                               '               large datasets},'
+                               'author      = {Klein, Aaron and Falkner, Stefan and Bartels, Simon and '
+                               '               Hennig, Philipp and Hutter, Frank},'
+                               'booktitle   = {Artificial Intelligence and Statistics},'
+                               'pages       = {528--536},'
+                               'year        = {2017},'
+                               'organization={PMLR}}'],
                 'code': 'https://github.com/automl/HPOlib1.5/blob/development/'
                         'hpolib/benchmarks/surrogates/paramnet.py'
                 }
@@ -158,7 +166,7 @@ class SurrogateSVMBenchmark(AbstractBenchmark):
         -------
         np.ndarray - The configuration transformed back to its original space
         """
-        cfg_array = np.zeros(2)
+        cfg_array = np.zeros(3)
         cfg_array[0] = configuration['C']
         cfg_array[1] = configuration['gamma']
         cfg_array[2] = fidelity['dataset_fraction']
@@ -168,6 +176,11 @@ class SurrogateSVMBenchmark(AbstractBenchmark):
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+
+        if fidelity['dataset_fraction'] < self.s_min:
+            logger.debug(f'The fidelity is smaller than the minimum data set fraction. We set the fidelity '
+                         f'(fidelity["dataset_fraction"]) to {self.s_min})')
+            fidelity['dataset_fraction'] = self.s_min
 
         cfg_array = self.convert_config_to_array(configuration, fidelity)
         obj_value = self.surrogate_objective.predict(cfg_array)[0]
