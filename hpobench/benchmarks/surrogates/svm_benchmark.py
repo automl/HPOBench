@@ -71,10 +71,6 @@ class SurrogateSVMBenchmark(AbstractBenchmark):
         rng : np.random.RandomState, int, None
         """
 
-        # TODO: What is the minimal data set fraction? What was the original dataset size the surrogate was trained on?
-        # define the minimal dataset fraction following Klein et al.
-        self.s_min = 100 / 50000.
-
         dm = SurrogateSVMDataManager()
         self.surrogate_objective, self.surrogate_costs = dm.load()
 
@@ -104,7 +100,10 @@ class SurrogateSVMBenchmark(AbstractBenchmark):
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
         Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
-        the SupportVector Benchmark
+        the SupportVector Benchmark.
+
+        Following Klein et al., we set the minimum data set fraction to 1/128 of the original data set
+        (N=50000 configurations).
 
         Fidelities
         ----------
@@ -124,14 +123,14 @@ class SurrogateSVMBenchmark(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformFloatHyperparameter("dataset_fraction", lower=0.0, upper=1.0, default_value=1.0, log=False)
+            CS.UniformFloatHyperparameter("dataset_fraction", lower=1/128, upper=1.0, default_value=1.0, log=False)
         ])
         return fidel_space
 
     @staticmethod
     def get_meta_information():
         """ Returns the meta information for the benchmark """
-        return {'name': 'ParamNet Benchmark',
+        return {'name': 'SVMOnMnist Benchmark',
                 'references': ['@InProceedings{falkner-icml-18,'
                                'title       = {{BOHB}: Robust and Efficient Hyperparameter Optimization at Scale},'
                                'url         = http://proceedings.mlr.press/v80/falkner18a.html'
@@ -149,7 +148,7 @@ class SurrogateSVMBenchmark(AbstractBenchmark):
                                'year        = {2017},'
                                'organization={PMLR}}'],
                 'code': 'https://github.com/automl/HPOlib1.5/blob/development/'
-                        'hpolib/benchmarks/surrogates/paramnet.py'
+                        'hpolib/benchmarks/surrogates/svm.py'
                 }
 
     @staticmethod
@@ -176,11 +175,6 @@ class SurrogateSVMBenchmark(AbstractBenchmark):
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-
-        if fidelity['dataset_fraction'] < self.s_min:
-            logger.debug(f'The fidelity is smaller than the minimum data set fraction. We set the fidelity '
-                         f'(fidelity["dataset_fraction"]) to {self.s_min})')
-            fidelity['dataset_fraction'] = self.s_min
 
         cfg_array = self.convert_config_to_array(configuration, fidelity)
         obj_value = self.surrogate_objective.predict(cfg_array)[0]
