@@ -256,7 +256,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
         cmd = f'{env_vars} singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
         logger.debug(cmd)
-        subprocess.Popen(cmd.split())
+        subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
         Pyro4.config.REQUIRE_EXPOSE = False
         # Generate Pyro 4 URI for connecting to client
