@@ -52,7 +52,6 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        chmod +x ci_scripts/install.sh && source ./ci_scripts/install.sh
         chmod +x ci_scripts/install_singularity.sh && source ./ci_scripts/install_singularity.sh
     - name: Run Tests
       run: chmod +x ci_scripts/script.sh && source ./ci_scripts/script.sh
