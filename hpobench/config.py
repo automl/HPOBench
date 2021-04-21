@@ -39,7 +39,7 @@ class HPOBenchConfig:
         # Constant paths in the container
         self._cache_dir_container = '/var/lib/hpobench/cache'
         self._data_dir_container = '/var/lib/hpobench/data'
-        self._socket_dir_container = '/var/lib/socket'
+        self._socket_dir_container = '/var/lib/hpobench/socket'
 
         # According to https://github.com/openml/openml-python/issues/884, try to set default directories.
         self.config_base_dir = Path(os.environ.get('XDG_CONFIG_HOME', '~/.config/hpobench')).expanduser().absolute()
