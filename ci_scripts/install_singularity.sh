@@ -16,9 +16,9 @@ sudo apt-get update && sudo apt-get install -y \
 
 if [[ "$SINGULARITY_VERSION" == "3.5" ]]; then
     export VERSION=3.5.3
-[[ "$SINGULARITY_VERSION" == "3.6" ]]; then
+elif [[ "$SINGULARITY_VERSION" == "3.6" ]]; then
     export VERSION=3.6.4
-[[ "$SINGULARITY_VERSION" == "3.7" ]]; then
+elif [[ "$SINGULARITY_VERSION" == "3.7" ]]; then
     export VERSION=3.7.3
 else
     echo "Skip installing Singularity"
