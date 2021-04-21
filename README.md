@@ -137,6 +137,11 @@ OpenML data additionally maintains it's own cache which is located at `~/.openml
 
 Singularity additionally maintains it's own cache which can be removed with `singularity cache clean`
 
+#### Use HPOBench benchmarks
+
+If you use a benchmark in your experiments, please specify the version number of the HPOBench as well as the version of 
+the used container. When starting an experiment, HPOBench writes automatically the 2 version numbers to the log. 
+
 ### Troubleshooting
 
   - **Singularity throws an 'Invalid Image format' exception**
