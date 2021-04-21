@@ -180,8 +180,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             # if the container source is the path to the container itself, we are going to use this container directly.
             if container_dir.is_file():
-                container_dir = container_dir.parent
                 container_name_with_tag = container_dir.name
+                container_dir = container_dir.parent
 
             # If the user specifies a container directory, search for the container name with (!) tag in it.
             elif container_dir.is_dir():
