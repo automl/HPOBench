@@ -205,12 +205,12 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             logger.debug('Image found on the local file system.')
 
-        env_vars = 'HPOBENCH_DEBUG={log_level_str} '
+        env_vars = f'HPOBENCH_DEBUG={log_level_str}'
         if env_str.strip() != '':
             # Following the documentation of singularity, actually all env variables should have a
             # 'SINGULARITYENV_'-prefix. However, it works also without it. We want as environmental variables input
             # a string of form VAR1=VAL1,VAR2=VAL2,...
-            env_vars += env_str.replace(' ', '').replace(',', ' ') + ' '
+            env_vars += ' ' + env_str.replace(' ', '').replace(',', ' ') + ' '
 
         bind_options = f'--bind ' \
                        f'{self.config.cache_dir}:{self.config._cache_dir_container},' \
