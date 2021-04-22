@@ -9,8 +9,8 @@ VERSION v0.0.1
     export PYTHONPATH=/home/nasbench-1shot1:$PYTHONPATH
 
 %post
-    apt update -y
-    apt install build-essential git wget -y
+    apt update -y \
+    && apt install build-essential git wget -y
 
     cd /home \
     && pip install tensorflow==1.15.0 \
@@ -22,7 +22,9 @@ VERSION v0.0.1
     && pip install .[nasbench_1shot1] \
     && cd / \
     && mkdir /var/lib/hpobench/ \
-    && chmod -R 777 /var/lib/hpobench/
+    && chmod -R 777 /var/lib/hpobench/ \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge
 
 %runscript
     python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py nas.nasbench_1shot1 $@

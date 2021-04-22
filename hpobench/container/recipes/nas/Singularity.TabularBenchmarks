@@ -22,7 +22,9 @@ VERSION v0.0.1
     && pip install .[tabular_benchmarks] \
     && cd / \
     && mkdir /var/lib/hpobench/ \
-    && chmod -R 777 /var/lib/hpobench/
+    && chmod -R 777 /var/lib/hpobench/ \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge
 
 %runscript
     python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py nas.tabular_benchmarks $@
