@@ -205,12 +205,15 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             logger.debug('Image found on the local file system.')
 
-        env_vars = f'HPOBENCH_DEBUG={log_level_str}'
+        env_vars = {'HPOBENCH_DEBUG': log_level_str}
         if env_str.strip() != '':
             # Following the documentation of singularity, actually all env variables should have a
             # 'SINGULARITYENV_'-prefix. However, it works also without it. We want as environmental variables input
             # a string of form VAR1=VAL1,VAR2=VAL2,...
-            env_vars += ' ' + env_str.replace(' ', '').replace(',', ' ') + ' '
+            env_str = env_str.replace(' ', '').rstrip(',')
+            for k_v in env_str.split(','):
+                k, v = k_v.split('=')
+                env_vars[k] = v
 
         bind_options = f'--bind ' \
                        f'{self.config.cache_dir}:{self.config._cache_dir_container},' \
@@ -254,20 +257,10 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # Give each instance a little bit time to start
         time.sleep(1)
 
-        # cmd = f'/bin/sh {env_vars} singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
-        # cmd = f'export SINGULARITYENV_HPOBENCH_DEBUG=true && singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
         cmd = f'singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
         logger.debug(cmd)
-        subprocess.Popen(cmd.split(), # stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         shell=False,
-                         env={**os.environ, **{'SINGULARITYENV_HPOBENCH_DEBUG': 'true'}})
-        # test_command = f'singularity exec instance://{self.socket_id} env'
-        # p = subprocess.Popen(test_command.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        #                  shell=False,
-        #                  env={**os.environ, **{'SINGULARITYENV_HPOBENCH_DEBUG': 'true'}})
-        #
-        # o, e = p.communicate()
-        # assert 'HPOBENCH_DEBUG=true' in str(o)
+        subprocess.Popen(cmd.split(), shell=False,
+                         env={**os.environ, **{'SINGULARITYENV_HPOBENCH_DEBUG': log_level_str}})
 
         Pyro4.config.REQUIRE_EXPOSE = False
         # Generate Pyro 4 URI for connecting to client
