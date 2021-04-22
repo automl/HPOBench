@@ -23,6 +23,7 @@ from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 # Read in the verbosity level from the environment variable HPOBENCH_DEBUG
 log_level_str = os.environ.get('HPOBENCH_DEBUG', 'false')
 LOG_LEVEL = logging.DEBUG if log_level_str == 'true' else logging.INFO
+print(f'Container: LOGLEVEL: {LOG_LEVEL}')
 
 # console = logging.StreamHandler()
 # console.setLevel(LOG_LEVEL)
@@ -42,6 +43,9 @@ class BenchmarkServer:
 
         self.socket_id = socket_id
         socket_path = config.socket_dir / (self.socket_id + "_unix.sock")
+        logger.debug(f'Container: Socket Path: {socket_path}')
+        logger.info(f'Container: INFO')
+        print(logger.parent.level)
         if socket_path.exists():
             os.remove(socket_path)
         self.daemon = Pyro4.Daemon(unixsocket=str(socket_path))

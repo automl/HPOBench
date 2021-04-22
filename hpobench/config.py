@@ -7,6 +7,8 @@ from yaml.parser import ParserError
 
 from hpobench import __version__
 
+root_logger = logging.getLogger()
+
 
 class HPOBenchConfig:
 
@@ -185,9 +187,9 @@ class HPOBenchConfig:
 
         if mismatch:
             config_version = config_version if not None else 'None'
-            logging.warning(f'The hpobenchrc file was created with another version of the hpobench. '
-                            f'Current version of the hpobenchrc file: {config_version}.\n'
-                            f'Current version of the hpobench: {hpobench_version}')
+            root_logger.warning(f'The hpobenchrc file was created with another version of the hpobench. '
+                                f'Current version of the hpobenchrc file: {config_version}.\n'
+                                f'Current version of the hpobench: {hpobench_version}')
 
         return not mismatch
 

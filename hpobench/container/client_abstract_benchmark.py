@@ -254,9 +254,20 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         # Give each instance a little bit time to start
         time.sleep(1)
 
-        cmd = f'{env_vars} singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
+        # cmd = f'/bin/sh {env_vars} singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
+        # cmd = f'export SINGULARITYENV_HPOBENCH_DEBUG=true && singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
+        cmd = f'singularity run {gpu_opt}instance://{self.socket_id} {benchmark_name} {self.socket_id}'
         logger.debug(cmd)
-        subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        subprocess.Popen(cmd.split(), # stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                         shell=False,
+                         env={**os.environ, **{'SINGULARITYENV_HPOBENCH_DEBUG': 'true'}})
+        # test_command = f'singularity exec instance://{self.socket_id} env'
+        # p = subprocess.Popen(test_command.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        #                  shell=False,
+        #                  env={**os.environ, **{'SINGULARITYENV_HPOBENCH_DEBUG': 'true'}})
+        #
+        # o, e = p.communicate()
+        # assert 'HPOBENCH_DEBUG=true' in str(o)
 
         Pyro4.config.REQUIRE_EXPOSE = False
         # Generate Pyro 4 URI for connecting to client
