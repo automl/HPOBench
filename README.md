@@ -71,6 +71,7 @@ pip install .
 | NASBench1shot1SearchSpace*Benchmark | nasbench_1shot1  | Loading may take several minutes. There are 3 benchmarks in total (1,2,3) |
 | ParamNet*OnStepsBenchmark       | paramnet         | There are 6 benchmarks in total (Adult, Higgs, Letter, Mnist, Optdigits, Poker) |
 | ParamNet*OnTimeBenchmark        | paramnet         | There are 6 benchmarks in total (Adult, Higgs, Letter, Mnist, Optdigits, Poker) |
+| SurrogateSVMBenchmark              | surrogate_svm      | A svm surrogate benchmark on MNIST. |
 | Learna⁺                            | learna_benchmark   | Not deterministic.                    |
 | MetaLearna⁺                        | learna_benchmark   | Not deterministic.                    |
 | XGBoostBenchmark⁺                  | xgboost_benchmark  | Works with OpenML task ids. |

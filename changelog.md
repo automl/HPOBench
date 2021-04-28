@@ -1,4 +1,5 @@
 # 0.0.8
+  * Add the surrogate SVM on MNIST benchmark from the BOHB paper. 
 
 # 0.0.7
   * Fix an error in the NASBench1shot1 Benchmark (SearchSpace3).
