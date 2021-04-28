@@ -1,14 +1,17 @@
+"""
+This entire code is from https://github.com/zi-w/Ensemble-Bayesian-Optimization/tree/master/test_functions
+We made some smaller changes similar to the changes described here:
+https://github.com/uber-research/TuRBO#robot-pushing
+"""
 import numpy as np
 import pygame
-from Box2D import *
-from Box2D.b2 import *
+from Box2D import b2Vec2, b2_staticBody, b2_dynamicBody, b2PolygonShape, b2CircleShape, b2World
 
 
 class PushReward:
-    def __init__(self):
+    def __init__(self, gui=False):
         # domain of this function
-        self.xmin = [-5., -5., -10., -10., 2., 0., -5., -5., -10., -10., 2., 0., -5., -5.]
-        self.xmax = [5., 5., 10., 10., 30., 2. * np.pi, 5., 5., 10., 10., 30., 2. * np.pi, 5., 5.]
+        self.xmin, self.xmax = self.get_limits()
 
         # starting xy locations for the two objects
         self.sxy = (0, 2)
@@ -17,16 +20,19 @@ class PushReward:
         self.gxy = [4, 3.5]
         self.gxy2 = [-4, 3.5]
 
+        self.gui = gui
+
+    @staticmethod
+    def get_limits():
+        xmin = [-5., -5., -10., -10., 2., 0., -5., -5., -10., -10., 2., 0., -5., -5.]
+        xmax = [5., 5., 10., 10., 30., 2. * np.pi, 5., 5., 10., 10., 30., 2. * np.pi, 5., 5.]
+        return xmin, xmax
+
     @property
     def f_max(self):
         # maximum value of this function
         return np.linalg.norm(np.array(self.gxy) - np.array(self.sxy)) \
                + np.linalg.norm(np.array(self.gxy2) - np.array(self.sxy2))
-
-    # @property
-    # def dx(self):
-    #     # dimension of the input
-    #     return self._dx
 
     def __call__(self, argv):
         # returns the reward of pushing two objects with two robots
@@ -47,9 +53,9 @@ class PushReward:
 
         initial_dist = self.f_max
 
-        world = b2WorldInterface(False)
+        world = b2WorldInterface(do_gui=self.gui)
         oshape, osize, ofriction, odensity, bfriction, hand_shape, hand_size = \
-            'circle', 1, 0.01, 0.05, 0.01, 'rectangle', (1, 0.3)
+            'circle', 1, 0.01, 0.05, 0.01, 'rectangle', (1, 0.3)  # noqa: F841
 
         base = make_base(500, 500, world)
         body = create_body(base, world, 'rectangle', (0.5, 0.5), ofriction, odensity, self.sxy)
@@ -57,8 +63,9 @@ class PushReward:
 
         robot = end_effector(world, (rx, ry), base, init_angle, hand_shape, hand_size)
         robot2 = end_effector(world, (rx2, ry2), base, init_angle2, hand_shape, hand_size)
-        (ret1, ret2) = run_simulation(world, body, body2, robot, robot2, xvel, yvel,
-                                      xvel2, yvel2, rtor, rtor2, simu_steps, simu_steps2)
+
+        ret1, ret2 = run_simulation(world, body, body2, robot, robot2, xvel, yvel,
+                                    xvel2, yvel2, rtor, rtor2, simu_steps, simu_steps2)
 
         ret1 = np.linalg.norm(np.array(self.gxy) - ret1)
         ret2 = np.linalg.norm(np.array(self.gxy2) - ret2)
@@ -123,7 +130,6 @@ class b2WorldInterface:
 
         if do_gui:
             self.gui_world = guiWorld(self.TARGET_FPS)
-            # raw_input()
         else:
             self.gui_world = None
 
@@ -166,19 +172,17 @@ class end_effector:
         else:
             raise Exception("%s is not a correct shape" % hand_shape)
 
-        self.hand.CreateFixture(
-            shape=rshape,
-            density=.1,
-            friction=.1
-        )
+        self.hand.CreateFixture(shape=rshape,
+                                density=.1,
+                                friction=.1
+                                )
         self.hand.userData = "hand"
 
-        friction_joint = world.CreateFrictionJoint(
-            bodyA=base,
-            bodyB=self.hand,
-            maxForce=2,
-            maxTorque=2,
-        )
+        friction_joint = world.CreateFrictionJoint(bodyA=base,  # noqa: F841
+                                                   bodyB=self.hand,
+                                                   maxForce=2,
+                                                   maxTorque=2,
+                                                   )
         b2world_interface.add_bodies(self.hand)
 
     def set_pos(self, pos, angle):
@@ -225,7 +229,7 @@ def create_body(base, b2world_interface, body_shape, body_size, body_friction, b
         density=body_density,
         friction=body_friction,
     )
-    friction_joint = world.CreateFrictionJoint(
+    friction_joint = world.CreateFrictionJoint(  # noqa: F841
         bodyA=base,
         bodyB=link,
         maxForce=5,
@@ -233,6 +237,7 @@ def create_body(base, b2world_interface, body_shape, body_size, body_friction, b
     )
 
     b2world_interface.add_bodies([link])
+
     return link
 
 
@@ -247,42 +252,20 @@ def make_base(table_width, table_length, b2world_interface):
     return base
 
 
-# def add_obstacles(b2world_interface, obsverts):
-#     world = b2world_interface.world
-#     obs = []
-#     for verts in obsverts:
-#         tmp = world.CreateStaticBody(
-#             position=(0, 0),
-#             shapes=b2PolygonShape(vertices=verts),
-#         )
-#         tmp.userData = "obs"
-#         obs.append(tmp)
-#
-#     # add boundaries
-#     x, y = sm.wbpolygon.exterior.xy
-#     minx, maxx, miny, maxy = np.min(x), np.max(x), np.min(y), np.max(y)
-#     centers = [(0, miny - 1), (0, maxy + 1), (minx - 1, 0), (maxx + 1, 0)]
-#     boxlen = [(maxx - minx, 0.5), (maxx - minx, 0.5), (0.5, maxy - miny), (0.5, maxy - miny)]
-#     for (pos, blen) in zip(centers, boxlen):
-#         tmp = world.CreateStaticBody(
-#             position=pos,
-#             shapes=b2PolygonShape(box=blen),
-#         )
-#         obs.append(tmp)
-#     b2world_interface.add_bodies(obs)
-
-
 def run_simulation(world, body, body2, robot, robot2, xvel, yvel,
                    xvel2, yvel2, rtor, rtor2, simulation_steps,
                    simulation_steps2):
     # simulating push with fixed direction pointing from robot location to body location
     desired_vel = np.array([xvel, yvel])
-    rvel = b2Vec2(desired_vel[0] + np.random.normal(0, 0.01), desired_vel[1] + np.random.normal(0, 0.01))
+
+    # Adaptation in TurBO paper: Reduce noice from 0.01 to 1e-6
+    rvel = b2Vec2(desired_vel[0] + np.random.normal(0, 1e-6), desired_vel[1] + np.random.normal(0, 1e-6))
 
     desired_vel2 = np.array([xvel2, yvel2])
-    rvel2 = b2Vec2(desired_vel2[0] + np.random.normal(0, 0.01), desired_vel2[1] + np.random.normal(0, 0.01))
+    rvel2 = b2Vec2(desired_vel2[0] + np.random.normal(0, 1e-6), desired_vel2[1] + np.random.normal(0, 1e-6))
 
     tmax = np.max([simulation_steps, simulation_steps2])
+
     for t in range(tmax + 100):
         if t < simulation_steps:
             robot.apply_wrench(rvel, rtor)
@@ -291,3 +274,12 @@ def run_simulation(world, body, body2, robot, robot2, xvel, yvel,
         world.step()
 
     return list(body.position), list(body2.position)
+
+
+# if __name__ == '__main__':
+#     f = PushReward(gui=False)
+#     x = np.random.uniform(f.xmin, f.xmax)
+#     x = f.xmax
+#     x[4] = f.xmin[4]
+#     print('Input = {}'.format(x))
+#     print('Output = {}'.format(f(x)))
