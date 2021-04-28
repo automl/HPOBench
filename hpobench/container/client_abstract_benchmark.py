@@ -35,6 +35,7 @@ from ConfigSpace.read_and_write import json as csjson
 from oslo_concurrency import lockutils
 
 import hpobench.config
+from hpobench import __version__
 from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 
 # Read in the verbosity level from the environment variable HPOBENCH_DEBUG
@@ -117,7 +118,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             logger.debug(f'Replace the tag \'latest\' with \'{container_tag}\'.')
 
         container_name_with_tag = f'{container_name}_{container_tag}'
-
+        logger.info(f'~~~ HPOBENCH VERSION: {__version__} ~~~~ CONTAINER VERSION: {container_tag} ~~~')
         logger.debug(f'Use benchmark {benchmark_name} from container {container_source}/{container_name}. \n'
                      f'And container directory {self.config.container_dir}')
 
@@ -180,8 +181,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             # if the container source is the path to the container itself, we are going to use this container directly.
             if container_dir.is_file():
-                container_dir = container_dir.parent
                 container_name_with_tag = container_dir.name
+                container_dir = container_dir.parent
 
             # If the user specifies a container directory, search for the container name with (!) tag in it.
             elif container_dir.is_dir():
