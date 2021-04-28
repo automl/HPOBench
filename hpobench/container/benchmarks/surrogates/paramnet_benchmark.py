@@ -23,6 +23,22 @@ class ParamNetAdultOnTimeBenchmark(AbstractBenchmarkClient):
         super(ParamNetAdultOnTimeBenchmark, self).__init__(**kwargs)
 
 
+class ParamNetReducedAdultOnStepsBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedAdultOnStepsBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedAdultOnStepsBenchmark, self).__init__(**kwargs)
+
+
+class ParamNetReducedAdultOnTimeBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedAdultOnTimeBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedAdultOnTimeBenchmark, self).__init__(**kwargs)
+
+
 class ParamNetHiggsOnStepsBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetHiggsOnStepsBenchmark')
@@ -37,6 +53,22 @@ class ParamNetHiggsOnTimeBenchmark(AbstractBenchmarkClient):
         kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
         super(ParamNetHiggsOnTimeBenchmark, self).__init__(**kwargs)
+
+
+class ParamNetReducedHiggsOnStepsBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedHiggsOnStepsBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedHiggsOnStepsBenchmark, self).__init__(**kwargs)
+
+
+class ParamNetReducedHiggsOnTimeBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedHiggsOnTimeBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedHiggsOnTimeBenchmark, self).__init__(**kwargs)
 
 
 class ParamNetLetterOnStepsBenchmark(AbstractBenchmarkClient):
@@ -55,6 +87,22 @@ class ParamNetLetterOnTimeBenchmark(AbstractBenchmarkClient):
         super(ParamNetLetterOnTimeBenchmark, self).__init__(**kwargs)
 
 
+class ParamNetReducedLetterOnStepsBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedLetterOnStepsBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedLetterOnStepsBenchmark, self).__init__(**kwargs)
+
+
+class ParamNetReducedLetterOnTimeBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedLetterOnTimeBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedLetterOnTimeBenchmark, self).__init__(**kwargs)
+
+
 class ParamNetMnistOnStepsBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetMnistOnStepsBenchmark')
@@ -69,6 +117,22 @@ class ParamNetMnistOnTimeBenchmark(AbstractBenchmarkClient):
         kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
         super(ParamNetMnistOnTimeBenchmark, self).__init__(**kwargs)
+
+
+class ParamNetReducedMnistOnStepsBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedMnistOnStepsBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedMnistOnStepsBenchmark, self).__init__(**kwargs)
+
+
+class ParamNetReducedMnistOnTimeBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedMnistOnTimeBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedMnistOnTimeBenchmark, self).__init__(**kwargs)
 
 
 class ParamNetOptdigitsOnStepsBenchmark(AbstractBenchmarkClient):
@@ -87,6 +151,22 @@ class ParamNetOptdigitsOnTimeBenchmark(AbstractBenchmarkClient):
         super(ParamNetOptdigitsOnTimeBenchmark, self).__init__(**kwargs)
 
 
+class ParamNetReducedOptdigitsOnStepsBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedOptdigitsOnStepsBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedOptdigitsOnStepsBenchmark, self).__init__(**kwargs)
+
+
+class ParamNetReducedOptdigitsOnTimeBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedOptdigitsOnTimeBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedOptdigitsOnTimeBenchmark, self).__init__(**kwargs)
+
+
 class ParamNetPokerOnStepsBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetPokerOnStepsBenchmark')
@@ -101,3 +181,19 @@ class ParamNetPokerOnTimeBenchmark(AbstractBenchmarkClient):
         kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
         super(ParamNetPokerOnTimeBenchmark, self).__init__(**kwargs)
+
+
+class ParamNetReducedPokerOnStepsBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedPokerOnStepsBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedPokerOnStepsBenchmark, self).__init__(**kwargs)
+
+
+class ParamNetReducedPokerOnTimeBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParamNetReducedPokerOnTimeBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'paramnet')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.3')
+        super(ParamNetReducedPokerOnTimeBenchmark, self).__init__(**kwargs)

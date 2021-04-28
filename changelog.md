@@ -3,12 +3,13 @@
     The containers had some problems when the file system was read-only. In this case, the home directory, which contains the 
     hpobenchrc file, was not mounted, so the init of the containers failed. To circumvent this problem, we make multiple
     changes: 
-    - We introduce an option to mount additional folder. This might be helpful when working on a cluster where the home 
+    * We introduce an option to mount additional folder. This might be helpful when working on a cluster where the home 
       directory is not available in the computation process.
-    - We also change the configuration file. The container does not read the yaml file anymore. Instead we bind the 
+    * We also change the configuration file. The container does not read the yaml file anymore. Instead we bind the 
       cache dir, data dir and socket dir into the container and let the container use them directly. We also remove the 
       global data directory and use only the data dir from now onwards.
-    
+  * Add the surrogate SVM on MNIST benchmark from the BOHB paper. 
+
 # 0.0.7
   * Fix an error in the NASBench1shot1 Benchmark (SearchSpace3).
   * Improve the behavior when a benchmark container is shut down.

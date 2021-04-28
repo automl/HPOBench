@@ -1,0 +1,57 @@
+name: Test Support for different Singularity Versions
+
+on: [push]
+
+jobs:
+  Tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - python-version: 3.7
+            DISPLAY_NAME: "Singularity Container Examples with S3.5"
+            RUN_CONTAINER_EXAMPLES: true
+            USE_SINGULARITY: false
+            SINGULARITY_VERSION: "3.5"
+          - python-version: 3.7
+            DISPLAY_NAME: "Singularity Container Examples with S3.6"
+            RUN_CONTAINER_EXAMPLES: true
+            USE_SINGULARITY: false
+            SINGULARITY_VERSION: "3.6"
+          - python-version: 3.7
+            DISPLAY_NAME: "Singularity Container Examples with S3.7"
+            RUN_CONTAINER_EXAMPLES: true
+            USE_SINGULARITY: false
+            SINGULARITY_VERSION: "3.7"
+
+      fail-fast: false
+
+    name: Tests ${{ matrix.python-version }} ${{ matrix.DISPLAY_NAME }}
+
+    env:
+      RUN_TESTS: ${{ matrix.RUN_TESTS }}
+      USE_SINGULARITY: ${{ matrix.USE_SINGULARITY }}
+      RUN_CODECOV: ${{ matrix.RUN_CODECOV }}
+      RUN_CODESTYLE: ${{ matrix.RUN_CODESTYLE }}
+      RUN_CONTAINER_EXAMPLES: ${{ matrix.RUN_CONTAINER_EXAMPLES }}
+      RUN_LOCAL_EXAMPLES: ${{ matrix.RUN_LOCAL_EXAMPLES }}
+      SINGULARITY_VERSION: ${{ matrix.SINGULARITY_VERSION }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Set up Go for Singularity
+      if: matrix.USE_SINGULARITY == true
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.14.15' # The Go version to download (if necessary) and use.
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        chmod +x ci_scripts/install_singularity.sh && source ./ci_scripts/install_singularity.sh
+    - name: Run Tests
+      run: chmod +x ci_scripts/script.sh && source ./ci_scripts/script.sh

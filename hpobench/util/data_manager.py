@@ -556,52 +556,24 @@ class NASBench_101DataManager(DataManager):
         return data
 
 
-class ParamNetDataManager(DataManager):
+class SurrogateDataManger(DataManager):
     def __init__(self, dataset: str):
 
-        allowed_datasets = ["adult", "higgs", "letter", "mnist", "optdigits", "poker"]
+        allowed_datasets = ["adult", "higgs", "letter", "mnist", "optdigits", "poker", "svm"]
         assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
                                             f'{", ".join(allowed_datasets)}, but was {dataset}'
 
-        super(ParamNetDataManager, self).__init__()
+        super(SurrogateDataManger, self).__init__()
 
         self.url_source = 'https://www.automl.org/wp-content/uploads/2019/05/surrogates.tar.gz'
         self.dataset = dataset
-        self.save_dir = hpobench.config_file.data_dir / "Paramnet"
+        self.save_dir = hpobench.config_file.data_dir / "Surrogates"
         self.compressed_data = self.save_dir / 'surrogates.tar.gz'
-
-    def load(self):
-        self.logger.info(f"Start to load the data from {self.save_dir} for dataset {self.dataset}")
-
-        obj_fn_file = self.save_dir / f'rf_surrogate_paramnet_{self.dataset}.pkl'
-        cost_file = self.save_dir / f'rf_cost_surrogate_paramnet_{self.dataset}.pkl'
-
-        # Check if the surrogate files are already available
-        if not (obj_fn_file.exists() or cost_file.exists()):
-            self.logger.info(f"One of the files {obj_fn_file} and {cost_file} not found.")
-
-            # If not, then check if we have to download the compressed data or if this file isn't already there,
-            # download it again.
-            self._check_availability_and_download()
-
-            # Extract the compressed data
-            self.logger.debug('Extract the compressed data')
-            with tarfile.open(self.compressed_data, 'r') as fh:
-                fh.extractall(self.save_dir)
-
-        self.logger.debug('Load the obj function values from file.')
-        with open(obj_fn_file, 'rb') as fh:
-            surrogate_objective = pickle.load(fh)
-
-        self.logger.debug('Load the cost values from file.')
-        with open(cost_file, 'rb') as fh:
-            surrogate_costs = pickle.load(fh)
-
-        self.logger.info(f'Finished loading the data for paramenet - dataset: {self.dataset}')
-        return surrogate_objective, surrogate_costs
+        self.obj_fn_file = None
+        self.cost_file = None
 
     @lockutils.synchronized('not_thread_process_safe', external=True,
-                            lock_path=f'{hpobench.config_file.cache_dir}/lock_paramnet_data', delay=0.5)
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_surrogates_data', delay=0.5)
     def _check_availability_and_download(self):
 
         # Check if the compressed data file is already available. This check is moved in this function to ensure
@@ -624,6 +596,56 @@ class ParamNetDataManager(DataManager):
                     _ = f.write(chunk)
                     f.flush()
         self.logger.info("Finished downloading")
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_surrogates_unzip_data', delay=0.5)
+    def _unzip_data(self):
+        self.logger.debug('Extract the compressed data')
+        with tarfile.open(self.compressed_data, 'r') as fh:
+            fh.extractall(self.save_dir)
+        self.logger.debug(f'Successfully extracted the data to {self.save_dir}')
+
+    def load(self):
+        self.logger.info(f"Start to load the data from {self.save_dir} for dataset {self.dataset}")
+
+        assert self.obj_fn_file is not None
+        assert self.cost_file is not None
+
+        # Check if the surrogate files are already available
+        if not (self.obj_fn_file.exists() or self.cost_file.exists()):
+            self.logger.info(f"One of the files {self.obj_fn_file} and {self.cost_file} not found.")
+
+            # If not, then check if we have to download the compressed data or if this file isn't already there,
+            # download it again.
+            self._check_availability_and_download()
+
+            # Extract the compressed data
+            self._unzip_data()
+
+        self.logger.debug('Load the obj function values from file.')
+        with open(self.obj_fn_file, 'rb') as fh:
+            surrogate_objective = pickle.load(fh)
+
+        self.logger.debug('Load the cost values from file.')
+        with open(self.cost_file, 'rb') as fh:
+            surrogate_costs = pickle.load(fh)
+
+        self.logger.info(f'Finished loading the data for paramenet - dataset: {self.dataset}')
+        return surrogate_objective, surrogate_costs
+
+
+class ParamNetDataManager(SurrogateDataManger):
+    def __init__(self, dataset: str):
+        super(ParamNetDataManager, self).__init__(dataset)
+        self.obj_fn_file = self.save_dir / f'rf_surrogate_paramnet_{dataset}.pkl'
+        self.cost_file = self.save_dir / f'rf_cost_surrogate_paramnet_{dataset}.pkl'
+
+
+class SurrogateSVMDataManager(SurrogateDataManger):
+    def __init__(self):
+        super(SurrogateSVMDataManager, self).__init__(dataset='svm')
+        self.obj_fn_file = self.save_dir / 'rf_surrogate_svm.pkl'
+        self.cost_file = self.save_dir / 'rf_cost_surrogate_svm.pkl'
 
 
 class BostonHousingData(HoldoutDataManager):
