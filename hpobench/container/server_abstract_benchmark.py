@@ -24,12 +24,10 @@ from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 log_level_str = os.environ.get('HPOBENCH_DEBUG', 'false')
 LOG_LEVEL = logging.DEBUG if log_level_str == 'true' else logging.INFO
 
-# console = logging.StreamHandler()
-# console.setLevel(LOG_LEVEL)
+root = logging.getLogger()
+root.setLevel(LOG_LEVEL)
 
 logger = logging.getLogger('BenchmarkServer')
-logger.setLevel(LOG_LEVEL)
-# logger.addHandler(console)
 
 
 @Pyro4.expose
@@ -42,6 +40,9 @@ class BenchmarkServer:
 
         self.socket_id = socket_id
         socket_path = config.socket_dir / (self.socket_id + "_unix.sock")
+        logger.debug(f'Socket Path: {socket_path}')
+        logger.info(f'Logging level: {logger.level}')
+
         if socket_path.exists():
             os.remove(socket_path)
         self.daemon = Pyro4.Daemon(unixsocket=str(socket_path))

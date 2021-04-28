@@ -28,7 +28,9 @@ VERSION v0.0.1
     && echo "Please don't touch the following lines"
     && cd / \
     && mkdir /var/lib/hpobench/ \
-    && chmod -R 777 /var/lib/hpobench/
+    && chmod -R 777 /var/lib/hpobench/ \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge
 
     echo "Finally, please change the benchmark in the runscript to point to your benchmark"
 

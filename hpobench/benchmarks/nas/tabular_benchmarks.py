@@ -30,6 +30,10 @@ python setup.py install
 
 Changelog:
 ==========
+0.0.4
+* New container release due to a general change in the communication between container and HPOBench.
+  Works with HPOBench >= v0.0.8
+
 0.0.3:
 * Standardize the structure of the meta information
 
@@ -53,7 +57,7 @@ from tabular_benchmarks.fcnet_benchmark import FCNetBenchmark
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 logger = logging.getLogger('TabularBenchmark')
 
 

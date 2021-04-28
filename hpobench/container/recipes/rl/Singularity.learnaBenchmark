@@ -6,14 +6,16 @@ MAINTAINER muelleph@cs.uni-freiburg.de
 VERSION v0.0.1
 
 %post
-    apt update -y
-    apt install build-essential git wget -y
+    apt update -y \
+    && apt install build-essential git wget -y
 
     cd /home \
     && git clone --single-branch --branch development https://github.com/PhMueller/learna.git \
     && cd learna \
     && ./thirdparty/miniconda/make_miniconda.sh \
     && ./thirdparty/miniconda/miniconda/bin/conda env create -f environment.yml \
+    && ./thirdparty/miniconda/miniconda/envs/learna/bin/python -m pip install docutils==0.16 \
+    && ./thirdparty/miniconda/miniconda/envs/learna/bin/python -m pip install tensorforce==0.3.3 \
     && ./thirdparty/miniconda/miniconda/envs/learna/bin/python -m pip install . \
     && ./thirdparty/miniconda/miniconda/envs/learna/bin/python -m learna.data.download_and_build_eterna ./learna/data/secondaries_to_single_files.sh data/eterna data/eterna/interim/eterna.txt \
     && ./learna/data/download_and_build_rfam_taneda.sh \
@@ -30,7 +32,9 @@ VERSION v0.0.1
     && ../learna/thirdparty/miniconda/miniconda/envs/learna/bin/python -m pip install . \
     && cd / \
     && mkdir /var/lib/hpobench/ \
-    && chmod -R 777 /var/lib/hpobench/
+    && chmod -R 777 /var/lib/hpobench/ \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge
 
 %runscript
     /home/learna/thirdparty/miniconda/miniconda/envs/learna/bin/python -s \
