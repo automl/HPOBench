@@ -27,6 +27,10 @@ https://github.com/D-X-Y/AutoDL-Projects/blob/master/docs/NAS-Bench-201.md
 
 Changelog:
 ==========
+0.0.4
+* New container release due to a general change in the communication between container and HPOBench.
+  Works with HPOBench >= v0.0.8
+
 0.0.3:
 * Standardize the structure of the meta information
 
@@ -49,7 +53,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.data_manager import NASBench_201Data
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 MAX_NODES = 4
 
 logger = logging.getLogger('NASBENCH201')

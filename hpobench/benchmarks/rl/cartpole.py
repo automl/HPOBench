@@ -1,6 +1,10 @@
 """
 Changelog:
 ==========
+0.0.3
+* New container release due to a general change in the communication between container and HPOBench.
+  Works with HPOBench >= v0.0.8
+
 0.0.2:
 * Standardize the structure of the meta information
 * Suppress unnecessary tensorforce logging messages
@@ -26,7 +30,7 @@ from tensorforce.execution import Runner  # noqa: E402
 from hpobench.abstract_benchmark import AbstractBenchmark  # noqa: E402
 from hpobench.util import rng_helper  # noqa: E402
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 logger = logging.getLogger('CartpoleBenchmark')
 tf.logging.set_verbosity(tf.logging.ERROR)
