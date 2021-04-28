@@ -30,11 +30,8 @@ a hard requirement of scikit-learn==0.23.x.
 
 1. Clone from github:
 =====================
-Clone the learna tool and install it to your Conda environment.
 ```
-git clone --single-branch --branch development https://github.com/PhMueller/learna.git
-cd learna
-pip install .
+git clone HPOBench
 ```
 
 2. Clone and install
@@ -50,6 +47,7 @@ Changelog:
 0.0.3:
 * Fix returned dictionary from Objective Function for ParamNetOnTime Benchmarks.
 * Suppress Warning (Surrogate was created with scikit-learn version 0.18.1 and current is 0.23.2)
+* Add another Search Space: Reduced.
 
 0.0.2:
 * Fix OnTime Test function:
@@ -99,6 +97,36 @@ class _ParamnetBase(AbstractBenchmark):
             warnings.filterwarnings("ignore", message="Trying to unpickle")
             dm = ParamNetDataManager(dataset=dataset)
             self.surrogate_objective, self.surrogate_costs = dm.load()
+
+    @staticmethod
+    def convert_config_to_array(configuration: Dict) -> np.ndarray:
+        raise NotImplementedError()
+
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        raise NotImplementedError()
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        raise NotImplementedError()
+
+    @staticmethod
+    def get_meta_information():
+        """ Returns the meta information for the benchmark """
+        return {'name': 'ParamNet Benchmark',
+                'references': ['@InProceedings{falkner-icml-18,'
+                               'title     = {{BOHB}: Robust and Efficient Hyperparameter Optimization at Scale},'
+                               'url       = http://proceedings.mlr.press/v80/falkner18a.html'
+                               'author    = {Falkner, Stefan and Klein, Aaron and Hutter, Frank}, '
+                               'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
+                               'pages     = {1436 - 1445},'
+                               'year      = {2018}}'],
+                'code': 'https://github.com/automl/HPOlib1.5/blob/development/'
+                        'hpolib/benchmarks/surrogates/paramnet.py'
+                }
+
+
+class _ParamnetFull(_ParamnetBase):
 
     @staticmethod
     def convert_config_to_array(configuration: Dict) -> np.ndarray:
@@ -158,24 +186,66 @@ class _ParamnetBase(AbstractBenchmark):
         ])
         return cs
 
-    @staticmethod
-    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        raise NotImplementedError()
+
+class _ParamnetReduced(_ParamnetBase):
 
     @staticmethod
-    def get_meta_information():
-        """ Returns the meta information for the benchmark """
-        return {'name': 'ParamNet Benchmark',
-                'references': ['@InProceedings{falkner-icml-18,'
-                               'title     = {{BOHB}: Robust and Efficient Hyperparameter Optimization at Scale},'
-                               'url       = http://proceedings.mlr.press/v80/falkner18a.html'
-                               'author    = {Falkner, Stefan and Klein, Aaron and Hutter, Frank}, '
-                               'booktitle = {Proceedings of the 35th International Conference on Machine Learning},'
-                               'pages     = {1436 - 1445},'
-                               'year      = {2018}}'],
-                'code': 'https://github.com/automl/HPOlib1.5/blob/development/'
-                        'hpolib/benchmarks/surrogates/paramnet.py'
-                }
+    def convert_config_to_array(configuration: Dict) -> np.ndarray:
+        """
+        This function transforms a configuration to a numpy array.
+        Since some of the values in the configuration space are in log space, cast it back to the original space.
+
+        Furthermore, we round the parameters ``batch size`` and ``average unit per layer`` to their next integer.
+        This is different to the original implementation of the paramnet benchmark from HPOlib1.5
+
+        Parameters
+        ----------
+        configuration : Dict
+
+        Returns
+        -------
+        np.ndarray - The configuration transformed back to its original space
+        """
+        cfg_array = np.zeros(8)
+        cfg_array[0] = 10 ** configuration['initial_lr_log10']
+        cfg_array[1] = round(2 ** configuration['batch_size_log2'])
+        cfg_array[2] = round(2 ** configuration['average_units_per_layer_log2'])
+        cfg_array[3] = 10 ** configuration['final_lr_fraction_log2']
+        cfg_array[4] = 0.5
+        cfg_array[5] = configuration['num_layers']
+        cfg_array[6] = configuration['dropout']
+        cfg_array[7] = configuration['dropout']
+
+        return cfg_array.reshape((1, -1))
+
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        cs = CS.ConfigurationSpace(seed=seed)
+        cs.add_hyperparameters([
+            CS.UniformFloatHyperparameter('initial_lr_log10', lower=-6, upper=-2, default_value=-4, log=False),
+            CS.UniformFloatHyperparameter('batch_size_log2', lower=3, upper=8, default_value=5.5, log=False),
+            CS.UniformFloatHyperparameter('average_units_per_layer_log2', lower=4, upper=8, default_value=6, log=False),
+            CS.UniformFloatHyperparameter('final_lr_fraction_log2', lower=-4, upper=0, default_value=-2, log=False),
+            # CS.UniformFloatHyperparameter('shape_parameter_1', lower=0., upper=1., default_value=0.5, log=False),
+            CS.UniformIntegerHyperparameter('num_layers', lower=1, upper=5, default_value=3, log=False),
+            # CS.UniformFloatHyperparameter('dropout_0', lower=0., upper=0.5, default_value=0.25, log=False),
+            CS.UniformFloatHyperparameter('dropout', lower=0., upper=0.5, default_value=0.25, log=False),
+        ])
+        return cs
 
 
 class _ParamnetOnStepsBenchmark(_ParamnetBase):
@@ -357,12 +427,12 @@ class _ParamnetOnTimeBenchmark(_ParamnetBase):
         return meta_info
 
 
-class ParamNetAdultOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+class ParamNetAdultOnStepsBenchmark(_ParamnetFull, _ParamnetOnStepsBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetAdultOnStepsBenchmark, self).__init__(dataset='adult', rng=rng)
 
 
-class ParamNetAdultOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+class ParamNetAdultOnTimeBenchmark(_ParamnetFull, _ParamnetOnTimeBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetAdultOnTimeBenchmark, self).__init__(dataset='adult', rng=rng)
 
@@ -371,12 +441,26 @@ class ParamNetAdultOnTimeBenchmark(_ParamnetOnTimeBenchmark):
         return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='adult', seed=seed)
 
 
-class ParamNetHiggsOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+class ParamNetReducedAdultOnStepsBenchmark(_ParamnetReduced, _ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedAdultOnStepsBenchmark, self).__init__(dataset='adult', rng=rng)
+
+
+class ParamNetReducedAdultOnTimeBenchmark(_ParamnetReduced, _ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedAdultOnTimeBenchmark, self).__init__(dataset='adult', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='adult', seed=seed)
+
+
+class ParamNetHiggsOnStepsBenchmark(_ParamnetFull, _ParamnetOnStepsBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetHiggsOnStepsBenchmark, self).__init__(dataset='higgs', rng=rng)
 
 
-class ParamNetHiggsOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+class ParamNetHiggsOnTimeBenchmark(_ParamnetFull, _ParamnetOnTimeBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetHiggsOnTimeBenchmark, self).__init__(dataset='higgs', rng=rng)
 
@@ -385,12 +469,26 @@ class ParamNetHiggsOnTimeBenchmark(_ParamnetOnTimeBenchmark):
         return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='higgs', seed=seed)
 
 
-class ParamNetLetterOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+class ParamNetReducedHiggsOnStepsBenchmark(_ParamnetReduced, _ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedHiggsOnStepsBenchmark, self).__init__(dataset='higgs', rng=rng)
+
+
+class ParamNetReducedHiggsOnTimeBenchmark(_ParamnetReduced, _ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedHiggsOnTimeBenchmark, self).__init__(dataset='higgs', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='higgs', seed=seed)
+
+
+class ParamNetLetterOnStepsBenchmark(_ParamnetFull, _ParamnetOnStepsBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetLetterOnStepsBenchmark, self).__init__(dataset='letter', rng=rng)
 
 
-class ParamNetLetterOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+class ParamNetLetterOnTimeBenchmark(_ParamnetFull, _ParamnetOnTimeBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetLetterOnTimeBenchmark, self).__init__(dataset='letter', rng=rng)
 
@@ -399,12 +497,26 @@ class ParamNetLetterOnTimeBenchmark(_ParamnetOnTimeBenchmark):
         return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='letter', seed=seed)
 
 
-class ParamNetMnistOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+class ParamNetReducedLetterOnStepsBenchmark(_ParamnetReduced, _ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedLetterOnStepsBenchmark, self).__init__(dataset='letter', rng=rng)
+
+
+class ParamNetReducedLetterOnTimeBenchmark(_ParamnetReduced, _ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedLetterOnTimeBenchmark, self).__init__(dataset='letter', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='letter', seed=seed)
+
+
+class ParamNetMnistOnStepsBenchmark(_ParamnetFull, _ParamnetOnStepsBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetMnistOnStepsBenchmark, self).__init__(dataset='mnist', rng=rng)
 
 
-class ParamNetMnistOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+class ParamNetMnistOnTimeBenchmark(_ParamnetFull, _ParamnetOnTimeBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetMnistOnTimeBenchmark, self).__init__(dataset='mnist', rng=rng)
 
@@ -413,12 +525,26 @@ class ParamNetMnistOnTimeBenchmark(_ParamnetOnTimeBenchmark):
         return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='mnist', seed=seed)
 
 
-class ParamNetOptdigitsOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+class ParamNetReducedMnistOnStepsBenchmark(_ParamnetReduced, _ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedMnistOnStepsBenchmark, self).__init__(dataset='mnist', rng=rng)
+
+
+class ParamNetReducedMnistOnTimeBenchmark(_ParamnetReduced, _ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedMnistOnTimeBenchmark, self).__init__(dataset='mnist', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='mnist', seed=seed)
+
+
+class ParamNetOptdigitsOnStepsBenchmark(_ParamnetFull, _ParamnetOnStepsBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetOptdigitsOnStepsBenchmark, self).__init__(dataset='optdigits', rng=rng)
 
 
-class ParamNetOptdigitsOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+class ParamNetOptdigitsOnTimeBenchmark(_ParamnetFull, _ParamnetOnTimeBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetOptdigitsOnTimeBenchmark, self).__init__(dataset='optdigits', rng=rng)
 
@@ -427,14 +553,42 @@ class ParamNetOptdigitsOnTimeBenchmark(_ParamnetOnTimeBenchmark):
         return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='optdigits', seed=seed)
 
 
-class ParamNetPokerOnStepsBenchmark(_ParamnetOnStepsBenchmark):
+class ParamNetReducedOptdigitsOnStepsBenchmark(_ParamnetReduced, _ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedOptdigitsOnStepsBenchmark, self).__init__(dataset='optdigits', rng=rng)
+
+
+class ParamNetReducedOptdigitsOnTimeBenchmark(_ParamnetReduced, _ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedOptdigitsOnTimeBenchmark, self).__init__(dataset='optdigits', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='optdigits', seed=seed)
+
+
+class ParamNetPokerOnStepsBenchmark(_ParamnetFull, _ParamnetOnStepsBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetPokerOnStepsBenchmark, self).__init__(dataset='poker', rng=rng)
 
 
-class ParamNetPokerOnTimeBenchmark(_ParamnetOnTimeBenchmark):
+class ParamNetPokerOnTimeBenchmark(_ParamnetFull, _ParamnetOnTimeBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
         super(ParamNetPokerOnTimeBenchmark, self).__init__(dataset='poker', rng=rng)
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return _ParamnetOnTimeBenchmark._get_fidelity_space(dataset='poker', seed=seed)
+
+
+class ParamNetReducedPokerOnStepsBenchmark(_ParamnetReduced, _ParamnetOnStepsBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedPokerOnStepsBenchmark, self).__init__(dataset='poker', rng=rng)
+
+
+class ParamNetReducedPokerOnTimeBenchmark(_ParamnetReduced, _ParamnetOnTimeBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None):
+        super(ParamNetReducedPokerOnTimeBenchmark, self).__init__(dataset='poker', rng=rng)
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
