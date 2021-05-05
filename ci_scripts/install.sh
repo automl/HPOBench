@@ -56,9 +56,9 @@ if [[ "$USE_SINGULARITY" == "true" ]]; then
       cryptsetup
 
     export VERSION=3.5.3 && # adjust this as necessary \
-      wget https://github.com/sylabs/singularity/archive/refs/tags/v${VERSION}.tar.gz
+      wget https://github.com/sylabs/singularity/archive/refs/tags/v${VERSION}.tar.gz && \
       tar -xzf v${VERSION}.tar.gz && \
-      cd singularity
+      cd singularity-${VERSION}
 
     ./mconfig && \
       make -C builddir && \
