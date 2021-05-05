@@ -436,12 +436,17 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         except (ConnectionRefusedError, Pyro4.errors.CommunicationError, Pyro4.errors.ConnectionClosedError):
             pass
 
-        # If the container is already closed, we dont want a error message here (-> DEVNULL)
-        subprocess.run(f'singularity instance stop {self.socket_id}'.split(), check=False, stdout=subprocess.DEVNULL)
+        try:
+            self.benchmark._pyroRelease()
+        except (ConnectionRefusedError, Pyro4.errors.CommunicationError, Pyro4.errors.ConnectionClosedError):
+            pass
 
+        # If the container is already closed, we dont want a error message here (-> DEVNULL)
+        subprocess.Popen(f'singularity instance stop {self.socket_id}',
+                         stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, shell=True)
         if (self.config.socket_dir / f'{self.socket_id}_unix.sock').exists():
             (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
-        # self.benchmark._pyroRelease()
+
         logger.info('Benchmark is successfully shut down.')
 
     def __call__(self, configuration: Dict, **kwargs) -> Dict:
