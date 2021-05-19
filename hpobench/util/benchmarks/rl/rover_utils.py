@@ -125,14 +125,14 @@ class Trajectory:
         pass
 
     def set_params(self, start, goal, params):
-        raise NotImplemented
+        raise NotImplementedError()
 
     def get_points(self, t):
-        raise NotImplemented
+        raise NotImplementedError()
 
     @property
     def param_size(self):
-        raise NotImplemented
+        raise NotImplementedError()
 
 
 class PointBSpline(Trajectory):
@@ -247,8 +247,8 @@ class RoverDomain:
 
         # estimate (trapezoidal) the integral of the cost along traj
         avg_cost = 0.5 * (costs[:-1] + costs[1:])
-        l = np.linalg.norm(points[1:] - points[:-1], axis=1)
-        total_cost = np.sum(l * avg_cost)
+        distance = np.linalg.norm(points[1:] - points[:-1], axis=1)
+        total_cost = np.sum(distance * avg_cost)
 
         if not self.force_start:
             total_cost += self.start_miss_cost(points[0], self.start)
@@ -264,15 +264,15 @@ class RoverDomain:
 
 class AABoxes:
     def __init__(self, lows, highs):
-        self.l = lows
-        self.h = highs
+        self.lows = lows
+        self.highs = highs
 
     def contains(self, X):
         if X.ndim == 1:
             X = X[None, :]
 
-        lX = self.l.T[None, :, :] <= X[:, :, None]
-        hX = self.h.T[None, :, :] > X[:, :, None]
+        lX = self.lows.T[None, :, :] <= X[:, :, None]
+        hX = self.highs.T[None, :, :] > X[:, :, None]
 
         return lX.all(axis=1) & hX.all(axis=1)
 
@@ -366,63 +366,6 @@ def plot_2d_rover(roverdomain, ngrid_points=100, ntraj_points=100, colormap='RdB
     plt.plot([roverdomain.start[0], roverdomain.goal[0]], (roverdomain.start[1], roverdomain.goal[1]), 'ok')
 
     return cmesh
-
-
-def generate_verts(rectangles):
-    poly3d = []
-    all_faces = []
-    vertices = []
-    for l, h in zip(rectangles.l, rectangles.h):
-        verts = [[l[0], l[1], l[2]], [l[0], h[1], l[2]], [h[0], h[1], l[2]], [h[0], l[1], l[2]],
-                 [l[0], l[1], h[2]], [l[0], h[1], h[2]], [h[0], h[1], h[2]], [h[0], l[1], h[2]]]
-
-        faces = [[0, 1, 2, 3], [0, 3, 7, 4], [3, 2, 6, 7], [7, 6, 5, 4], [1, 5, 6, 2], [0, 4, 5, 1]]
-
-        vert_ind = [[0, 1, 2], [0, 2, 3], [0, 3, 4], [4, 3, 7], [7, 3, 2], [2, 6, 7],
-                    [7, 5, 4], [7, 6, 5], [2, 5, 6], [2, 1, 5], [0, 1, 4], [1, 4, 5]]
-
-        plist = [[verts[vert_ind[ix][iy]] for iy in range(len(vert_ind[0]))] for ix in range(len(vert_ind))]
-        faces = [[verts[faces[ix][iy]] for iy in range(len(faces[0]))] for ix in range(len(faces))]
-
-        poly3d = poly3d + plist
-        vertices = vertices + verts
-        all_faces = all_faces + faces
-
-    return poly3d, vertices, all_faces
-
-
-def plot_3d_forest_rover(roverdomain, rectangles, ntraj_points=100):
-    from matplotlib import pyplot as plt
-    from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
-
-    # get the cost of the current trajectory
-    traj_cost = roverdomain.estimate_cost()
-
-    # get points on the current trajectory
-    traj_points = roverdomain.traj.get_points(np.linspace(0., 1.0, ntraj_points, endpoint=True))
-
-    # convert the rectangles into lists of vertices for matplotlib
-    poly3d, verts, faces = generate_verts(rectangles)
-
-    ax = plt.gcf().add_subplot(111, projection='3d')
-
-    # plot start and goal
-    ax.scatter((roverdomain.start[0], roverdomain.goal[0]),
-               (roverdomain.start[1], roverdomain.goal[1]),
-               (roverdomain.start[2], roverdomain.goal[2]), c='k')
-
-    # plot traj
-    seg = zip(traj_points[:-1, :], traj_points[1:, :])
-    ax.add_collection3d(Line3DCollection(seg, colors=[(0, 1., 0, 1.)] * len(seg)))
-
-    # plot rectangles
-    ax.add_collection3d(Poly3DCollection(poly3d, facecolors=(0.7, 0.7, 0.7, 1.), linewidth=0.5))
-
-    # set limits of axis to be the same as domain
-    s_range = roverdomain.s_range
-    ax.set_xlim(s_range[0][0], s_range[1][0])
-    ax.set_ylim(s_range[0][1], s_range[1][1])
-    ax.set_zlim(s_range[0][2], s_range[1][2])
 
 
 class NormalizedInputFn:
