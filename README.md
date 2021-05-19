@@ -116,7 +116,16 @@ config = b.get_configuration_space(seed=1).sample_configuration()
 result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5})
 ```
 
-### Remove all caches
+### Remove all data, containers, and caches
+
+Update: In version 0.0.8, we have added the script `hpobench/util/clean_up_script.py`. It allows to easily remove all
+data, downloaded containers, and caches. To get more information, you can use the following command. 
+```bash
+python ./hpobench/util/clean_up_script.py --help
+``` 
+
+If you like to delete only specific parts, i.e. a single container,
+you can find the benchmark's data, container, and caches in the following directories:
 
 #### HPOBench data
 HPOBench stores downloaded containers and datasets at the following locations:
