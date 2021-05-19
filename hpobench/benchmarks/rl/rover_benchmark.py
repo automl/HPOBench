@@ -94,9 +94,11 @@ class RoverBenchmark(AbstractBenchmark):
         f = ConstantOffsetFn(self.domain, offset=5)
         f = NormalizedInputFn(f, self.domain.s_range)
 
-        obj_value = f(configuration)
+        # This original problem aims to maximize the reward (negative costs). We cast it to a minimization task.
+        # The optimal value is -5.
+        reward = f(configuration)
 
-        return {'function_value': obj_value,
+        return {'function_value': -reward,
                 "cost": time() - start_time,
                 'info': {'fidelity': fidelity}}
 
@@ -206,7 +208,7 @@ class RoverBenchmark(AbstractBenchmark):
         obstacles = UnionGeom([trees, r_box])
 
         # Define fix start and goal points
-        start = np.zeros([0.05, 0.05])
+        start = np.array([0.05, 0.05])
         goal = np.array([0.95, 0.95])
 
         # The costs for hitting a obstacle is 20, having a longer trajectory (route) is 0.05
