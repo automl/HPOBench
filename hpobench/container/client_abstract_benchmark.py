@@ -71,9 +71,9 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
         # connect to already running server if a socket_id is given. In this case, skip the init of
         # the benchmark
-        already_running = socket_id is not None
+        self.proxy_only = socket_id is not None
 
-        if not already_running:
+        if not self.proxy_only:
             self.socket_id = self._id_generator()
             self.load_benchmark(benchmark_name, container_name, container_source, container_tag, env_str, bind_str, gpu, rng,
                                 **kwargs)
@@ -439,7 +439,10 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         return self.objective_function(configuration, **kwargs)['function_value']
 
     def __del__(self):
-        self._shutdown()
+        if not self.proxy_only:
+            self._shutdown()
+        else:
+            self.benchmark._pyroRelease()
 
     @staticmethod
     def _id_generator() -> str:
