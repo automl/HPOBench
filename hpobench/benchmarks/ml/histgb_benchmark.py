@@ -3,6 +3,7 @@ import openml
 import numpy as np
 import pandas as pd
 import ConfigSpace as CS
+from copy import deepcopy
 from typing import Union, Dict
 
 from sklearn.impute import SimpleImputer
@@ -11,15 +12,18 @@ from sklearn.utils import check_random_state
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, make_scorer
+
+# https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
+from sklearn.ensemble import HistGradientBoostingClassifier
 
 import hpobench.util.rng_helper as rng_helper
 from hpobench.benchmarks.ml.ml_benchmark_template import Benchmark
 
 
-class RandomForestBenchmark(Benchmark):
+class HistGBBenchmark(Benchmark):
     def __init__(
             self,
             task_id: Union[int, None] = None,
@@ -28,7 +32,7 @@ class RandomForestBenchmark(Benchmark):
             fidelity_choice: int = 1,
             benchmark_type: str = "raw"
     ):
-        super(RandomForestBenchmark, self).__init__(
+        super(HistGBBenchmark, self).__init__(
             task_id, seed, valid_size, fidelity_choice, benchmark_type
         )
         pass
@@ -44,14 +48,18 @@ class RandomForestBenchmark(Benchmark):
                 'max_depth', lower=1, upper=15, default_value=2, log=False
             ),
             CS.UniformIntegerHyperparameter(
-                'min_samples_split', lower=2, upper=128, default_value=2, log=True
-            ),
-            CS.UniformFloatHyperparameter(
-                'max_features', lower=0.1, upper=0.9, default_value=0.5, log=False
-            ),
-            CS.UniformIntegerHyperparameter(
                 'min_samples_leaf', lower=1, upper=64, default_value=1, log=True
             ),
+            CS.UniformFloatHyperparameter(
+                'learning_rate', lower=1e-5, upper=1e-1, default_value=0.1, log=False
+            ),
+            #TODO: find best way to encode l2 reg. since log params cannot have 0 as exact bound
+            # scales the regularization parameter by using it as a power of 10
+            # such that the range of the parameter becomes {0, 1e-7, 1e-6, ..., 1e-1}
+            # where 10 ** 0 is enforced to be 0 (no regularization)
+            CS.UniformIntegerHyperparameter(
+                'l2_regularization', lower=-7, upper=0, default_value=0, log=False
+            )  # value of 1 indicates 0 regularization
         ])
         return cs
 
@@ -101,10 +109,17 @@ class RandomForestBenchmark(Benchmark):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
         rng = self.rng if rng is None else rng
-        model = RandomForestClassifier(
-            **config.get_dictionary(),
-            n_estimators=fidelity['n_estimators'],  # a fidelity being used during initialization
-            bootstrap=True,
+        config = deepcopy(config).get_dictionary()
+        l2 = config.pop("l2_regularization")
+        l2 = 0 if l2 == 1 else 10 ** l2
+        # TODO: decide on encoding of learning rate
+        #TODO: allow non-encoded categoricals?
+        #TODO: early stopping set to False?
+        model = HistGradientBoostingClassifier(
+            **config,
+            l2_regularization=l2,
+            max_iter=fidelity['n_estimators'],  # a fidelity being used during initialization
+            early_stopping=False,
             random_state=rng
         )
         return model
