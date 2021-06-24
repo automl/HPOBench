@@ -16,7 +16,6 @@ from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.metrics import accuracy_score, make_scorer
 
 import hpobench.util.rng_helper as rng_helper
-from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.benchmarks.ml.ml_benchmark_template import Benchmark
 
 
