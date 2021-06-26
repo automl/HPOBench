@@ -88,6 +88,5 @@ class SVMBenchmark(Benchmark):
             **config,
             random_state=rng,
             cache_size=self.cache_size
-
         )
         return model

@@ -12,10 +12,29 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, make_scorer
+from sklearn.metrics import make_scorer, roc_auc_score, accuracy_score, f1_score, \
+    top_k_accuracy_score, balanced_accuracy_score
 
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
+
+
+metrics = dict(
+    #TODO: decide on metrics generalized for different datasets
+    acc=accuracy_score,
+    bal_acc=balanced_accuracy_score,
+    f1=f1_score,
+    # roc=roc_auc_score,
+    # topk=top_k_accuracy_score
+)
+metrics_kwargs = dict(
+    #TODO: decide on metric parameters
+    acc=dict(),
+    bal_acc=dict(),
+    f1=dict(average="weighted"),
+    # roc=dict(average="weighted"),
+    # topk=dict()
+)
 
 
 class Benchmark(AbstractBenchmark):
@@ -36,7 +55,10 @@ class Benchmark(AbstractBenchmark):
         self.benchmark_type = benchmark_type
         self.task_id = task_id
         self.valid_size = valid_size
-        self.accuracy_scorer = make_scorer(accuracy_score)
+        self.scorers = dict()
+        for k, v in metrics.items():
+            self.scorers[k] = make_scorer(v, **metrics_kwargs[k])
+        # self.scorers = make_scorer(accuracy_score)
 
         # Data variables
         self.train_X = None
@@ -231,7 +253,10 @@ class Benchmark(AbstractBenchmark):
         # fitting the model with subsampled data
         model.fit(train_X[train_idx], train_y.iloc[train_idx])
         # computing statistics on training data
-        train_loss = 1 - self.accuracy_scorer(model, train_X, train_y)
+        scores = dict()
+        for k, v in self.scorers.items():
+            scores[k] = v(model, train_X, train_y)
+        train_loss = 1 - scores["acc"]  # self.accuracy_scorer(model, train_X, train_y)
 
         model_fit_time = time.time() - start
         return model, model_fit_time, train_loss
@@ -255,7 +280,10 @@ class Benchmark(AbstractBenchmark):
             pass
 
         start = time.time()
-        val_loss = 1 - self.accuracy_scorer(model, self.valid_X, self.valid_y)
+        scores = dict()
+        for k, v in self.scorers.items():
+            scores[k] = v(model, self.valid_X, self.valid_y)
+        val_loss = 1 - scores["acc"]  # self.accuracy_scorer(model, self.valid_X, self.valid_y)
         eval_time = time.time() - start
 
         info = {
@@ -264,6 +292,7 @@ class Benchmark(AbstractBenchmark):
             'cost': model_fit_time + eval_time,
             'training_cost': model_fit_time,
             'evaluation_cost': eval_time,
+            'scores': scores,
             # storing as dictionary and not ConfigSpace saves tremendous memory
             'fidelity': fidelity.get_dictionary(),
             'config': configuration.get_dictionary()
@@ -294,22 +323,26 @@ class Benchmark(AbstractBenchmark):
             pass
 
         start = time.time()
-        val_loss = 1 - self.accuracy_scorer(model, self.test_X, self.test_y)
+        scores = dict()
+        for k, v in self.scorers.items():
+            scores[k] = v(model, self.test_X, self.test_y)
+        test_loss = 1 - scores["acc"]  # self.accuracy_scorer(model, self.test_X, self.test_y)
         eval_time = time.time() - start
 
         info = {
             'train_loss': train_loss,
-            'val_loss': val_loss,
+            'test_loss': test_loss,
             'cost': model_fit_time + eval_time,
             'training_cost': model_fit_time,
             'evaluation_cost': eval_time,
+            'scores': scores,
             # storing as dictionary and not ConfigSpace saves tremendous memory
             'fidelity': fidelity.get_dictionary(),
             'config': configuration.get_dictionary()
         }
 
         return {
-            'function_value': info['val_loss'],
+            'function_value': info['test_loss'],
             'cost': info['cost'],
             'info': info
         }

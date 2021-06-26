@@ -50,8 +50,9 @@ class HistGBBenchmark(Benchmark):
             CS.UniformIntegerHyperparameter(
                 'min_samples_leaf', lower=1, upper=64, default_value=1, log=True
             ),
+            #TODO: fix lr value range error in map_to_config()
             CS.UniformFloatHyperparameter(
-                'learning_rate', lower=1e-5, upper=1e-1, default_value=0.1, log=False
+                'learning_rate', lower=1e-5, upper=1e-1, default_value=0.1, log=True
             ),
             #TODO: find best way to encode l2 reg. since log params cannot have 0 as exact bound
             # scales the regularization parameter by using it as a power of 10
