@@ -19,7 +19,6 @@ from sklearn.metrics import accuracy_score, make_scorer
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-import hpobench.util.rng_helper as rng_helper
 from hpobench.benchmarks.ml.ml_benchmark_template import Benchmark
 
 
