@@ -15,7 +15,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import make_scorer, roc_auc_score, accuracy_score, f1_score, \
     top_k_accuracy_score, balanced_accuracy_score
 
-import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 
 
