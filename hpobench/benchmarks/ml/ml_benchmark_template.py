@@ -221,8 +221,6 @@ class Benchmark(AbstractBenchmark):
         raise NotImplementedError()
 
     def _raw_objective(self, config, fidelity, shuffle, rng, eval="valid"):
-        start = time.time()
-
         # initializing model
         model = self.init_model(config, fidelity, rng)
 
@@ -250,15 +248,18 @@ class Benchmark(AbstractBenchmark):
             )
         )
         # fitting the model with subsampled data
+        start = time.time()
         model.fit(train_X[train_idx], train_y.iloc[train_idx])
+        model_fit_time = time.time() - start
         # computing statistics on training data
         scores = dict()
+        score_cost = dict()
         for k, v in self.scorers.items():
+            _start = time.time()
             scores[k] = v(model, train_X, train_y)
+            score_cost[k] = time.time() - _start
         train_loss = 1 - scores["acc"]  # self.accuracy_scorer(model, train_X, train_y)
-
-        model_fit_time = time.time() - start
-        return model, model_fit_time, train_loss
+        return model, model_fit_time, train_loss, scores, score_cost
 
     def objective(
             self,
@@ -271,27 +272,29 @@ class Benchmark(AbstractBenchmark):
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
         """
         if self.benchmark_type == "raw":
-            model, model_fit_time, train_loss = self._raw_objective(
+            model, model_fit_time, train_loss, train_scores, train_score_cost = self._raw_objective(
                 configuration, fidelity, shuffle, rng
             )
         else:
             #TODO: add cases for `tabular` and `surrogate` benchmarks
-            pass
+            pass + info['train_costs']['acc']
 
-        start = time.time()
         scores = dict()
+        score_cost = dict()
         for k, v in self.scorers.items():
+            _start = time.time()
             scores[k] = v(model, self.valid_X, self.valid_y)
+            score_cost[k] = time.time() - _start
         val_loss = 1 - scores["acc"]  # self.accuracy_scorer(model, self.valid_X, self.valid_y)
-        eval_time = time.time() - start
 
         info = {
             'train_loss': train_loss,
             'val_loss': val_loss,
-            'cost': model_fit_time + eval_time,
-            'training_cost': model_fit_time,
-            'evaluation_cost': eval_time,
-            'scores': scores,
+            'model_cost': model_fit_time,
+            'train_scores': train_scores,
+            'train_costs': train_score_cost,
+            'eval_scores': scores,
+            'eval_costs': score_cost,
             # storing as dictionary and not ConfigSpace saves tremendous memory
             'fidelity': fidelity.get_dictionary(),
             'config': configuration.get_dictionary()
@@ -299,7 +302,7 @@ class Benchmark(AbstractBenchmark):
 
         return {
             'function_value': info['val_loss'],
-            'cost': info['cost'],
+            'cost': model_fit_time + info['train_costs']['acc'] + info['eval_costs']['acc'],
             'info': info
         }
 
@@ -314,27 +317,29 @@ class Benchmark(AbstractBenchmark):
         """Function that evaluates a 'config' on a 'fidelity' on the test set
         """
         if self.benchmark_type == "raw":
-            model, model_fit_time, train_loss = self._raw_objective(
+            model, model_fit_time, train_loss, train_scores, train_score_cost = self._raw_objective(
                 configuration, fidelity, shuffle, rng, eval="test"
             )
         else:
             #TODO: add cases for `tabular` and `surrogate` benchmarks
             pass
 
-        start = time.time()
         scores = dict()
+        score_cost = dict()
         for k, v in self.scorers.items():
+            _start = time.time()
             scores[k] = v(model, self.test_X, self.test_y)
-        test_loss = 1 - scores["acc"]  # self.accuracy_scorer(model, self.test_X, self.test_y)
-        eval_time = time.time() - start
+            score_cost[k] = time.time() - _start
+        test_loss = 1 - scores["acc"]  # self.accuracy_scorer(model, self.valid_X, self.valid_y)
 
         info = {
             'train_loss': train_loss,
-            'test_loss': test_loss,
-            'cost': model_fit_time + eval_time,
-            'training_cost': model_fit_time,
-            'evaluation_cost': eval_time,
-            'scores': scores,
+            'val_loss': test_loss,
+            'model_cost': model_fit_time,
+            'train_scores': train_scores,
+            'train_costs': train_score_cost,
+            'eval_scores': scores,
+            'eval_costs': score_cost,
             # storing as dictionary and not ConfigSpace saves tremendous memory
             'fidelity': fidelity.get_dictionary(),
             'config': configuration.get_dictionary()
@@ -342,7 +347,7 @@ class Benchmark(AbstractBenchmark):
 
         return {
             'function_value': info['test_loss'],
-            'cost': info['cost'],
+            'cost': model_fit_time + info['train_costs']['acc'] + info['eval_costs']['acc'],
             'info': info
         }
 
