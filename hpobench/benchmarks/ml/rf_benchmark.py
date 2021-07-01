@@ -24,12 +24,9 @@ class RandomForestBenchmark(Benchmark):
             task_id: Union[int, None] = None,
             seed: Union[int, None] = None,  # Union[np.random.RandomState, int, None] = None,
             valid_size: float = 0.33,
-            fidelity_choice: int = 1,
-            benchmark_type: str = "raw"
+            fidelity_choice: int = 1
     ):
-        super(RandomForestBenchmark, self).__init__(
-            task_id, seed, valid_size, fidelity_choice, benchmark_type
-        )
+        super(RandomForestBenchmark, self).__init__(task_id, seed, valid_size, fidelity_choice)
         pass
 
     @staticmethod
