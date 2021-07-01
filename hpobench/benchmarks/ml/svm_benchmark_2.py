@@ -24,12 +24,9 @@ class SVMBenchmark(Benchmark):
             task_id: Union[int, None] = None,
             seed: Union[int, None] = None,  # Union[np.random.RandomState, int, None] = None,
             valid_size: float = 0.33,
-            fidelity_choice: int = 1,
-            benchmark_type: str = "raw"
+            fidelity_choice: int = 1
     ):
-        super(SVMBenchmark, self).__init__(
-            task_id, seed, valid_size, fidelity_choice, benchmark_type
-        )
+        super(SVMBenchmark, self).__init__(task_id, seed, valid_size, fidelity_choice)
         self.cache_size = 200
 
     @staticmethod
@@ -37,15 +34,6 @@ class SVMBenchmark(Benchmark):
         """Parameter space to be optimized --- contains the hyperparameters
         """
         cs = CS.ConfigurationSpace(seed=seed)
-
-        # cs.add_hyperparameters([
-        #     CS.UniformFloatHyperparameter(
-        #         'C', lower=-10., upper=10., default_value=0., log=False
-        #     ),
-        #     CS.UniformFloatHyperparameter(
-        #         'gamma', lower=-10., upper=10., default_value=1., log=False
-        #     ),
-        # ])
         # from https://github.com/automl/auto-sklearn/blob/master/autosklearn/pipeline/components/classification/libsvm_svc.p
         cs.add_hyperparameters([
             CS.UniformFloatHyperparameter(
