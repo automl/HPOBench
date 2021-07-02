@@ -194,8 +194,9 @@ class Benchmark(AbstractBenchmark):
 
         # Similar to (https://arxiv.org/pdf/1605.07079.pdf)
         # use 10 times the number of classes as lower bound for the dataset fraction
-        n_classes = len(self.task.class_labels)   # np.unique(self.train_y).shape[0]
+        n_classes = len(self.task.class_labels)
         self.lower_bound_train_size = (10 * n_classes) / self.train_X.shape[0]
+        self.lower_bound_train_size = np.max((1 / 512, self.lower_bound_train_size))
 
         if verbose:
             print("Shape of data post-preprocessing: {}".format(train_X.shape), "\n")
@@ -332,7 +333,7 @@ class Benchmark(AbstractBenchmark):
 
         info = {
             'train_loss': train_loss,
-            'val_loss': test_loss,
+            'test_loss': test_loss,
             'model_cost': model_fit_time,
             'train_scores': train_scores,
             'train_costs': train_score_cost,
