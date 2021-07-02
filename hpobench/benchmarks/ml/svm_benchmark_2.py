@@ -45,8 +45,8 @@ class SVMBenchmark(Benchmark):
         ])
         return cs
 
-    @staticmethod
-    def get_fidelity_space(seed=None, fidelity_choice=None):
+    @classmethod
+    def get_fidelity_space(cls, seed=None, fidelity_choice=None):
         """Fidelity space available --- specifies the fidelity dimensions
 
         For SVM, only a single fidelity exists, i.e., subsample fraction.
@@ -57,12 +57,14 @@ class SVMBenchmark(Benchmark):
 
         """
         z_cs = CS.ConfigurationSpace(seed=seed)
-        subsample_lower_bound = np.max((0.1, (0.1 or self.lower_bound_train_size)))
+
         if fidelity_choice == 0:
             subsample = CS.Constant('subsample', value=1)
         else:
+            # TODO: dynamically adapt based on 1/512 and lower_bound_train_size and set log=True
+            lower = 0.1
             subsample = CS.UniformFloatHyperparameter(
-                'subsample', lower=subsample_lower_bound, upper=1, default_value=0.33, log=False
+                'subsample', lower=lower, upper=1, default_value=0.33, log=False
             )
         z_cs.add_hyperparameter(subsample)
         return z_cs
