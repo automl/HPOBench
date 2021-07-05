@@ -4,7 +4,7 @@ install_packages=""
 
 if [[ "$RUN_TESTS" == "true" ]]; then
     echo "Install tools for testing"
-    install_packages="${install_packages}xgboost,cartpole,pytest,test_paramnet,"
+    install_packages="${install_packages}xgboost,pytest,test_paramnet,"
     pip install codecov
 
     # The param net benchmark does not work with a scikit-learn version != 0.23.2. (See notes in the benchmark)
@@ -56,9 +56,9 @@ if [[ "$USE_SINGULARITY" == "true" ]]; then
       cryptsetup
 
     export VERSION=3.5.3 && # adjust this as necessary \
-      wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
-      tar -xzf singularity-${VERSION}.tar.gz && \
-      cd singularity
+      wget https://github.com/sylabs/singularity/archive/refs/tags/v${VERSION}.tar.gz && \
+      tar -xzf v${VERSION}.tar.gz && \
+      cd singularity-${VERSION}
 
     ./mconfig && \
       make -C builddir && \

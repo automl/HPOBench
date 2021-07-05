@@ -248,11 +248,12 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             logger.debug(f'Could not start instance: Try {num_tries + 1}|{MAX_TRIES}')
             if num_tries + 1 == MAX_TRIES:
-                raise SystemError(f'Could not start a instance of the benchmark. Retried {MAX_TRIES:d} times'
+                raise SystemError(f'Could not start an instance of the benchmark. Retried {MAX_TRIES:d} times'
                                   f'\nStdout: {output} \nStderr: {err}')
 
             sleep_for = np.random.randint(1, 60)
-            logger.critical(f'[{num_tries + 1}/{MAX_TRIES}] Could not start instance, sleeping for {sleep_for} seconds')
+            logger.critical(f'[{num_tries + 1}/{MAX_TRIES}] Could not start the instance,'
+                            f' sleeping for {sleep_for} seconds')
             time.sleep(sleep_for)
 
         # Give each instance a little bit time to start
@@ -436,12 +437,17 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         except (ConnectionRefusedError, Pyro4.errors.CommunicationError, Pyro4.errors.ConnectionClosedError):
             pass
 
-        # If the container is already closed, we dont want a error message here (-> DEVNULL)
-        subprocess.run(f'singularity instance stop {self.socket_id}'.split(), check=False, stdout=subprocess.DEVNULL)
+        try:
+            self.benchmark._pyroRelease()
+        except (ConnectionRefusedError, Pyro4.errors.CommunicationError, Pyro4.errors.ConnectionClosedError):
+            pass
 
+        # If the container is already closed, we dont want a error message here (-> DEVNULL)
+        subprocess.Popen(f'singularity instance stop {self.socket_id}',
+                         stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, shell=True)
         if (self.config.socket_dir / f'{self.socket_id}_unix.sock').exists():
             (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
-        # self.benchmark._pyroRelease()
+
         logger.info('Benchmark is successfully shut down.')
 
     def __call__(self, configuration: Dict, **kwargs) -> Dict:
