@@ -31,7 +31,14 @@ jobs:
             DISPLAY_NAME: "Local Examples"
             RUN_LOCAL_EXAMPLES: true
             USE_SINGULARITY: false
-
+          - python-version: 3.8
+            DISPLAY_NAME: "Singularity Tests"
+            RUN_TESTS: true
+            USE_SINGULARITY: true
+          - python-version: 3.9
+            DISPLAY_NAME: "Singularity Tests"
+            RUN_TESTS: true
+            USE_SINGULARITY: true
       fail-fast: false
 
     name: Tests ${{ matrix.python-version }} ${{ matrix.DISPLAY_NAME }}
