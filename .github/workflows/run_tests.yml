@@ -39,10 +39,6 @@ jobs:
             DISPLAY_NAME: "Singularity Tests"
             RUN_TESTS: true
             USE_SINGULARITY: true
-          - python-version: "3.10"
-            DISPLAY_NAME: "Singularity Tests"
-            RUN_TESTS: true
-            USE_SINGULARITY: true
       fail-fast: false
 
     name: Tests ${{ matrix.python-version }} ${{ matrix.DISPLAY_NAME }}
