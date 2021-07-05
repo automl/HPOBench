@@ -75,10 +75,10 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
         if not self.proxy_only:
             self.socket_id = self._id_generator()
-            self.load_benchmark(benchmark_name, container_name, container_source, container_tag, env_str, bind_str, gpu, rng,
-                                **kwargs)
-            self.start_server(benchmark_name, container_name, container_source, container_tag, env_str, bind_str, gpu, rng,
-                              **kwargs)
+
+            self.load_benchmark(benchmark_name=benchmark_name, container_name=container_name,
+                                container_source=container_source, container_tag=container_tag, **kwargs)
+            self.start_server(benchmark_name=benchmark_name, env_str=env_str, bind_str=bind_str, gpu=gpu)
             self.connect_to_server()
             self.init_benchmark(rng, **kwargs)
         else:
@@ -117,8 +117,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         return f_str
 
     def load_benchmark(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
-               container_tag: str = 'latest', env_str: Optional[str] = '', bind_str: Optional[str] = '',
-               gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+                       container_tag: str = 'latest', **kwargs):
 
         # We can point to a different container source. See below.
         self.container_source = container_source or self.config.container_source
@@ -171,8 +170,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                     else:
                         cmd += f'{container_source}/{container_name.lower()}:{container_tag}'
 
-                    logger.info(f'Start downloading the container {self.container_name_with_tag} from {container_source}. '
-                                'This may take several minutes.')
+                    logger.info(f'Start downloading the container {self.container_name_with_tag} '
+                                f'from {container_source}. This may take several minutes.')
                     logger.debug(cmd)
                     subprocess.run(cmd, shell=True, check=True)
                     time.sleep(1)
@@ -210,9 +209,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             logger.debug('Image found on the local file system.')
 
-    def start_server(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
-               container_tag: str = 'latest', env_str: Optional[str] = '', bind_str: Optional[str] = '',
-               gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+    def start_server(self, benchmark_name: str, env_str: Optional[str] = '', bind_str: Optional[str] = '',
+                     gpu: Optional[bool] = False):
 
         env_vars = {'HPOBENCH_DEBUG': log_level_str}
         if env_str.strip() != '':
