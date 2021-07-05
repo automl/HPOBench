@@ -4,7 +4,7 @@ install_packages=""
 
 if [[ "$RUN_TESTS" == "true" ]]; then
     echo "Install tools for testing"
-    install_packages="${install_packages}xgboost,cartpole,pytest,test_paramnet,"
+    install_packages="${install_packages}xgboost,pytest,test_paramnet,"
     pip install codecov
 
     # The param net benchmark does not work with a scikit-learn version != 0.23.2. (See notes in the benchmark)
