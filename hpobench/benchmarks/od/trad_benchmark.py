@@ -254,9 +254,9 @@ class ODTraditional(AbstractBenchmark):
                 'institution = "Stony Brook University, Department of Computer Sciences" }'
 
             ],
-            'shape of train data': self.x_train.shape,
-            'shape of test data': self.x_test.shape,
+            'shape of train data': X_train.shape,
+            'shape of test data': X_test.shape,
             'initial random seed': self.rng,
             'dataset_name': self.dataset_name,
-            'contamination': self.datamanger.get_contamination_ratio()
+            'contamination': self.datamanager.dataset.get_contamination_ratio()
         }
