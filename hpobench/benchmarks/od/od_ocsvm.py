@@ -1,12 +1,16 @@
 import logging
-from typing import Union
+import time
+from typing import Union, Tuple, Dict, List
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 import numpy as np
 from sklearn.svm import OneClassSVM
 
-from hpobench.dependencies.od.traditional_benchmark import ODTraditional
+import hpobench.util.rng_helper as rng_helper
+from hpobench.benchmarks.od.trad_benchmark import ODTraditional
+
+
 
 __version__ = '0.0.1'
 
@@ -15,10 +19,8 @@ logger = logging.getLogger('ODOneClassSupportVectorMachine')
 
 class ODOneClassSupportVectorMachine(ODTraditional):
     """
-    Benchmark to train a One-Class Support Vector Machine (OC-SVM) model for outlier detection. Overall,
-    this benchmark can be used with one of 15 datasets (using a contamination ratio of 10%) provided by the
-    ODDS Library (Rayana, 2016). Internally, a 4-fold cross-validation is used to prevent overfitting.
-    Area under the precission-recall curve (AUPR) is used as metric.
+    Hyperparameter optimization task to optimize OCSVM
+    for outlier detection.
     """
 
     def __init__(self,
@@ -28,10 +30,6 @@ class ODOneClassSupportVectorMachine(ODTraditional):
         Parameters
         ----------
         dataset_name : str
-            Must be one of [
-                "annthyroid", "arrhythmia", "breastw", "cardio", "ionosphere",
-                "mammography", "musk", "optdigits", "pendigits", "pima",
-                "satellite", "satimage-2", "thyroid", "vowels", "wbc"]
         rng : np.random.RandomState, int, None
         """
         super(ODOneClassSupportVectorMachine, self).__init__(
@@ -42,7 +40,7 @@ class ODOneClassSupportVectorMachine(ODTraditional):
     def get_name(self):
         """Returns the name of the model for the meta information."""
         return "One Class Support Vector Machine"
-
+    
     def get_model(self, configuration):
         """Returns the unfitted model given a configuration."""
         hp_gamma = float(configuration['gamma'])
@@ -52,7 +50,7 @@ class ODOneClassSupportVectorMachine(ODTraditional):
 
     def calculate_scores(self, model, X):
         """Calculates the scores based on the model and X."""
-        return (-1) * model.decision_function(X)
+        return (-1) *  model.decision_function(X)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:

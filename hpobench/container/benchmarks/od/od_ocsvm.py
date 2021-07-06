@@ -6,10 +6,10 @@
 from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
 
 
-class ODKernelDensityEstimation(AbstractBenchmarkClient):
+class ODOneClassSupportVectorMachine(AbstractBenchmarkClient):
     def __init__(self, dataset_name: str, **kwargs):
         kwargs['dataset_name'] = dataset_name
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ODKernelDensityEstimation')
-        kwargs['container_name'] = kwargs.get('container_name', 'kde_benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ODOneClassSupportVectorMachine')
+        kwargs['container_name'] = kwargs.get('container_name', 'od_ocsvm')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(ODKernelDensityEstimation, self).__init__(**kwargs)
+        super(ODOneClassSupportVectorMachine, self).__init__(**kwargs)

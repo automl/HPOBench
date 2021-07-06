@@ -4,7 +4,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def test_ocsvm():
-    from hpobench.benchmarks.od.ocsvm_benchmark import ODOneClassSupportVectorMachine
+    from hpobench.benchmarks.od.od_ocsvm import ODOneClassSupportVectorMachine
     seed=6
     benchmark = ODOneClassSupportVectorMachine("cardio", rng=seed)
 
@@ -16,7 +16,7 @@ def test_ocsvm():
 
 
 def test_kde():
-    from hpobench.benchmarks.od.kde_benchmark import ODKernelDensityEstimation
+    from hpobench.benchmarks.od.od_kde import ODKernelDensityEstimation
     seed=6
     benchmark = ODKernelDensityEstimation("cardio", rng=seed)
 
@@ -29,7 +29,7 @@ def test_kde():
 
 
 def test_ae():
-    from hpobench.benchmarks.od.ae_benchmark import ODAutoencoder
+    from hpobench.benchmarks.od.od_ae import ODAutoencoder
     seed=6
     benchmark = ODAutoencoder("cardio", rng=seed)
 
