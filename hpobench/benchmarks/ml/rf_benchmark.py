@@ -15,10 +15,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, make_scorer
 
-from hpobench.benchmarks.ml.ml_benchmark_template import Benchmark
+from hpobench.benchmarks.ml.ml_benchmark_template import MLBenchmark
 
 
-class RandomForestBenchmark(Benchmark):
+class RandomForestBenchmark(MLBenchmark):
     def __init__(
             self,
             task_id: Union[int, None] = None,

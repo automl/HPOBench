@@ -14,7 +14,7 @@ except ImportError:
 
 
 def test_whitebox_without_container_xgb():
-    from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+    from hpobench.benchmarks.ml.xgboost_benchmark_old import XGBoostBenchmark as Benchmark
     b = Benchmark(task_id=167199, rng=0)
     cs = b.get_configuration_space(seed=0)
 
