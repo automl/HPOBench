@@ -20,4 +20,4 @@ VERSION v0.0.1
     && pip cache purge
 
 %runscript
-    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py od.ocsvm_benchmark $@
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py od.od_ocsvm $@
