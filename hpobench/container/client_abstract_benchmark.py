@@ -114,7 +114,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             When a `socket_id` is given, instead of creating a new container, connect only to the container that is
             reachable at `socket_id`. Make sure that a container is already running with the address `socket_id`.
 
-        kwargs : Dict
+        kwargs
             Optional benchmark parameters, such as a task_id for the XGBoostBenchmark
         """
 
