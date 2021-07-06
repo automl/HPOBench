@@ -483,6 +483,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         try:
             self.benchmark.shutdown()
         except (TypeError, ConnectionRefusedError, Pyro4.errors.CommunicationError, Pyro4.errors.ConnectionClosedError):
+        except (TypeError, ConnectionRefusedError, Pyro4.errors.CommunicationError, Pyro4.errors.ConnectionClosedError):
             pass
 
         try:
