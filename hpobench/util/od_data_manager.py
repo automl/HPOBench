@@ -13,7 +13,21 @@ import numpy as np
 
 
 ODDS_URL = {
+    "annthyroid": 'https://www.dropbox.com/s/aifk51owxbogwav/annthyroidd.mat?dl=1',
+    "arrhythmia": 'https://www.dropbox.com/s/lmlwuspn1sey48r/arrhythmia.mat?dl=1',
+    "breastw": 'https://www.dropbox.com/s/g3hlnucj71kfvq4/breastw.mat?dl=1',
     "cardio": 'https://www.dropbox.com/s/galg3ihvxklf0qi/cardio.mat?dl=1',
+    "ionosphere": 'https://www.dropbox.com/s/lpn4z73fico4uup/ionosphere.mat?dl=1',
+    "mammography": 'https://www.dropbox.com/s/tq2v4hhwyv17hlk/mammography.mat?dl=1',
+    "musk": 'https://www.dropbox.com/s/we6aqhb0m38i60t/musk.mat?dl=1',
+    "optdigits": 'https://www.dropbox.com/s/w52ndgz5k75s514/optdigits.mat?dl=1',
+    "pendigits": 'https://www.dropbox.com/s/1x8rzb4a0lia6t1/pendigits.mat?dl=1',
+    "pima": 'https://www.dropbox.com/s/mvlwu7p0nyk2a2r/pima.mat?dl=1',
+    "satellite": 'https://www.dropbox.com/s/dpzxp8jyr9h93k5/satellite.mat?dl=1',
+    "satimage-2": 'https://www.dropbox.com/s/hckgvu9m6fs441p/satimage-2.mat?dl=1',
+    "thyroid": 'https://www.dropbox.com/s/bih0e15a0fukftb/thyroid.mat?dl=1',
+    "vowels": 'https://www.dropbox.com/s/pa26odoq6atq9vx/vowels.mat?dl=1',
+    "wbc": 'https://www.dropbox.com/s/ebz9v9kdnvykzcb/wbc.mat?dl=1'
 }
 
 

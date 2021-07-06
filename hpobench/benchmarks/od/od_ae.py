@@ -413,7 +413,7 @@ class ODAutoencoder(AbstractBenchmark):
             'shape of test data': X_test.shape,
             'initial random seed': self.rng,
             'dataset_name': self.dataset_name,
-            'contamination': self.datamanger.get_contamination_ratio()
+            'contamination': self.datamanager.dataset.get_contamination_ratio()
         }
 
 
