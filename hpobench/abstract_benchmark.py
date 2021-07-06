@@ -226,12 +226,17 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def get_fidelity_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+    def get_fidelity_space(
+            seed: Union[int, None] = None, fidelity_choice: Union[int, None] = None
+    ) -> ConfigSpace.ConfigurationSpace:
         """ Defines the available fidelity parameters as a "fidelity space" for each benchmark.
         Parameters
         ----------
         seed: int, None
             Seed for the fidelity space.
+        fidelity_choice: int, None
+            integer value to choose the type of fidelity space
+
         Returns
         -------
         ConfigSpace.ConfigurationSpace

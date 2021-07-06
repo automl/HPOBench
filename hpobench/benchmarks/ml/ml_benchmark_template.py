@@ -36,7 +36,7 @@ metrics_kwargs = dict(
 )
 
 
-class Benchmark(AbstractBenchmark):
+class MLBenchmark(AbstractBenchmark):
     _issue_tasks = [3917, 3945]
 
     def __init__(
@@ -48,7 +48,7 @@ class Benchmark(AbstractBenchmark):
     ):
         self.seed = seed if seed is not None else np.random.randint(1, 10 ** 6)
         self.rng = check_random_state(self.seed)
-        super(Benchmark, self).__init__(rng=seed)
+        super(MLBenchmark, self).__init__(rng=seed)
 
         self.task_id = task_id
         self.valid_size = valid_size
@@ -84,7 +84,7 @@ class Benchmark(AbstractBenchmark):
         raise NotImplementedError()
 
     @staticmethod
-    def get_fidelity_space(seed=None, fidelity_choice=1):
+    def get_fidelity_space(seed=None, fidelity_choice=None):
         """Fidelity space available --- specifies the fidelity dimensions
 
         If fidelity_choice is 0
@@ -194,8 +194,8 @@ class Benchmark(AbstractBenchmark):
 
         # Similar to (https://arxiv.org/pdf/1605.07079.pdf)
         # use 10 times the number of classes as lower bound for the dataset fraction
-        n_classes = len(self.task.class_labels)
-        self.lower_bound_train_size = (10 * n_classes) / self.train_X.shape[0]
+        self.n_classes = len(self.task.class_labels)
+        self.lower_bound_train_size = (10 * self.n_classes) / self.train_X.shape[0]
         self.lower_bound_train_size = np.max((1 / 512, self.lower_bound_train_size))
 
         if verbose:
@@ -219,7 +219,7 @@ class Benchmark(AbstractBenchmark):
         """
         raise NotImplementedError()
 
-    def _raw_objective(self, config, fidelity, shuffle, rng, eval="valid"):
+    def _train_objective(self, config, fidelity, shuffle, rng, eval="valid"):
         # initializing model
         model = self.init_model(config, fidelity, rng)
 
@@ -260,7 +260,7 @@ class Benchmark(AbstractBenchmark):
         train_loss = 1 - scores["acc"]
         return model, model_fit_time, train_loss, scores, score_cost
 
-    def objective(
+    def objective_function(
             self,
             configuration: Union[CS.Configuration, Dict],
             fidelity: Union[CS.Configuration, Dict, None] = None,
@@ -270,7 +270,7 @@ class Benchmark(AbstractBenchmark):
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
         """
-        model, model_fit_time, train_loss, train_scores, train_score_cost = self._raw_objective(
+        model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
             configuration, fidelity, shuffle, rng
         )
         val_scores = dict()
@@ -310,7 +310,7 @@ class Benchmark(AbstractBenchmark):
             'info': info
         }
 
-    def objective_test(
+    def objective_function_test(
             self,
             configuration: Union[CS.Configuration, Dict],
             fidelity: Union[CS.Configuration, Dict, None] = None,
@@ -320,7 +320,7 @@ class Benchmark(AbstractBenchmark):
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the test set
         """
-        model, model_fit_time, train_loss, train_scores, train_score_cost = self._raw_objective(
+        model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
             configuration, fidelity, shuffle, rng, eval="test"
         )
         test_scores = dict()
@@ -350,34 +350,40 @@ class Benchmark(AbstractBenchmark):
             'info': info
         }
 
-    # pylint: disable=arguments-differ
-    @AbstractBenchmark.check_parameters
-    def objective_function(
-            self,
-            configuration: Union[CS.Configuration, Dict],
-            fidelity: Union[CS.Configuration, Dict, None] = None,
-            shuffle: bool = False,
-            rng: Union[np.random.RandomState, int, None] = None,
-            **kwargs
-    ) -> Dict:
-        """Function that evaluates a 'config' on a 'fidelity' on the validation set
-        """
-        return dict()
-
-    # pylint: disable=arguments-differ
-    @AbstractBenchmark.check_parameters
-    def objective_function_test(
-            self,
-            configuration: Union[CS.Configuration, Dict],
-            fidelity: Union[CS.Configuration, Dict, None] = None,
-            shuffle: bool = False,
-            rng: Union[np.random.RandomState, int, None] = None,
-            **kwargs
-    ) -> Dict:
-        """Function that evaluates a 'config' on a 'fidelity' on the test set
-        """
-        return dict()
+    # # pylint: disable=arguments-differ
+    # @AbstractBenchmark.check_parameters
+    # def objective_function(
+    #         self,
+    #         configuration: Union[CS.Configuration, Dict],
+    #         fidelity: Union[CS.Configuration, Dict, None] = None,
+    #         shuffle: bool = False,
+    #         rng: Union[np.random.RandomState, int, None] = None,
+    #         **kwargs
+    # ) -> Dict:
+    #     """Function that evaluates a 'config' on a 'fidelity' on the validation set
+    #     """
+    #     return dict()
+    #
+    # # pylint: disable=arguments-differ
+    # @AbstractBenchmark.check_parameters
+    # def objective_function_test(
+    #         self,
+    #         configuration: Union[CS.Configuration, Dict],
+    #         fidelity: Union[CS.Configuration, Dict, None] = None,
+    #         shuffle: bool = False,
+    #         rng: Union[np.random.RandomState, int, None] = None,
+    #         **kwargs
+    # ) -> Dict:
+    #     """Function that evaluates a 'config' on a 'fidelity' on the test set
+    #     """
+    #     return dict()
 
     def get_meta_information(self):
         """ Returns the meta information for the benchmark """
-        pass
+        return {'name': 'Support Vector Machine',
+                'shape of train data': self.x_train.shape,
+                'shape of test data': self.x_test.shape,
+                'shape of valid data': self.x_valid.shape,
+                'initial random seed': self.rng,
+                'task_id': self.task_id
+                }

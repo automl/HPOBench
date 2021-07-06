@@ -10,7 +10,7 @@ To run this example please install the necessary dependencies via:
 import argparse
 from time import time
 
-from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+from hpobench.benchmarks.ml.xgboost_benchmark_old import XGBoostBenchmark as Benchmark
 from hpobench.util.openml_data_manager import get_openmlcc18_taskids
 
 
