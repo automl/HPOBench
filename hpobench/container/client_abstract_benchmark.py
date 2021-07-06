@@ -66,6 +66,57 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                  container_tag: str = 'latest', env_str: Optional[str] = '', bind_str: Optional[str] = '',
                  gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None,
                  socket_id=None, **kwargs):
+        """
+        Initialization of the benchmark using container.
+
+        Parameters
+        ----------
+
+        benchmark_name: str
+            Class name of the benchmark to use. For example XGBoostBenchmark. This value is defined in the benchmark
+            definition (hpobench/container/benchmarks/<type>/<name>)
+        container_source : Optional[str]
+            Path to the container. Either local path or url to a hosting
+            platform, e.g. singularity hub.
+        container_tag : str
+            Singularity containers are specified by an address as well as a container tag. We use the tag as a version
+            number. By default the tag is set to `latest`, which then pulls the latest container from the container
+            source. The tag-versioning allows the users to rerun an experiment, which was performed with an older
+            container version. Take a look in the container_source to find the right tag to use.
+        container_name : str
+            name of the container. E.g. xgboost_benchmark. Specifying different container could be
+            useful to have multiple container for the same benchmark, if a tool like auto-sklearn is updated to a newer
+            version, and you want to compare its performance across its versions.
+            Also, a container can contain multiple benchmarks. Therefore, we have to define for each benchmark the
+            corresponding container name.
+        bind_str : Optional[str]
+            Defaults to ''. You can bind further directories into the container.
+            This string have the form src[:dest[:opts]].
+            For more information, see https://sylabs.io/guides/3.5/user-guide/bind_paths_and_mounts.html
+        env_str : Optional[str]
+            Defaults to ''. Sometimes you want to pass a parameter to your container. You can do this by setting some
+            environmental variables. The list should follow the form VAR1=VALUE1,VAR2=VALUE2,..
+            For more information, see
+            https://sylabs.io/guides/3.5/user-guide/environment_and_metadata.html#environment-overview
+        gpu : bool
+            If True, the container has access to the local cuda-drivers.
+            (Not tested)
+        rng : np.random.RandomState, int, None
+            The random seed for the benchmark. This seed is sent to the benchmark container.
+        socket_id : Optional[str]
+            In HPOBench 0.0.8, we split the functionality of starting and connecting to a container into two steps.
+            1) Start the benchmark on a random generated socket id.
+            2) Create a proxy connection to the container via this socket id.
+
+            When no `socket_id` is given, a new container is started. The `socket_id` (address) of this containers is
+            stored in the class attribute Benchmark.socket_id
+
+            When a `socket_id` is given, instead of creating a new container, connect only to the container that is
+            reachable at `socket_id`. Make sure that a container is already running with the address `socket_id`.
+
+        kwargs : Dict
+            Optional benchmark parameters, such as a task_id for the XGBoostBenchmark
+        """
 
         self.config = hpobench.config.config_file
 
@@ -95,6 +146,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         return kwargs_str
 
     def _parse_configuration(self, configuration: Union[CS.Configuration, Dict]) -> str:
+        """ Helper function to parse the configuration as json dict. """
         if isinstance(configuration, CS.Configuration):
             configuration = configuration.get_dictionary()
         elif isinstance(configuration, dict):
@@ -105,6 +157,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         return c_str
 
     def _parse_fidelities(self, fidelity: Union[CS.Configuration, Dict, None] = None):
+        """ Helper function to parse the fidelity as json dict. """
         if fidelity is None:
             fidelity = {}
         elif isinstance(fidelity, CS.Configuration):
@@ -117,8 +170,13 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         return f_str
 
     def load_benchmark(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
-                       container_tag: str = 'latest', **kwargs):
-
+                       container_tag: str = 'latest', **kwargs) -> None:
+        """
+        This setup function downloads the container from a defined source. The source is defined either in the
+        .hpobenchrc or in the its benchmark definition (hpobench/container/benchmarks/<type>/<name>). If an container
+        is already locally available, the local container is used. Then, the container is started and a connection
+        between the container and the client is established.
+        """
         # We can point to a different container source. See below.
         self.container_source = container_source or self.config.container_source
         self.container_dir = Path(self.config.container_dir)
@@ -210,7 +268,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             logger.debug('Image found on the local file system.')
 
     def start_server(self, benchmark_name: str, env_str: Optional[str] = '', bind_str: Optional[str] = '',
-                     gpu: Optional[bool] = False):
+                     gpu: Optional[bool] = False) -> None:
+        """
+        Start a server. This means we create the container as a singularity instance.
+        We pass arguments to the container via environment variables.
+        """
 
         env_vars = {'HPOBENCH_DEBUG': log_level_str}
         if env_str.strip() != '':
@@ -275,6 +337,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         logger.debug('Instance successfully started')
 
     def connect_to_server(self):
+        """ Given a socket_id, create a Pyro4 Proxy connection to the container. """
         Pyro4.config.REQUIRE_EXPOSE = False
         # Generate Pyro 4 URI for connecting to client
         self.uri = f'PYRO:{self.socket_id}.unixsock@./u:' \
@@ -283,6 +346,9 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         logger.debug('Connected Proxy to benchmark')
 
     def init_benchmark(self, rng, **kwargs):
+        """ Call the init function of the benchmark via Proxy. This function may take some time, since the
+            init of the benchmark may include some long-running operations.
+        """
         # Handle rng and other optional benchmark arguments
         kwargs_str = self._parse_kwargs(rng, **kwargs)
 
