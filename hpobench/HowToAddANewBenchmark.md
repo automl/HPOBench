@@ -6,8 +6,8 @@
 - `<Type>`: Category of the benchmark in uppercase, e.g. OD (outlier detection)
 - `<dataset_name>`: Name of the dataset (optional, ), e.g. cifar10
 - `<DatasetName>`: Name of the dataset (optional), e.g. Cifar10
-- `<new_benchmark>*`: Filename of the benchmark, e.g. `<type>`_ocsvm_`<dataset_name>`_benchmark or `<type>`_ocsvm_benchmark
-- `<NewBenchmark>*`: Classname of the benchmark, e.g. `<Type>`OCSVM`<DatasetName>`Benchmark or `<Type>`OCSVMBenchmark
+- `<new_benchmark>*`: Filename of the benchmark, e.g. `<type>`\_ocsvm\_`<dataset_name>` or `<type>`_ocsvm
+- `<NewBenchmark>*`: Classname of the benchmark, e.g. `<Type>`OCSVM`<DatasetName>` or `<Type>`OCSVM
 - `<branch_name>`: Branch name for your benchmarks, e.g. outlier_detection
 
 `*`: has to be unique across all available benchmarks.
