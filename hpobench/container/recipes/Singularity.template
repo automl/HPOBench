@@ -24,7 +24,7 @@ VERSION v0.0.1
     && echo "Please never push a recipe that checks out any other branch than development or master" \
     && git checkout development \
     && echo "Here you can install extra requirements additional to singularity" \
-    && pip install . \
+    && pip install .[<new_benchmark>] \
     && echo "Please don't touch the following lines"
     && cd / \
     && mkdir /var/lib/hpobench/ \
@@ -35,4 +35,4 @@ VERSION v0.0.1
     echo "Finally, please change the benchmark in the runscript to point to your benchmark"
 
 %runscript
-    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py <type>.new_benchmark_file $@
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py <type>.<new_benchmark> $@
