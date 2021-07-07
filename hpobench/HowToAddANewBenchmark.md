@@ -18,7 +18,7 @@
 Fork HPOBench and clone it to your machine. Switch to the development branch and create your own branch. Then install HPOBench
 with `pip install .`
 ```bash
-git clone https://github.com/automl/HPOBench.git
+git clone https://github.com/<your_github_name>/HPOBench.git
 cd HPOBench
 git checkout development
 git branch <branch_name>
