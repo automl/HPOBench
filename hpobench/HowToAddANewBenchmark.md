@@ -57,7 +57,7 @@ Now, you can create a PR marked as [WIP] and proceed with building a containeriz
 
   1. Create a container benchmark class `<NewBenchmark>` in `hpobench/container/benchmarks/<type>/<new_benchmark>.py` inheriting from the base class `AbstractBenchmarkClient` in `hpobench.container.client_abstract_benchmark`. The arguments `benchmark_name` and `container_name` should be assigned to `<NewBenchmark>` and `<container_name>`, respectively.
   *Note: this are just a few lines of code, see, e.g. `hpobench/container/benchmarks/ml/xgboost_benchmark.py`).*
-  2. Copy `hpobench/container/recipes/Singularity.template` to  `hpobench/container/recipes/<type>/Singularity.<NewBenchmark>`.
+  2. Copy `hpobench/container/recipes/Singularity.template` to `hpobench/container/recipes/<type>/Singularity.<NewBenchmark>`.
   3. Modify the recipe and add your **additional Python** and **non-Python** dependencies collected above. Make sure you install the right dependencies with ```pip install .[<container_name>]```.
   3. Test your container locally (see below).
 
@@ -65,13 +65,13 @@ Now, you can update your PR and let us know s.t. we can upload the container. Th
   
 ## How to test your container locally
 
-  1. Open `hpobench/container/recipes/<type>/Singularity.<NewBenchmark>` and change the following lines in the recipe
+  1. Switch into the folder `hpobench/container/recipes/<type>`, open the file `Singularity.<NewBenchmark>` and change the following lines in the recipe
   ```bash
     && git clone https://github.com/automl/HPOBench.git \
     && cd HPOBench \
     && git checkout development \
   ```
-  to point to the branch/repo where your fork is on, e.g.
+  to point to the repo and branch where your fork is on:
   ```bash
     && git clone https://github.com/<your_github_name>/HPOBench.git \
     && cd HPOBench \
@@ -79,11 +79,12 @@ Now, you can update your PR and let us know s.t. we can upload the container. Th
   ```
 
   2. Run `sudo singularity build <NewBenchmark> Singularity.<NewBenchmark>`
-  3. Verify that everything works with:
+  3. Verify that everything works with
 
 ```python
 from hpobench.container.benchmarks.<type>.<new_benchmark> import <NewBenchmark>
 b = <NewBenchmark>(container_source="./", container_name="<container_name>")
 res = b.objective_function(configuration=b.get_configuration_space(seed=1).sample_configuration())
 ```
+Use `singularity exec <NewBenchmark> python <test_filename>.py` for that.
 
