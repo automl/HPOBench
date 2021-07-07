@@ -15,7 +15,7 @@
 
 ## Create a local benchmark
 
-Clone HPOBench, switch to the development branch and create your own branch. Then install hpobench
+Fork HPOBench and clone it to your machine. Switch to the development branch and create your own branch. Then install HPOBench
 with `pip install .`
 ```bash
 git clone https://github.com/automl/HPOBench.git
@@ -56,25 +56,29 @@ Now, you can create a PR marked as [WIP] and proceed with building a containeriz
 ## Create a containerized benchmark
 
   1. Create a container benchmark class `<NewBenchmark>` in `hpobench/container/benchmarks/<type>/<new_benchmark>.py` inheriting from the base class `AbstractBenchmarkClient` in `hpobench.container.client_abstract_benchmark`. The arguments `benchmark_name` and `container_name` should be assigned to `<NewBenchmark>`.
-  <span style="color:red">Todo: What are benchmark_name + container_name for?</span>
-  *Note: this are just a few lines of code, see, e.g. `hpobench/container/benchmarks/ml/xgboost_benchmark.py`).*.
+  <mark>Todo: What are benchmark_name + container_name for?</mark>
+  *Note: this are just a few lines of code, see, e.g. `hpobench/container/benchmarks/ml/xgboost_benchmark.py`).*
   2. Copy `hpobench/container/recipes/Singularity.template` to  `hpobench/container/recipes/<type>/Singularity.<NewBenchmark>`.
   3. Modify the recipe and add your **additional Python** and **non-Python** dependencies collected above. Make sure you install the right dependencies with ```pip install .[<new_benchmark>]```.
   3. Test your container locally (see below).
 
-Now, you can update your PR and let us know, so we can upload the container. Thanks.
+Now, you can update your PR and let us know s.t. we can upload the container. Thanks.
   
 ## How to test your container locally
 
-  1. `cd hpobench/container/benchmarks/recipes/<type>/Singularity.<NewBenchmark>` and change to following lines in the recipe:
+  1. Open `hpobench/container/recipes/<type>/Singularity.<NewBenchmark>` and change the following lines in the recipe
   ```bash
     && git clone https://github.com/automl/HPOBench.git \
     && cd HPOBench \
     && git checkout development \
   ```
-  to point to the branch/repo where your fork is on, e.g. `<branch_name>`.
-  <span style="color:red">Todo: In Singularity.template is mentioned that you should not point to your branch.</span>
-   
+  to point to the branch/repo where your fork is on, e.g.
+  ```bash
+    && git clone https://github.com/<your_github_name>/HPOBench.git \
+    && cd HPOBench \
+    && git checkout <branch_name> \
+  ```
+
   2. Run `sudo singularity build <NewBenchmark> Singularity.<NewBenchmark>`
   3. Verify that everything works with:
 
