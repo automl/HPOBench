@@ -8,9 +8,9 @@
 - `<DatasetName>`: Name of the dataset (optional), e.g. Cifar10
 - `<new_benchmark>*`: Filename of the benchmark, e.g. `<type>`\_ocsvm\_`<dataset_name>` or `<type>`_ocsvm
 - `<NewBenchmark>*`: Classname of the benchmark, e.g. `<Type>`OCSVM`<DatasetName>` or `<Type>`OCSVM
-- `<branch_name>`: Branch name for your benchmarks, e.g. outlier_detection
+- `<container_name>*`: If you want to bunch multiple benchmarks together (makes sense if benchmarks share the same dependencies), you can use a general container name, e.g. outlier_detection. Otherwise just use `<new_benchmark>`.
 
-`*`: has to be unique across all available benchmarks.
+`*`: has to be unique across all available benchmarks/containers/branches.
 
 
 ## Create a local benchmark
@@ -21,8 +21,8 @@ with `pip install .`
 git clone https://github.com/<your_github_name>/HPOBench.git
 cd HPOBench
 git checkout development
-git branch <branch_name>
-git checkout <branch_name>
+git branch <container_name>
+git checkout <container_name>
 pip install .
 ```
 
@@ -35,7 +35,7 @@ Then:
    `hpobench/util/openml_data_manager.py` with a `load()` method that downloads data once and reuses it for further calls.
   4. Collect all **additional Python** and **non-Python** dependencies while doing this. 
   Consider fixing the version of each dependency to maintain reproducibility.
-  5. Add dependencies to PyPI in a new file to `/extra_requirements`. The name of the file is secondary. However, add the dependencies as a list under the key `<new_benchmark>`.
+  5. Add dependencies to PyPI in a new file to `/extra_requirements`. The name of the file is secondary. However, add the dependencies as a list under the key `<container_name>`.
   6. Add the remaining dependencies or steps necessary to run your benchmark in the docstring of your benchmark class
     (see, e.g. `hpobench/benchmarks/nas/nasbench_101.py`).
   7. Verify that everything works with, e.g.
@@ -55,11 +55,10 @@ Now, you can create a PR marked as [WIP] and proceed with building a containeriz
 
 ## Create a containerized benchmark
 
-  1. Create a container benchmark class `<NewBenchmark>` in `hpobench/container/benchmarks/<type>/<new_benchmark>.py` inheriting from the base class `AbstractBenchmarkClient` in `hpobench.container.client_abstract_benchmark`. The arguments `benchmark_name` and `container_name` should be assigned to `<NewBenchmark>`.
-  <mark>Todo: What are benchmark_name + container_name for?</mark>
+  1. Create a container benchmark class `<NewBenchmark>` in `hpobench/container/benchmarks/<type>/<new_benchmark>.py` inheriting from the base class `AbstractBenchmarkClient` in `hpobench.container.client_abstract_benchmark`. The arguments `benchmark_name` and `container_name` should be assigned to `<NewBenchmark>` and `<container_name>`, respectively.
   *Note: this are just a few lines of code, see, e.g. `hpobench/container/benchmarks/ml/xgboost_benchmark.py`).*
   2. Copy `hpobench/container/recipes/Singularity.template` to  `hpobench/container/recipes/<type>/Singularity.<NewBenchmark>`.
-  3. Modify the recipe and add your **additional Python** and **non-Python** dependencies collected above. Make sure you install the right dependencies with ```pip install .[<new_benchmark>]```.
+  3. Modify the recipe and add your **additional Python** and **non-Python** dependencies collected above. Make sure you install the right dependencies with ```pip install .[<container_name>]```.
   3. Test your container locally (see below).
 
 Now, you can update your PR and let us know s.t. we can upload the container. Thanks.
@@ -76,7 +75,7 @@ Now, you can update your PR and let us know s.t. we can upload the container. Th
   ```bash
     && git clone https://github.com/<your_github_name>/HPOBench.git \
     && cd HPOBench \
-    && git checkout <branch_name> \
+    && git checkout <container_name> \
   ```
 
   2. Run `sudo singularity build <NewBenchmark> Singularity.<NewBenchmark>`
@@ -84,7 +83,7 @@ Now, you can update your PR and let us know s.t. we can upload the container. Th
 
 ```python
 from hpobench.container.benchmarks.<type>.<new_benchmark> import <NewBenchmark>
-b = <NewBenchmark>(container_source="./", container_name="<NewBenchmark>")
+b = <NewBenchmark>(container_source="./", container_name="<container_name>")
 res = b.objective_function(configuration=b.get_configuration_space(seed=1).sample_configuration())
 ```
 
