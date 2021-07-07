@@ -131,3 +131,7 @@ dmypy.json
 # Misc
 .idea/
 experiments/
+
+# Vagrant
+.vagrant
+Vagrantfile
