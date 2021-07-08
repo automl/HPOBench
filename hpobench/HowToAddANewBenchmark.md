@@ -2,17 +2,16 @@
 
 ## Placeholders for your benchmark
 
-- `<type>`: Category of the benchmark, e.g. od (outlier detection)
-- `<Type>`: Category of the benchmark in uppercase, e.g. OD (outlier detection)
-- `<new_benchmark>*`: Filename of the benchmark, e.g. `<type>`\_ocsvm
-- `<NewBenchmark>*`: Classname of the benchmark, e.g. `<Type>`OCSVM
+- `<type>`: Category of the benchmark, e.g. ml (machine learning)
+- `<new_benchmark>`: Filename of the benchmark*, e.g. svm
+- `<NewBenchmark>`: Classname of the benchmark*, e.g. SupportVectorMachine
 
 `*`: has to be unique across all available benchmarks.
 
 
 ## Create a local benchmark
 
-Fork HPOBench and clone it to your machine. Switch to the development branch and create your own branch. Then install HPOBench with `pip install .`
+[Fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) HPOBench and clone it to your machine. Switch to the development branch and create your own branch. Then install HPOBench with `pip install .`
 ```bash
 git clone https://github.com/<your_github_name>/HPOBench.git
 cd HPOBench
@@ -26,12 +25,10 @@ Then:
   1. Implement your new benchmark class `<NewBenchmark>` in `hpobench/benchmarks/<type>/<new_benchmark>.py` inheriting from the base class 
   `AbstractBenchmark` in `hpobench.abstract_benchmark`. Your benchmark should implement `__init__()`, 
   `get_configuration_space()`, `get_fidelity_space()`, `objective_function()` and `objective_function_test()`.
-    A good example for this can be found in `hpobench/benchmarks/ml/xgboost_benchmark.py`
   3. If your benchmarks needs a dataset (e.g. for training a ml model), please also implement a DataManager, see e.g.
    `hpobench/util/openml_data_manager.py` with a `load()` method that downloads data once and reuses it for further calls.
-  4. Collect all **additional Python** and **non-Python** dependencies while doing this. 
-  Consider fixing the version of each dependency to maintain reproducibility.
-  5. Add dependencies to PyPI in a new file to `/extra_requirements`. The name of the file is secondary. However, add the dependencies as a list under the key `<new_benchmark>`.
+  4. Collect all **additional Python** and **non-Python** dependencies while doing this. Make sure to also note the exact version of each dependency.
+  5. Add dependencies installable via `pip` in a new file to `/extra_requirements`. While the name of the file is secondary, please choose a descriptive name. Add the dependencies as a list under the key `<new_benchmark>`.
   6. Add the remaining dependencies or steps necessary to run your benchmark in the docstring of your benchmark class
     (see, e.g. `hpobench/benchmarks/nas/nasbench_101.py`).
   7. Verify that everything works with, e.g.
@@ -52,9 +49,8 @@ Now, you can create a PR marked as [WIP] and proceed with building a containeriz
 ## Create a containerized benchmark
 
   1. Create a container benchmark class `<NewBenchmark>` in `hpobench/container/benchmarks/<type>/<new_benchmark>.py` inheriting from the base class `AbstractBenchmarkClient` in `hpobench.container.client_abstract_benchmark`. The arguments `benchmark_name` and `container_name` should be assigned to `<NewBenchmark>` and `<new_benchmark>`, respectively.
-  *Note: this are just a few lines of code, see, e.g. `hpobench/container/benchmarks/ml/xgboost_benchmark.py`).*
   2. Copy `hpobench/container/recipes/Singularity.template` to `hpobench/container/recipes/<type>/Singularity.<NewBenchmark>`.
-  3. Modify the recipe and add your **additional Python** and **non-Python** dependencies collected above. Make sure you install the right dependencies with ```pip install .[<new_benchmark>]```.
+  3. Make sure you install the right dependencies within the file ```pip install .[<new_benchmark>]```.
   3. Test your container locally (see below).
 
 Now, you can update your PR and let us know s.t. we can upload the container. Thanks.
@@ -74,7 +70,7 @@ Now, you can update your PR and let us know s.t. we can upload the container. Th
     && git checkout <new_benchmark> \
   ```
 
-  2. Run `sudo singularity build <NewBenchmark> Singularity.<NewBenchmark>`
+  2. Run `sudo singularity build <NewBenchmark> Singularity.<NewBenchmark>`.
   3. Verify with `singularity exec <NewBenchmark> python <test_filename.py` that everything works using code similar to:
 
 ```python
