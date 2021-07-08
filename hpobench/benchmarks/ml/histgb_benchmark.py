@@ -28,9 +28,10 @@ class HistGBBenchmark(MLBenchmark):
             task_id: Union[int, None] = None,
             seed: Union[int, None] = None,  # Union[np.random.RandomState, int, None] = None,
             valid_size: float = 0.33,
-            fidelity_choice: int = 1
+            fidelity_choice: int = 1,
+            data_path: Union[str, None] = None
     ):
-        super(HistGBBenchmark, self).__init__(task_id, seed, valid_size, fidelity_choice)
+        super(HistGBBenchmark, self).__init__(task_id, seed, valid_size, fidelity_choice, data_path)
         pass
 
     @staticmethod

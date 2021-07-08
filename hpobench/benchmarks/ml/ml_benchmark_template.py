@@ -1,3 +1,4 @@
+import os
 import time
 import openml
 import numpy as np
@@ -44,10 +45,13 @@ class MLBenchmark(AbstractBenchmark):
             task_id: Union[int, None] = None,
             seed: Union[int, None] = None,  # Union[np.random.RandomState, int, None] = None,
             valid_size: float = 0.33,
-            fidelity_choice: int = 1
+            fidelity_choice: int = 1,
+            data_path: Union[str, None] = None,
+            global_seed: int = 1
     ):
         self.seed = seed if seed is not None else np.random.randint(1, 10 ** 6)
         self.rng = check_random_state(self.seed)
+        self.global_seed = global_seed  # used for fixed training-validation splits
         super(MLBenchmark, self).__init__(rng=seed)
 
         self.task_id = task_id
@@ -55,7 +59,7 @@ class MLBenchmark(AbstractBenchmark):
         self.scorers = dict()
         for k, v in metrics.items():
             self.scorers[k] = make_scorer(v, **metrics_kwargs[k])
-        # self.scorers = make_scorer(accuracy_score)
+        self.data_path = data_path
 
         # Data variables
         self.train_X = None
@@ -129,6 +133,19 @@ class MLBenchmark(AbstractBenchmark):
 
         The validation set is fixed till this function is called again or explicitly altered
         """
+        if self.data_path is not None and os.path.isdir(self.data_path):
+            data_path = os.path.join(self.data_path, str(self.task_id))
+            data_str = os.path.join(data_path, "{}_{}.parquet.gzip")
+            required_file_list = [
+                ("train", "x"), ("train", "y"),
+                ("valid", "x"), ("valid", "y"),
+                ("test", "x"), ("test", "y")
+            ]
+            for files in required_file_list:
+                if not os.path.isfile(data_str.format("train", "x")):
+                    raise FileNotFoundError("{} not found!".format(data_str.format(*files)))
+            return
+
         # fetches task
         self.task = openml.tasks.get_task(self.task_id, download_data=False)
         # fetches dataset
@@ -146,7 +163,7 @@ class MLBenchmark(AbstractBenchmark):
         (cont_idx,) = np.where(~categorical_ind)
 
         # splitting dataset into train and test (10% test)
-        # train-test split is fixed for a task and its associated dataset
+        # train-test split is fixed for a task and its associated dataset (from OpenML)
         self.train_idx, self.test_idx = self.task.get_train_test_split_indices()
         train_x = X.iloc[self.train_idx]
         train_y = y.iloc[self.train_idx]
@@ -158,7 +175,7 @@ class MLBenchmark(AbstractBenchmark):
         valid_size = self.valid_size if valid_size is None else valid_size
         self.train_X, self.valid_X, self.train_y, self.valid_y = train_test_split(
             train_x, train_y, test_size=valid_size,
-            shuffle=True, stratify=train_y, random_state=self.rng
+            shuffle=True, stratify=train_y, random_state=check_random_state(self.global_seed)
         )
 
         # preprocessor to handle missing values, categorical columns encodings,
@@ -349,34 +366,6 @@ class MLBenchmark(AbstractBenchmark):
             'cost': model_fit_time + info['train_costs']['acc'] + info['test_costs']['acc'],
             'info': info
         }
-
-    # # pylint: disable=arguments-differ
-    # @AbstractBenchmark.check_parameters
-    # def objective_function(
-    #         self,
-    #         configuration: Union[CS.Configuration, Dict],
-    #         fidelity: Union[CS.Configuration, Dict, None] = None,
-    #         shuffle: bool = False,
-    #         rng: Union[np.random.RandomState, int, None] = None,
-    #         **kwargs
-    # ) -> Dict:
-    #     """Function that evaluates a 'config' on a 'fidelity' on the validation set
-    #     """
-    #     return dict()
-    #
-    # # pylint: disable=arguments-differ
-    # @AbstractBenchmark.check_parameters
-    # def objective_function_test(
-    #         self,
-    #         configuration: Union[CS.Configuration, Dict],
-    #         fidelity: Union[CS.Configuration, Dict, None] = None,
-    #         shuffle: bool = False,
-    #         rng: Union[np.random.RandomState, int, None] = None,
-    #         **kwargs
-    # ) -> Dict:
-    #     """Function that evaluates a 'config' on a 'fidelity' on the test set
-    #     """
-    #     return dict()
 
     def get_meta_information(self):
         """ Returns the meta information for the benchmark """
