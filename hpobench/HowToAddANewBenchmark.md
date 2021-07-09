@@ -1,5 +1,7 @@
 # How to add a new benchmark step-by-step
 
+Please read and understand the [README.md](https://github.com/automl/HPOBench/blob/master/README.md) first before adding a new benchmark.
+
 ## Placeholders for your benchmark
 
 - `<type>`: Category of the benchmark, e.g. ml (machine learning)
@@ -70,8 +72,8 @@ Now, you can update your PR and let us know s.t. we can upload the container. Th
     && git checkout <new_benchmark> \
   ```
 
-  2. Run `sudo singularity build <NewBenchmark> Singularity.<NewBenchmark>`.
-  3. Verify with `singularity exec <NewBenchmark> python <test_filename.py` that everything works using code similar to:
+  2. Run `sudo singularity build <new_benchmark> Singularity.<NewBenchmark>`.
+  3. Verify everything with:
 
 ```python
 from hpobench.container.benchmarks.<type>.<new_benchmark> import <NewBenchmark>
