@@ -133,6 +133,16 @@ class MLBenchmark(AbstractBenchmark):
 
         The validation set is fixed till this function is called again or explicitly altered
         """
+        # fetches task
+        self.task = openml.tasks.get_task(self.task_id, download_data=False)
+        self.n_classes = len(self.task.class_labels)
+        # fetches dataset
+        self.dataset = openml.datasets.get_dataset(self.task.dataset_id, download_data=False)
+        if verbose:
+            print(self.task, '\n')
+            print(self.dataset, '\n')
+
+        # check if the path to data splits is valid
         if self.data_path is not None and os.path.isdir(self.data_path):
             data_path = os.path.join(self.data_path, str(self.task_id))
             data_str = os.path.join(data_path, "{}_{}.parquet.gzip")
@@ -144,15 +154,8 @@ class MLBenchmark(AbstractBenchmark):
             for files in required_file_list:
                 if not os.path.isfile(data_str.format("train", "x")):
                     raise FileNotFoundError("{} not found!".format(data_str.format(*files)))
+            # ignore the remaining data loaders and preprocessors as valid data splits available
             return
-
-        # fetches task
-        self.task = openml.tasks.get_task(self.task_id, download_data=False)
-        # fetches dataset
-        self.dataset = openml.datasets.get_dataset(self.task.dataset_id, download_data=False)
-        if verbose:
-            print(self.task, '\n')
-            print(self.dataset, '\n')
 
         # loads full data
         X, y, categorical_ind, feature_names = self.dataset.get_data(
@@ -211,7 +214,7 @@ class MLBenchmark(AbstractBenchmark):
 
         # Similar to (https://arxiv.org/pdf/1605.07079.pdf)
         # use 10 times the number of classes as lower bound for the dataset fraction
-        self.n_classes = len(self.task.class_labels)
+
         self.lower_bound_train_size = (10 * self.n_classes) / self.train_X.shape[0]
         self.lower_bound_train_size = np.max((1 / 512, self.lower_bound_train_size))
 
