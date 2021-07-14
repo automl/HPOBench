@@ -1,19 +1,7 @@
-import time
-import openml
 import numpy as np
-import pandas as pd
 import ConfigSpace as CS
-from typing import Union, Dict
-
-from sklearn.impute import SimpleImputer
-from sklearn.pipeline import make_pipeline
-from sklearn.utils import check_random_state
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.preprocessing import StandardScaler
+from typing import Union
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, make_scorer
 
 from hpobench.benchmarks.ml.ml_benchmark_template import MLBenchmark
 

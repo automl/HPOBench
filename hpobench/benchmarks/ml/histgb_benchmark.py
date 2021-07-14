@@ -1,19 +1,7 @@
-import time
-import openml
 import numpy as np
-import pandas as pd
 import ConfigSpace as CS
 from copy import deepcopy
-from typing import Union, Dict
-
-from sklearn.impute import SimpleImputer
-from sklearn.pipeline import make_pipeline
-from sklearn.utils import check_random_state
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, make_scorer
+from typing import Union
 
 # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
