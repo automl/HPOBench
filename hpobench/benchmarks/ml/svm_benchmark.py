@@ -35,13 +35,13 @@ class SVMBenchmark(MLBenchmark):
         """Parameter space to be optimized --- contains the hyperparameters
         """
         cs = CS.ConfigurationSpace(seed=seed)
-        # from https://github.com/automl/auto-sklearn/blob/master/autosklearn/pipeline/components/classification/libsvm_svc.p
+        # https://www.csie.ntu.edu.tw/~cjlin/papers/guide/guide.pdf (Section 3.2)
         cs.add_hyperparameters([
             CS.UniformFloatHyperparameter(
-                "C", 0.03125, 32768, log=True, default_value=1.0
+                "C", 2**-5, 2**15, log=True, default_value=1.0
             ),
             CS.UniformFloatHyperparameter(
-                "gamma", 3.0517578125e-05, 8, log=True, default_value=0.1
+                "gamma", 2**-15, 2**3, log=True, default_value=0.1
             )
         ])
         return cs
