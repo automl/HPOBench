@@ -14,6 +14,7 @@ class Autoencoder(pl.LightningModule):
         self.backbone = backbone
 
         self.train_losses = []
+        self.train_auprs = []
         self.val_auprs = []
         self.test_aupr = None
 
@@ -30,23 +31,13 @@ class Autoencoder(pl.LightningModule):
         )
 
     def configure_optimizers(self):
-        if self.config["optimizer"] == "AdamWOptimizer":
-            optimizer = torch.optim.AdamW(
-                self.parameters(),
-                lr=self.config["optimizer:AdamWOptimizer:lr"],
-                betas=(self.config["optimizer:AdamWOptimizer:beta1"], self.config["optimizer:AdamWOptimizer:beta2"]),
-                weight_decay=self.config["optimizer:AdamWOptimizer:weight_decay"]
-            )
-        elif self.config["optimizer"] == "SGDOptimizer":
-            optimizer = torch.optim.SGD(
-                self.parameters(),
-                lr=self.config["optimizer:SGDOptimizer:lr"],
-                momentum=self.config["optimizer:SGDOptimizer:momentum"],
-                weight_decay=self.config["optimizer:SGDOptimizer:weight_decay"]
-            )
-        else:
-            raise RuntimeError("Could not find the optimizer.")
-            
+        optimizer = torch.optim.AdamW(
+            self.parameters(),
+            lr=self.config["lr"],
+            betas=(self.config["beta1"], self.config["beta2"]),
+            weight_decay=self.config["weight_decay"]
+        )
+
         return optimizer
 
     @staticmethod
@@ -70,8 +61,8 @@ class Autoencoder(pl.LightningModule):
 
         return x_hat
 
-    def training_step(self, batch, batch_idx):
-        x, y = batch
+    def training_step(self, batch, _):
+        x, _ = batch
         x_hat = self(x)
         loss = self.calculate_loss(x, x_hat)
 
@@ -81,7 +72,7 @@ class Autoencoder(pl.LightningModule):
         losses = torch.stack([o['loss'] for o in outputs]).cpu().numpy().flatten()
         self.train_losses.append(np.mean(losses))
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, _):
         x, y = batch
         x_hat = self(x)
         loss = self.calculate_loss(x, x_hat)

@@ -131,6 +131,7 @@ dmypy.json
 # Misc
 .idea/
 experiments/
+.DS_Store
 
 # Vagrant
 .vagrant
