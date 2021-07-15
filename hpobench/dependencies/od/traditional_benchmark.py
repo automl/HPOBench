@@ -6,11 +6,11 @@ from typing import Union, Tuple, Dict, List
 import ConfigSpace as CS
 import numpy as np
 from sklearn.metrics import precision_recall_curve, auc
-from hpobench.benchmarks.od.utils.scaler import get_fitted_scaler
+from hpobench.dependencies.od.utils.scaler import get_fitted_scaler
 
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
-from hpobench.util.od_data_manager import OutlierDetectionDataManager
+from hpobench.dependencies.od.data_manager import OutlierDetectionDataManager
 
 
 class ODTraditional(AbstractBenchmark):
@@ -66,10 +66,8 @@ class ODTraditional(AbstractBenchmark):
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
-        Trains a traditional model given a hyperparameter configuration and
-        evaluates the model on the validation set.
-
-        4-fold cross-validation is used. Validation AUPR are averaged.
+        Trains a traditional model on a given hyperparameter configuration and
+        evaluates the model on the validation set. 4-fold cross-validation is used.
 
         Parameters
         ----------
@@ -91,10 +89,10 @@ class ODTraditional(AbstractBenchmark):
         Returns
         -------
         Dict -
-            function_value : validation loss
+            function_value : 1 - mean of the validation AUPRs from each split.
             cost : time to train and evaluate the model
             info : Dict
-                train_loss : training loss
+                train_loss : 1 - mean of the train AUPRS from each split.
                 fidelity : used fidelities in this evaluation
         """
         start_time = time.time()
@@ -102,11 +100,11 @@ class ODTraditional(AbstractBenchmark):
         # Train support vector machine
         model = self.get_model(configuration)
 
-        train_losses = []
-        val_losses = []
+        train_auprs = []
+        val_auprs = []
 
         for split in range(4):
-            (X_train, y_train), (X_val, y_val) = self.dataset.get_train_val_data(split=split)
+            (X_train, y_train), (X_val, y_val) = self.datamanager.dataset.get_train_val_data(split=split)
 
             # Normalize data
             scaler = get_fitted_scaler(X_train, configuration["scaler"])
@@ -116,20 +114,24 @@ class ODTraditional(AbstractBenchmark):
 
             model.fit(X_train, y_train)
 
-            # Compute validation error
-            train_loss = 1 - self.calculate_aupr(model, X_train, y_train)
-            val_loss = 1 - self.calculate_aupr(model, X_val, y_val)
+            # Compute train+validation error
+            train_aupr = self.calculate_aupr(model, X_train, y_train)
+            val_aupr = self.calculate_aupr(model, X_val, y_val)
 
-            train_losses.append(train_loss)
-            val_losses.append(val_loss)
+            train_auprs.append(train_aupr)
+            val_auprs.append(val_aupr)
+
+        train_aupr = float(np.mean(np.array(train_auprs)))
+        val_aupr = float(np.mean(np.array(val_auprs)))
 
         cost = time.time() - start_time
 
         return {
-            'function_value': float(np.mean(np.array(val_losses))),
+            'function_value': 1 - val_aupr,
             'cost': cost,
             'info': {
-                'train_loss': float(np.mean(np.array(train_losses))),
+                'train_aupr': train_aupr,
+                'val_aupr': val_aupr,
                 'fidelity': fidelity
             }
         }
@@ -163,10 +165,10 @@ class ODTraditional(AbstractBenchmark):
         Returns
         -------
         Dict -
-            function_value : X_test loss
+            function_value : 1 - AUPR (on test dataset)
             cost : time to X_train and evaluate the model
             info : Dict
-                train_valid_loss: Loss on the train+valid data set
+                train_valid_loss: 1 - AUPR (on train+validation dataset)
                 fidelity : used fidelities in this evaluation
         """
 
@@ -186,44 +188,26 @@ class ODTraditional(AbstractBenchmark):
         model.fit(X_train, y_train)
 
         # Compute validation error
-        train_loss = 1 - self.calculate_aupr(model, X_train, y_train)
-        test_loss = 1 - self.calculate_aupr(model, X_test, y_test)
+        train_aupr = float(self.calculate_aupr(model, X_train, y_train))
+        test_aupr = float(self.calculate_aupr(model, X_test, y_test))
 
         cost = time.time() - start_time
 
         return {
-            'function_value': float(test_loss),
+            'function_value': 1 - test_aupr,
             'cost': cost,
             'info': {
-                'train_loss': float(train_loss),
+                'train_aupr': train_aupr,
+                'test_aupr': test_aupr,
                 'fidelity': fidelity
             }
         }
 
     @staticmethod
-    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        """
-        Parameters
-        ----------
-        seed : int, None
-            Fixing the seed for the ConfigSpace.ConfigurationSpace
-
-        Returns
-        -------
-        ConfigSpace.ConfigurationSpace
-        """
-        raise NotImplementedError()
-
-    @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """
-        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
-        the traditional models.
-
-        Fidelities
-        ----------
-        dataset_fraction: float - [0.1, 1]
-            fraction of training data set to use
+        Creates an empty ConfigSpace.ConfigurationSpace for traditional models
+        as no fidelitie are used.
 
         Parameters
         ----------

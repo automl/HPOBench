@@ -32,22 +32,21 @@ ODDS_URL = {
 
 
 class OutlierDetectionDataManager(CrossvalidationDataManager):
-    """ Base class for loading dataset from ODDS.
-
-    Attributes
-    ----------
-    rng : np.random.RandomState
-    name : str
-
-    Parameters
-    ----------
-    openml_task_id : int
-        Unique identifier for the task on OpenML
-    rng : int, np.random.RandomState, None
-        defines the random state
-    """
+    """ Base class for loading dataset from ODDS. """
 
     def __init__(self, dataset_name: str, rng: Union[int, np.random.RandomState, None] = None):
+        """
+        Parameters
+        ----------
+        dataset_name : str
+            Must be one of [
+                "annthyroid", "arrhythmia", "breastw", "cardio", "ionosphere", 
+                "mammography", "musk", "optdigits", "pendigits", "pima",
+                "satellite", "satimage-2", "thyroid", "vowels", "wbc"]
+        rng : int, np.random.RandomState, None
+            defines the random state
+        """
+
         super(OutlierDetectionDataManager, self).__init__()
 
         if dataset_name not in ODDS_URL:
