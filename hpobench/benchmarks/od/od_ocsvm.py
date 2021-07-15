@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.svm import OneClassSVM
 
 import hpobench.util.rng_helper as rng_helper
-from hpobench.benchmarks.od.trad_benchmark import ODTraditional
+from hpobench.dependencies.od.traditional_benchmark import ODTraditional
 
 
 
@@ -19,8 +19,10 @@ logger = logging.getLogger('ODOneClassSupportVectorMachine')
 
 class ODOneClassSupportVectorMachine(ODTraditional):
     """
-    Hyperparameter optimization task to optimize OCSVM
-    for outlier detection.
+    Benchmark to train a One-Class Support Vector Machine (OC-SVM) model for outlier detection. Overall,
+    this benchmark can be used with one of 15 datasets (using a contamination ratio of 10%) provided by the ODDS Library (Rayana, 2016).
+    Internally, a 4-fold cross-validation is used to prevent overfitting. Area under the precission-
+    recall curve (AUPR) is used as metric.
     """
 
     def __init__(self,
@@ -30,6 +32,10 @@ class ODOneClassSupportVectorMachine(ODTraditional):
         Parameters
         ----------
         dataset_name : str
+            Must be one of [
+                "annthyroid", "arrhythmia", "breastw", "cardio", "ionosphere", 
+                "mammography", "musk", "optdigits", "pendigits", "pima",
+                "satellite", "satimage-2", "thyroid", "vowels", "wbc"]
         rng : np.random.RandomState, int, None
         """
         super(ODOneClassSupportVectorMachine, self).__init__(

@@ -1,6 +1,8 @@
 import torch
+import numpy as np
+import pytorch_lightning as pl
 from torch import nn
-
+import torch.nn.functional as F
 from hpobench.dependencies.od.utils.activations import ACTIVATIONS
 
 
@@ -28,7 +30,7 @@ class Block(nn.Module):
             # are not initialized to that moment
             try:
                 z = self.batch_normalization_layer(z)
-            except:  # noqa E722
+            except:
                 pass
 
         z = self.activation_layer(z)
@@ -53,7 +55,7 @@ class MLP(nn.Module):
             return ACTIVATIONS["swish"](train_beta=train_beta)
         else:
             return ACTIVATIONS[self.config["activation"]]()
-
+    
     def _build_backbone(self):
         features = self.num_features
         activation = self._get_activation()
@@ -84,13 +86,13 @@ class MLP(nn.Module):
             decoder_in_features = in_features[int(len(features) / 2):]
         else:
             decoder_in_features = in_features[int(len(features) / 2):]
-
+        
         # Build encoder
         self.encoder_blocks = []
         for i in range(len(encoder_features)-1):
             self.encoder_blocks += [
                 Block(
-                    encoder_features[i],
+                    encoder_features[i], 
                     encoder_features[i+1],
                     activation,
                     batch_normalization=self.config["batch_normalization"],
@@ -103,7 +105,7 @@ class MLP(nn.Module):
         for i in range(len(decoder_features)-2):
             self.decoder_blocks += [
                 Block(
-                    decoder_in_features[i],
+                    decoder_in_features[i], 
                     decoder_features[i+1],
                     activation,
                     batch_normalization=self.config["batch_normalization"],
@@ -132,7 +134,7 @@ class MLP(nn.Module):
             encoder_outputs += [output]
 
         return encoder_outputs
-
+    
     def decode(self, z, encoder_outputs=None):
         # Use encoder outputs only if skip connection is used
         if not self.config["skip_connection"]:
@@ -153,4 +155,5 @@ class MLP(nn.Module):
         if encoder_outputs is not None:
             output = torch.cat([output, encoder_outputs[-1]], dim=1)
 
+        #output = self.output_layer(output)
         return output

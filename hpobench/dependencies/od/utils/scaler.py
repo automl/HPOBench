@@ -8,7 +8,7 @@ def get_fitted_scaler(X_train, name=None):
     """
 
     if name == "MinMax":
-        scaler = MinMaxScaler(feature_range=(0, 1), copy=True)
+        scaler = MinMaxScaler(feature_range=(0,1), copy=True)
     elif name == "Standard":
         scaler = StandardScaler(copy=True)
     elif name is None or name == "None":

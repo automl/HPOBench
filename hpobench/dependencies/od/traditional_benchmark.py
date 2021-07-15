@@ -1,15 +1,16 @@
+import logging
 import abc
 import time
-from typing import Union, Dict
+from typing import Union, Tuple, Dict, List
 
 import ConfigSpace as CS
 import numpy as np
 from sklearn.metrics import precision_recall_curve, auc
+from hpobench.dependencies.od.utils.scaler import get_fitted_scaler
 
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.dependencies.od.data_manager import OutlierDetectionDataManager
-from hpobench.dependencies.od.utils.scaler import get_fitted_scaler
 
 
 class ODTraditional(AbstractBenchmark):
@@ -27,13 +28,12 @@ class ODTraditional(AbstractBenchmark):
         dataset_name : str
         rng : np.random.RandomState, int, None
         """
-        self.rng = rng_helper.get_rng(rng)
 
         # Load dataset manager
         self.dataset_name = dataset_name
-        self.datamanager = OutlierDetectionDataManager(dataset_name, self.rng)
+        self.datamanager = OutlierDetectionDataManager(dataset_name, rng)
 
-        super(ODTraditional, self).__init__(rng=self.rng)
+        super(ODTraditional, self).__init__(rng=rng)
 
     @abc.abstractmethod
     def get_name(self):
@@ -53,14 +53,15 @@ class ODTraditional(AbstractBenchmark):
     def calculate_aupr(self, model, X, y):
         """Calculates the AUPR based on the model, X and y."""
         scores = self.calculate_scores(model, X)
-
+        
         precision, recall, thresholds = precision_recall_curve(y, scores)
         area = auc(recall, precision)
 
         return area
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
-    def objective_function(self,
+    def objective_function(self, 
                            configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -74,6 +75,9 @@ class ODTraditional(AbstractBenchmark):
             Configuration for the SVM model
         fidelity: Dict, None
             Fidelity parameters for the SVM model, check get_fidelity_space(). Uses default (max) value if None.
+        shuffle : bool
+            If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
+            Defaults to ``False``.
         rng : np.random.RandomState, int, None,
             Random seed for benchmark. By default the class level random seed.
 
@@ -132,6 +136,7 @@ class ODTraditional(AbstractBenchmark):
             }
         }
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
     def objective_function_test(self,
                                 configuration: Union[CS.Configuration, Dict],
@@ -147,6 +152,9 @@ class ODTraditional(AbstractBenchmark):
             Configuration for the SVM Model
         fidelity: Dict, None
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        shuffle : bool
+            If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
+            Defaults to ``False``.
         rng : np.random.RandomState, int, None,
             Random seed for benchmark. By default the class level random seed.
             To prevent overfitting on a single seed, it is possible to pass a
