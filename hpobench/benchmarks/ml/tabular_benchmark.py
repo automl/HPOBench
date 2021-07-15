@@ -3,14 +3,17 @@ import glom
 import numpy as np
 import ConfigSpace as CS
 import pickle5 as pickle
-from typing import Union, List
+from copy import deepcopy
+from typing import Union, List, Dict
+from hpobench.benchmarks.ml.ml_benchmark_template import metrics
 
 
 class TabularBenchmark:
-    def __init__(self, table_path: str, seed: Union[int, None]=None):
+    def __init__(self, table_path: str, seed: Union[int, None] = None):
         assert os.path.isfile(table_path), "Not a valid path: {}".format(table_path)
         table = self._load_table(table_path)
         self.seed = seed if seed is not None else np.random.randint(1, 10 ** 6)
+        self.rng = np.random.RandomState(self.seed)
         self.exp_args = table['exp_args']
         self.config_spaces = table['config_spaces']
         self.x_cs = self.get_hyperparameter_space(seed=self.seed)
@@ -54,7 +57,14 @@ class TabularBenchmark:
             "Not a valid metric: {}".format(list(self.global_minimums.keys()))
         return self.global_minimums[metric]
 
-    def objective_function(self, config, fidelity):
+    def _objective(
+            self,
+            config: CS.Configuration,
+            fidelity: CS.Configuration,
+            seed: Union[int, None] = None,
+            metric: Union[str, None] = "acc",
+            eval: Union[str] = "val"
+    ) -> Dict:
         self.x_cs.check_configuration(config)
         self.z_cs.check_configuration(fidelity)
         key_path = []
@@ -67,4 +77,49 @@ class TabularBenchmark:
             raise ValueError(
                 "Invalid config-fidelity or not recorded in table!\n{}\n{}".format(config, fidelity)
             )
-        return val
+        seeds = list(val.keys())
+        assert metric in list(metrics.keys()), \
+            "metric not found among: {{{}}}".format(", ".join(list(metrics.keys())))
+        score_key = "{}_scores".format(eval)
+        cost_key = "{}_scores".format(eval)
+        if seed is None:
+            result = dict(function_value=0.0, cost=0.0, info=dict())
+            loss = []
+            costs = 0.0
+            info = dict()
+            for seed in seeds:
+                result = deepcopy(val[seed])
+                loss.append(1 - result["info"][score_key][metric])
+                costs += result["info"]["model_cost"] + result["info"][cost_key][metric]
+                info[seed] = result["info"]
+            loss = np.mean(loss)
+            result["function_value"] = loss
+            result["cost"] = costs
+            result["info"] = info
+        else:
+            assert seed in list(val.keys()), \
+                "seed not found among: {{{}}}".format(", ".join([str(s) for s in seeds]))
+            result = deepcopy(val[seed])
+            result["function_value"] = 1 - result["info"][score_key][metric]
+            result["cost"] = result["info"]["model_cost"] + result["info"][cost_key][metric]
+        return result
+
+    def objective_function(
+            self,
+            config: CS.Configuration,
+            fidelity: CS.Configuration,
+            seed: Union[int, None] = None,
+            metric: Union[str, None] = "acc"
+    ) -> Dict:
+        result = self._objective(config, fidelity, seed, metric, eval="val")
+        return result
+
+    def objective_function_test(
+            self,
+            config: CS.Configuration,
+            fidelity: CS.Configuration,
+            seed: Union[int, None] = None,
+            metric: Union[str, None] = "acc"
+    ) -> Dict:
+        result = self._objective(config, fidelity, seed, metric, eval="test")
+        return result
