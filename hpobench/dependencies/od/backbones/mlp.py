@@ -3,7 +3,7 @@ import numpy as np
 import pytorch_lightning as pl
 from torch import nn
 import torch.nn.functional as F
-from hpobench.benchmarks.od.utils.activations import ACTIVATIONS
+from hpobench.dependencies.od.utils.activations import ACTIVATIONS
 
 
 class Block(nn.Module):

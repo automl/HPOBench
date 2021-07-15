@@ -10,15 +10,15 @@ import numpy as np
 import torch
 torch.use_deterministic_algorithms(True)
 import pytorch_lightning as pl
-from hpobench.benchmarks.od.backbones.mlp import MLP
-from hpobench.benchmarks.od.callbacks.earlystopping import EarlyStopping
-from hpobench.benchmarks.od.callbacks.checkpoint_saver import CheckpointSaver
-from hpobench.benchmarks.od.models.autoencoder import Autoencoder
-from hpobench.benchmarks.od.utils.scaler import get_fitted_scaler
+from hpobench.dependencies.od.backbones.mlp import MLP
+from hpobench.dependencies.od.callbacks.earlystopping import EarlyStopping
+from hpobench.dependencies.od.callbacks.checkpoint_saver import CheckpointSaver
+from hpobench.dependencies.od.models.autoencoder import Autoencoder
+from hpobench.dependencies.od.utils.scaler import get_fitted_scaler
 
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
-from hpobench.util.od_data_manager import OutlierDetectionDataManager
+from hpobench.dependencies.od.data_manager import OutlierDetectionDataManager
 
 
 
@@ -29,8 +29,12 @@ logger = logging.getLogger('ODAutoencoder')
 
 class ODAutoencoder(AbstractBenchmark):
     """
-    Hyperparameter optimization task to optimize an autoencoder
-    for outlier detection task.
+    A fully connected autoencoder implemented in PyTorch Lightning with a maximum of
+    four layers (including latent layer) is optimized on the area under precission-recall curve (AUPR) metric.
+    In addition to the neural architecture hyperparameters, the benchmark includes multiple regularization techniques,
+    scalers, and activation functions to train the autoencoder on 15 different Outlier Detection
+    DataSets (using a contamination ratio of 10%). Cross-validation, early stopping, and the number of training epochs as
+    fidelity complete the benchmark.
     """
 
     def __init__(self,
@@ -40,6 +44,10 @@ class ODAutoencoder(AbstractBenchmark):
         Parameters
         ----------
         dataset_name : str
+            Must be one of [
+                "annthyroid", "arrhythmia", "breastw", "cardio", "ionosphere", 
+                "mammography", "musk", "optdigits", "pendigits", "pima",
+                "satellite", "satimage-2", "thyroid", "vowels", "wbc"]
         rng : np.random.RandomState, int, None
         """
 
@@ -64,9 +72,9 @@ class ODAutoencoder(AbstractBenchmark):
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         """
-        Trains the autoencoder with 4-fold cross-validation.
-        Training ends if validation AUPR is not getting better after 10 epochs.
-        Returns the mean of the best validation AUPRs.
+        Trains the autoencoder with 4-fold cross-validation
+        Training ends if AUPR is not getting better after 10 epochs.
+        Returns one minus the mean of the best validation AUPRs.
 
         Parameters
         ----------
@@ -85,21 +93,21 @@ class ODAutoencoder(AbstractBenchmark):
         Returns
         -------
         Dict -
-            function_value : validation AUPR
+            function_value : 1 - mean of the best validation AUPRs from each split.
             cost : time to train and evaluate the model
             info : Dict
-                train_loss : training loss
+                train_loss : training loss (reconstruction loss)
                 fidelity : used fidelities in this evaluation
         """
         start_time = time.time()
 
         train_losses = []
-        val_losses = []
+        val_auprs = []
 
         # Train four autoencoder
         for split in range(4):
             # Get data
-            (X_train, _), (X_val, y_val) = self.datamanager.dataset.get_train_val_data(split=split)
+            (X_train, y_train), (X_val, y_val) = self.datamanager.dataset.get_train_val_data(split=split)
 
             # Normalize data
             scaler = get_fitted_scaler(X_train, configuration["scaler"])
@@ -129,33 +137,41 @@ class ODAutoencoder(AbstractBenchmark):
                 ],
             )
 
-            trainer.fit(
-                model,
-                train_dataloader=self.datamanager.dataset.get_loader(
-                    X_train,
-                    batch_size=configuration["batch_size"]),
-                val_dataloaders=self.datamanager.dataset.get_loader(
-                    X_val,
-                    y_val,
-                    train=False)
-            )
+            try:
+                trainer.fit(
+                    model,
+                    train_dataloader=self.datamanager.dataset.get_loader(
+                        X_train,
+                        batch_size=configuration["batch_size"]),
+                    val_dataloaders=self.datamanager.dataset.get_loader(
+                        X_val,
+                        y_val,
+                        train=False)
+                )
 
-            # Get epoch with the highest validation aupr
-            index = np.argmax(np.array(model.val_auprs))
+                # Get epoch with the highest validation aupr
+                index = np.argmax(np.array(model.val_auprs))
 
-            train_loss = 1 - model.train_losses[index]
-            val_loss = 1 - model.val_auprs[index]
+                train_loss = model.train_losses[index]
+                val_aupr = model.val_auprs[index]
+            except:
+                train_loss = np.inf
+                val_aupr = 0
             
             train_losses.append(train_loss)
-            val_losses.append(val_loss)
+            val_auprs.append(val_aupr)
+
+        train_loss = float(np.mean(np.array(train_losses)))
+        val_aupr = float(np.mean(np.array(val_auprs)))
 
         cost = time.time() - start_time
 
         return {
-            'function_value': float(np.mean(np.array(val_losses))),
+            'function_value': 1 - val_aupr,
             'cost': cost,
             'info': {
-                'train_loss': float(np.mean(np.array(train_losses))),
+                'train_loss': train_loss,
+                'val_aupr': val_aupr,
                 'fidelity': fidelity
             }
         }
@@ -168,7 +184,8 @@ class ODAutoencoder(AbstractBenchmark):
         """
         Trains the autoencoder with a given configuration on both the training
         and validation dataset. It is ensured that the combined dataset has the
-        same contamination ratio as used in training.
+        same contamination ratio as used in training. Finally, 1 - AUPR on
+        the test dataset is reported. No early stopping is used.
 
         Parameters
         ----------
@@ -186,10 +203,10 @@ class ODAutoencoder(AbstractBenchmark):
         Returns
         -------
         Dict -
-            function_value : X_test AUPR
+            function_value : 1 - AUPR (on test dataset)
             cost : time to X_train and evaluate the model
             info : Dict
-                train_valid_loss: Loss on the train+valid data set
+                train_valid_loss: Loss on the train+validation dataset
                 fidelity : used fidelities in this evaluation
         """
 
@@ -218,42 +235,56 @@ class ODAutoencoder(AbstractBenchmark):
             check_val_every_n_epoch=1,
             deterministic=True,
             callbacks=[
-                CheckpointSaver(),
-                EarlyStopping(activated=True, patience=10, worst_loss=0.0)
+                CheckpointSaver()
             ],
         )
 
-        # We use the training data to validate here
-        trainer.fit(
-            model,
-            train_dataloader=self.datamanager.dataset.get_loader(
-                X_train,
-                batch_size=configuration["batch_size"]),
-            val_dataloaders=self.datamanager.dataset.get_loader(
-                X_train,
-                y_train,
-                train=False)
-        )
+        try:
+            # We use the train+validation data to train and validate here
+            trainer.fit(
+                model,
+                train_dataloader=self.datamanager.dataset.get_loader(
+                    X_train,
+                    y_train,
+                    batch_size=configuration["batch_size"]),
+                val_dataloaders=self.datamanager.dataset.get_loader(
+                    X_train,
+                    y_train,
+                    train=False)
+            )
 
-        trainer.test(
-            model,
-            self.datamanager.dataset.get_loader(
-                X_test,
-                y_test,
-                train=False), 
-            verbose=False
-        )
-    
-        assert model.test_aupr
-        test_aupr = 1 - model.test_aupr
+            # Model is trained on the epoch with
+            # the highest train+val AUPR (check checkpoint_saver for more information)
+            trainer.test(
+                model,
+                self.datamanager.dataset.get_loader(
+                    X_test,
+                    y_test,
+                    train=False),
+                verbose=False
+            )
+
+            # Get index of best epoch
+            index = np.argmax(np.array(model.val_auprs))
+
+            # train and val AUPR should be roughtly the same here
+            train_loss = float(model.train_losses[index])
+            val_aupr = float(model.val_auprs[index])
+            test_aupr = float(model.test_aupr)
+        except:
+            train_loss = np.inf
+            val_aupr = 0.0
+            test_aupr = 0.0
 
         cost = time.time() - start_time
 
         return {
-            'function_value': float(test_aupr),
+            'function_value': 1 - test_aupr,
             'cost': cost,
             'info': {
-                'train_loss': float(np.mean(np.array(model.train_losses))),
+                'train_loss': train_loss,
+                'val_aupr': val_aupr,
+                'test_aupr': test_aupr,
                 'fidelity': fidelity
             }
         }
@@ -305,7 +336,7 @@ class ODAutoencoder(AbstractBenchmark):
         skip_connection = CSH.CategoricalHyperparameter('skip_connection', choices=[True, False], default_value=False)
         batch_normalization = CSH.CategoricalHyperparameter('batch_normalization', choices=[True, False], default_value=False)
         dropout = CSH.CategoricalHyperparameter('dropout', choices=[True, False], default_value=True)
-        dropout_rate = CSH.UniformFloatHyperparameter('dropout_rate', 0, 0.8, default_value=0.5)
+        dropout_rate = CSH.UniformFloatHyperparameter('dropout_rate', 0.2, 0.8, default_value=0.5)
 
         cs.add_hyperparameters([
             activation,
@@ -318,36 +349,17 @@ class ODAutoencoder(AbstractBenchmark):
         cs.add_condition(CS.EqualsCondition(dropout_rate, dropout, True))
 
         # Optimizer
-        optimizers = {
-            'AdamWOptimizer': [
-                CSH.UniformFloatHyperparameter('lr', lower=1e-5, upper=1e-1, default_value=0.001, log=True),
-                CSH.UniformFloatHyperparameter('beta1', lower=0.85, upper=0.999, default_value=0.9),
-                CSH.UniformFloatHyperparameter('beta2', lower=0.9, upper=0.9999, default_value=0.999),
-                CSH.UniformFloatHyperparameter('weight_decay', lower=0.0, upper=0.1, default_value=0.01)
-            ],
-            #'SGDOptimizer': [
-            #    CSH.UniformFloatHyperparameter('lr', lower=1e-5, upper=1e-1, default_value=0.001, log=True),
-            #    CSH.UniformFloatHyperparameter('momentum', lower=0.0, upper=0.99, default_value=0.0),
-            #    CSH.UniformFloatHyperparameter('weight_decay', lower=0.0, upper=0.1, default_value=0.0)
-            #],
-        }
+        lr = CSH.UniformFloatHyperparameter('lr', lower=1e-5, upper=1e-1, default_value=0.001, log=True)
+        beta1 = CSH.UniformFloatHyperparameter('beta1', lower=0.85, upper=0.999, default_value=0.9)
+        beta2 = CSH.UniformFloatHyperparameter('beta2', lower=0.9, upper=0.9999, default_value=0.999)
+        weight_decay = CSH.UniformFloatHyperparameter('weight_decay', lower=0.0, upper=0.1, default_value=0.01)
 
-        choice = CSH.CategoricalHyperparameter(
-            'optimizer',
-            list(optimizers.keys()),
-            default_value=list(optimizers.keys())[0]
-        )
-        cs.add_hyperparameter(choice)
-
-        for optimizer, hyperparameters in optimizers.items():
-            sub_cs = ConfigurationSpace()
-            sub_cs.add_hyperparameters(hyperparameters)
-
-            cs.add_configuration_space(
-                'optimizer:' + optimizer,
-                sub_cs,
-                parent_hyperparameter={'parent': choice, 'value': optimizer}
-            )
+        cs.add_hyperparameters([
+            lr,
+            beta1,
+            beta2,
+            weight_decay
+        ])
 
         # Batch size
         batch_size = CSH.UniformIntegerHyperparameter('batch_size', lower=16, upper=512, default_value=128)
@@ -388,7 +400,7 @@ class ODAutoencoder(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformIntegerHyperparameter("epochs", lower=10, upper=100, default_value=10, log=False),
+            CS.UniformIntegerHyperparameter("epochs", lower=10, upper=100, default_value=100, log=False),
         ])
 
         return fidel_space
