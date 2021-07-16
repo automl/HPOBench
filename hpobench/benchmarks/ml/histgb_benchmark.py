@@ -63,7 +63,6 @@ class HistGBBenchmark(MLBenchmark):
             Fidelity space is multi-multi fidelity, all possible fidelities
         """
         z_cs = CS.ConfigurationSpace(seed=seed)
-        subsample_lower_bound = np.max((0.1, (0.1 or self.lower_bound_train_size)))
         if fidelity_choice == 0:
             # only subsample as fidelity
             ntrees = CS.Constant('n_estimators', value=100)
@@ -78,7 +77,7 @@ class HistGBBenchmark(MLBenchmark):
             # only subsample as fidelity
             ntrees = CS.Constant('n_estimators', value=100)
             subsample = CS.UniformFloatHyperparameter(
-                'subsample', lower=subsample_lower_bound, upper=1, default_value=1, log=False
+                'subsample', lower=0.1, upper=1, default_value=1, log=False
             )
         else:
             # both n_estimators and subsample as fidelities
@@ -86,7 +85,7 @@ class HistGBBenchmark(MLBenchmark):
                 'n_estimators', lower=2, upper=100, default_value=10, log=False
             )
             subsample = CS.UniformFloatHyperparameter(
-                'subsample', lower=subsample_lower_bound, upper=1, default_value=1, log=False
+                'subsample', lower=0.1, upper=1, default_value=1, log=False
             )
         z_cs.add_hyperparameters([ntrees, subsample])
         return z_cs

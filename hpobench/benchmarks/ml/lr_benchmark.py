@@ -1,12 +1,12 @@
 import ConfigSpace as CS
 from typing import Union, List, Dict
 
-from sklearn.svm import SVC
+from sklearn.linear_model import SGDClassifier
 
 from hpobench.benchmarks.ml.ml_benchmark_template import MLBenchmark
 
 
-class SVMBenchmark(MLBenchmark):
+class LRBenchmark(MLBenchmark):
     def __init__(
             self,
             task_id: Union[int, None] = None,
@@ -15,7 +15,7 @@ class SVMBenchmark(MLBenchmark):
             fidelity_choice: int = 1,
             data_path: Union[str, None] = None
     ):
-        super(SVMBenchmark, self).__init__(task_id, seed, valid_size, fidelity_choice, data_path)
+        super(LRBenchmark, self).__init__(task_id, seed, valid_size, fidelity_choice, data_path)
         self.cache_size = 200
 
     @staticmethod
@@ -23,13 +23,12 @@ class SVMBenchmark(MLBenchmark):
         """Parameter space to be optimized --- contains the hyperparameters
         """
         cs = CS.ConfigurationSpace(seed=seed)
-        # https://www.csie.ntu.edu.tw/~cjlin/papers/guide/guide.pdf (Section 3.2)
         cs.add_hyperparameters([
             CS.UniformFloatHyperparameter(
-                "C", 2**-5, 2**15, log=True, default_value=1.0
+                "alpha", 10**-5, 10**4, log=True, default_value=1.0
             ),
             CS.UniformFloatHyperparameter(
-                "gamma", 2**-15, 2**3, log=True, default_value=0.1
+                "eta0", 2**-10, 1, log=True, default_value=0.3
             )
         ])
         return cs
@@ -48,21 +47,37 @@ class SVMBenchmark(MLBenchmark):
         z_cs = CS.ConfigurationSpace(seed=seed)
 
         if fidelity_choice == 0:
+            iter = CS.Constant('iter', value=1000)
             subsample = CS.Constant('subsample', value=1)
-        else:
-            subsample = CS.UniformFloatHyperparameter(
-                'subsample', lower=0.1, upper=1, default_value=0.33, log=False
+        elif fidelity_choice == 1:
+            iter = CS.UniformIntegerHyperparameter(
+                'iter', lower=100, upper=10000, default_value=100, log=False
             )
-        z_cs.add_hyperparameter(subsample)
+            subsample = CS.Constant('subsample', value=1)
+        elif fidelity_choice == 2:
+            iter = CS.Constant('iter', value=1000)
+            subsample = CS.UniformFloatHyperparameter(
+                'subsample', lower=0.1, upper=1, default_value=1, log=False
+            )
+        else:
+            iter = CS.UniformIntegerHyperparameter(
+                'iter', lower=100, upper=10000, default_value=100, log=False
+            )
+            subsample = CS.UniformFloatHyperparameter(
+                'subsample', lower=0.1, upper=1, default_value=1, log=False
+            )
+        z_cs.add_hyperparameters([iter, subsample])
         return z_cs
 
     def init_model(self, config, fidelity=None, rng=None):
         # initializing model
         rng = self.rng if rng is None else rng
         config = config.get_dictionary()
-        model = SVC(
+        model = SGDClassifier(
             **config,
-            random_state=rng,
-            cache_size=self.cache_size
+            loss="log",
+            max_iter=fidelity["iter"],
+            learning_rate="invscaling",
+            random_state=rng
         )
         return model
