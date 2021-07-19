@@ -67,7 +67,7 @@ class NNBenchmark(MLBenchmark):
         fidelity1 = dict(
             fixed=CS.Constant('iter', value=100),
             variable=CS.UniformIntegerHyperparameter(
-                'iter', lower=3, upper=30, default_value=50, log=False
+                'iter', lower=3, upper=30, default_value=30, log=False
             )
         )
         fidelity2 = dict(
