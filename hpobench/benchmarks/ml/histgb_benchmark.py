@@ -35,17 +35,12 @@ class HistGBBenchmark(MLBenchmark):
             CS.UniformIntegerHyperparameter(
                 'min_samples_leaf', lower=1, upper=64, default_value=1, log=True
             ),
-            #TODO: fix lr value range error in map_to_config()
             CS.UniformFloatHyperparameter(
-                'learning_rate', lower=1e-5, upper=1e-1, default_value=0.1, log=True
+                'learning_rate', lower=2**-10, upper=1, default_value=0.3, log=True
             ),
-            #TODO: find best way to encode l2 reg. since log params cannot have 0 as exact bound
-            # scales the regularization parameter by using it as a power of 10
-            # such that the range of the parameter becomes {0, 1e-7, 1e-6, ..., 1e-1}
-            # where 10 ** 0 is enforced to be 0 (no regularization)
-            CS.UniformIntegerHyperparameter(
-                'l2_regularization', lower=-7, upper=0, default_value=0, log=False
-            )  # value of 1 indicates 0 regularization
+            CS.UniformFloatHyperparameter(
+                'l2_regularization', lower=2**-10, upper=2**10, default_value=0.1, log=True
+            )
         ])
         return cs
 
@@ -66,7 +61,7 @@ class HistGBBenchmark(MLBenchmark):
         fidelity1 = dict(
             fixed=CS.Constant('n_estimators', value=100),
             variable=CS.UniformIntegerHyperparameter(
-                'n_estimators', lower=2, upper=100, default_value=10, log=False
+                'n_estimators', lower=1, upper=128, default_value=10, log=False
             )
         )
         fidelity2 = dict(
@@ -98,15 +93,8 @@ class HistGBBenchmark(MLBenchmark):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
         rng = self.rng if rng is None else rng
-        config = deepcopy(config).get_dictionary()
-        l2 = config.pop("l2_regularization")
-        l2 = 0 if l2 == 1 else 10 ** l2
-        # TODO: decide on encoding of learning rate
-        #TODO: allow non-encoded categoricals?
-        #TODO: early stopping set to False?
         model = HistGradientBoostingClassifier(
-            **config,
-            l2_regularization=l2,
+            **config.get_dictionary(),
             max_iter=fidelity['n_estimators'],  # a fidelity being used during initialization
             early_stopping=False,
             random_state=rng

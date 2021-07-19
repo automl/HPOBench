@@ -32,7 +32,7 @@ class XGBoostBenchmark(MLBenchmark):
                 'eta', lower=2**-10, upper=1., default_value=0.3, log=True
             ),  # learning rate
             CS.UniformIntegerHyperparameter(
-                'max_depth', lower=1, upper=15, default_value=6, log=False
+                'max_depth', lower=1, upper=15, default_value=2, log=False
             ),
             CS.UniformFloatHyperparameter(
                 'min_child_weight', lower=1., upper=2**7., default_value=1., log=True
@@ -72,7 +72,7 @@ class XGBoostBenchmark(MLBenchmark):
         fidelity1 = dict(
             fixed=CS.Constant('n_estimators', value=100),
             variable=CS.UniformIntegerHyperparameter(
-                'n_estimators', lower=2, upper=100, default_value=10, log=False
+                'n_estimators', lower=1, upper=128, default_value=10, log=False
             )
         )
         fidelity2 = dict(
