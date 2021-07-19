@@ -16,7 +16,7 @@ class LRBenchmark(MLBenchmark):
             data_path: Union[str, None] = None
     ):
         super(LRBenchmark, self).__init__(task_id, seed, valid_size, fidelity_choice, data_path)
-        self.cache_size = 200
+        self.cache_size = 500
 
     @staticmethod
     def get_configuration_space(seed=None):
@@ -45,27 +45,34 @@ class LRBenchmark(MLBenchmark):
 
         """
         z_cs = CS.ConfigurationSpace(seed=seed)
-
+        fidelity1 = dict(
+            fixed=CS.Constant('iter', value=1000),
+            variable=CS.UniformIntegerHyperparameter(
+                'iter', lower=10, upper=1000, default_value=100, log=False
+            )
+        )
+        fidelity2 = dict(
+            fixed=CS.Constant('subsample', value=1),
+            variable=CS.UniformFloatHyperparameter(
+                'subsample', lower=0.1, upper=1, default_value=1, log=False
+            )
+        )
         if fidelity_choice == 0:
-            iter = CS.Constant('iter', value=1000)
-            subsample = CS.Constant('subsample', value=1)
+            # black-box setting (full fidelity)
+            iter = fidelity1["fixed"]
+            subsample = fidelity2["fixed"]
         elif fidelity_choice == 1:
-            iter = CS.UniformIntegerHyperparameter(
-                'iter', lower=100, upper=10000, default_value=100, log=False
-            )
-            subsample = CS.Constant('subsample', value=1)
+            # gray-box setting (multi-fidelity) - iterations
+            iter = fidelity1["variable"]
+            subsample = fidelity2["fixed"]
         elif fidelity_choice == 2:
-            iter = CS.Constant('iter', value=1000)
-            subsample = CS.UniformFloatHyperparameter(
-                'subsample', lower=0.1, upper=1, default_value=1, log=False
-            )
+            # gray-box setting (multi-fidelity) - data subsample
+            iter = fidelity1["fixed"]
+            subsample = fidelity2["variable"]
         else:
-            iter = CS.UniformIntegerHyperparameter(
-                'iter', lower=100, upper=10000, default_value=100, log=False
-            )
-            subsample = CS.UniformFloatHyperparameter(
-                'subsample', lower=0.1, upper=1, default_value=1, log=False
-            )
+            # gray-box setting (multi-multi-fidelity) - iterations + data subsample
+            iter = fidelity1["variable"]
+            subsample = fidelity2["variable"]
         z_cs.add_hyperparameters([iter, subsample])
         return z_cs
 

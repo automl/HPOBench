@@ -46,13 +46,18 @@ class SVMBenchmark(MLBenchmark):
 
         """
         z_cs = CS.ConfigurationSpace(seed=seed)
-
-        if fidelity_choice == 0:
-            subsample = CS.Constant('subsample', value=1)
-        else:
-            subsample = CS.UniformFloatHyperparameter(
+        fidelity = dict(
+            fixed=CS.Constant('subsample', value=1),
+            variable=CS.UniformFloatHyperparameter(
                 'subsample', lower=0.1, upper=1, default_value=0.33, log=False
             )
+        )
+        if fidelity_choice == 0:
+            # black-box setting (full fidelity)
+            subsample = fidelity["fixed"]
+        else:
+            # gray-box setting (multi-fidelity) - data subsample
+            subsample = fidelity["variable"]
         z_cs.add_hyperparameter(subsample)
         return z_cs
 

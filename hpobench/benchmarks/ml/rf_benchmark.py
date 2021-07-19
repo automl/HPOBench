@@ -56,30 +56,34 @@ class RandomForestBenchmark(MLBenchmark):
             Fidelity space is multi-multi fidelity, all possible fidelities
         """
         z_cs = CS.ConfigurationSpace(seed=seed)
+        fidelity1 = dict(
+            fixed=CS.Constant('n_estimators', value=100),
+            variable=CS.UniformIntegerHyperparameter(
+                'n_estimators', lower=2, upper=100, default_value=10, log=False
+            )
+        )
+        fidelity2 = dict(
+            fixed=CS.Constant('subsample', value=1),
+            variable=CS.UniformFloatHyperparameter(
+                'subsample', lower=0.1, upper=1, default_value=1, log=False
+            )
+        )
         if fidelity_choice == 0:
-            # only subsample as fidelity
-            ntrees = CS.Constant('n_estimators', value=100)
-            subsample = CS.Constant('subsample', value=1)
+            # black-box setting (full fidelity)
+            ntrees = fidelity1["fixed"]
+            subsample = fidelity2["fixed"]
         elif fidelity_choice == 1:
-            # only n_estimators as fidelity
-            ntrees = CS.UniformIntegerHyperparameter(
-                'n_estimators', lower=2, upper=100, default_value=10, log=False
-            )
-            subsample = CS.Constant('subsample', value=1)
+            # gray-box setting (multi-fidelity) - ntrees
+            ntrees = fidelity1["variable"]
+            subsample = fidelity2["fixed"]
         elif fidelity_choice == 2:
-            # only subsample as fidelity
-            ntrees = CS.Constant('n_estimators', value=100)
-            subsample = CS.UniformFloatHyperparameter(
-                'subsample', lower=0.1, upper=1, default_value=1, log=False
-            )
+            # gray-box setting (multi-fidelity) - data subsample
+            ntrees = fidelity1["fixed"]
+            subsample = fidelity2["variable"]
         else:
-            # both n_estimators and subsample as fidelities
-            ntrees = CS.UniformIntegerHyperparameter(
-                'n_estimators', lower=2, upper=100, default_value=10, log=False
-            )
-            subsample = CS.UniformFloatHyperparameter(
-                'subsample', lower=0.1, upper=1, default_value=1, log=False
-            )
+            # gray-box setting (multi-multi-fidelity) - ntrees + data subsample
+            ntrees = fidelity1["variable"]
+            subsample = fidelity2["variable"]
         z_cs.add_hyperparameters([ntrees, subsample])
         return z_cs
 
