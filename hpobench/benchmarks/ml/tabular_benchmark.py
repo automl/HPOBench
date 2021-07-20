@@ -75,6 +75,13 @@ class TabularBenchmark:
             max_fidelity[hp.name] = np.sort(hp.sequence)[-1]
         return max_fidelity
 
+    def get_fidelity_range(self):
+        fidelities = []
+        for hp in self.z_cs.get_hyperparameters():
+            if not isinstance(hp, CS.Constant) and len(hp.sequence) > 1:
+                fidelities.append((hp.name, hp.sequence[0], hp.sequence[-1]))
+        return fidelities
+
     def _objective(
             self,
             config: CS.Configuration,
