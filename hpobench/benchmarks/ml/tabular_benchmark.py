@@ -26,6 +26,18 @@ class TabularBenchmark:
             table = pickle.load(f)
         return table
 
+    def _get_model_name(self):
+        return self.exp_args["space"]
+
+    def _total_number_of_configurations(self, space: str="hyperparameters") -> int:
+        """ Returns the number of unique configurations in the parameter/fidelity space
+        """
+        count = 1
+        cs = self.x_cs if space == "hyperparameters" else self.z_cs
+        for hp in cs.get_hyperparameters():
+            count *= len(hp.sequence)
+        return count
+
     def get_hyperparameter_space(self, seed=None, original=False):
         cs = CS.ConfigurationSpace(seed=seed)
         if original:
@@ -56,6 +68,12 @@ class TabularBenchmark:
         assert metric in self.global_minimums.keys(), \
             "Not a valid metric: {}".format(list(self.global_minimums.keys()))
         return self.global_minimums[metric]
+
+    def get_max_fidelity(self) -> Dict:
+        max_fidelity = dict()
+        for hp in self.z_cs.get_hyperparameters():
+            max_fidelity[hp.name] = np.sort(hp.sequence)[-1]
+        return max_fidelity
 
     def _objective(
             self,

@@ -38,15 +38,15 @@ class NNBenchmark(MLBenchmark):
             CS.OrdinalHyperparameter(
                 'max_hidden_dim', sequence=[64, 128, 256, 512, 1024], default_value=128
             ),
+            CS.UniformFloatHyperparameter(
+                'alpha', lower=10**-5, upper=10**4, default_value=10**-3, log=True
+            ),
             CS.UniformIntegerHyperparameter(
-                'batch_size', lower=4, upper=128, default_value=16, log=True
+                'batch_size', lower=4, upper=256, default_value=32, log=True
             ),
             CS.UniformFloatHyperparameter(
                 'learning_rate_init', lower=2**-10, upper=1, default_value=0.3, log=True
-            ),
-            CS.UniformFloatHyperparameter(
-                'momentum', lower=0, upper=1, default_value=0.9, log=False
-            ),
+            )
         ])
         return cs
 
@@ -67,7 +67,7 @@ class NNBenchmark(MLBenchmark):
         fidelity1 = dict(
             fixed=CS.Constant('iter', value=100),
             variable=CS.UniformIntegerHyperparameter(
-                'iter', lower=3, upper=30, default_value=30, log=False
+                'iter', lower=3, upper=150, default_value=30, log=False
             )
         )
         fidelity2 = dict(
@@ -168,6 +168,7 @@ class NNBenchmark(MLBenchmark):
             activation="relu",
             solver="sgd",
             learning_rate="invscaling",
+            momentum=0.9,
             max_iter=fidelity['iter'],  # a fidelity being used during initialization
             random_state=rng
         )
