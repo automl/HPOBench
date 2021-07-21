@@ -9,11 +9,16 @@
       cache dir, data dir and socket dir into the container and let the container use them directly. We also remove the 
       global data directory and use only the data dir from now onwards.
   * Add the surrogate SVM on MNIST benchmark from the BOHB paper.
+  * ParamNetBenchmark: 
+    Suppress some unuseful warnings and introduce a new param net benchmark that has a reduced search space.
+  * Add Clean Up script: 
+    See the documentation for more information. You can clean all caches and container files by calling:
+    `python util/clean_up_scripts.py --clear_all`
+  * Improve Information on how to add a new benchmark
   * Fix an error in PyBnn Benchmark:
     We introduce the benchmark version 0.0.4.  
     In this new version, we prevent infinity values in the nll loss when the predicted variance
-    is 0. We set the predicted variance before computing the log to max(var, 1e-10)
-         
+    is 0. We set the predicted variance before computing the log to max(var, 1e-10)         
 # 0.0.7
   * Fix an error in the NASBench1shot1 Benchmark (SearchSpace3).
   * Improve the behavior when a benchmark container is shut down.
