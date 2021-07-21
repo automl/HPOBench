@@ -11,7 +11,7 @@
   * Add the surrogate SVM on MNIST benchmark from the BOHB paper.
   * Fix an error in PyBnn Benchmark:
     We introduce the benchmark version 0.0.4.  
-    In this new version, we prevent infinity value in the nll loss when the predicted variance
+    In this new version, we prevent infinity values in the nll loss when the predicted variance
     is 0. We set the predicted variance before computing the log to max(var, 1e-10)
          
 # 0.0.7
