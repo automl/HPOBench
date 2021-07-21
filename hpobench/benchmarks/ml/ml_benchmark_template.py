@@ -177,8 +177,8 @@ class MLBenchmark(AbstractBenchmark):
         # validation set is fixed till this function is called again or explicitly altered
         valid_size = self.valid_size if valid_size is None else valid_size
         self.train_X, self.valid_X, self.train_y, self.valid_y = train_test_split(
-            train_x, train_y, test_size=valid_size,
-            shuffle=True, stratify=train_y, random_state=check_random_state(self.global_seed)
+            train_x, train_y, test_size=valid_size, shuffle=True, stratify=train_y,
+            random_state=check_random_state(self.global_seed)  # uses global seed for fixed splits
         )
 
         # preprocessor to handle missing values, categorical columns encodings,
@@ -200,7 +200,7 @@ class MLBenchmark(AbstractBenchmark):
             ])
         )
         if verbose:
-            print("Shape of data pre-preprocessing: {}".format(train_X.shape))
+            print("Shape of data pre-preprocessing: {}".format(self.train_X.shape))
 
         # preprocessor fit only on the training set
         self.train_X = self.preprocessor.fit_transform(self.train_X)
@@ -219,7 +219,7 @@ class MLBenchmark(AbstractBenchmark):
         self.lower_bound_train_size = np.max((1 / 512, self.lower_bound_train_size))
 
         if verbose:
-            print("Shape of data post-preprocessing: {}".format(train_X.shape), "\n")
+            print("Shape of data post-preprocessing: {}".format(self.train_X.shape), "\n")
 
         if verbose:
             print("\nTraining data (X, y): ({}, {})".format(self.train_X.shape, self.train_y.shape))
@@ -261,9 +261,13 @@ class MLBenchmark(AbstractBenchmark):
 
         # subsample here:
         # application of the other fidelity to the dataset that the model interfaces
+        if self.lower_bound_train_size is None:
+            self.lower_bound_train_size = (10 * self.n_classes) / self.train_X.shape[0]
+            self.lower_bound_train_size = np.max((1 / 512, self.lower_bound_train_size))
+        subsample = np.max((fidelity['subsample'], self.lower_bound_train_size))
         train_idx = self.rng.choice(
             np.arange(len(train_X)), size=int(
-                fidelity['subsample'] * len(train_X)
+                subsample * len(train_X)
             )
         )
         # fitting the model with subsampled data
