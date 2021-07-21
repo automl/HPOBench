@@ -13,27 +13,23 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import make_scorer, roc_auc_score, accuracy_score, f1_score, \
-    top_k_accuracy_score, balanced_accuracy_score
+from sklearn.metrics import make_scorer, accuracy_score, balanced_accuracy_score, \
+    precision_score, f1_score
 
 from hpobench.abstract_benchmark import AbstractBenchmark
 
 
 metrics = dict(
-    #TODO: decide on metrics generalized for different datasets
     acc=accuracy_score,
     bal_acc=balanced_accuracy_score,
     f1=f1_score,
-    # roc=roc_auc_score,
-    # topk=top_k_accuracy_score
+    precision=precision_score,
 )
 metrics_kwargs = dict(
-    #TODO: decide on metric parameters
     acc=dict(),
     bal_acc=dict(),
-    f1=dict(average="weighted"),
-    # roc=dict(average="weighted"),
-    # topk=dict()
+    f1=dict(average="macro", zero_division=0),
+    precision=dict(average="macro", zero_division=0),
 )
 
 
@@ -174,11 +170,11 @@ class MLBenchmark(AbstractBenchmark):
         self.test_y = y.iloc[self.test_idx]
 
         # splitting training into training and validation
-        # validation set is fixed till this function is called again or explicitly altered
+        # validation set is fixed as per the global seed independent of the benchmark seed
         valid_size = self.valid_size if valid_size is None else valid_size
         self.train_X, self.valid_X, self.train_y, self.valid_y = train_test_split(
             train_x, train_y, test_size=valid_size, shuffle=True, stratify=train_y,
-            random_state=check_random_state(self.global_seed)  # uses global seed for fixed splits
+            random_state=check_random_state(self.global_seed)
         )
 
         # preprocessor to handle missing values, categorical columns encodings,
@@ -214,7 +210,6 @@ class MLBenchmark(AbstractBenchmark):
 
         # Similar to (https://arxiv.org/pdf/1605.07079.pdf)
         # use 10 times the number of classes as lower bound for the dataset fraction
-
         self.lower_bound_train_size = (10 * self.n_classes) / self.train_X.shape[0]
         self.lower_bound_train_size = np.max((1 / 512, self.lower_bound_train_size))
 
@@ -228,7 +223,7 @@ class MLBenchmark(AbstractBenchmark):
             print("\nData loading complete!\n")
         return
 
-    def shuffle_data_idx(self, train_id=None, ng=None):
+    def shuffle_data_idx(self, train_idx=None, rng=None):
         rng = self.rng if rng is None else rng
         train_idx = self.train_idx if train_idx is None else train_idx
         rng.shuffle(train_idx)
@@ -311,11 +306,12 @@ class MLBenchmark(AbstractBenchmark):
             _start = time.time()
             test_scores[k] = v(model, self.test_X, self.test_y)
             test_score_cost[k] = time.time() - _start
-        val_loss = 1 - test_scores["acc"]
+        test_loss = 1 - test_scores["acc"]
 
         info = {
             'train_loss': train_loss,
             'val_loss': val_loss,
+            'test_loss': test_loss,
             'model_cost': model_fit_time,
             'train_scores': train_scores,
             'train_costs': train_score_cost,
@@ -330,7 +326,7 @@ class MLBenchmark(AbstractBenchmark):
 
         return {
             'function_value': info['val_loss'],
-            'cost': model_fit_time + info['train_costs']['acc'] + info['val_costs']['acc'],
+            'cost': model_fit_time + info['val_costs']['acc'],
             'info': info
         }
 
@@ -370,16 +366,17 @@ class MLBenchmark(AbstractBenchmark):
 
         return {
             'function_value': info['test_loss'],
-            'cost': model_fit_time + info['train_costs']['acc'] + info['test_costs']['acc'],
+            'cost': model_fit_time + info['test_costs']['acc'],
             'info': info
         }
 
     def get_meta_information(self):
         """ Returns the meta information for the benchmark """
-        return {'name': 'Support Vector Machine',
-                'shape of train data': self.x_train.shape,
-                'shape of test data': self.x_test.shape,
-                'shape of valid data': self.x_valid.shape,
-                'initial random seed': self.rng,
-                'task_id': self.task_id
-                }
+        return {
+            'name': 'Support Vector Machine',
+            'shape of train data': self.train_X.shape,
+            'shape of test data': self.test_X.shape,
+            'shape of valid data': self.valid_X.shape,
+            'initial random seed': self.seed,
+            'task_id': self.task_id
+        }

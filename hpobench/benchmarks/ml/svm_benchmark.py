@@ -1,5 +1,5 @@
 import ConfigSpace as CS
-from typing import Union, List, Dict
+from typing import Union
 
 from sklearn.svm import SVC
 
