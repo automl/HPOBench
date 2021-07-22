@@ -25,10 +25,10 @@ class LRBenchmark(MLBenchmark):
         cs = CS.ConfigurationSpace(seed=seed)
         cs.add_hyperparameters([
             CS.UniformFloatHyperparameter(
-                "alpha", 10**-5, 10**4, log=True, default_value=1.0
+                "alpha", 1e-5, 1, log=True, default_value=1e-3
             ),
             CS.UniformFloatHyperparameter(
-                "eta0", 2**-10, 1, log=True, default_value=0.3
+                "eta0", 1e-5, 1, log=True, default_value=1e-2
             )
         ])
         return cs
@@ -48,13 +48,13 @@ class LRBenchmark(MLBenchmark):
         fidelity1 = dict(
             fixed=CS.Constant('iter', value=1000),
             variable=CS.UniformIntegerHyperparameter(
-                'iter', lower=10, upper=1000, default_value=100, log=False
+                'iter', lower=10, upper=1000, default_value=1000, log=False
             )
         )
         fidelity2 = dict(
-            fixed=CS.Constant('subsample', value=1),
+            fixed=CS.Constant('subsample', value=1.0),
             variable=CS.UniformFloatHyperparameter(
-                'subsample', lower=0.1, upper=1, default_value=1, log=False
+                'subsample', lower=0.1, upper=1.0, default_value=1.0, log=False
             )
         )
         if fidelity_choice == 0:
@@ -79,12 +79,13 @@ class LRBenchmark(MLBenchmark):
     def init_model(self, config, fidelity=None, rng=None):
         # initializing model
         rng = self.rng if rng is None else rng
-        config = config.get_dictionary()
+        # https://scikit-learn.org/stable/modules/sgd.html
         model = SGDClassifier(
-            **config,
-            loss="log",
+            **config.get_dictionary(),
+            loss="log",  # performs Logistic Regression
             max_iter=fidelity["iter"],
-            learning_rate="invscaling",
-            random_state=rng
+            learning_rate="adaptive",
+            tol=None,
+            random_state=rng,
         )
         return model

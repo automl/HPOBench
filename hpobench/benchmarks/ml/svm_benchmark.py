@@ -23,13 +23,13 @@ class SVMBenchmark(MLBenchmark):
         """Parameter space to be optimized --- contains the hyperparameters
         """
         cs = CS.ConfigurationSpace(seed=seed)
-        # https://www.csie.ntu.edu.tw/~cjlin/papers/guide/guide.pdf (Section 3.2)
+        # https://jmlr.org/papers/volume20/18-444/18-444.pdf (Table 1)
         cs.add_hyperparameters([
             CS.UniformFloatHyperparameter(
-                "C", 2**-5, 2**15, log=True, default_value=1.0
+                "C", 2**-10, 2**10, log=True, default_value=1.0
             ),
             CS.UniformFloatHyperparameter(
-                "gamma", 2**-15, 2**3, log=True, default_value=0.1
+                "gamma", 2**-10, 2**10, log=True, default_value=0.1
             )
         ])
         return cs
@@ -49,7 +49,7 @@ class SVMBenchmark(MLBenchmark):
         fidelity = dict(
             fixed=CS.Constant('subsample', value=1),
             variable=CS.UniformFloatHyperparameter(
-                'subsample', lower=0.1, upper=1, default_value=0.33, log=False
+                'subsample', lower=0.1, upper=1.0, default_value=1.0, log=False
             )
         )
         if fidelity_choice == 0:
