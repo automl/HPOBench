@@ -1,3 +1,5 @@
+# 0.0.9
+
 # 0.0.8
   * Improve container integration
     The containers had some problems when the file system was read-only. In this case, the home directory, which contains the 
