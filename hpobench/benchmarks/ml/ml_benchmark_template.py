@@ -353,10 +353,13 @@ class MLBenchmark(AbstractBenchmark):
 
         info = {
             'train_loss': train_loss,
+            'val_loss': None,
             'test_loss': test_loss,
             'model_cost': model_fit_time,
             'train_scores': train_scores,
             'train_costs': train_score_cost,
+            'val_scores': dict(),
+            'val_costs': dict(),
             'test_scores': test_scores,
             'test_costs': test_score_cost,
             # storing as dictionary and not ConfigSpace saves tremendous memory
