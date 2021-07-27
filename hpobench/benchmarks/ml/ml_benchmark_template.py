@@ -234,7 +234,7 @@ class MLBenchmark(AbstractBenchmark):
         """
         raise NotImplementedError()
 
-    def _train_objective(self, config, fidelity, shuffle, rng, eval="valid"):
+    def _train_objective(self, config, fidelity, shuffle, rng, evaluation="valid"):
         # initializing model
         model = self.init_model(config, fidelity, rng)
 
@@ -273,9 +273,12 @@ class MLBenchmark(AbstractBenchmark):
         scores = dict()
         score_cost = dict()
         for k, v in self.scorers.items():
-            _start = time.time()
-            scores[k] = 0  # v(model, train_X, train_y)
-            score_cost[k] = time.time() - _start
+            scores[k] = 0.0
+            score_cost[k] = 0.0
+            if evaluation == "test":
+                _start = time.time()
+                scores[k] = v(model, train_X, train_y)
+                score_cost[k] = time.time() - _start
         train_loss = 1 - scores["acc"]
         return model, model_fit_time, train_loss, scores, score_cost
 
@@ -290,7 +293,7 @@ class MLBenchmark(AbstractBenchmark):
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
         """
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
-            configuration, fidelity, shuffle, rng
+            configuration, fidelity, shuffle, rng, evaluation="val"
         )
         val_scores = dict()
         val_score_cost = dict()
@@ -341,7 +344,7 @@ class MLBenchmark(AbstractBenchmark):
         """Function that evaluates a 'config' on a 'fidelity' on the test set
         """
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
-            configuration, fidelity, shuffle, rng, eval="test"
+            configuration, fidelity, shuffle, rng, evaluation="test"
         )
         test_scores = dict()
         test_score_cost = dict()

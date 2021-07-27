@@ -61,7 +61,7 @@ class HistGBBenchmark(MLBenchmark):
         fidelity1 = dict(
             fixed=CS.Constant('n_estimators', value=100),
             variable=CS.UniformIntegerHyperparameter(
-                'n_estimators', lower=1, upper=128, default_value=10, log=False
+                'n_estimators', lower=16, upper=512, default_value=512, log=False
             )
         )
         fidelity2 = dict(

@@ -28,16 +28,19 @@ class RandomForestBenchmark(MLBenchmark):
 
         cs.add_hyperparameters([
             CS.UniformIntegerHyperparameter(
-                'max_depth', lower=1, upper=15, default_value=2, log=False
-            ),
-            CS.UniformIntegerHyperparameter(
-                'min_samples_split', lower=2, upper=128, default_value=2, log=True
+                'max_depth', lower=1, upper=30, default_value=10, log=False
             ),
             CS.UniformFloatHyperparameter(
-                'max_features', lower=0.1, upper=0.9, default_value=0.5, log=False
+                'min_samples_split', lower=0.05, upper=0.9, default_value=0.9, log=True
+            ),
+            # CS.UniformIntegerHyperparameter(
+            #     'min_samples_split', lower=2, upper=20, default_value=2, log=False
+            # ),
+            CS.UniformFloatHyperparameter(
+                'max_features', lower=0.1, upper=1.0, default_value=0.5, log=False
             ),
             CS.UniformIntegerHyperparameter(
-                'min_samples_leaf', lower=1, upper=64, default_value=1, log=True
+                'min_samples_leaf', lower=1, upper=20, default_value=1, log=False
             ),
         ])
         return cs
@@ -59,7 +62,7 @@ class RandomForestBenchmark(MLBenchmark):
         fidelity1 = dict(
             fixed=CS.Constant('n_estimators', value=100),
             variable=CS.UniformIntegerHyperparameter(
-                'n_estimators', lower=1, upper=128, default_value=10, log=False
+                'n_estimators', lower=16, upper=512, default_value=512, log=False
             )
         )
         fidelity2 = dict(

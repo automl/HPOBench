@@ -19,8 +19,6 @@ class NNBenchmark(MLBenchmark):
         super(NNBenchmark, self).__init__(
             task_id, seed, valid_size, fidelity_choice, data_path
         )
-        # fixing layers in the architecture
-        self.n_layers = 5
         pass
 
     @staticmethod
@@ -30,22 +28,16 @@ class NNBenchmark(MLBenchmark):
         cs = CS.ConfigurationSpace(seed=seed)
 
         cs.add_hyperparameters([
-            CS.CategoricalHyperparameter(
-                'shape', default_value="funnel",
-                choices=["funnel", "long_funnel", "rhombus", "diamond", "hexagon",
-                         "brick", "triangle", "stairs"]
-            ),
-            CS.OrdinalHyperparameter(
-                'max_hidden_dim', sequence=[64, 128, 256, 512, 1024], default_value=128
-            ),
-            CS.UniformFloatHyperparameter(
-                'alpha', lower=10**-5, upper=10**4, default_value=10**-3, log=True
-            ),
+            CS.UniformIntegerHyperparameter('depth', default_value=3, lower=1, upper=3),
+            CS.UniformIntegerHyperparameter('width', default_value=64, lower=16, upper=256),
             CS.UniformIntegerHyperparameter(
                 'batch_size', lower=4, upper=256, default_value=32, log=True
             ),
             CS.UniformFloatHyperparameter(
-                'learning_rate_init', lower=2**-10, upper=1, default_value=0.3, log=True
+                'alpha', lower=10**-8, upper=1, default_value=10**-3, log=True
+            ),
+            CS.UniformFloatHyperparameter(
+                'learning_rate_init', lower=10**-5, upper=1, default_value=10**-3, log=True
             )
         ])
         return cs
@@ -67,7 +59,7 @@ class NNBenchmark(MLBenchmark):
         fidelity1 = dict(
             fixed=CS.Constant('iter', value=100),
             variable=CS.UniformIntegerHyperparameter(
-                'iter', lower=3, upper=150, default_value=30, log=False
+                'iter', lower=3, upper=243, default_value=243, log=False
             )
         )
         fidelity2 = dict(
@@ -95,80 +87,21 @@ class NNBenchmark(MLBenchmark):
         z_cs.add_hyperparameters([iter, subsample])
         return z_cs
 
-    def _get_architecture(self, shape: str, max_hidden_size: int) -> Tuple:
-        # https://mikkokotila.github.io/slate/#shapes
-        arch = []
-        if shape == "funnel":
-            for i in range(self.n_layers):
-                arch.append(max_hidden_size)
-                max_hidden_size = np.ceil(max_hidden_size / 2).astype(int)
-        elif shape == "long_funnel":
-            brick_arch_len = np.ceil(self.n_layers / 2).astype(int)
-            for i in range(brick_arch_len):
-                arch.append(max_hidden_size)
-            for i in range(self.n_layers - brick_arch_len):
-                max_hidden_size = np.ceil(max_hidden_size / 2).astype(int)
-                arch.append(max_hidden_size)
-        elif shape == "rhombus":
-            arch.append(max_hidden_size)
-            rhombus_len = self.n_layers // 2
-            _arch = []
-            for i in range(rhombus_len):
-                max_hidden_size = np.ceil(max_hidden_size / 2).astype(int)
-                _arch.append(max_hidden_size)
-            arch = np.flip(_arch).tolist() + arch + _arch
-        elif shape == "diamond":
-            # open rhombus
-            arch.append(max_hidden_size)
-            rhombus_len = self.n_layers // 2
-            second_max_hidden_size = np.ceil(max_hidden_size / 2).astype(int)
-            _arch = []
-            for i in range(rhombus_len):
-                max_hidden_size = np.ceil(max_hidden_size / 2).astype(int)
-                _arch.append(max_hidden_size)
-            arch = [second_max_hidden_size] * rhombus_len + arch + _arch
-        elif shape == "hexagon":
-            if self.n_layers % 2 == 0:
-                arch.append(max_hidden_size)
-            half_len = np.ceil(self.n_layers / 2).astype(int)
-            _arch = []
-            for i in range(half_len):
-                _arch.append(max_hidden_size)
-                max_hidden_size = np.ceil(max_hidden_size / 2).astype(int)
-            arch = _arch[::-1] + arch + _arch[:-1]
-        elif shape == "triangle":
-            # reverse funnel
-            for i in range(self.n_layers):
-                arch.append(max_hidden_size)
-                max_hidden_size = np.ceil(max_hidden_size / 2).astype(int)
-            arch = arch[::-1]
-        elif shape == "stairs":
-            for i in range(1, self.n_layers+1):
-                arch.append(max_hidden_size)
-                if i % 2 == 0 or self.n_layers < 4:
-                    max_hidden_size = np.ceil(max_hidden_size / 2).astype(int)
-        else:
-            # default to brick design
-            arch = tuple([max_hidden_size] * self.n_layers)
-        arch = tuple(arch)
-        return arch
-
     def init_model(self, config, fidelity=None, rng=None):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
         rng = self.rng if rng is None else rng
         config = deepcopy(config.get_dictionary())
-        shape = config["shape"]
-        max_hidden_dim = config["max_hidden_dim"]
-        config.pop("shape")
-        config.pop("max_hidden_dim")
+        depth = config["depth"]
+        width = config["width"]
+        config.pop("depth")
+        config.pop("width")
+        hidden_layers = [width] * depth
         model = MLPClassifier(
             **config,
-            hidden_layer_sizes=self._get_architecture(shape, max_hidden_dim),
+            hidden_layer_sizes=hidden_layers,
             activation="relu",
-            solver="sgd",
-            learning_rate="invscaling",
-            momentum=0.9,
+            solver="adam",
             max_iter=fidelity['iter'],  # a fidelity being used during initialization
             random_state=rng
         )
