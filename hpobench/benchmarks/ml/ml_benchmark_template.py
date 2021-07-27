@@ -274,7 +274,7 @@ class MLBenchmark(AbstractBenchmark):
         score_cost = dict()
         for k, v in self.scorers.items():
             _start = time.time()
-            scores[k] = v(model, train_X, train_y)
+            scores[k] = 0  # v(model, train_X, train_y)
             score_cost[k] = time.time() - _start
         train_loss = 1 - scores["acc"]
         return model, model_fit_time, train_loss, scores, score_cost
