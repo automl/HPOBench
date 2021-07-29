@@ -32,26 +32,17 @@ class XGBoostBenchmark(MLBenchmark):
                 'eta', lower=2**-10, upper=1., default_value=0.3, log=True
             ),  # learning rate
             CS.UniformIntegerHyperparameter(
-                'max_depth', lower=1, upper=30, default_value=10, log=False
+                'max_depth', lower=6, upper=50, default_value=10, log=True
             ),
             CS.UniformFloatHyperparameter(
                 'min_child_weight', lower=1., upper=2**7., default_value=1., log=True
             ),
             CS.UniformFloatHyperparameter(
-                'colsample_bytree', lower=0.01, upper=1., default_value=1.
+                'colsample_bytree', lower=0.05, upper=1., default_value=1.
             ),
-            # CS.UniformFloatHyperparameter(
-            #     'colsample_bylevel', lower=0.01, upper=1., default_value=1.
-            # ),
             CS.UniformFloatHyperparameter(
                 'reg_lambda', lower=2**-10, upper=2**10, default_value=1, log=True
-            ),
-            # CS.UniformFloatHyperparameter(
-            #     'reg_alpha', lower=2**-10, upper=2**10, default_value=1, log=True
-            # ),
-            # CS.UniformFloatHyperparameter(
-            #     'subsample_per_it', lower=0.1, upper=1, default_value=1, log=False
-            # )
+            )
         ])
         return cs
 
@@ -72,7 +63,7 @@ class XGBoostBenchmark(MLBenchmark):
         fidelity1 = dict(
             fixed=CS.Constant('n_estimators', value=100),
             variable=CS.UniformIntegerHyperparameter(
-                'n_estimators', lower=16, upper=512, default_value=512, log=False
+                'n_estimators', lower=50, upper=2000, default_value=1000, log=False
             )
         )
         fidelity2 = dict(
@@ -105,6 +96,7 @@ class XGBoostBenchmark(MLBenchmark):
         """
         rng = rng if (rng is None and isinstance(rng, int)) else self.seed
         extra_args = dict(
+            booster="gbtree",
             n_estimators=fidelity['n_estimators'],
             objective="binary:logistic",
             random_state=rng,
