@@ -25,17 +25,13 @@ class RandomForestBenchmark(MLBenchmark):
         """Parameter space to be optimized --- contains the hyperparameters
         """
         cs = CS.ConfigurationSpace(seed=seed)
-
         cs.add_hyperparameters([
             CS.UniformIntegerHyperparameter(
-                'max_depth', lower=1, upper=30, default_value=10, log=False
+                'max_depth', lower=1, upper=50, default_value=10, log=True
             ),
             CS.UniformFloatHyperparameter(
                 'min_samples_split', lower=0.05, upper=0.9, default_value=0.9, log=True
             ),
-            # CS.UniformIntegerHyperparameter(
-            #     'min_samples_split', lower=2, upper=20, default_value=2, log=False
-            # ),
             CS.UniformFloatHyperparameter(
                 'max_features', lower=0.1, upper=1.0, default_value=0.5, log=False
             ),
