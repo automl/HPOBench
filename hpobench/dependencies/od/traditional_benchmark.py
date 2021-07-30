@@ -1,16 +1,15 @@
-import logging
 import abc
 import time
-from typing import Union, Tuple, Dict, List
+from typing import Union, Dict
 
 import ConfigSpace as CS
 import numpy as np
 from sklearn.metrics import precision_recall_curve, auc
-from hpobench.dependencies.od.utils.scaler import get_fitted_scaler
 
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.dependencies.od.data_manager import OutlierDetectionDataManager
+from hpobench.dependencies.od.utils.scaler import get_fitted_scaler
 
 
 class ODTraditional(AbstractBenchmark):
@@ -54,15 +53,14 @@ class ODTraditional(AbstractBenchmark):
     def calculate_aupr(self, model, X, y):
         """Calculates the AUPR based on the model, X and y."""
         scores = self.calculate_scores(model, X)
-        
+
         precision, recall, thresholds = precision_recall_curve(y, scores)
         area = auc(recall, precision)
 
         return area
 
-    # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
-    def objective_function(self, 
+    def objective_function(self,
                            configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -134,7 +132,6 @@ class ODTraditional(AbstractBenchmark):
             }
         }
 
-    # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
     def objective_function_test(self,
                                 configuration: Union[CS.Configuration, Dict],

@@ -1,9 +1,9 @@
-import torch
 import numpy as np
 import pytorch_lightning as pl
-from torch import nn
-from sklearn.metrics import precision_recall_curve, auc
+import torch
 import torch.nn.functional as F
+from sklearn.metrics import precision_recall_curve, auc
+from torch import nn
 
 
 class Autoencoder(pl.LightningModule):
@@ -46,7 +46,7 @@ class Autoencoder(pl.LightningModule):
         aupr = auc(recall, precision)
 
         return aupr
-    
+
     @staticmethod
     def calculate_loss(x, x_hat):
         return F.mse_loss(x_hat, x)
