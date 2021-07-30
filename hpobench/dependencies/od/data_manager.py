@@ -1,23 +1,22 @@
 import os
-from typing import Tuple, Union, List
+from typing import Union
+from urllib.request import urlretrieve
+
 import numpy as np
 import scipy.io
-from urllib.request import urlretrieve, urlopen
+import torch
+from torch.utils.data import Dataset, DataLoader
 
 import hpobench
 from hpobench.util.data_manager import CrossvalidationDataManager
 from hpobench.util.rng_helper import get_rng
 
-import torch
-from torch.utils.data import Dataset, DataLoader
-import numpy as np
-
 ODDS_PATH = 'https://automl.org/wp-content/uploads/datasets/ODDS'
 ODDS_NAMES = [
-    "annthyroid", "arrhythmia",  "breastw", "cardio", "ionosphere", 
-    "mammography", "musk", "optdigits", "pendigits", "pima", 
+    "annthyroid", "arrhythmia",  "breastw", "cardio", "ionosphere",
+    "mammography", "musk", "optdigits", "pendigits", "pima",
     "satellite", "satimage-2", "thyroid", "vowels", "wbc"]
-ODDS_URL = {name:os.path.join(ODDS_PATH, name + ".mat") for name in ODDS_NAMES}
+ODDS_URL = {name: os.path.join(ODDS_PATH, name + ".mat") for name in ODDS_NAMES}
 
 
 class OutlierDetectionDataManager(CrossvalidationDataManager):
@@ -29,7 +28,7 @@ class OutlierDetectionDataManager(CrossvalidationDataManager):
         ----------
         dataset_name : str
             Must be one of [
-                "annthyroid", "arrhythmia", "breastw", "cardio", "ionosphere", 
+                "annthyroid", "arrhythmia", "breastw", "cardio", "ionosphere",
                 "mammography", "musk", "optdigits", "pendigits", "pima",
                 "satellite", "satimage-2", "thyroid", "vowels", "wbc"]
         rng : int, np.random.RandomState, None
@@ -49,7 +48,7 @@ class OutlierDetectionDataManager(CrossvalidationDataManager):
 
         self.create_save_directory(self._save_to)
         filename = self.__load_data(filename=self.dataset_name)
-        
+
         self.dataset = OutlierDataset(filename, rng=self.rng, logger=self.logger)
 
     def __load_data(self, filename: str, images: bool = False) -> np.ndarray:
@@ -69,13 +68,13 @@ class OutlierDetectionDataManager(CrossvalidationDataManager):
 
 class OutlierDataset:
     def __init__(self, filename,
-                       rng,
-                       normal_classes=[0],
-                       outlier_classes=[1],
-                       contamination_ratio=0.05,
-                       val_split_ratio=0.2,
-                       test_split_ratio=0.2,
-                       logger=None):
+                 rng,
+                 normal_classes=[0],
+                 outlier_classes=[1],
+                 contamination_ratio=0.05,
+                 val_split_ratio=0.2,
+                 test_split_ratio=0.2,
+                 logger=None):
 
         """
         Prepares the data for outlier detection.
@@ -87,10 +86,10 @@ class OutlierDataset:
             split_ratio: Ratio how much test data of the given data will be used.
             seed: Defines the initial shuffle of the data.
         """
-        
+
         assert len(normal_classes) > 0 and len(outlier_classes) > 0
-        assert val_split_ratio < 1.0 and val_split_ratio > 0.0
-        assert test_split_ratio < 1.0 and test_split_ratio > 0.0
+        assert 0.0 < val_split_ratio < 1.0
+        assert 0.0 < test_split_ratio < 1.0
 
         data = scipy.io.loadmat(filename)
         X, y = data["X"], data["y"]
@@ -123,16 +122,16 @@ class OutlierDataset:
         outlier_indices = [i in outlier_classes for i in y.flatten()]
         y[outlier_indices] = 1
 
-        normal_indices = np.where(y==0)[0]
-        outlier_indices = np.where(y==1)[0]
+        normal_indices = np.where(y == 0)[0]
+        outlier_indices = np.where(y == 1)[0]
         num_normal = len(normal_indices)
         num_outlier = len(outlier_indices)
-        num_all = num_normal + num_outlier
+        # num_all = num_normal + num_outlier
 
         self.logger.info(f"Found {num_normal} normal data.")
         self.logger.info(f"Found {num_outlier} anomaly data.")
 
-        self.logger.info(f"Begin data splitting.")
+        self.logger.info("Begin data splitting.")
         test_normal_cut = int(len(normal_indices)*(1-test_split_ratio))
         test_outlier_cut = int(len(outlier_indices)*(1-test_split_ratio))
         test_normal_indices = normal_indices[test_normal_cut:]
@@ -143,23 +142,25 @@ class OutlierDataset:
         train_outlier_indices = outlier_indices[:test_outlier_cut]
 
         # Based on the seed, we shuffle the training dataset now
-        self.logger.info(f"Shuffle data.")
+        self.logger.info("Shuffle data.")
         perm = rng.permutation(len(train_normal_indices))
         train_normal_indices = train_normal_indices[perm]
 
         perm = rng.permutation(len(train_outlier_indices))
         train_outlier_indices = train_outlier_indices[perm]
 
-        train_split_ratio = (1 - (val_split_ratio + test_split_ratio))
-        train_split_ratio_scaled = train_split_ratio / (train_split_ratio + val_split_ratio)
+        # train_split_ratio = (1 - (val_split_ratio + test_split_ratio))
+        # train_split_ratio_scaled = train_split_ratio / (train_split_ratio + val_split_ratio)
 
-        self.train_normal_indices = train_normal_indices#.tolist()
-        self.train_outlier_indices = train_outlier_indices#.tolist()
-        self.test_normal_indices = test_normal_indices#.tolist()
-        self.test_outlier_indices = test_outlier_indices#.tolist()
-        
-        self.logger.info(f"Found training data: {len(train_normal_indices)} normal and {len(train_outlier_indices)} anomaly data.")
-        self.logger.info(f"Found test data: {len(test_normal_indices)} normal and {len(test_outlier_indices)} anomaly data.")
+        self.train_normal_indices = train_normal_indices
+        self.train_outlier_indices = train_outlier_indices
+        self.test_normal_indices = test_normal_indices
+        self.test_outlier_indices = test_outlier_indices
+
+        self.logger.info(f"Found training data: {len(train_normal_indices)} normal "
+                         f"and {len(train_outlier_indices)} anomaly data.")
+        self.logger.info(f"Found test data: {len(test_normal_indices)} normal "
+                         f"and {len(test_outlier_indices)} anomaly data.")
 
         self._X = X
         self._y = y
@@ -174,7 +175,7 @@ class OutlierDataset:
 
         if split is None or split == 0:
             assert self.val_split_ratio
-            self.logger.info(f"Using default train val with split")
+            self.logger.info("Using default train val with split")
 
             # Calculate the ratio based on val and test split ratio
             train_split_ratio = (1 - (self.val_split_ratio + self.test_split_ratio))
@@ -240,8 +241,10 @@ class OutlierDataset:
             contamination_ratio = num_outlier / (num_normal + num_outlier)
             self.logger.debug(f"Dataset is used with standard outlier fraction {contamination_ratio*100}%.")
 
-        self.logger.debug(f"Using training data: {len(train_normal_indices)} normal and {len(train_outlier_indices)} anomaly data.")
-        self.logger.debug(f"Using validation data: {len(val_normal_indices)} normal and {len(val_outlier_indices)} anomaly data.")
+        self.logger.debug(f"Using training data: {len(train_normal_indices)} normal "
+                          f"and {len(train_outlier_indices)} anomaly data.")
+        self.logger.debug(f"Using validation data: {len(val_normal_indices)} normal "
+                          f"and {len(val_outlier_indices)} anomaly data.")
 
         X_train = self._X[train_normal_indices+train_outlier_indices]
         y_train = self._y[train_normal_indices+train_outlier_indices].flatten()
@@ -284,7 +287,8 @@ class OutlierDataset:
             contamination_ratio = num_outlier / (num_normal + num_outlier)
             self.logger.debug(f"Dataset is used with standard outlier fraction {contamination_ratio*100}%.")
 
-        self.logger.debug(f"Using training data: {len(train_normal_indices)} normal and {len(train_outlier_indices)} anomaly data.")
+        self.logger.debug(f"Using training data: {len(train_normal_indices)} normal "
+                          f"and {len(train_outlier_indices)} anomaly data.")
 
         X_train = self._X[train_normal_indices+train_outlier_indices]
         y_train = self._y[train_normal_indices+train_outlier_indices].flatten()
@@ -321,10 +325,10 @@ class _OutlierDataset(Dataset):
 
         if y is None:
             self.y = np.zeros((self.X.shape[0], 1), dtype=int)
-        
+
     def __len__(self):
         return len(self.X)
-        
+
     def __getitem__(self, idx):
         X = self.X[idx]
         X = X.reshape(1, -1)
