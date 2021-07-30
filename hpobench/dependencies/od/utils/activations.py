@@ -15,7 +15,6 @@ class Swish(nn.Module):
         return input * torch.sigmoid(self.weight * input)
 
 
-
 ACTIVATIONS = {
     "relu": torch.nn.ReLU,
     "tanh": torch.nn.Tanh,

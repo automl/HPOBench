@@ -1,26 +1,20 @@
 import logging
 import time
-from typing import Union, Tuple, Dict, List
+from typing import Union, Dict
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
-from ConfigSpace.configuration_space import ConfigurationSpace
 import numpy as np
-
-import torch
-torch.use_deterministic_algorithms(True)
 import pytorch_lightning as pl
-from hpobench.dependencies.od.backbones.mlp import MLP
-from hpobench.dependencies.od.callbacks.earlystopping import EarlyStopping
-from hpobench.dependencies.od.callbacks.checkpoint_saver import CheckpointSaver
-from hpobench.dependencies.od.models.autoencoder import Autoencoder
-from hpobench.dependencies.od.utils.scaler import get_fitted_scaler
 
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
+from hpobench.dependencies.od.backbones.mlp import MLP
+from hpobench.dependencies.od.callbacks.checkpoint_saver import CheckpointSaver
+from hpobench.dependencies.od.callbacks.earlystopping import EarlyStopping
 from hpobench.dependencies.od.data_manager import OutlierDetectionDataManager
-
-
+from hpobench.dependencies.od.models.autoencoder import Autoencoder
+from hpobench.dependencies.od.utils.scaler import get_fitted_scaler
 
 __version__ = '0.0.1'
 
@@ -33,8 +27,8 @@ class ODAutoencoder(AbstractBenchmark):
     four layers (including latent layer) is optimized on the area under precission-recall curve (AUPR) metric.
     In addition to the neural architecture hyperparameters, the benchmark includes multiple regularization techniques,
     scalers, and activation functions to train the autoencoder on 15 different Outlier Detection
-    DataSets (using a contamination ratio of 10%). Cross-validation, early stopping, and the number of training epochs as
-    fidelity complete the benchmark.
+    DataSets (using a contamination ratio of 10%). Cross-validation, early stopping, and the number of training epochs
+    as fidelity complete the benchmark.
     """
 
     def __init__(self,
@@ -45,7 +39,7 @@ class ODAutoencoder(AbstractBenchmark):
         ----------
         dataset_name : str
             Must be one of [
-                "annthyroid", "arrhythmia", "breastw", "cardio", "ionosphere", 
+                "annthyroid", "arrhythmia", "breastw", "cardio", "ionosphere",
                 "mammography", "musk", "optdigits", "pendigits", "pima",
                 "satellite", "satimage-2", "thyroid", "vowels", "wbc"]
         rng : np.random.RandomState, int, None
@@ -63,13 +57,11 @@ class ODAutoencoder(AbstractBenchmark):
         super(ODAutoencoder, self).__init__(rng=self.rng)
 
     def get_features(self):
-        """Returns the number of features for the given
-        dataset name."""
+        """Returns the number of features for the given dataset name."""
         return self.datamanager.dataset.get_features()
 
-    # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
-    def objective_function(self, 
+    def objective_function(self,
                            configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -155,10 +147,11 @@ class ODAutoencoder(AbstractBenchmark):
 
                 train_loss = model.train_losses[index]
                 val_aupr = model.val_auprs[index]
-            except:
+            except Exception as e:
+                logger.exception(e)
                 train_loss = np.inf
                 val_aupr = 0
-            
+
             train_losses.append(train_loss)
             val_auprs.append(val_aupr)
 
@@ -177,7 +170,6 @@ class ODAutoencoder(AbstractBenchmark):
             }
         }
 
-    # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
@@ -272,7 +264,9 @@ class ODAutoencoder(AbstractBenchmark):
             train_loss = float(model.train_losses[index])
             val_aupr = float(model.val_auprs[index])
             test_aupr = float(model.test_aupr)
-        except:
+
+        except Exception as e:
+            logger.exception(e)
             train_loss = np.inf
             val_aupr = 0.0
             test_aupr = 0.0
@@ -316,10 +310,14 @@ class ODAutoencoder(AbstractBenchmark):
         num_units = [1 if units < 1.0 else int(units) for units in num_units]  # Make sure we have at least one unit
 
         num_layers = CSH.UniformIntegerHyperparameter('num_layers', lower=0, upper=3, default_value=2)
-        num_units_layer_1 = CSH.UniformIntegerHyperparameter('num_units_layer_1', lower=num_units[2], upper=num_units[0])
-        num_units_layer_2 = CSH.UniformIntegerHyperparameter('num_units_layer_2', lower=num_units[3], upper=num_units[1])
-        num_units_layer_3 = CSH.UniformIntegerHyperparameter('num_units_layer_3', lower=num_units[3], upper=num_units[1])
-        num_latent_units = CSH.UniformIntegerHyperparameter('num_latent_units', lower=num_units[4], upper=num_units[2])
+        num_units_layer_1 = CSH.UniformIntegerHyperparameter('num_units_layer_1',
+                                                             lower=num_units[2], upper=num_units[0])
+        num_units_layer_2 = CSH.UniformIntegerHyperparameter('num_units_layer_2',
+                                                             lower=num_units[3], upper=num_units[1])
+        num_units_layer_3 = CSH.UniformIntegerHyperparameter('num_units_layer_3',
+                                                             lower=num_units[3], upper=num_units[1])
+        num_latent_units = CSH.UniformIntegerHyperparameter('num_latent_units',
+                                                            lower=num_units[4], upper=num_units[2])
 
         cs.add_hyperparameters([
             num_layers,
@@ -333,9 +331,12 @@ class ODAutoencoder(AbstractBenchmark):
         cs.add_condition(CS.GreaterThanCondition(num_units_layer_2, num_layers, 1))
         cs.add_condition(CS.GreaterThanCondition(num_units_layer_3, num_layers, 2))
 
-        activation = CSH.CategoricalHyperparameter('activation', choices=['relu', 'swish', 'swish-1', 'tanh'], default_value="relu")
-        skip_connection = CSH.CategoricalHyperparameter('skip_connection', choices=[True, False], default_value=False)
-        batch_normalization = CSH.CategoricalHyperparameter('batch_normalization', choices=[True, False], default_value=False)
+        activation = CSH.CategoricalHyperparameter('activation', choices=['relu', 'swish', 'swish-1', 'tanh'],
+                                                   default_value="relu")
+        skip_connection = CSH.CategoricalHyperparameter('skip_connection', choices=[True, False],
+                                                        default_value=False)
+        batch_normalization = CSH.CategoricalHyperparameter('batch_normalization', choices=[True, False],
+                                                            default_value=False)
         dropout = CSH.CategoricalHyperparameter('dropout', choices=[True, False], default_value=True)
         dropout_rate = CSH.UniformFloatHyperparameter('dropout_rate', 0.2, 0.8, default_value=0.5)
 
@@ -412,7 +413,7 @@ class ODAutoencoder(AbstractBenchmark):
         X_test, _ = self.datamanager.dataset.get_test_data()
 
         return {
-            'name': self.get_name(),
+            'name': 'OutlierDetection - AutoEncoder',
             'references': [
                 '@misc{Rayana:2016 ,'
                 'author = "Shebuti Rayana",'
