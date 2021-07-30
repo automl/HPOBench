@@ -50,16 +50,18 @@ class ODAutoencoder(AbstractBenchmark):
                 "satellite", "satimage-2", "thyroid", "vowels", "wbc"]
         rng : np.random.RandomState, int, None
         """
+        self.rng = rng_helper.get_rng(rng)
+        pl.seed_everything(self.rng.randint(0, 10000))
 
         # Load datamanager
         # It's important to call it before super
         # as AbstractBenchmark samples configuration space in which
         # the datamanager is needed
         self.dataset_name = dataset_name
-        self.datamanager = OutlierDetectionDataManager(dataset_name, rng)
+        self.datamanager = OutlierDetectionDataManager(dataset_name, self.rng)
 
-        super(ODAutoencoder, self).__init__(rng=rng)
-    
+        super(ODAutoencoder, self).__init__(rng=self.rng)
+
     def get_features(self):
         """Returns the number of features for the given
         dataset name."""
@@ -117,7 +119,6 @@ class ODAutoencoder(AbstractBenchmark):
 
             # Set seed to ensure deterministic behaviour
             if rng:
-                torch.manual_seed(rng)
                 pl.seed_everything(rng)
 
             # Setup backbone + model
