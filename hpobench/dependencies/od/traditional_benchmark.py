@@ -28,12 +28,13 @@ class ODTraditional(AbstractBenchmark):
         dataset_name : str
         rng : np.random.RandomState, int, None
         """
+        self.rng = rng_helper.get_rng(rng)
 
         # Load dataset manager
         self.dataset_name = dataset_name
-        self.datamanager = OutlierDetectionDataManager(dataset_name, rng)
+        self.datamanager = OutlierDetectionDataManager(dataset_name, self.rng)
 
-        super(ODTraditional, self).__init__(rng=rng)
+        super(ODTraditional, self).__init__(rng=self.rng)
 
     @abc.abstractmethod
     def get_name(self):
@@ -75,9 +76,6 @@ class ODTraditional(AbstractBenchmark):
             Configuration for the SVM model
         fidelity: Dict, None
             Fidelity parameters for the SVM model, check get_fidelity_space(). Uses default (max) value if None.
-        shuffle : bool
-            If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
-            Defaults to ``False``.
         rng : np.random.RandomState, int, None,
             Random seed for benchmark. By default the class level random seed.
 
@@ -152,9 +150,6 @@ class ODTraditional(AbstractBenchmark):
             Configuration for the SVM Model
         fidelity: Dict, None
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
-        shuffle : bool
-            If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
-            Defaults to ``False``.
         rng : np.random.RandomState, int, None,
             Random seed for benchmark. By default the class level random seed.
             To prevent overfitting on a single seed, it is possible to pass a
