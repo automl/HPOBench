@@ -125,7 +125,7 @@ class ODAutoencoder(AbstractBenchmark):
             model = Autoencoder(backbone, configuration)
 
             trainer = pl.Trainer(
-                logger=None,
+                logger=[],
                 checkpoint_callback=False,
                 min_epochs=1,
                 max_epochs=fidelity["epochs"],
@@ -226,7 +226,7 @@ class ODAutoencoder(AbstractBenchmark):
         model = Autoencoder(backbone, configuration)
 
         trainer = pl.Trainer(
-            logger=None,
+            logger=[],
             checkpoint_callback=False,
             # min epochs are recognized automatically based on current epoch
             min_epochs=1,
@@ -429,10 +429,4 @@ class ODAutoencoder(AbstractBenchmark):
         }
 
 
-
-
-
-
-
-
-
+__all__ = [ODAutoencoder]
