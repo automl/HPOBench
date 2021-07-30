@@ -30,13 +30,13 @@ class HistGBBenchmark(MLBenchmark):
 
         cs.add_hyperparameters([
             CS.UniformIntegerHyperparameter(
-                'max_depth', lower=1, upper=15, default_value=2, log=False
+                'max_depth', lower=6, upper=30, default_value=6, log=True
             ),
             CS.UniformIntegerHyperparameter(
-                'min_samples_leaf', lower=1, upper=64, default_value=1, log=True
+                'max_leaf_node', lower=2, upper=64, default_value=32, log=True
             ),
             CS.UniformFloatHyperparameter(
-                'learning_rate', lower=2**-10, upper=1, default_value=0.3, log=True
+                'eta', lower=2**-10, upper=1, default_value=0.1, log=True
             ),
             CS.UniformFloatHyperparameter(
                 'l2_regularization', lower=2**-10, upper=2**10, default_value=0.1, log=True
@@ -61,7 +61,7 @@ class HistGBBenchmark(MLBenchmark):
         fidelity1 = dict(
             fixed=CS.Constant('n_estimators', value=100),
             variable=CS.UniformIntegerHyperparameter(
-                'n_estimators', lower=16, upper=512, default_value=512, log=False
+                'n_estimators', lower=100, upper=1000, default_value=1000, log=False
             )
         )
         fidelity2 = dict(
