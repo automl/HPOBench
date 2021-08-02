@@ -28,8 +28,10 @@ class NNBenchmark(MLBenchmark):
         cs = CS.ConfigurationSpace(seed=seed)
 
         cs.add_hyperparameters([
-            CS.UniformIntegerHyperparameter('depth', default_value=3, lower=1, upper=3),
-            CS.UniformIntegerHyperparameter('width', default_value=64, lower=16, upper=256),
+            CS.UniformIntegerHyperparameter('depth', default_value=3, lower=1, upper=3, log=False),
+            CS.UniformIntegerHyperparameter(
+                'width', default_value=64, lower=16, upper=1024, log=True
+            ),
             CS.UniformIntegerHyperparameter(
                 'batch_size', lower=4, upper=256, default_value=32, log=True
             ),

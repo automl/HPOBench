@@ -32,13 +32,10 @@ class XGBoostBenchmark(MLBenchmark):
                 'eta', lower=2**-10, upper=1., default_value=0.3, log=True
             ),  # learning rate
             CS.UniformIntegerHyperparameter(
-                'max_depth', lower=6, upper=50, default_value=10, log=True
+                'max_depth', lower=1, upper=50, default_value=10, log=True
             ),
             CS.UniformFloatHyperparameter(
-                'min_child_weight', lower=1., upper=2**7., default_value=1., log=True
-            ),
-            CS.UniformFloatHyperparameter(
-                'colsample_bytree', lower=0.05, upper=1., default_value=1.
+                'colsample_bytree', lower=0.1, upper=1., default_value=1., log=False
             ),
             CS.UniformFloatHyperparameter(
                 'reg_lambda', lower=2**-10, upper=2**10, default_value=1, log=True
@@ -105,6 +102,7 @@ class XGBoostBenchmark(MLBenchmark):
         if self.n_classes > 2:
             extra_args["objective"] = "multi:softmax"
             extra_args.update({"num_class": self.n_classes})
+
         model = xgb.XGBClassifier(
             **config.get_dictionary(),
             **extra_args

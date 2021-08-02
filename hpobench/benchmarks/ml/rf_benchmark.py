@@ -1,6 +1,7 @@
 import numpy as np
 import ConfigSpace as CS
 from typing import Union
+from copy import deepcopy
 from sklearn.ensemble import RandomForestClassifier
 
 from hpobench.benchmarks.ml.ml_benchmark_template import MLBenchmark
@@ -29,11 +30,12 @@ class RandomForestBenchmark(MLBenchmark):
             CS.UniformIntegerHyperparameter(
                 'max_depth', lower=1, upper=50, default_value=10, log=True
             ),
-            CS.UniformFloatHyperparameter(
-                'min_samples_split', lower=0.05, upper=0.9, default_value=0.9, log=True
+            CS.UniformIntegerHyperparameter(
+                'min_samples_split', lower=2, upper=128, default_value=32, log=True
             ),
+            # the use of a float max_features is different than the sklearn usage
             CS.UniformFloatHyperparameter(
-                'max_features', lower=0.1, upper=1.0, default_value=0.5, log=False
+                'max_features', lower=0, upper=1.0, default_value=0.5, log=False
             ),
             CS.UniformIntegerHyperparameter(
                 'min_samples_leaf', lower=1, upper=20, default_value=1, log=False
@@ -90,8 +92,11 @@ class RandomForestBenchmark(MLBenchmark):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
         rng = self.rng if rng is None else rng
+        config = deepcopy(config.get_dictionary())
+        n_features = self.train_X.shape[1]
+        config["max_features"] = int(np.rint(np.power(n_features, config["max_features"])))
         model = RandomForestClassifier(
-            **config.get_dictionary(),
+            **config,
             n_estimators=fidelity['n_estimators'],  # a fidelity being used during initialization
             bootstrap=True,
             random_state=rng
