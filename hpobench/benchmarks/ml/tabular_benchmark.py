@@ -1,13 +1,11 @@
 import os
-import glom
 import json
-import pickle
 import numpy as np
 import pandas as pd
 import ConfigSpace as CS
-import pickle5 as pickle
-from copy import deepcopy
+from ConfigSpace.read_and_write import json as json_cs
 from typing import Union, List, Dict
+
 from hpobench.benchmarks.ml.ml_benchmark_template import metrics
 
 
@@ -16,25 +14,18 @@ class TabularBenchmark:
         assert os.path.isdir(path), "Not a valid path: {}".format(path)
         self.data_path = os.path.join(path, "{}_{}_data.parquet.gzip".format(model, task_id))
         assert os.path.isfile(self.data_path)
-        self.config_path = os.path.join(path, "{}_{}_configs.pkl".format(model, task_id))
-        assert os.path.isfile(self.config_path)
-        self.exp_args_path = os.path.join(path, "{}_{}.json".format(model, task_id))
-        assert os.path.isfile(self.exp_args_path)
+        self.metadata_path = os.path.join(path, "{}_{}_metadata.json".format(model, task_id))
+        assert os.path.isfile(self.metadata_path)
 
         self.seed = seed if seed is not None else np.random.randint(1, 10 ** 6)
         self.rng = np.random.RandomState(self.seed)
         self.table = self._load_parquet(self.data_path)
-        self.exp_args = self._load_json(self.exp_args_path)
-        self.config_spaces = self._load_pickle(self.config_path)
-
+        self.metadata = self._load_json(self.metadata_path)
+        self.exp_args = self.metadata["exp_args"]
+        self.config_spaces = self.metadata["config_spaces"]
+        self.global_minimums = self.metadata["global_min"]
         self.x_cs = self.get_hyperparameter_space(seed=self.seed)
         self.z_cs = self.get_fidelity_space(seed=self.seed)
-        self.global_minimums = self.exp_args["global_min"]
-
-    def _load_pickle(self, path):
-        with open(path, "rb") as f:
-            data = pickle.load(f)
-        return data
 
     def _load_parquet(self, path):
         data = pd.read_parquet(path)
@@ -44,6 +35,13 @@ class TabularBenchmark:
         with open(path, "r") as f:
             data = json.load(f)
         return data
+
+    def _preprocess_configspace(self, config_space):
+        """ Converts floats to np.float32 """
+        for hp in config_space.get_hyperparameters():
+            hp.sequence = tuple(np.array(hp.sequence).astype(np.float32))
+            hp.default_value = np.float32(hp.default_value)
+        return config_space
 
     def _total_number_of_configurations(self, space: str="hyperparameters") -> int:
         """ Returns the number of unique configurations in the parameter/fidelity space
@@ -59,18 +57,18 @@ class TabularBenchmark:
 
     def get_hyperparameter_space(self, seed=None, original=False):
         cs = CS.ConfigurationSpace(seed=seed)
-        if original:
-            _cs = self.config_spaces['x']
-        _cs = self.config_spaces['x_discrete']
+        load_name = "x" if original else "x_discrete"
+        _cs = json_cs.read(self.config_spaces[load_name])
         for hp in _cs.get_hyperparameters():
             cs.add_hyperparameter(hp)
+        if not original:
+            cs = self._preprocess_configspace(cs)
         return cs
 
     def get_fidelity_space(self, seed=None, original=False):
         cs = CS.ConfigurationSpace(seed=seed)
-        if original:
-            _cs = self.config_spaces['z']
-        _cs = self.config_spaces['z_discrete']
+        load_name = "z" if original else "z_discrete"
+        _cs = json_cs.read(self.config_spaces[load_name])
         for hp in _cs.get_hyperparameters():
             cs.add_hyperparameter(hp)
         return cs
