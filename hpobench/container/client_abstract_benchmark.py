@@ -64,25 +64,14 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
     """
     def __init__(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
                  container_tag: str = 'latest', env_str: Optional[str] = '', bind_str: Optional[str] = '',
-                 gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-
-        self.socket_id = self._id_generator()
-        self._setup(benchmark_name, container_name, container_source, container_tag, env_str, bind_str, gpu, rng,
-                    **kwargs)
-
-    def _setup(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
-               container_tag: str = 'latest', env_str: Optional[str] = '', bind_str: Optional[str] = '',
-               gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-
-        """ Initialization of the benchmark using container.
-
-        This setup function downloads the container from a defined source. The source is defined either in the
-        .hpobenchrc or in the its benchmark definition (hpobench/container/benchmarks/<type>/<name>). If an container
-        is already locally available, the local container is used. Then, the container is started and a connection
-        between the container and the client is established.
+                 gpu: Optional[bool] = False, rng: Union[np.random.RandomState, int, None] = None,
+                 socket_id=None, **kwargs):
+        """
+        Initialization of the benchmark using container.
 
         Parameters
         ----------
+
         benchmark_name: str
             Class name of the benchmark to use. For example XGBoostBenchmark. This value is defined in the benchmark
             definition (hpobench/container/benchmarks/<type>/<name>)
@@ -112,15 +101,87 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         gpu : bool
             If True, the container has access to the local cuda-drivers.
             (Not tested)
+        rng : np.random.RandomState, int, None
+            The random seed for the benchmark. This seed is sent to the benchmark container.
+        socket_id : Optional[str]
+            In HPOBench 0.0.8, we split the functionality of starting and connecting to a container into two steps.
+            1) Start the benchmark on a random generated socket id.
+            2) Create a proxy connection to the container via this socket id.
+
+            When no `socket_id` is given, a new container is started. The `socket_id` (address) of this containers is
+            stored in the class attribute Benchmark.socket_id
+
+            When a `socket_id` is given, instead of creating a new container, connect only to the container that is
+            reachable at `socket_id`. Make sure that a container is already running with the address `socket_id`.
+
+        kwargs
+            Optional benchmark parameters, such as a task_id for the XGBoostBenchmark
         """
-        # Create unique ID
+
         self.config = hpobench.config.config_file
 
-        # We can point to a different container source. See below.
-        container_source = container_source or self.config.container_source
-        container_dir = Path(self.config.container_dir)
+        # connect to already running server if a socket_id is given. In this case, skip the init of
+        # the benchmark
+        self.proxy_only = socket_id is not None
 
-        if (container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry')
+        if not self.proxy_only:
+            self.socket_id = self._id_generator()
+
+            self.load_benchmark(benchmark_name=benchmark_name, container_name=container_name,
+                                container_source=container_source, container_tag=container_tag, **kwargs)
+            self.start_server(benchmark_name=benchmark_name, env_str=env_str, bind_str=bind_str, gpu=gpu)
+            self.connect_to_server()
+            self.init_benchmark(rng, **kwargs)
+        else:
+            self.socket_id = socket_id
+            self.connect_to_server()
+
+    def _parse_kwargs(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        """ Helper function to parse the named keyword arguments to json str. """
+        if rng is not None:
+            kwargs['rng'] = rng
+        if 'latest' in kwargs:
+            del kwargs['latest']
+        kwargs_str = json.dumps(kwargs, indent=None, cls=BenchmarkEncoder)
+        return kwargs_str
+
+    def _parse_configuration(self, configuration: Union[CS.Configuration, Dict]) -> str:
+        """ Helper function to parse the configuration as json dict. """
+        if isinstance(configuration, CS.Configuration):
+            configuration = configuration.get_dictionary()
+        elif isinstance(configuration, dict):
+            configuration = configuration
+        else:
+            raise ValueError(f'Type of config not understood: {type(configuration)}')
+        c_str = json.dumps(configuration, indent=None, cls=BenchmarkEncoder)
+        return c_str
+
+    def _parse_fidelities(self, fidelity: Union[CS.Configuration, Dict, None] = None):
+        """ Helper function to parse the fidelity as json dict. """
+        if fidelity is None:
+            fidelity = {}
+        elif isinstance(fidelity, CS.Configuration):
+            fidelity = fidelity.get_dictionary()
+        elif isinstance(fidelity, dict):
+            fidelity = fidelity
+        else:
+            raise ValueError(f'Type of fidelity not understood: {type(fidelity)}')
+        f_str = json.dumps(fidelity, indent=None, cls=BenchmarkEncoder)
+        return f_str
+
+    def load_benchmark(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
+                       container_tag: str = 'latest', **kwargs) -> None:
+        """
+        This setup function downloads the container from a defined source. The source is defined either in the
+        .hpobenchrc or in the its benchmark definition (hpobench/container/benchmarks/<type>/<name>). If an container
+        is already locally available, the local container is used. Then, the container is started and a connection
+        between the container and the client is established.
+        """
+        # We can point to a different container source. See below.
+        self.container_source = container_source or self.config.container_source
+        self.container_dir = Path(self.config.container_dir)
+
+        if (self.container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry')
                 and container_tag == 'latest'):
             assert 'latest' in kwargs, 'If the container is hosted on the gitlab registry, make sure that in the ' \
                                        'container init, the field \'latest\' is set.'
@@ -128,15 +189,15 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             container_tag = kwargs['latest']
             logger.debug(f'Replace the tag \'latest\' with \'{container_tag}\'.')
 
-        container_name_with_tag = f'{container_name}_{container_tag}'
+        self.container_name_with_tag = f'{container_name}_{container_tag}'
         logger.info(f'~~~ HPOBENCH VERSION: {__version__} ~~~~ CONTAINER VERSION: {container_tag} ~~~')
-        logger.debug(f'Use benchmark {benchmark_name} from container {container_source}/{container_name}. \n'
+        logger.debug(f'Use benchmark {benchmark_name} from container {self.container_source}/{container_name}. \n'
                      f'And container directory {self.config.container_dir}')
 
         # Pull the container from the singularity hub if the container is hosted online. If the container is stored
         # locally (e.g.for development) do not pull it.
-        if container_source is not None \
-                and any((s in container_source for s in ['shub', 'library', 'docker', 'oras', 'http'])):
+        if self.container_source is not None \
+                and any((s in self.container_source for s in ['shub', 'library', 'docker', 'oras', 'http'])):
 
             # Racing conditions: If a process is already loading the benchmark container, let all other processes wait.
             # Following https://github.com/dhellmann/oslo.concurrency/blob/master/openstack/common/lockutils.py
@@ -151,13 +212,13 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             @lockutils.synchronized('not_thread_process_safe', external=True,
                                     lock_path=f'{self.config.cache_dir}/lock_{container_name}', delay=5)
             def download_container(container_dir, container_name, container_source, container_tag):
-                if not (container_dir / container_name_with_tag).exists():
+                if not (container_dir / self.container_name_with_tag).exists():
                     logger.debug('Going to pull the container from an online source.')
 
                     container_dir.mkdir(parents=True, exist_ok=True)
 
                     cmd = f'singularity pull --dir {self.config.container_dir} ' \
-                          f'--name {container_name_with_tag} '
+                          f'--name {self.container_name_with_tag} '
 
                     # Currently, we can't see the available container tags on gitlab. Therefore, we create for each
                     # "tag" a new entry in the registry. This might change in the future. But as long as we don't have
@@ -167,44 +228,51 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                     else:
                         cmd += f'{container_source}/{container_name.lower()}:{container_tag}'
 
-                    logger.info(f'Start downloading the container {container_name_with_tag} from {container_source}. '
-                                'This may take several minutes.')
+                    logger.info(f'Start downloading the container {self.container_name_with_tag} '
+                                f'from {container_source}. This may take several minutes.')
                     logger.debug(cmd)
                     subprocess.run(cmd, shell=True, check=True)
                     time.sleep(1)
                 else:
                     logger.debug('Skipping downloading the container. It is already downloaded.')
 
-            download_container(container_dir, container_name, container_source, container_tag)
+            download_container(self.container_dir, container_name, self.container_source, container_tag)
         else:
             logger.debug(f'Looking on the local filesystem for the container file, since container source was '
-                         f'either \'None\' or not a known address. Image Source: {container_source}')
+                         f'either \'None\' or not a known address. Image Source: {self.container_source}')
 
             # Make sure that the container can be found locally.
-            container_dir = Path(container_source)
+            self.container_dir = Path(self.container_source)
 
-            if not container_dir.exists():
+            if not self.container_dir.exists():
                 raise FileNotFoundError(f'Could not find the container on the local filesystem. The path '
-                                        f'{container_source} does not exist.'
+                                        f'{self.container_source} does not exist.'
                                         'Please either specify the full path to the container '
                                         'or the directory in which the container is, as well as '
                                         'the benchmark name and the container tag (default: latest).')
 
             # if the container source is the path to the container itself, we are going to use this container directly.
-            if container_dir.is_file():
-                container_name_with_tag = container_dir.name
-                container_dir = container_dir.parent
+            if self.container_dir.is_file():
+                self.container_name_with_tag = self.container_dir.name
+                self.container_dir = self.container_dir.parent
 
             # If the user specifies a container directory, search for the container name with (!) tag in it.
-            elif container_dir.is_dir():
-                assert (container_dir / container_name_with_tag).exists(), \
-                    f'Local container not found in {container_dir / container_name_with_tag}'
+            elif self.container_dir.is_dir():
+                assert (self.container_dir / self.container_name_with_tag).exists(), \
+                    f'Local container not found in {self.container_dir / self.container_name_with_tag}'
 
             else:
                 raise FileNotFoundError('The container source is neither a file nor a directory.'
-                                        f'container_source: {container_dir}')
+                                        f'self.container_source: {self.container_dir}')
 
             logger.debug('Image found on the local file system.')
+
+    def start_server(self, benchmark_name: str, env_str: Optional[str] = '', bind_str: Optional[str] = '',
+                     gpu: Optional[bool] = False) -> None:
+        """
+        Start a server. This means we create the container as a singularity instance.
+        We pass arguments to the container via environment variables.
+        """
 
         env_vars = {'HPOBENCH_DEBUG': log_level_str}
         if env_str.strip() != '':
@@ -225,8 +293,11 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
         gpu_opt = '--nv ' if gpu else ''  # Option for enabling GPU support
 
+        assert self.container_dir is not None and self.container_name_with_tag is not None
+
         cmd = f'singularity instance start {bind_options} {gpu_opt}' \
-              f'{container_dir / container_name_with_tag} {self.socket_id}'
+              f'{self.container_dir / self.container_name_with_tag} {self.socket_id}'
+        logger.debug(cmd)
         logger.debug(cmd)
 
         for num_tries in range(MAX_TRIES):
@@ -248,11 +319,12 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             logger.debug(f'Could not start instance: Try {num_tries + 1}|{MAX_TRIES}')
             if num_tries + 1 == MAX_TRIES:
-                raise SystemError(f'Could not start a instance of the benchmark. Retried {MAX_TRIES:d} times'
+                raise SystemError(f'Could not start an instance of the benchmark. Retried {MAX_TRIES:d} times'
                                   f'\nStdout: {output} \nStderr: {err}')
 
             sleep_for = np.random.randint(1, 60)
-            logger.critical(f'[{num_tries + 1}/{MAX_TRIES}] Could not start instance, sleeping for {sleep_for} seconds')
+            logger.critical(f'[{num_tries + 1}/{MAX_TRIES}] Could not start the instance,'
+                            f' sleeping for {sleep_for} seconds')
             time.sleep(sleep_for)
 
         # Give each instance a little bit time to start
@@ -262,13 +334,21 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         logger.debug(cmd)
         subprocess.Popen(cmd.split(), shell=False,
                          env={**os.environ, **{'SINGULARITYENV_HPOBENCH_DEBUG': log_level_str}})
+        logger.debug('Instance successfully started')
 
+    def connect_to_server(self):
+        """ Given a socket_id, create a Pyro4 Proxy connection to the container. """
         Pyro4.config.REQUIRE_EXPOSE = False
         # Generate Pyro 4 URI for connecting to client
         self.uri = f'PYRO:{self.socket_id}.unixsock@./u:' \
                    f'{self.config.socket_dir}/{self.socket_id}_unix.sock'
         self.benchmark = Pyro4.Proxy(self.uri)
+        logger.debug('Connected Proxy to benchmark')
 
+    def init_benchmark(self, rng, **kwargs):
+        """ Call the init function of the benchmark via Proxy. This function may take some time, since the
+            init of the benchmark may include some long-running operations.
+        """
         # Handle rng and other optional benchmark arguments
         kwargs_str = self._parse_kwargs(rng, **kwargs)
 
@@ -289,37 +369,6 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
 
             break
         logger.debug('Connected to container')
-
-    def _parse_kwargs(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        """ Helper function to parse the named keyword arguments to json str. """
-        if rng is not None:
-            kwargs['rng'] = rng
-        if 'latest' in kwargs:
-            del kwargs['latest']
-        kwargs_str = json.dumps(kwargs, indent=None, cls=BenchmarkEncoder)
-        return kwargs_str
-
-    def _parse_configuration(self, configuration: Union[CS.Configuration, Dict]) -> str:
-        if isinstance(configuration, CS.Configuration):
-            configuration = configuration.get_dictionary()
-        elif isinstance(configuration, dict):
-            configuration = configuration
-        else:
-            raise ValueError(f'Type of config not understood: {type(configuration)}')
-        c_str = json.dumps(configuration, indent=None, cls=BenchmarkEncoder)
-        return c_str
-
-    def _parse_fidelities(self, fidelity: Union[CS.Configuration, Dict, None] = None):
-        if fidelity is None:
-            fidelity = {}
-        elif isinstance(fidelity, CS.Configuration):
-            fidelity = fidelity.get_dictionary()
-        elif isinstance(fidelity, dict):
-            fidelity = fidelity
-        else:
-            raise ValueError(f'Type of fidelity not understood: {type(fidelity)}')
-        f_str = json.dumps(fidelity, indent=None, cls=BenchmarkEncoder)
-        return f_str
 
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[Dict, CS.Configuration, None] = None,
@@ -433,15 +482,20 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         """ Shutdown benchmark and stop container"""
         try:
             self.benchmark.shutdown()
+        except (TypeError, ConnectionRefusedError, Pyro4.errors.CommunicationError, Pyro4.errors.ConnectionClosedError):
+            pass
+
+        try:
+            self.benchmark._pyroRelease()
         except (ConnectionRefusedError, Pyro4.errors.CommunicationError, Pyro4.errors.ConnectionClosedError):
             pass
 
         # If the container is already closed, we dont want a error message here (-> DEVNULL)
-        subprocess.run(f'singularity instance stop {self.socket_id}'.split(), check=False, stdout=subprocess.DEVNULL)
-
+        subprocess.Popen(f'singularity instance stop {self.socket_id}',
+                         stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, shell=True)
         if (self.config.socket_dir / f'{self.socket_id}_unix.sock').exists():
             (self.config.socket_dir / f'{self.socket_id}_unix.sock').unlink()
-        # self.benchmark._pyroRelease()
+
         logger.info('Benchmark is successfully shut down.')
 
     def __call__(self, configuration: Dict, **kwargs) -> Dict:
@@ -449,7 +503,10 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         return self.objective_function(configuration, **kwargs)['function_value']
 
     def __del__(self):
-        self._shutdown()
+        if not self.proxy_only:
+            self._shutdown()
+        else:
+            self.benchmark._pyroRelease()
 
     @staticmethod
     def _id_generator() -> str:

@@ -92,10 +92,10 @@ pip install .
 All of HPOBench's settings are stored in a file, the `hpobenchrc`-file. 
 It is a yaml file, which is automatically generated at the first use of HPOBench. 
 By default, it is placed in `$XDG_CONFIG_HOME`. If `$XDG_CONFIG_HOME` is not set, then the
-`hpobenchrc`-file is saved to `'~/.config/hpobench'`. When using the containerized benchmarks, the unix socket is 
+`hpobenchrc`-file is saved to `'~/.config/hpobench'`. When using the containerized benchmarks, the Unix socket is 
 defined via `$TEMP_DIR`. This is by default `\tmp`. Make sure to have write permissions in those directories. 
 
-In the `hpobenchrc`, you can specify for example the directory, in that the benchmark-containers are
+In the `hpobenchrc`, you can specify for example the directory, in that the benchmark containers are
 downloaded. We encourage you to take a look into the `hpobenchrc`, to find out more about all
 possible settings. 
 
@@ -119,7 +119,16 @@ config = b.get_configuration_space(seed=1).sample_configuration()
 result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5})
 ```
 
-### Remove all caches
+### Remove all data, containers, and caches
+
+Update: In version 0.0.8, we have added the script `hpobench/util/clean_up_script.py`. It allows to easily remove all
+data, downloaded containers, and caches. To get more information, you can use the following command. 
+```bash
+python ./hpobench/util/clean_up_script.py --help
+``` 
+
+If you like to delete only specific parts, i.e. a single container,
+you can find the benchmark's data, container, and caches in the following directories:
 
 #### HPOBench data
 HPOBench stores downloaded containers and datasets at the following locations:
@@ -130,17 +139,17 @@ $XDG_CACHE_HOME # ~/.cache/hpobench
 $XDG_DATA_HOME # ~/.local/share/hpobench
 ```
 
-For crashes or when not properly shutting down containers, there might be socket files left under `/tmp/`.
+For crashes or when not properly shutting down containers, there might be socket files left under `/tmp/hpobench_socket`.
 
 #### OpenML data
 
-OpenML data additionally maintains it's own cache which is located at `~/.openml/`
+OpenML data additionally maintains its cache which is located at `~/.openml/`
 
 #### Singularity container
 
-Singularity additionally maintains it's own cache which can be removed with `singularity cache clean`
+Singularity additionally maintains its cache which can be removed with `singularity cache clean`
 
-#### Use HPOBench benchmarks
+### Use HPOBench benchmarks in research projects
 
 If you use a benchmark in your experiments, please specify the version number of the HPOBench as well as the version of 
 the used container. When starting an experiment, HPOBench writes automatically the 2 version numbers to the log. 
@@ -151,7 +160,7 @@ the used container. When starting an experiment, HPOBench writes automatically t
   Use a singularity version > 3. For users of the Meta-Cluster in Freiburg, you have to set the following path:
   ```export PATH=/usr/local/kislurm/singularity-3.5/bin/:$PATH```
 
-  - **A Benchmark fails with `SystemError: Could not start a instance of the benchmark. Retried 5 times` but the container 
+  - **A Benchmark fails with `SystemError: Could not start an instance of the benchmark. Retried 5 times` but the container 
 can be started locally with `singularity instance start <pathtocontainer> test`**
 See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that does not end with '}'. If yes delete this file and retry.   
   

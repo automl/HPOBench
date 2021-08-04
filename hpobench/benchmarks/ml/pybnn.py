@@ -10,6 +10,9 @@ you need to install the following packages besides installing the hpobench with
 
 Changelog:
 ==========
+0.0.4
+* Limit variance in NLL loss to prevent very large values.
+
 0.0.3
 * New container release due to a general change in the communication between container and HPOBench.
   Works with HPOBench >= v0.0.8
@@ -51,7 +54,7 @@ from sgmcmc.bnn.model import BayesianNeuralNetwork  # noqa: E402
 from sgmcmc.bnn.lasagne_layers import AppendLayer  # noqa: E402
 
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 logger = logging.getLogger('PyBnnBenchmark')
 
 
@@ -220,6 +223,7 @@ class BayesianNeuralNetworkBenchmark(AbstractBenchmark):
     @staticmethod
     def _neg_log_likelihood(targets: np.ndarray, mean_pred: np.ndarray, var_pred: np.ndarray) -> np.ndarray:
         """ Compute the negative log likelihood for normal distributions. """
+        var_pred = np.clip(var_pred, a_min=1e-10, a_max=np.inf)
         nll = [stats.norm.logpdf(targets[i], loc=mean_pred[i], scale=np.sqrt(var_pred[i]))
                for i in range(targets.shape[0])]
         return -np.mean(nll)

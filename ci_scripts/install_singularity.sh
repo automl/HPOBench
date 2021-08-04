@@ -24,12 +24,12 @@ else
     echo "Skip installing Singularity"
 fi
 
-wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
-tar -xzf singularity-${VERSION}.tar.gz && \
-cd ./singularity && \
+wget https://github.com/sylabs/singularity/archive/refs/tags/v${VERSION}.tar.gz && \
+tar -xzf v${VERSION}.tar.gz && \
+cd singularity-${VERSION} && \
 ./mconfig && \
 make -C builddir && \
 sudo make -C builddir install
 
 cd ..
-pip install .[singulaity]
+pip install .
