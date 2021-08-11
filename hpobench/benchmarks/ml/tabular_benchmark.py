@@ -1,40 +1,72 @@
-import os
-import json
-import numpy as np
-import pandas as pd
-import ConfigSpace as CS
-from ConfigSpace.read_and_write import json as json_cs
+from pathlib import Path
 from typing import Union, List, Dict
 
-from hpobench.benchmarks.ml.ml_benchmark_template import metrics
+import ConfigSpace
+import ConfigSpace as CS
+import numpy as np
+from ConfigSpace.read_and_write import json as json_cs
+
+from hpobench.abstract_benchmark import AbstractBenchmark
+from hpobench.dependencies.ml.ml_benchmark_template import metrics
+from hpobench.util.data_manager import TabularDataManager
 
 
-class TabularBenchmark:
-    def __init__(self, path: str, model: str, task_id: int, seed: Union[int, None] = None):
-        assert os.path.isdir(path), "Not a valid path: {}".format(path)
-        self.data_path = os.path.join(path, "{}_{}_data.parquet.gzip".format(model, task_id))
-        assert os.path.isfile(self.data_path)
-        self.metadata_path = os.path.join(path, "{}_{}_metadata.json".format(model, task_id))
-        assert os.path.isfile(self.metadata_path)
+class BaseTabularBenchmark(AbstractBenchmark):
 
-        self.seed = seed if seed is not None else np.random.randint(1, 10 ** 6)
-        self.rng = np.random.RandomState(self.seed)
-        self.table = self._load_parquet(self.data_path)
-        self.metadata = self._load_json(self.metadata_path)
+    def __init__(self, model: str, task_id: int, data_dir: Union[Path, str, None] = None,
+                 rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+
+        super(BaseTabularBenchmark, self).__init__(rng=rng, **kwargs)
+
+        self.task_id = task_id
+        self.model = model
+
+        self.table, self.metadata = TabularDataManager(model, task_id, data_dir)
+
         self.exp_args = self.metadata["exp_args"]
         self.config_spaces = self.metadata["config_spaces"]
         self.global_minimums = self.metadata["global_min"]
-        self.x_cs = self.get_hyperparameter_space(seed=self.seed)
-        self.z_cs = self.get_fidelity_space(seed=self.seed)
 
-    def _load_parquet(self, path):
-        data = pd.read_parquet(path)
-        return data
+    @AbstractBenchmark.check_parameters
+    def objective_function(self,
+                           configuration: Union[ConfigSpace.Configuration, Dict],
+                           fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
+                           rng: Union[np.random.RandomState, int, None] = None,
+                           seed: Union[int, None] = None,
+                           metric: Union[str, None] = 'acc',
+                           **kwargs) -> Dict:
 
-    def _load_json(self, path):
-        with open(path, "r") as f:
-            data = json.load(f)
-        return data
+        result = self._objective(configuration, fidelity, seed, metric, evaluation="val")
+        return result
+
+    @AbstractBenchmark.check_parameters
+    def objective_function_test(self,
+                                configuration: Union[ConfigSpace.Configuration, Dict],
+                                fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
+                                rng: Union[np.random.RandomState, int, None] = None,
+                                seed: Union[int, None] = None,
+                                metric: Union[str, None] = 'acc',
+                                **kwargs) -> Dict:
+
+        result = self._objective(configuration, fidelity, seed, metric, evaluation="test")
+        return result
+
+    # pylint: disable=arguments-differ
+    def get_configuration_space(self, seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+        raise NotImplementedError
+
+    # pylint: disable=arguments-differ
+    def get_fidelity_space(self, seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+        raise NotImplementedError
+
+    # pylint: disable=arguments-differ
+    def get_meta_information(self) -> Dict:
+        """ Returns the meta information for the benchmark """
+        return {'name': 'BaseTabularBenchmark',
+                'references': [],
+                'task_id': self.task_id,
+                'model': self.model
+                }
 
     def _preprocess_configspace(self, config_space):
         """ Converts floats to np.float32 """
@@ -47,7 +79,7 @@ class TabularBenchmark:
         """ Returns the number of unique configurations in the parameter/fidelity space
         """
         count = 1
-        cs = self.x_cs if space == "hyperparameters" else self.z_cs
+        cs = self.configuration_space if space == "hyperparameters" else self.fidelity_space
         for hp in cs.get_hyperparameters():
             count *= len(hp.sequence)
         return count
@@ -55,29 +87,11 @@ class TabularBenchmark:
     def _seeds_used(self):
         return self.table.seed.unique().tolist()
 
-    def get_hyperparameter_space(self, seed=None, original=False):
-        cs = CS.ConfigurationSpace(seed=seed)
-        load_name = "x" if original else "x_discrete"
-        _cs = json_cs.read(self.config_spaces[load_name])
-        for hp in _cs.get_hyperparameters():
-            cs.add_hyperparameter(hp)
-        if not original:
-            cs = self._preprocess_configspace(cs)
-        return cs
-
-    def get_fidelity_space(self, seed=None, original=False):
-        cs = CS.ConfigurationSpace(seed=seed)
-        load_name = "z" if original else "z_discrete"
-        _cs = json_cs.read(self.config_spaces[load_name])
-        for hp in _cs.get_hyperparameters():
-            cs.add_hyperparameter(hp)
-        return cs
-
     def sample_hyperparamer(self, n: int = 1) -> Union[CS.Configuration, List]:
-        return self.x_cs.sample_configuration(n)
+        return self.configuration_space.sample_configuration(n)
 
     def sample_fidelity(self, n: int = 1) -> Union[CS.Configuration, List]:
-        return self.z_cs.sample_configuration(n)
+        return self.fidelity_space.sample_configuration(n)
 
     def get_global_min(self, metric: str = "acc"):
         """ Retrieves the minimum (1 - metric) for train, validation and test splits
@@ -88,13 +102,13 @@ class TabularBenchmark:
 
     def get_max_fidelity(self) -> Dict:
         max_fidelity = dict()
-        for hp in self.z_cs.get_hyperparameters():
+        for hp in self.fidelity_space.get_hyperparameters():
             max_fidelity[hp.name] = np.sort(hp.sequence)[-1]
         return max_fidelity
 
     def get_fidelity_range(self):
         fidelities = []
-        for hp in self.z_cs.get_hyperparameters():
+        for hp in self.fidelity_space.get_hyperparameters():
             if not isinstance(hp, CS.Constant) and len(hp.sequence) > 1:
                 fidelities.append((hp.name, hp.sequence[0], hp.sequence[-1]))
         return fidelities
@@ -119,17 +133,16 @@ class TabularBenchmark:
             metric: Union[str, None] = "acc",
             evaluation: Union[str] = ""
     ) -> Dict:
-        self.x_cs.check_configuration(config)
-        self.z_cs.check_configuration(fidelity)
-        assert metric in list(metrics.keys()), \
-            "metric not found among: {{{}}}".format(", ".join(list(metrics.keys())))
-        score_key = "{}_scores".format(evaluation)
-        cost_key = "{}_scores".format(evaluation)
+
+        metric_str = ', '.join(list(metrics.keys))
+        assert metric in list(metrics.keys()), f"metric not found among: {metric_str}"
+        score_key = f"{evaluation}_scores"
+        cost_key = f"{evaluation}_scores"
 
         key_path = dict()
-        for name in np.sort(self.x_cs.get_hyperparameter_names()):
+        for name in np.sort(self.configuration_space.get_hyperparameter_names()):
             key_path[str(name)] = config[str(name)]
-        for name in np.sort(self.z_cs.get_hyperparameter_names()):
+        for name in np.sort(self.fidelity_space.get_hyperparameter_names()):
             key_path[str(name)] = fidelity[str(name)]
 
         if seed is not None:
@@ -152,22 +165,42 @@ class TabularBenchmark:
         result = dict(function_value=loss, cost=costs, info=info)
         return result
 
-    def objective_function(
-            self,
-            config: CS.Configuration,
-            fidelity: CS.Configuration,
-            seed: Union[int, None] = None,
-            metric: Union[str, None] = "acc"
-    ) -> Dict:
-        result = self._objective(config, fidelity, seed, metric, evaluation="val")
-        return result
 
-    def objective_function_test(
-            self,
-            config: CS.Configuration,
-            fidelity: CS.Configuration,
-            seed: Union[int, None] = None,
-            metric: Union[str, None] = "acc"
-    ) -> Dict:
-        result = self._objective(config, fidelity, seed, metric, evaluation="test")
-        return result
+class TabularBenchmark(BaseTabularBenchmark):
+    def __init__(self, model: str, task_id: int, data_dir: Union[Path, str, None] = None,
+                 rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(TabularBenchmark, self).__init__(model, task_id, data_dir, rng, **kwargs)
+
+    # pylint: disable=arguments-differ
+    def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        cs = json_cs.read(self.config_spaces['x_discrete'])
+        cs = self._preprocess_configspace(cs)
+        cs.seed(seed)
+        return cs
+
+    # pylint: disable=arguments-differ
+    def get_fidelity_space(self, seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+        cs = json_cs.read(self.config_spaces['z_discrete'])
+        cs.seed(seed=seed)
+        return cs
+
+
+class OriginalTabularBenchmark(BaseTabularBenchmark):
+    def __init__(self, model: str, task_id: int, data_dir: Union[Path, str, None] = None,
+                 rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(OriginalTabularBenchmark, self).__init__(model, task_id, data_dir, rng, **kwargs)
+
+    # pylint: disable=arguments-differ
+    def get_configuration_space(self, seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+        cs = json_cs.read(self.config_spaces['x'])
+        cs.seed(seed)
+        return cs
+
+    # pylint: disable=arguments-differ
+    def get_fidelity_space(self, seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+        cs = json_cs.read(self.config_spaces['z'])
+        cs.seed(seed=seed)
+        return cs
+
+
+__all__ = [TabularBenchmark, OriginalTabularBenchmark]
