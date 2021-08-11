@@ -13,19 +13,19 @@ hpobench.util.openml_data_manager.
 
 import abc
 import gzip
+import json
 import logging
 import pickle
 import tarfile
-import requests
-
 from io import BytesIO
 from pathlib import Path
+from time import time
 from typing import Tuple, Dict, Any, Union
 from urllib.request import urlretrieve, urlopen
 from zipfile import ZipFile
-from time import time
 
 import numpy as np
+import requests
 
 try:
     from oslo_concurrency import lockutils
