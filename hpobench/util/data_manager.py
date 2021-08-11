@@ -116,7 +116,6 @@ class DataManager(abc.ABC, metaclass=abc.ABCMeta):
         self.logger.debug(f'Successfully extracted the data to {save_dir}')
 
 
-
 class HoldoutDataManager(DataManager):
     """  Base Class for loading and managing the Holdout data sets.
 

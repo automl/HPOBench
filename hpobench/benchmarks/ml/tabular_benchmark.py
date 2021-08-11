@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Union, List, Dict
 
-import ConfigSpace
 import ConfigSpace as CS
 import numpy as np
 from ConfigSpace.read_and_write import json as json_cs
@@ -29,8 +28,8 @@ class BaseTabularBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark.check_parameters
     def objective_function(self,
-                           configuration: Union[ConfigSpace.Configuration, Dict],
-                           fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
+                           configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[Dict, CS.Configuration, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
                            seed: Union[int, None] = None,
                            metric: Union[str, None] = 'acc',
@@ -41,8 +40,8 @@ class BaseTabularBenchmark(AbstractBenchmark):
 
     @AbstractBenchmark.check_parameters
     def objective_function_test(self,
-                                configuration: Union[ConfigSpace.Configuration, Dict],
-                                fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
+                                configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[Dict, CS.Configuration, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
                                 seed: Union[int, None] = None,
                                 metric: Union[str, None] = 'acc',
@@ -52,11 +51,11 @@ class BaseTabularBenchmark(AbstractBenchmark):
         return result
 
     # pylint: disable=arguments-differ
-    def get_configuration_space(self, seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+    def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         raise NotImplementedError
 
     # pylint: disable=arguments-differ
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         raise NotImplementedError
 
     # pylint: disable=arguments-differ
@@ -75,7 +74,7 @@ class BaseTabularBenchmark(AbstractBenchmark):
             hp.default_value = np.float32(hp.default_value)
         return config_space
 
-    def _total_number_of_configurations(self, space: str="hyperparameters") -> int:
+    def _total_number_of_configurations(self, space: str = "hyperparameters") -> int:
         """ Returns the number of unique configurations in the parameter/fidelity space
         """
         count = 1
@@ -179,7 +178,7 @@ class TabularBenchmark(BaseTabularBenchmark):
         return cs
 
     # pylint: disable=arguments-differ
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         cs = json_cs.read(self.config_spaces['z_discrete'])
         cs.seed(seed=seed)
         return cs
@@ -191,13 +190,13 @@ class OriginalTabularBenchmark(BaseTabularBenchmark):
         super(OriginalTabularBenchmark, self).__init__(model, task_id, data_dir, rng, **kwargs)
 
     # pylint: disable=arguments-differ
-    def get_configuration_space(self, seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+    def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         cs = json_cs.read(self.config_spaces['x'])
         cs.seed(seed)
         return cs
 
     # pylint: disable=arguments-differ
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         cs = json_cs.read(self.config_spaces['z'])
         cs.seed(seed=seed)
         return cs
