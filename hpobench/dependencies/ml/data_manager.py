@@ -76,7 +76,7 @@ class OpenMLDataManager(DataManager):
             ]
             for files in required_file_list:
                 data_str = "{}_{}.parquet.gzip".format(*files)
-                if (data_path / data_str).exists():
+                if not (data_path / data_str).exists():
                     raise FileNotFoundError("{} not found!".format(data_str.format(*files)))
             # ignore the remaining data loaders and preprocessors as valid data splits available
             return
