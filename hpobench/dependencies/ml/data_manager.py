@@ -99,7 +99,7 @@ class OpenMLDataManager(DataManager):
         return True
 
     def __download_data(self, valid_size: Union[int, float, None], verbose: bool):
-        self.logger.info(f'Start to download the OpenML dataset')
+        self.logger.info('Start to download the OpenML dataset')
 
         # loads full data
         X, y, categorical_ind, feature_names = self.dataset.get_data(target=self.task.target_name,

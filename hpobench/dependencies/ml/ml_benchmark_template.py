@@ -1,12 +1,10 @@
-import os
 import time
-import openml
+from pathlib import Path
+from typing import Union, Dict
+
+import ConfigSpace as CS
 import numpy as np
 import pandas as pd
-import ConfigSpace as CS
-from typing import Union, Dict
-from pathlib import Path
-
 from sklearn.metrics import make_scorer, accuracy_score, balanced_accuracy_score, \
     precision_score, f1_score
 
@@ -89,7 +87,7 @@ class MLBenchmark(AbstractBenchmark):
         raise NotImplementedError()
 
     @staticmethod
-    def get_fidelity_space(seed=None):
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """Fidelity space available --- specifies the fidelity dimensions
 
         If fidelity_choice is 0
