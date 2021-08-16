@@ -1,3 +1,0 @@
-{
-  "ml_tabular_benchmarks": ["pandas>=1.0.0"]
-}

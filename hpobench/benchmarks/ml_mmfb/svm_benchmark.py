@@ -10,7 +10,7 @@ from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
 class SVMBaseBenchmark(MLBenchmark):
     def __init__(self,
-                 task_id: Union[int, None] = None,
+                 task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):

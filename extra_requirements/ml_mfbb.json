@@ -1,0 +1,4 @@
+{
+  "ml_tabular_benchmarks": ["pandas==1.2.4"],
+  "ml_mfbb": ["pandas==1.2.4","sklearn==0.24.2"]
+}
