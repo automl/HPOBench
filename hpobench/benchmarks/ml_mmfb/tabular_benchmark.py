@@ -31,6 +31,7 @@ class BaseTabularBenchmark(AbstractBenchmark):
 
         super(BaseTabularBenchmark, self).__init__(rng=rng, **kwargs)
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
     def objective_function(self,
                            configuration: Union[CS.Configuration, Dict],
@@ -43,6 +44,7 @@ class BaseTabularBenchmark(AbstractBenchmark):
         result = self._objective(configuration, fidelity, seed, metric, evaluation="val")
         return result
 
+    # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
     def objective_function_test(self,
                                 configuration: Union[CS.Configuration, Dict],

@@ -646,6 +646,7 @@ class SurrogateDataManger(DataManager):
                     f.flush()
         self.logger.info("Finished downloading")
 
+    # pylint: disable=arguments-differ
     @lockutils.synchronized('not_thread_process_safe', external=True,
                             lock_path=f'{hpobench.config_file.cache_dir}/lock_surrogates_unzip_data', delay=0.5)
     def _unzip_data(self):
@@ -949,6 +950,7 @@ class TabularDataManager(DataManager):
         self.parquet_file = self._save_dir / self.task_id / f'{self.model}_{self.task_id}_data.parquet.gzip'
         self.metadata_file = self._save_dir / self.task_id / f'{self.model}_{self.task_id}_metadata.json'
 
+    # pylint: disable=arguments-differ
     def load(self):
         # Can we directly load the files?
         if self.parquet_file.exists() and self.metadata_file.exists():

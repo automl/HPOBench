@@ -53,6 +53,7 @@ class OpenMLDataManager(DataManager):
 
         super(OpenMLDataManager, self).__init__()
 
+    # pylint: disable=arguments-differ
     @lockutils.synchronized('not_thread_process_safe', external=True,
                             lock_path=f'{config_file.cache_dir}/openml_dm_lock', delay=0.2)
     def load(self, valid_size=None, verbose=False):
