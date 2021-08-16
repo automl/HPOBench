@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from typing import Union, Dict
+from typing import Union, Dict, Iterable
 
 import ConfigSpace as CS
 import numpy as np
@@ -10,6 +10,7 @@ from sklearn.metrics import make_scorer, accuracy_score, balanced_accuracy_score
 
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.dependencies.ml.data_manager import OpenMLDataManager
+from hpobench.util.rng_helper import get_rng
 
 metrics = dict(
     acc=accuracy_score,
@@ -81,7 +82,7 @@ class MLBenchmark(AbstractBenchmark):
         self.configuration_space = self.get_configuration_space(self.seed)
 
     @staticmethod
-    def get_configuration_space(seed=None):
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """Parameter space to be optimized --- contains the hyperparameters
         """
         raise NotImplementedError()
@@ -112,32 +113,40 @@ class MLBenchmark(AbstractBenchmark):
             'task_id': self.task_id
         }
 
-    def init_model(self, config, fidelity=None, rng=None):
+    def init_model(self, config: Dict, fidelity: Dict = None, rng: Union[int, np.random.RandomState, None] = None):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
         raise NotImplementedError()
 
-    def get_config(self, size=None):
+    def get_config(self, size: Union[int, None] = None):
         """Samples configuration(s) from the (hyper) parameter space
         """
         if size is None:  # return only one config
             return self.configuration_space.sample_configuration()
         return [self.configuration_space.sample_configuration() for i in range(size)]
 
-    def get_fidelity(self, size=None):
+    def get_fidelity(self, size: Union[int, None] = None):
         """Samples candidate fidelities from the fidelity space
         """
         if size is None:  # return only one config
             return self.fidelity_space.sample_configuration()
         return [self.fidelity_space.sample_configuration() for i in range(size)]
 
-    def shuffle_data_idx(self, train_idx=None, rng=None):
+    def shuffle_data_idx(self, train_idx: Iterable = None, rng: Union[np.random.RandomState, None] = None) -> Iterable:
         rng = self.rng if rng is None else rng
         train_idx = self.train_idx if train_idx is None else train_idx
         rng.shuffle(train_idx)
         return train_idx
 
-    def _train_objective(self, config, fidelity, shuffle, rng, evaluation="valid"):
+    def _train_objective(self, config: Dict,
+                         fidelity: Dict,
+                         shuffle: bool,
+                         rng: Union[np.random.RandomState, int, None] = None,
+                         evaluation: Union[str, None] = "valid"):
+
+        if rng is not None:
+            rng = get_rng(rng, self.rng)
+
         # initializing model
         model = self.init_model(config, fidelity, rng)
 
@@ -226,8 +235,8 @@ class MLBenchmark(AbstractBenchmark):
             'test_scores': test_scores,
             'test_costs': test_score_cost,
             # storing as dictionary and not ConfigSpace saves tremendous memory
-            'fidelity': fidelity.get_dictionary(),
-            'config': configuration.get_dictionary()
+            'fidelity': fidelity,
+            'config': configuration,
         }
 
         return {
@@ -269,8 +278,8 @@ class MLBenchmark(AbstractBenchmark):
             'test_scores': test_scores,
             'test_costs': test_score_cost,
             # storing as dictionary and not ConfigSpace saves tremendous memory
-            'fidelity': fidelity.get_dictionary(),
-            'config': configuration.get_dictionary()
+            'fidelity': fidelity,
+            'config': configuration,
         }
 
         return {

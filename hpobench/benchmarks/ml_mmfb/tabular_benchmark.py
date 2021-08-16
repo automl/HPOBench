@@ -67,7 +67,7 @@ class BaseTabularBenchmark(AbstractBenchmark):
                 'model': self.model
                 }
 
-    def _preprocess_configspace(self, config_space):
+    def _preprocess_configspace(self, config_space: CS.ConfigurationSpace) -> CS.ConfigurationSpace:
         """ Converts floats to np.float32 """
         for hp in config_space.get_hyperparameters():
             hp.sequence = tuple(np.array(hp.sequence).astype(np.float32))
@@ -83,7 +83,7 @@ class BaseTabularBenchmark(AbstractBenchmark):
             count *= len(hp.sequence)
         return count
 
-    def _seeds_used(self):
+    def _seeds_used(self) -> List:
         return self.table.seed.unique().tolist()
 
     def sample_hyperparamer(self, n: int = 1) -> Union[CS.Configuration, List]:
@@ -105,7 +105,7 @@ class BaseTabularBenchmark(AbstractBenchmark):
             max_fidelity[hp.name] = np.sort(hp.sequence)[-1]
         return max_fidelity
 
-    def get_fidelity_range(self):
+    def get_fidelity_range(self) -> List:
         fidelities = []
         for hp in self.fidelity_space.get_hyperparameters():
             if not isinstance(hp, CS.Constant) and len(hp.sequence) > 1:
@@ -126,11 +126,11 @@ class BaseTabularBenchmark(AbstractBenchmark):
 
     def _objective(
             self,
-            config: CS.Configuration,
-            fidelity: CS.Configuration,
+            config: Dict,
+            fidelity: Dict,
             seed: Union[int, None] = None,
             metric: Union[str, None] = "acc",
-            evaluation: Union[str] = ""
+            evaluation: Union[str, None] = ""
     ) -> Dict:
 
         metric_str = ', '.join(list(metrics.keys))

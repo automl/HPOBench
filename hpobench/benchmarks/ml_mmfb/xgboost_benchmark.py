@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import Union, Tuple, Dict
 
 import ConfigSpace as CS
 import numpy as np
@@ -17,7 +17,7 @@ class XGBoostBaseBenchmark(MLBenchmark):
         super(XGBoostBaseBenchmark, self).__init__(task_id, rng, valid_size, data_path)
 
     @staticmethod
-    def get_configuration_space(seed=None):
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """Parameter space to be optimized --- contains the hyperparameters
         """
         cs = CS.ConfigurationSpace(seed=seed)
@@ -76,9 +76,18 @@ class XGBoostBaseBenchmark(MLBenchmark):
         subsample = fidelity2[subsample_choice]
         return n_estimators, subsample
 
-    def init_model(self, config, fidelity=None, rng=None):
+    def init_model(self,
+                   config: Union[CS.Configuration, Dict],
+                   fidelity: Union[CS.Configuration, Dict, None] = None,
+                   rng: Union[int, np.random.RandomState, None] = None):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
+        if isinstance(config, CS.Configuration):
+            config = config.get_dictionary()
+        if isinstance(fidelity, CS.Configuration):
+            fidelity = fidelity.get_dictionary()
+
+        # TODO: This seems to be wrong. (AND-condition)
         rng = rng if (rng is None and isinstance(rng, int)) else self.seed
         extra_args = dict(
             booster="gbtree",
@@ -92,7 +101,7 @@ class XGBoostBaseBenchmark(MLBenchmark):
             extra_args.update({"num_class": self.n_classes})
 
         model = xgb.XGBClassifier(
-            **config.get_dictionary(),
+            **config,
             **extra_args
         )
         return model

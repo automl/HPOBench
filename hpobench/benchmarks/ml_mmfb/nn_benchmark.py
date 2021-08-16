@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Union, Tuple
+from typing import Union, Tuple, Dict
 
 import ConfigSpace as CS
 import numpy as np
@@ -18,7 +18,7 @@ class NNBaseBenchmark(MLBenchmark):
         super(NNBaseBenchmark, self).__init__(task_id, rng, valid_size, data_path)
 
     @staticmethod
-    def get_configuration_space(seed=None):
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """Parameter space to be optimized --- contains the hyperparameters
         """
         cs = CS.ConfigurationSpace(seed=seed)
@@ -76,11 +76,11 @@ class NNBaseBenchmark(MLBenchmark):
         subsample = fidelity2[subsample_choice]
         return iter, subsample
 
-    def init_model(self, config, fidelity=None, rng=None):
+    def init_model(self, config: Dict, fidelity: Dict = None, rng: Union[int, np.random.RandomState, None] = None):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
         rng = self.rng if rng is None else rng
-        config = deepcopy(config.get_dictionary())
+        config = deepcopy(config)
         depth = config["depth"]
         width = config["width"]
         config.pop("depth")

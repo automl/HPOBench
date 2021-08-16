@@ -1,11 +1,11 @@
-from typing import Union, Tuple
+from typing import Union, Tuple, Dict
 
 import ConfigSpace as CS
 import numpy as np
 from ConfigSpace.hyperparameters import Hyperparameter
-from sklearn.ensemble import HistGradientBoostingClassifier
 # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
+from sklearn.ensemble import HistGradientBoostingClassifier
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
@@ -77,12 +77,12 @@ class HistGBBenchmark(MLBenchmark):
         subsample = fidelity2[subsample_choice]
         return ntrees, subsample
 
-    def init_model(self, config, fidelity=None, rng=None):
+    def init_model(self, config: Dict, fidelity: Dict = None, rng: Union[int, np.random.RandomState, None] = None):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
         rng = self.rng if rng is None else rng
         model = HistGradientBoostingClassifier(
-            **config.get_dictionary(),
+            **config,
             max_iter=fidelity['n_estimators'],  # a fidelity being used during initialization
             early_stopping=False,
             random_state=rng

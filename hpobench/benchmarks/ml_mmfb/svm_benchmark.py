@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Dict
 
 import ConfigSpace as CS
 import numpy as np
@@ -19,7 +19,7 @@ class SVMBaseBenchmark(MLBenchmark):
         self.cache_size = 200
 
     @staticmethod
-    def get_configuration_space(seed=None):
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """Parameter space to be optimized --- contains the hyperparameters
         """
         cs = CS.ConfigurationSpace(seed=seed)
@@ -62,10 +62,10 @@ class SVMBaseBenchmark(MLBenchmark):
 
         return subsample
 
-    def init_model(self, config, fidelity=None, rng=None):
+    def init_model(self, config: Dict, fidelity: Dict = None, rng: Union[int, np.random.RandomState, None] = None):
         # initializing model
         rng = self.rng if rng is None else rng
-        config = config.get_dictionary()
+        config = config
         model = SVC(
             **config,
             random_state=rng,
