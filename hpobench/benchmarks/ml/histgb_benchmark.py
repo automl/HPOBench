@@ -1,10 +1,11 @@
+from typing import Union, Tuple
+
 import ConfigSpace as CS
 import numpy as np
-from typing import Union
-
+from ConfigSpace.hyperparameters import Hyperparameter
+from sklearn.ensemble import HistGradientBoostingClassifier
 # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingClassifier
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
@@ -39,18 +40,23 @@ class HistGBBenchmark(MLBenchmark):
         return cs
 
     @staticmethod
-    def _get_fidelity_choices(ntrees_choice: str, subsample_choice: str):
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """Fidelity space available --- specifies the fidelity dimensions
 
-        If SearchSpace is 0
+        If fidelity_choice is 0
             Fidelity space is the maximal fidelity, akin to a black-box function
-        If SearchSpace is 1
+        If fidelity_choice is 1
             Fidelity space is a single fidelity, in this case the number of trees (n_estimators)
-        If SearchSpace is 2
+        If fidelity_choice is 2
             Fidelity space is a single fidelity, in this case the fraction of dataset (subsample)
-        If SearchSpace is >2
+        If fidelity_choice is >2
             Fidelity space is multi-multi fidelity, all possible fidelities
         """
+        raise NotImplementedError()
+
+    @staticmethod
+    def _get_fidelity_choices(ntrees_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
+
         assert ntrees_choice in ['fixed', 'variable']
         assert subsample_choice in ['fixed', 'variable']
 
@@ -70,21 +76,6 @@ class HistGBBenchmark(MLBenchmark):
         ntrees = fidelity1[ntrees_choice]
         subsample = fidelity2[subsample_choice]
         return ntrees, subsample
-
-    @staticmethod
-    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        """Fidelity space available --- specifies the fidelity dimensions
-
-        If fidelity_choice is 0
-            Fidelity space is the maximal fidelity, akin to a black-box function
-        If fidelity_choice is 1
-            Fidelity space is a single fidelity, in this case the number of trees (n_estimators)
-        If fidelity_choice is 2
-            Fidelity space is a single fidelity, in this case the fraction of dataset (subsample)
-        If fidelity_choice is >2
-            Fidelity space is multi-multi fidelity, all possible fidelities
-        """
-        raise NotImplementedError()
 
     def init_model(self, config, fidelity=None, rng=None):
         """ Function that returns the model initialized based on the configuration and fidelity
