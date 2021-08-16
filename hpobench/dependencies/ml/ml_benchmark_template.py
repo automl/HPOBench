@@ -53,7 +53,12 @@ class MLBenchmark(AbstractBenchmark):
         self.scorers = dict()
         for k, v in metrics.items():
             self.scorers[k] = make_scorer(v, **metrics_kwargs[k])
-        self.data_path = data_path
+
+        if data_path is None:
+            from hpobench import config_file
+            data_path = config_file.data_dir / "OpenML"
+
+        self.data_path = Path(data_path)
 
         dm = OpenMLDataManager(task_id, valid_size, data_path, global_seed)
         dm.load()

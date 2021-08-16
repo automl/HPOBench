@@ -11,7 +11,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-
+from oslo_concurrency import lockutils
 
 from hpobench.util.data_manager import DataManager
 
@@ -48,9 +48,13 @@ class OpenMLDataManager(DataManager):
         if data_path is None:
             data_path = config_file.data_dir / "OpenML"
 
-        self.data_path = data_path
+        self.data_path = Path(data_path)
+        openml.config.set_cache_directory(str(self.data_path))
+
         super(OpenMLDataManager, self).__init__()
 
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{config_file.cache_dir}/openml_dm_lock', delay=0.2)
     def load(self, valid_size=None, verbose=False):
         """Fetches data from OpenML and initializes the train-validation-test data splits
 
@@ -66,25 +70,42 @@ class OpenMLDataManager(DataManager):
             self.logger.debug(self.task)
             self.logger.debug(self.dataset)
 
-        # check if the path to data splits is valid
-        if self.data_path is not None and self.data_path.is_dir():
-            data_path = self.data_path / str(self.task_id)
-            required_file_list = [
-                ("train", "x"), ("train", "y"),
-                ("valid", "x"), ("valid", "y"),
-                ("test", "x"), ("test", "y")
-            ]
-            for files in required_file_list:
-                data_str = "{}_{}.parquet.gzip".format(*files)
-                if not (data_path / data_str).exists():
-                    raise FileNotFoundError("{} not found!".format(data_str.format(*files)))
-            # ignore the remaining data loaders and preprocessors as valid data splits available
+        data_set_path = self.data_path / "org/openml/www/datasets" / str(self.task.dataset_id)
+        successfully_loaded = self.try_to_load_data(data_set_path)
+        if successfully_loaded:
+            self.logger.info(f'Successfully loaded the preprocessed splits from '
+                             f'{data_set_path}')
             return
 
+        # If the data is not available, download it.
+        self.__download_data(verbose=verbose, valid_size=valid_size)
+
+        # Save the preprocessed splits to file for later usage.
+        self.generate_openml_splits(data_set_path)
+
+        return
+
+    def try_to_load_data(self, data_path: Path) -> bool:
+        path_str = "{}_{}.parquet.gzip"
+        try:
+            self.train_X = pd.read_parquet(data_path / path_str.format("train", "x")).to_numpy()
+            self.train_y = pd.read_parquet(data_path / path_str.format("train", "y")).squeeze(axis=1)
+            self.valid_X = pd.read_parquet(data_path / path_str.format("valid", "x")).to_numpy()
+            self.valid_y = pd.read_parquet(data_path / path_str.format("valid", "y")).squeeze(axis=1)
+            self.test_X = pd.read_parquet(data_path / path_str.format("test", "x")).to_numpy()
+            self.test_y = pd.read_parquet(data_path / path_str.format("test", "y")).squeeze(axis=1)
+        except FileNotFoundError:
+            return False
+        return True
+
+    def __download_data(self, valid_size: Union[int, float, None], verbose: bool):
+        self.logger.info(f'Start to download the OpenML dataset')
+
         # loads full data
-        X, y, categorical_ind, feature_names = self.dataset.get_data(
-            target=self.task.target_name, dataset_format="dataframe"
-        )
+        X, y, categorical_ind, feature_names = self.dataset.get_data(target=self.task.target_name,
+                                                                     dataset_format="dataframe")
+        assert Path(self.dataset.data_file).exists(), f'The datafile {self.dataset.data_file} does not exists.'
+
         categorical_ind = np.array(categorical_ind)
         (cat_idx,) = np.where(categorical_ind)
         (cont_idx,) = np.where(~categorical_ind)
@@ -147,7 +168,21 @@ class OpenMLDataManager(DataManager):
             self.logger.debug("Validation data (X, y): ({}, {})".format(self.valid_X.shape, self.valid_y.shape))
             self.logger.debug("Test data (X, y): ({}, {})".format(self.test_X.shape, self.test_y.shape))
             self.logger.debug("\nData loading complete!\n")
-        return
+
+    def generate_openml_splits(self, data_path):
+        """ Store the created splits to file for later use… """
+        self.logger.info(f'Save the splits to {data_path}')
+
+        path_str = "{}_{}.parquet.gzip"
+        colnames = np.arange(self.train_X.shape[1]).astype(str)
+        label_name = str(self.task.target_name)
+
+        pd.DataFrame(self.train_X, columns=colnames).to_parquet(data_path / path_str.format("train", "x"))
+        self.train_y.to_frame(label_name).to_parquet(data_path / path_str.format("train", "y"))
+        pd.DataFrame(self.valid_X, columns=colnames).to_parquet(data_path / path_str.format("valid", "x"))
+        self.valid_y.to_frame(label_name).to_parquet(data_path / path_str.format("valid", "y"))
+        pd.DataFrame(self.test_X, columns=colnames).to_parquet(data_path / path_str.format("test", "x"))
+        self.test_y.to_frame(label_name).to_parquet(data_path / path_str.format("test", "y"))
 
     @staticmethod
     def _convert_labels(labels):
