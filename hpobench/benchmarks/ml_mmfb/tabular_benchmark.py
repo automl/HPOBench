@@ -12,19 +12,24 @@ from hpobench.util.data_manager import TabularDataManager
 
 class BaseTabularBenchmark(AbstractBenchmark):
 
-    def __init__(self, model: str, task_id: int, data_dir: Union[Path, str, None] = None,
+    def __init__(self,
+                 model: str, task_id: int,
+                 data_dir: Union[Path, str, None] = None,
                  rng: Union[int, np.random.RandomState, None] = None, **kwargs):
 
-        super(BaseTabularBenchmark, self).__init__(rng=rng, **kwargs)
+        assert model in ['lr', 'svm', 'xgb'], f'Parameter `model` has to be one of [lr, svm, xgb] but was {model}'
 
         self.task_id = task_id
         self.model = model
 
-        self.table, self.metadata = TabularDataManager(model, task_id, data_dir)
+        self.dm = TabularDataManager(model, task_id, data_dir)
+        self.table, self.metadata = self.dm.load()
 
         self.exp_args = self.metadata["exp_args"]
         self.config_spaces = self.metadata["config_spaces"]
         self.global_minimums = self.metadata["global_min"]
+
+        super(BaseTabularBenchmark, self).__init__(rng=rng, **kwargs)
 
     @AbstractBenchmark.check_parameters
     def objective_function(self,
@@ -113,16 +118,33 @@ class BaseTabularBenchmark(AbstractBenchmark):
         return fidelities
 
     def _search_dataframe(self, row_dict, df):
-        # https://stackoverflow.com/a/46165056/8363967
-        mask = np.array([True] * df.shape[0])
-        for i, param in enumerate(df.drop("result", axis=1).columns):
-            mask *= df[param].values == row_dict[param]
-        idx = np.where(mask)
-        if len(idx) != 1:
+        query_stmt = self._build_query(row_dict)
+        result = df.query(query_stmt)
+        # TODO: What happens in this case? The objective function raises a TypeError.
+        if len(result) == 0:
             return None
-        idx = idx[0][0]
-        result = df.iloc[idx]["result"]
-        return result
+        return result.iloc[0].loc['result']
+
+        # TODO: This created an out-of-bounds error. The idx mask should have been 2d, but was 1d.
+        # # https://stackoverflow.com/a/46165056/8363967
+        # mask = np.array([True] * df.shape[0])
+        # for i, param in enumerate(df.drop("result", axis=1).columns):
+        #     mask *= df[param].values == row_dict[param]
+        # idx = np.where(mask)
+        # if len(idx) != 1:
+        #     return None
+        # idx = idx[0][0]
+        # result = df.iloc[idx]["result"]
+        # return result
+
+    @staticmethod
+    def _build_query(row_dict: Dict) -> str:
+        query = ''
+        for i, (param_name, param_value) in enumerate(row_dict.items()):
+            if i != 0:
+                query += ' & '
+            query += f'{param_name} == {param_value}'
+        return query
 
     def _objective(
             self,
@@ -133,12 +155,13 @@ class BaseTabularBenchmark(AbstractBenchmark):
             evaluation: Union[str, None] = ""
     ) -> Dict:
 
-        metric_str = ', '.join(list(metrics.keys))
+        metric_str = ', '.join(list(metrics.keys()))
         assert metric in list(metrics.keys()), f"metric not found among: {metric_str}"
         score_key = f"{evaluation}_scores"
         cost_key = f"{evaluation}_scores"
 
         key_path = dict()
+        # TODO: Dicts are unordered. This does not have to have an effect.
         for name in np.sort(self.configuration_space.get_hyperparameter_names()):
             key_path[str(name)] = config[str(name)]
         for name in np.sort(self.fidelity_space.get_hyperparameter_names()):

@@ -138,7 +138,8 @@ class MLBenchmark(AbstractBenchmark):
         rng.shuffle(train_idx)
         return train_idx
 
-    def _train_objective(self, config: Dict,
+    def _train_objective(self,
+                         config: Dict,
                          fidelity: Dict,
                          shuffle: bool,
                          rng: Union[np.random.RandomState, int, None] = None,

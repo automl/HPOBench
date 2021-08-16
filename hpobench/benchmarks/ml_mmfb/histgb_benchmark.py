@@ -27,11 +27,13 @@ class HistGBBenchmark(MLBenchmark):
             CS.UniformIntegerHyperparameter(
                 'max_depth', lower=6, upper=30, default_value=6, log=True
             ),
+            # TODO: The parameter max_leaf_node is not accepted. Changed it from max_leaf_node to max_leaf_nodes
             CS.UniformIntegerHyperparameter(
-                'max_leaf_node', lower=2, upper=64, default_value=32, log=True
+                'max_leaf_nodes', lower=2, upper=64, default_value=32, log=True
             ),
+            # TODO: The parameter eta is not accepted. Do you mean learning_rate? Changed it from eta to learning_rate
             CS.UniformFloatHyperparameter(
-                'eta', lower=2**-10, upper=1, default_value=0.1, log=True
+                'learning_rate', lower=2**-10, upper=1, default_value=0.1, log=True
             ),
             CS.UniformFloatHyperparameter(
                 'l2_regularization', lower=2**-10, upper=2**10, default_value=0.1, log=True

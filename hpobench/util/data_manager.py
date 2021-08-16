@@ -93,7 +93,7 @@ class DataManager(abc.ABC, metaclass=abc.ABCMeta):
                 if chunk:
                     _ = f.write(chunk)
                     f.flush()
-        self.logger.info("Finished downloading")
+        self.logger.info(f"Finished downloading to {data_file}")
 
     @lockutils.synchronized('not_thread_process_safe', external=True,
                             lock_path=f'{hpobench.config_file.cache_dir}/lock_unzip_file', delay=0.5)
@@ -929,20 +929,21 @@ class TabularDataManager(DataManager):
     def __init__(self, model: str, task_id: [int, str], data_dir: [str, Path, None] = None):
         super(TabularDataManager, self).__init__()
 
-        assert model in ['lr', 'svm']
+        assert model in ['lr', 'svm', 'xgb'], f'Model has to be one of [lr, svm, xgb] but was {model}'
 
         self.model = model
         self.task_id = str(task_id)
 
-        url_svm = 'https://figshare.com/s/5a0929ad9b2ccd8dda58'
-        url_lr = 'https://ndownloader.figshare.com/files/29027112?private_link=d644493a93dbab4b4ee1'
+        url_dict = dict(xgb='https://ndownloader.figshare.com/files/29113257?private_link=c817bed4e7efc6daee91',
+                        svm='https://ndownloader.figshare.com/files/29102307?private_link=5a0929ad9b2ccd8dda58',
+                        lr='https://ndownloader.figshare.com/files/29027112?private_link=d644493a93dbab4b4ee1')
 
-        self.url_to_use = url_svm if model == 'svm' else url_lr
+        self.url_to_use = url_dict.get(model)
 
         if data_dir is None:
-            data_dir = hpobench.config_file.data_dir / "TabularData"
+            data_dir = hpobench.config_file.data_dir
 
-        self._save_dir = Path(data_dir)
+        self._save_dir = Path(data_dir) / "TabularData" / self.model
         self.create_save_directory(self._save_dir)
 
         self.parquet_file = self._save_dir / self.task_id / f'{self.model}_{self.task_id}_data.parquet.gzip'
