@@ -5,7 +5,7 @@ import numpy as np
 from ConfigSpace.hyperparameters import Hyperparameter
 from sklearn.svm import SVC
 
-from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+from hpobench.dependencies.ml_mmfb.ml_benchmark_template import MLBenchmark
 
 
 class SVMBenchmark(MLBenchmark):

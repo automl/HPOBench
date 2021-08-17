@@ -5,7 +5,7 @@ import numpy as np
 import xgboost as xgb
 from ConfigSpace.hyperparameters import Hyperparameter
 
-from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+from hpobench.dependencies.ml_mmfb.ml_benchmark_template import MLBenchmark
 
 
 class XGBoostBenchmark(MLBenchmark):
@@ -54,7 +54,7 @@ class XGBoostBenchmark(MLBenchmark):
         assert subsample_choice in ['fixed', 'variable']
 
         fidelity1 = dict(
-            fixed=CS.Constant('n_estimators', value=100),  # TODO: Should this be 1000 or 100?
+            fixed=CS.Constant('n_estimators', value=1000),
             variable=CS.UniformIntegerHyperparameter(
                 'n_estimators', lower=50, upper=2000, default_value=1000, log=False
             )

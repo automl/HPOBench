@@ -9,7 +9,7 @@ from sklearn.metrics import make_scorer, accuracy_score, balanced_accuracy_score
     precision_score, f1_score
 
 from hpobench.abstract_benchmark import AbstractBenchmark
-from hpobench.dependencies.ml.data_manager import OpenMLDataManager
+from hpobench.dependencies.ml_mmfb.data_manager import OpenMLDataManager
 from hpobench.util.rng_helper import get_rng
 
 metrics = dict(

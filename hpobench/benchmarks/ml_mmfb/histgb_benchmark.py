@@ -7,7 +7,7 @@ from ConfigSpace.hyperparameters import Hyperparameter
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+from hpobench.dependencies.ml_mmfb.ml_benchmark_template import MLBenchmark
 
 
 class HistGBBenchmark(MLBenchmark):
