@@ -113,7 +113,9 @@ class MLBenchmark(AbstractBenchmark):
             'task_id': self.task_id
         }
 
-    def init_model(self, config: Dict, fidelity: Dict = None, rng: Union[int, np.random.RandomState, None] = None):
+    def init_model(self, config: Union[CS.Configuration, Dict],
+                   fidelity: Union[CS.Configuration, Dict, None] = None,
+                   rng: Union[int, np.random.RandomState, None] = None):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
         raise NotImplementedError()

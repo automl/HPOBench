@@ -62,10 +62,13 @@ class SVMBaseBenchmark(MLBenchmark):
 
         return subsample
 
-    def init_model(self, config: Dict, fidelity: Dict = None, rng: Union[int, np.random.RandomState, None] = None):
+    def init_model(self, config: Union[CS.Configuration, Dict],
+                   fidelity: Union[CS.Configuration, Dict, None] = None,
+                   rng: Union[int, np.random.RandomState, None] = None):
         # initializing model
         rng = self.rng if rng is None else rng
-        config = config
+        if isinstance(config, CS.Configuration):
+            config = config.get_dictionary()
         model = SVC(
             **config,
             random_state=rng,

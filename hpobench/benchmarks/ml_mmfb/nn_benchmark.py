@@ -76,10 +76,18 @@ class NNBaseBenchmark(MLBenchmark):
         subsample = fidelity2[subsample_choice]
         return iter, subsample
 
-    def init_model(self, config: Dict, fidelity: Dict = None, rng: Union[int, np.random.RandomState, None] = None):
+    def init_model(self, config: Union[CS.Configuration, Dict],
+                   fidelity: Union[CS.Configuration, Dict, None] = None,
+                   rng: Union[int, np.random.RandomState, None] = None):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
         rng = self.rng if rng is None else rng
+
+        if isinstance(config, CS.Configuration):
+            config = config.get_dictionary()
+        if isinstance(fidelity, CS.Configuration):
+            fidelity = fidelity.get_dictionary()
+
         config = deepcopy(config)
         depth = config["depth"]
         width = config["width"]
