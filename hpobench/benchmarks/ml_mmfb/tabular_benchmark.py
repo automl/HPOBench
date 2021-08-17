@@ -10,7 +10,7 @@ from hpobench.dependencies.ml_mmfb.ml_benchmark_template import metrics
 from hpobench.util.data_manager import TabularDataManager
 
 
-class BaseTabularBenchmark(AbstractBenchmark):
+class TabularBenchmark(AbstractBenchmark):
 
     def __init__(self,
                  model: str, task_id: int,
@@ -29,7 +29,10 @@ class BaseTabularBenchmark(AbstractBenchmark):
         self.config_spaces = self.metadata["config_spaces"]
         self.global_minimums = self.metadata["global_min"]
 
-        super(BaseTabularBenchmark, self).__init__(rng=rng, **kwargs)
+        self.original_cs = json_cs.read(self.config_spaces['x'])
+        self.original_fs = json_cs.read(self.config_spaces['z'])
+
+        super(TabularBenchmark, self).__init__(rng=rng, **kwargs)
 
     # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
@@ -59,19 +62,26 @@ class BaseTabularBenchmark(AbstractBenchmark):
 
     # pylint: disable=arguments-differ
     def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        raise NotImplementedError
+        cs = json_cs.read(self.config_spaces['x_discrete'])
+        cs = self._preprocess_configspace(cs)
+        cs.seed(seed)
+        return cs
 
     # pylint: disable=arguments-differ
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        raise NotImplementedError
+        cs = json_cs.read(self.config_spaces['z_discrete'])
+        cs.seed(seed=seed)
+        return cs
 
     # pylint: disable=arguments-differ
     def get_meta_information(self) -> Dict:
         """ Returns the meta information for the benchmark """
-        return {'name': 'BaseTabularBenchmark',
+        return {'name': 'TabularBenchmark',
                 'references': [],
                 'task_id': self.task_id,
-                'model': self.model
+                'model': self.model,
+                'original_configuration_space': self.original_cs,
+                'original_fidelity_space': self.original_fs,
                 }
 
     def _preprocess_configspace(self, config_space: CS.ConfigurationSpace) -> CS.ConfigurationSpace:
@@ -93,7 +103,7 @@ class BaseTabularBenchmark(AbstractBenchmark):
     def _seeds_used(self) -> List:
         return self.table.seed.unique().tolist()
 
-    def sample_hyperparamer(self, n: int = 1) -> Union[CS.Configuration, List]:
+    def sample_hyperparameter(self, n: int = 1) -> Union[CS.Configuration, List]:
         return self.configuration_space.sample_configuration(n)
 
     def sample_fidelity(self, n: int = 1) -> Union[CS.Configuration, List]:
@@ -163,10 +173,9 @@ class BaseTabularBenchmark(AbstractBenchmark):
         cost_key = f"{evaluation}_scores"
 
         key_path = dict()
-        # TODO: Dicts are unordered. This does not have to have an effect.
-        for name in np.sort(self.configuration_space.get_hyperparameter_names()):
+        for name in self.configuration_space.get_hyperparameter_names():
             key_path[str(name)] = config[str(name)]
-        for name in np.sort(self.fidelity_space.get_hyperparameter_names()):
+        for name in self.fidelity_space.get_hyperparameter_names():
             key_path[str(name)] = fidelity[str(name)]
 
         if seed is not None:
@@ -190,41 +199,4 @@ class BaseTabularBenchmark(AbstractBenchmark):
         return result
 
 
-class TabularBenchmark(BaseTabularBenchmark):
-    def __init__(self, model: str, task_id: int, data_dir: Union[Path, str, None] = None,
-                 rng: Union[int, np.random.RandomState, None] = None, **kwargs):
-        super(TabularBenchmark, self).__init__(model, task_id, data_dir, rng, **kwargs)
-
-    # pylint: disable=arguments-differ
-    def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        cs = json_cs.read(self.config_spaces['x_discrete'])
-        cs = self._preprocess_configspace(cs)
-        cs.seed(seed)
-        return cs
-
-    # pylint: disable=arguments-differ
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        cs = json_cs.read(self.config_spaces['z_discrete'])
-        cs.seed(seed=seed)
-        return cs
-
-
-class OriginalTabularBenchmark(BaseTabularBenchmark):
-    def __init__(self, model: str, task_id: int, data_dir: Union[Path, str, None] = None,
-                 rng: Union[int, np.random.RandomState, None] = None, **kwargs):
-        super(OriginalTabularBenchmark, self).__init__(model, task_id, data_dir, rng, **kwargs)
-
-    # pylint: disable=arguments-differ
-    def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        cs = json_cs.read(self.config_spaces['x'])
-        cs.seed(seed)
-        return cs
-
-    # pylint: disable=arguments-differ
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        cs = json_cs.read(self.config_spaces['z'])
-        cs.seed(seed=seed)
-        return cs
-
-
-__all__ = [TabularBenchmark, OriginalTabularBenchmark]
+__all__ = [TabularBenchmark]
