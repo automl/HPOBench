@@ -9,13 +9,13 @@ from sklearn.neural_network import MLPClassifier
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
 
-class NNBaseBenchmark(MLBenchmark):
+class NNBenchmark(MLBenchmark):
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
-        super(NNBaseBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        super(NNBenchmark, self).__init__(task_id, rng, valid_size, data_path)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -44,18 +44,13 @@ class NNBaseBenchmark(MLBenchmark):
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        """Fidelity space available --- specifies the fidelity dimensions
 
-        If fidelity_choice is 0
-            Fidelity space is the maximal fidelity, akin to a black-box function
-        If fidelity_choice is 1
-            Fidelity space is a single fidelity, in this case the number of epochs (max_iter)
-        If fidelity_choice is 2
-            Fidelity space is a single fidelity, in this case the fraction of dataset (subsample)
-        If fidelity_choice is >2
-            Fidelity space is multi-multi fidelity, all possible fidelities
-        """
-        raise NotImplementedError()
+        fidelity_space = CS.ConfigurationSpace(seed=seed)
+        fidelity_space.add_hyperparameters(
+            # gray-box setting (multi-multi-fidelity) - iterations + data subsample
+            NNBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='variable')
+        )
+        return fidelity_space
 
     @staticmethod
     def _get_fidelity_choices(iter_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
@@ -105,45 +100,24 @@ class NNBaseBenchmark(MLBenchmark):
         return model
 
 
-class NNSearchSpace0Benchmark(NNBaseBenchmark):
+class NNBenchmarkBB(NNBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # black-box setting (full fidelity)
-            NNSearchSpace0Benchmark._get_fidelity_choices(iter_choice='fixed', subsample_choice='fixed')
+            NNBenchmarkBB._get_fidelity_choices(iter_choice='fixed', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-class NNSearchSpace1Benchmark(NNBaseBenchmark):
+class NNBenchmarkMF(NNBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-fidelity) - iterations
-            NNSearchSpace1Benchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='fixed')
+            NNBenchmarkMF._get_fidelity_choices(iter_choice='variable', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-class NNSearchSpace2Benchmark(NNBaseBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-fidelity) - subsample
-            NNSearchSpace2Benchmark._get_fidelity_choices(iter_choice='fixed', subsample_choice='variable')
-        )
-        return fidelity_space
-
-
-class NNSearchSpace3Benchmark(NNBaseBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-multi-fidelity) - iterations + data subsample
-            NNSearchSpace3Benchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='variable')
-        )
-        return fidelity_space
-
-
-__all__ = [NNSearchSpace0Benchmark, NNSearchSpace1Benchmark,
-           NNSearchSpace2Benchmark, NNSearchSpace3Benchmark]
+__all__ = [NNBenchmark, NNBenchmarkBB, NNBenchmarkMF]

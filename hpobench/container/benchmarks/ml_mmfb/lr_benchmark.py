@@ -6,37 +6,28 @@
 from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
 
 
-class LRSearchSpace0Benchmark(AbstractBenchmarkClient):
+class LRBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LRSearchSpace0Benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LRBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(LRSearchSpace0Benchmark, self).__init__(**kwargs)
+        super(LRBenchmark, self).__init__(**kwargs)
 
 
-class LRSearchSpace1Benchmark(AbstractBenchmarkClient):
+class LRBenchmarkBB(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LRSearchSpace1Benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LRBenchmarkBB')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(LRSearchSpace1Benchmark, self).__init__(**kwargs)
+        super(LRBenchmarkBB, self).__init__(**kwargs)
 
 
-class LRSearchSpace2Benchmark(AbstractBenchmarkClient):
+class LRBenchmarkMF(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LRSearchSpace2Benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LRBenchmarkMF')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(LRSearchSpace2Benchmark, self).__init__(**kwargs)
+        super(LRBenchmarkMF, self).__init__(**kwargs)
 
 
-class LRSearchSpace3Benchmark(AbstractBenchmarkClient):
-    def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LRSearchSpace3Benchmark')
-        kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(LRSearchSpace3Benchmark, self).__init__(**kwargs)
-
-
-__all__ = [LRSearchSpace0Benchmark, LRSearchSpace1Benchmark,
-           LRSearchSpace2Benchmark, LRSearchSpace3Benchmark]
+__all__ = [LRBenchmark, LRBenchmarkBB, LRBenchmarkMF]

@@ -8,13 +8,13 @@ from ConfigSpace.hyperparameters import Hyperparameter
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
 
-class XGBoostBaseBenchmark(MLBenchmark):
+class XGBoostBenchmark(MLBenchmark):
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
-        super(XGBoostBaseBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        super(XGBoostBenchmark, self).__init__(task_id, rng, valid_size, data_path)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -40,18 +40,12 @@ class XGBoostBaseBenchmark(MLBenchmark):
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        """Fidelity space available --- specifies the fidelity dimensions
-
-        If fidelity_choice is 0
-            Fidelity space is the maximal fidelity, akin to a black-box function
-        If fidelity_choice is 1
-            Fidelity space is a single fidelity, in this case the number of trees (n_estimators)
-        If fidelity_choice is 2
-            Fidelity space is a single fidelity, in this case the fraction of dataset (subsample)
-        If fidelity_choice is >2
-            Fidelity space is multi-multi fidelity, all possible fidelities
-        """
-        raise NotImplementedError()
+        fidelity_space = CS.ConfigurationSpace(seed=seed)
+        fidelity_space.add_hyperparameters(
+            # gray-box setting (multi-multi-fidelity) - ntrees + data subsample
+            XGBoostBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='variable')
+        )
+        return fidelity_space
 
     @staticmethod
     def _get_fidelity_choices(n_estimators_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
@@ -107,45 +101,24 @@ class XGBoostBaseBenchmark(MLBenchmark):
         return model
 
 
-class XGBoostSearchSpace0Benchmark(XGBoostBaseBenchmark):
+class XGBoostBenchmarkBB(XGBoostBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # black-box setting (full fidelity)
-            XGBoostBaseBenchmark._get_fidelity_choices(n_estimators_choice='fixed', subsample_choice='fixed')
+            XGBoostBenchmark._get_fidelity_choices(n_estimators_choice='fixed', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-class XGBoostSearchSpace1Benchmark(XGBoostBaseBenchmark):
+class XGBoostBenchmarkMF(XGBoostBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-fidelity) - ntrees
-            XGBoostBaseBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='fixed')
+            XGBoostBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-class XGBoostSearchSpace2Benchmark(XGBoostBaseBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-fidelity) - data subsample
-            XGBoostBaseBenchmark._get_fidelity_choices(n_estimators_choice='fixed', subsample_choice='variable')
-        )
-        return fidelity_space
-
-
-class XGBoostSearchSpace3Benchmark(XGBoostBaseBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-multi-fidelity) - ntrees + data subsample
-            XGBoostBaseBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='variable')
-        )
-        return fidelity_space
-
-
-__all__ = [XGBoostSearchSpace0Benchmark, XGBoostSearchSpace1Benchmark,
-           XGBoostSearchSpace2Benchmark, XGBoostSearchSpace3Benchmark]
+__all__ = [XGBoostBenchmarkBB, XGBoostBenchmarkMF, XGBoostBenchmark]

@@ -9,13 +9,13 @@ from sklearn.ensemble import RandomForestClassifier
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
 
-class RandomForestBaseBenchmark(MLBenchmark):
+class RandomForestBenchmark(MLBenchmark):
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
-        super(RandomForestBaseBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        super(RandomForestBenchmark, self).__init__(task_id, rng, valid_size, data_path)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -41,18 +41,12 @@ class RandomForestBaseBenchmark(MLBenchmark):
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        """Fidelity space available --- specifies the fidelity dimensions
-
-        If fidelity_choice is 0
-            Fidelity space is the maximal fidelity, akin to a black-box function
-        If fidelity_choice is 1
-            Fidelity space is a single fidelity, in this case the number of trees (n_estimators)
-        If fidelity_choice is 2
-            Fidelity space is a single fidelity, in this case the fraction of dataset (subsample)
-        If fidelity_choice is >2
-            Fidelity space is multi-multi fidelity, all possible fidelities
-        """
-        raise NotImplementedError()
+        fidelity_space = CS.ConfigurationSpace(seed=seed)
+        fidelity_space.add_hyperparameters(
+            # gray-box setting (multi-multi-fidelity) - ntrees + data subsample
+            RandomForestBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='variable')
+        )
+        return fidelity_space
 
     @staticmethod
     def _get_fidelity_choices(n_estimators_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
@@ -100,45 +94,24 @@ class RandomForestBaseBenchmark(MLBenchmark):
         return model
 
 
-class RandomForestSearchSpace0Benchmark(RandomForestBaseBenchmark):
+class RandomForestBenchmarkBB(RandomForestBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # black-box setting (full fidelity)
-            RandomForestBaseBenchmark._get_fidelity_choices(n_estimators_choice='fixed', subsample_choice='fixed')
+            RandomForestBenchmark._get_fidelity_choices(n_estimators_choice='fixed', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-class RandomForestSearchSpace1Benchmark(RandomForestBaseBenchmark):
+class RandomForestBenchmarkMF(RandomForestBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-fidelity) - ntrees
-            RandomForestBaseBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='fixed')
+            RandomForestBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-class RandomForestSearchSpace2Benchmark(RandomForestBaseBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-fidelity) - data subsample
-            RandomForestBaseBenchmark._get_fidelity_choices(n_estimators_choice='fixed', subsample_choice='variable')
-        )
-        return fidelity_space
-
-
-class RandomForestSearchSpace3Benchmark(RandomForestBaseBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-multi-fidelity) - ntrees + data subsample
-            RandomForestBaseBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='variable')
-        )
-        return fidelity_space
-
-
-__all__ = [RandomForestSearchSpace0Benchmark, RandomForestSearchSpace1Benchmark,
-           RandomForestSearchSpace2Benchmark, RandomForestSearchSpace3Benchmark]
+__all__ = [RandomForestBenchmark, RandomForestBenchmarkBB, RandomForestBenchmarkMF]

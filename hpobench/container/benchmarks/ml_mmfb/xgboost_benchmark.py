@@ -6,28 +6,28 @@
 from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
 
 
-class XGBoostSearchSpace0Benchmark(AbstractBenchmarkClient):
+class XGBoostBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostSearchSpace0Benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(XGBoostSearchSpace0Benchmark, self).__init__(**kwargs)
+        super(XGBoostBenchmark, self).__init__(**kwargs)
 
 
-class XGBoostSearchSpace1Benchmark(AbstractBenchmarkClient):
+class XGBoostBenchmarkBB(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostSearchSpace1Benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostBenchmarkBB')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(XGBoostSearchSpace1Benchmark, self).__init__(**kwargs)
+        super(XGBoostBenchmarkBB, self).__init__(**kwargs)
 
 
-class XGBoostSearchSpace2Benchmark(AbstractBenchmarkClient):
+class XGBoostBenchmarkMF(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostSearchSpace2Benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostBenchmarkMF')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(XGBoostSearchSpace2Benchmark, self).__init__(**kwargs)
+        super(XGBoostBenchmarkMF, self).__init__(**kwargs)
 
 
 class XGBoostSearchSpace3Benchmark(AbstractBenchmarkClient):
@@ -38,5 +38,4 @@ class XGBoostSearchSpace3Benchmark(AbstractBenchmarkClient):
         super(XGBoostSearchSpace3Benchmark, self).__init__(**kwargs)
 
 
-__all__ = [XGBoostSearchSpace0Benchmark, XGBoostSearchSpace1Benchmark,
-           XGBoostSearchSpace2Benchmark, XGBoostSearchSpace3Benchmark]
+__all__ = [XGBoostBenchmark, XGBoostBenchmarkBB, XGBoostBenchmarkMF]

@@ -6,37 +6,28 @@
 from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
 
 
-class HistGBSearchSpace0Benchmark(AbstractBenchmarkClient):
+class HistGBBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'HistGBSearchSpace0Benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'HistGBBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(HistGBSearchSpace0Benchmark, self).__init__(**kwargs)
+        super(HistGBBenchmark, self).__init__(**kwargs)
 
 
-class HistGBSearchSpace1Benchmark(AbstractBenchmarkClient):
+class HistGBBenchmarkBB(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'HistGBSearchSpace1Benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'HistGBBenchmarkBB')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(HistGBSearchSpace1Benchmark, self).__init__(**kwargs)
+        super(HistGBBenchmarkBB, self).__init__(**kwargs)
 
 
-class HistGBSearchSpace2Benchmark(AbstractBenchmarkClient):
+class HistGBBenchmarkMF(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'HistGBSearchSpace2Benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'HistGBBenchmarkMF')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(HistGBSearchSpace2Benchmark, self).__init__(**kwargs)
+        super(HistGBBenchmarkMF, self).__init__(**kwargs)
 
 
-class HistGBSearchSpace3Benchmark(AbstractBenchmarkClient):
-    def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'HistGBSearchSpace3Benchmark')
-        kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(HistGBSearchSpace3Benchmark, self).__init__(**kwargs)
-
-
-__all__ = [HistGBSearchSpace0Benchmark, HistGBSearchSpace1Benchmark,
-           HistGBSearchSpace2Benchmark, HistGBSearchSpace3Benchmark]
+__all__ = [HistGBBenchmark, HistGBBenchmarkBB, HistGBBenchmarkMF]

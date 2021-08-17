@@ -8,15 +8,15 @@ from sklearn.linear_model import SGDClassifier
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
 
-class LRBaseBenchmark(MLBenchmark):
+class LRBenchmark(MLBenchmark):
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
 
-        super(LRBaseBenchmark, self).__init__(task_id, rng, valid_size, data_path)
-        self.cache_size = 500  # TODO: Do we need this?
+        super(LRBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        self.cache_size = 500
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -34,7 +34,12 @@ class LRBaseBenchmark(MLBenchmark):
         return cs
 
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        raise NotImplementedError()
+        fidelity_space = CS.ConfigurationSpace(seed=seed)
+        fidelity_space.add_hyperparameters(
+            # gray-box setting (multi-multi-fidelity) - iterations + data subsample
+            LRBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='variable')
+        )
+        return fidelity_space
 
     @staticmethod
     def _get_fidelity_choices(iter_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
@@ -87,49 +92,29 @@ class LRBaseBenchmark(MLBenchmark):
             learning_rate="adaptive",
             tol=None,
             random_state=rng,
+
         )
         return model
 
 
-class LRSearchSpace0Benchmark(LRBaseBenchmark):
+class LRBenchmarkBB(LRBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # black-box setting (full fidelity)
-            LRBaseBenchmark._get_fidelity_choices(iter_choice='fixed', subsample_choice='fixed')
+            LRBenchmark._get_fidelity_choices(iter_choice='fixed', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-class LRSearchSpace1Benchmark(LRBaseBenchmark):
+class LRBenchmarkMF(LRBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-fidelity) - iterations
-            LRBaseBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='fixed')
+            LRBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-class LRSearchSpace2Benchmark(LRBaseBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-fidelity) - data subsample
-            LRBaseBenchmark._get_fidelity_choices(iter_choice='fixed', subsample_choice='variable')
-        )
-        return fidelity_space
-
-
-class LRSearchSpace3Benchmark(LRBaseBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-multi-fidelity) - iterations + data subsample
-            LRBaseBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='variable')
-        )
-        return fidelity_space
-
-
-__all__ = [LRSearchSpace0Benchmark, LRSearchSpace1Benchmark,
-           LRSearchSpace2Benchmark, LRSearchSpace3Benchmark]
+__all__ = [LRBenchmark, LRBenchmarkBB, LRBenchmarkMF]

@@ -27,11 +27,9 @@ class HistGBBenchmark(MLBenchmark):
             CS.UniformIntegerHyperparameter(
                 'max_depth', lower=6, upper=30, default_value=6, log=True
             ),
-            # TODO: The parameter max_leaf_node is not accepted. Changed it from max_leaf_node to max_leaf_nodes
             CS.UniformIntegerHyperparameter(
                 'max_leaf_nodes', lower=2, upper=64, default_value=32, log=True
             ),
-            # TODO: The parameter eta is not accepted. Do you mean learning_rate? Changed it from eta to learning_rate
             CS.UniformFloatHyperparameter(
                 'learning_rate', lower=2**-10, upper=1, default_value=0.1, log=True
             ),
@@ -43,18 +41,12 @@ class HistGBBenchmark(MLBenchmark):
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        """Fidelity space available --- specifies the fidelity dimensions
-
-        If fidelity_choice is 0
-            Fidelity space is the maximal fidelity, akin to a black-box function
-        If fidelity_choice is 1
-            Fidelity space is a single fidelity, in this case the number of trees (n_estimators)
-        If fidelity_choice is 2
-            Fidelity space is a single fidelity, in this case the fraction of dataset (subsample)
-        If fidelity_choice is >2
-            Fidelity space is multi-multi fidelity, all possible fidelities
-        """
-        raise NotImplementedError()
+        fidelity_space = CS.ConfigurationSpace(seed=seed)
+        fidelity_space.add_hyperparameters(
+            # gray-box setting (multi-multi-fidelity) - ntrees + data subsample
+            HistGBBenchmark._get_fidelity_choices(ntrees_choice='variable', subsample_choice='variable')
+        )
+        return fidelity_space
 
     @staticmethod
     def _get_fidelity_choices(ntrees_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
@@ -100,7 +92,7 @@ class HistGBBenchmark(MLBenchmark):
         return model
 
 
-class HistGBSearchSpace0Benchmark(HistGBBenchmark):
+class HistGBBenchmarkBB(HistGBBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
@@ -110,7 +102,7 @@ class HistGBSearchSpace0Benchmark(HistGBBenchmark):
         return fidelity_space
 
 
-class HistGBSearchSpace1Benchmark(HistGBBenchmark):
+class HistGBBenchmarkMF(HistGBBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
@@ -120,25 +112,4 @@ class HistGBSearchSpace1Benchmark(HistGBBenchmark):
         return fidelity_space
 
 
-class HistGBSearchSpace2Benchmark(HistGBBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-fidelity) - subsample
-            HistGBBenchmark._get_fidelity_choices(ntrees_choice='fixed', subsample_choice='variable')
-        )
-        return fidelity_space
-
-
-class HistGBSearchSpace3Benchmark(HistGBBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-multi-fidelity) - ntrees + data subsample
-            HistGBBenchmark._get_fidelity_choices(ntrees_choice='variable', subsample_choice='variable')
-        )
-        return fidelity_space
-
-
-__all__ = [HistGBSearchSpace0Benchmark, HistGBSearchSpace1Benchmark,
-           HistGBSearchSpace2Benchmark, HistGBSearchSpace3Benchmark]
+__all__ = [HistGBBenchmark, HistGBBenchmarkBB, HistGBBenchmarkMF]

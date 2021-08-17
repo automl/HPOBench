@@ -6,20 +6,28 @@
 from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
 
 
-class SVMSearchSpace0Benchmark(AbstractBenchmarkClient):
+class SVMBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SVMSearchSpace0Benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SVMBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(SVMSearchSpace0Benchmark, self).__init__(**kwargs)
+        super(SVMBenchmark, self).__init__(**kwargs)
 
 
-class SVMSearchSpace1Benchmark(AbstractBenchmarkClient):
+class SVMBenchmarkMF(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SVMSearchSpace1Benchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SVMBenchmarkMF')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(SVMSearchSpace1Benchmark, self).__init__(**kwargs)
+        super(SVMBenchmarkMF, self).__init__(**kwargs)
 
 
-__all__ = [SVMSearchSpace0Benchmark, SVMSearchSpace1Benchmark]
+class SVMBenchmarkBB(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SVMBenchmarkBB')
+        kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        super(SVMBenchmarkBB, self).__init__(**kwargs)
+
+
+__all__ = [SVMBenchmark, SVMBenchmarkMF, SVMBenchmarkBB]
