@@ -54,9 +54,9 @@ class XGBoostBenchmark(MLBenchmark):
         assert subsample_choice in ['fixed', 'variable']
 
         fidelity1 = dict(
-            fixed=CS.Constant('n_estimators', value=1000),
+            fixed=CS.Constant('n_estimators', value=2000),
             variable=CS.UniformIntegerHyperparameter(
-                'n_estimators', lower=50, upper=2000, default_value=1000, log=False
+                'n_estimators', lower=50, upper=2000, default_value=2000, log=False
             )
         )
         fidelity2 = dict(

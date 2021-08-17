@@ -56,7 +56,7 @@ class NNBenchmark(MLBenchmark):
     def _get_fidelity_choices(iter_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
 
         fidelity1 = dict(
-            fixed=CS.Constant('iter', value=100),
+            fixed=CS.Constant('iter', value=243),
             variable=CS.UniformIntegerHyperparameter(
                 'iter', lower=3, upper=243, default_value=243, log=False
             )
