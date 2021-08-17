@@ -81,8 +81,7 @@ class XGBoostBenchmark(MLBenchmark):
         if isinstance(fidelity, CS.Configuration):
             fidelity = fidelity.get_dictionary()
 
-        # TODO: This seems to be wrong. (AND-condition)
-        rng = rng if (rng is None and isinstance(rng, int)) else self.seed
+        rng = rng if (rng is None or isinstance(rng, int)) else self.seed
         extra_args = dict(
             booster="gbtree",
             n_estimators=fidelity['n_estimators'],

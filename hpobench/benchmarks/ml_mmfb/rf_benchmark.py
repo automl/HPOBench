@@ -55,7 +55,7 @@ class RandomForestBenchmark(MLBenchmark):
         assert subsample_choice in ['fixed', 'variable']
 
         fidelity1 = dict(
-            fixed=CS.Constant('n_estimators', value=100),  # TODO: is the default value here 100 or 512?
+            fixed=CS.Constant('n_estimators', value=512),
             variable=CS.UniformIntegerHyperparameter(
                 'n_estimators', lower=16, upper=512, default_value=512, log=False
             )
