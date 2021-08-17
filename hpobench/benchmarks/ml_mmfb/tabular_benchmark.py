@@ -135,7 +135,8 @@ class TabularBenchmark(AbstractBenchmark):
         for i, param in enumerate(df.drop("result", axis=1).columns):
             mask *= df[param].values == row_dict[param]
         idx = np.where(mask)
-        assert len(idx) == 1, f'The query has resulted into mulitple matches. This should not happen.'
+        assert len(idx) == 1, 'The query has resulted into mulitple matches. This should not happen. ' \
+                              f'The Query was {row_dict}'
         idx = idx[0][0]
         result = df.iloc[idx]["result"]
         return result
