@@ -14,12 +14,4 @@ class TabularBenchmark(AbstractBenchmarkClient):
         super(TabularBenchmark, self).__init__(**kwargs)
 
 
-class OriginalTabularBenchmark(AbstractBenchmarkClient):
-    def __init__(self, **kwargs):
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'OriginalTabularBenchmark')
-        kwargs['container_name'] = kwargs.get('container_name', 'ml_tabular_benchmarks')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
-        super(OriginalTabularBenchmark, self).__init__(**kwargs)
-
-
-__all__ = [TabularBenchmark, OriginalTabularBenchmark]
+__all__ = [TabularBenchmark]
