@@ -130,33 +130,15 @@ class TabularBenchmark(AbstractBenchmark):
         return fidelities
 
     def _search_dataframe(self, row_dict, df):
-        query_stmt = self._build_query(row_dict)
-        result = df.query(query_stmt)
-        # TODO: What happens in this case? The objective function raises a TypeError.
-        if len(result) == 0:
-            return None
-        return result.iloc[0].loc['result']
-
-        # TODO: This created an out-of-bounds error. The idx mask should have been 2d, but was 1d.
-        # # https://stackoverflow.com/a/46165056/8363967
-        # mask = np.array([True] * df.shape[0])
-        # for i, param in enumerate(df.drop("result", axis=1).columns):
-        #     mask *= df[param].values == row_dict[param]
-        # idx = np.where(mask)
-        # if len(idx) != 1:
-        #     return None
-        # idx = idx[0][0]
-        # result = df.iloc[idx]["result"]
-        # return result
-
-    @staticmethod
-    def _build_query(row_dict: Dict) -> str:
-        query = ''
-        for i, (param_name, param_value) in enumerate(row_dict.items()):
-            if i != 0:
-                query += ' & '
-            query += f'{param_name} == {param_value}'
-        return query
+        # https://stackoverflow.com/a/46165056/8363967
+        mask = np.array([True] * df.shape[0])
+        for i, param in enumerate(df.drop("result", axis=1).columns):
+            mask *= df[param].values == row_dict[param]
+        idx = np.where(mask)
+        assert len(idx) == 1, f'The query has resulted into mulitple matches. This should not happen.'
+        idx = idx[0][0]
+        result = df.iloc[idx]["result"]
+        return result
 
     def _objective(
             self,
