@@ -114,4 +114,4 @@ class RandomForestBenchmarkMF(RandomForestBenchmark):
         return fidelity_space
 
 
-__all__ = [RandomForestBenchmark, RandomForestBenchmarkBB, RandomForestBenchmarkMF]
+__all__ = ['RandomForestBenchmark', 'RandomForestBenchmarkBB', 'RandomForestBenchmarkMF']

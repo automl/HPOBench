@@ -120,4 +120,4 @@ class NNBenchmarkMF(NNBenchmark):
         return fidelity_space
 
 
-__all__ = [NNBenchmark, NNBenchmarkBB, NNBenchmarkMF]
+__all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF']

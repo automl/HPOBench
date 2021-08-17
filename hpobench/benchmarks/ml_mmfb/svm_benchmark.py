@@ -84,3 +84,5 @@ class SVMBenchmarkBB(SVMBenchmark):
 
 # To keep the parity of the the overall design
 SVMBenchmarkMF = SVMBenchmark
+
+__all__ = ['SVMBenchmark', 'SVMBenchmarkMF', 'SVMBenchmarkBB']

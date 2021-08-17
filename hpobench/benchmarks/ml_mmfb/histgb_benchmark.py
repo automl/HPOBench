@@ -112,4 +112,4 @@ class HistGBBenchmarkMF(HistGBBenchmark):
         return fidelity_space
 
 
-__all__ = [HistGBBenchmark, HistGBBenchmarkBB, HistGBBenchmarkMF]
+__all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF']

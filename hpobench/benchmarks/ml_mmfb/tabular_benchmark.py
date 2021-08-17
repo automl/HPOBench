@@ -181,4 +181,4 @@ class TabularBenchmark(AbstractBenchmark):
         return result
 
 
-__all__ = [TabularBenchmark]
+__all__ = ['TabularBenchmark']

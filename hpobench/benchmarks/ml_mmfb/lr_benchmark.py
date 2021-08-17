@@ -117,4 +117,4 @@ class LRBenchmarkMF(LRBenchmark):
         return fidelity_space
 
 
-__all__ = [LRBenchmark, LRBenchmarkBB, LRBenchmarkMF]
+__all__ = ['LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF']
