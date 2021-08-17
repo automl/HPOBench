@@ -30,4 +30,4 @@ class HistGBBenchmarkMF(AbstractBenchmarkClient):
         super(HistGBBenchmarkMF, self).__init__(**kwargs)
 
 
-__all__ = [HistGBBenchmark, HistGBBenchmarkBB, HistGBBenchmarkMF]
+__all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF']

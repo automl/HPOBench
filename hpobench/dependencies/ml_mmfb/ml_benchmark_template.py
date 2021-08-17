@@ -286,7 +286,7 @@ class MLBenchmark(AbstractBenchmark):
         }
 
         return {
-            'function_value': info['test_loss'],
-            'cost': model_fit_time + info['test_costs']['acc'],
+            'function_value': float(info['test_loss']),
+            'cost': float(model_fit_time + info['test_costs']['acc']),
             'info': info
         }

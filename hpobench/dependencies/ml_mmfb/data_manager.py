@@ -14,8 +14,6 @@ from sklearn.model_selection import train_test_split
 from oslo_concurrency import lockutils
 
 from hpobench.util.data_manager import DataManager
-
-
 from hpobench import config_file
 
 

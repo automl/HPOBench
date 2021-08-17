@@ -30,4 +30,4 @@ class SVMBenchmarkBB(AbstractBenchmarkClient):
         super(SVMBenchmarkBB, self).__init__(**kwargs)
 
 
-__all__ = [SVMBenchmark, SVMBenchmarkMF, SVMBenchmarkBB]
+__all__ = ['SVMBenchmark', 'SVMBenchmarkMF', 'SVMBenchmarkBB']

@@ -38,4 +38,4 @@ class XGBoostSearchSpace3Benchmark(AbstractBenchmarkClient):
         super(XGBoostSearchSpace3Benchmark, self).__init__(**kwargs)
 
 
-__all__ = [XGBoostBenchmark, XGBoostBenchmarkBB, XGBoostBenchmarkMF]
+__all__ = ['XGBoostBenchmark', 'XGBoostBenchmarkBB', 'XGBoostBenchmarkMF']
