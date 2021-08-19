@@ -63,7 +63,7 @@ class TabularBenchmark(AbstractBenchmark):
     # pylint: disable=arguments-differ
     def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         cs = json_cs.read(self.config_spaces['x_discrete'])
-        cs = self._preprocess_configspace(cs)
+        # cs = self._preprocess_configspace(cs)
         cs.seed(seed)
         return cs
 
@@ -178,7 +178,7 @@ class TabularBenchmark(AbstractBenchmark):
             info[seed] = res["info"]
             key_path.pop("seed")
         loss = np.mean(loss)
-        result = dict(function_value=loss, cost=costs, info=info)
+        result = dict(function_value=float(loss), cost=costs, info=info)
         return result
 
 
