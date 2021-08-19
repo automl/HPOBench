@@ -41,6 +41,14 @@ except ImportError:
 import hpobench
 
 
+tabular_multi_fidelity_urls = dict(
+    xgb="https://figshare.com/articles/dataset/XGBoost/15155919",
+    svm="https://figshare.com/articles/dataset/SupportVectorMachine/15098280",
+    lr="https://figshare.com/articles/dataset/LogisticRegression/15098283",
+    rf="https://figshare.com/articles/dataset/RandomForest/15173517",
+    nn="https://figshare.com/articles/dataset/NeuralNetwork/15156915"
+)
+
 class DataManager(abc.ABC, metaclass=abc.ABCMeta):
     """ Base Class for loading and managing the data.
 
@@ -930,14 +938,12 @@ class TabularDataManager(DataManager):
     def __init__(self, model: str, task_id: [int, str], data_dir: [str, Path, None] = None):
         super(TabularDataManager, self).__init__()
 
-        assert model in ['lr', 'svm', 'xgb'], f'Model has to be one of [lr, svm, xgb] but was {model}'
+        assert model in tabular_multi_fidelity_urls.keys(), f'Model has to be one of [lr, svm, xgb] but was {model}'
 
         self.model = model
         self.task_id = str(task_id)
 
-        url_dict = dict(xgb='https://ndownloader.figshare.com/files/29113257?private_link=c817bed4e7efc6daee91',
-                        svm='https://ndownloader.figshare.com/files/29102307?private_link=5a0929ad9b2ccd8dda58',
-                        lr='https://ndownloader.figshare.com/files/29027112?private_link=d644493a93dbab4b4ee1')
+        url_dict = tabular_multi_fidelity_urls
 
         self.url_to_use = url_dict.get(model)
 
