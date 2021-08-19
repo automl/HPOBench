@@ -1,72 +1,74 @@
-from copy import deepcopy
 from typing import Union, Tuple, Dict
 
 import ConfigSpace as CS
 import numpy as np
 from ConfigSpace.hyperparameters import Hyperparameter
-from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import SGDClassifier
 
-from hpobench.dependencies.ml_mmfb.ml_benchmark_template import MLBenchmark
+from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
 
-class NNBenchmark(MLBenchmark):
+class LRBenchmark(MLBenchmark):
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
-        super(NNBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+
+        super(LRBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        self.cache_size = 500
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """Parameter space to be optimized --- contains the hyperparameters
         """
         cs = CS.ConfigurationSpace(seed=seed)
-
         cs.add_hyperparameters([
-            CS.UniformIntegerHyperparameter(
-                'depth', default_value=3, lower=1, upper=3, log=False
-            ),
-            CS.UniformIntegerHyperparameter(
-                'width', default_value=64, lower=16, upper=1024, log=True
-            ),
-            CS.UniformIntegerHyperparameter(
-                'batch_size', lower=4, upper=256, default_value=32, log=True
+            CS.UniformFloatHyperparameter(
+                "alpha", 1e-5, 1, log=True, default_value=1e-3
             ),
             CS.UniformFloatHyperparameter(
-                'alpha', lower=10**-8, upper=1, default_value=10**-3, log=True
-            ),
-            CS.UniformFloatHyperparameter(
-                'learning_rate_init', lower=10**-5, upper=1, default_value=10**-3, log=True
+                "eta0", 1e-5, 1, log=True, default_value=1e-2
             )
         ])
         return cs
 
-    @staticmethod
-    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-
+    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-multi-fidelity) - iterations + data subsample
-            NNBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='variable')
+            LRBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='variable')
         )
         return fidelity_space
 
     @staticmethod
     def _get_fidelity_choices(iter_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
+        """Fidelity space available --- specifies the fidelity dimensions
+
+        For SVM, only a single fidelity exists, i.e., subsample fraction.
+        if fidelity_choice == 0
+            uses the entire data (subsample=1), reflecting the black-box setup
+        else
+            parameterizes the fraction of data to subsample
+
+        """
+
+        assert iter_choice in ['fixed', 'variable']
+        assert subsample_choice in ['fixed', 'variable']
 
         fidelity1 = dict(
-            fixed=CS.Constant('iter', value=243),
+            fixed=CS.Constant('iter', value=1000),
             variable=CS.UniformIntegerHyperparameter(
-                'iter', lower=3, upper=243, default_value=243, log=False
+                'iter', lower=10, upper=1000, default_value=1000, log=False
             )
         )
         fidelity2 = dict(
-            fixed=CS.Constant('subsample', value=1),
+            fixed=CS.Constant('subsample', value=1.0),
             variable=CS.UniformFloatHyperparameter(
-                'subsample', lower=0.1, upper=1, default_value=1, log=False
+                'subsample', lower=0.1, upper=1.0, default_value=1.0, log=False
             )
         )
+
         iter = fidelity1[iter_choice]
         subsample = fidelity2[subsample_choice]
         return iter, subsample
@@ -74,8 +76,7 @@ class NNBenchmark(MLBenchmark):
     def init_model(self, config: Union[CS.Configuration, Dict],
                    fidelity: Union[CS.Configuration, Dict, None] = None,
                    rng: Union[int, np.random.RandomState, None] = None):
-        """ Function that returns the model initialized based on the configuration and fidelity
-        """
+        # initializing model
         rng = self.rng if rng is None else rng
 
         if isinstance(config, CS.Configuration):
@@ -83,41 +84,37 @@ class NNBenchmark(MLBenchmark):
         if isinstance(fidelity, CS.Configuration):
             fidelity = fidelity.get_dictionary()
 
-        config = deepcopy(config)
-        depth = config["depth"]
-        width = config["width"]
-        config.pop("depth")
-        config.pop("width")
-        hidden_layers = [width] * depth
-        model = MLPClassifier(
+        # https://scikit-learn.org/stable/modules/sgd.html
+        model = SGDClassifier(
             **config,
-            hidden_layer_sizes=hidden_layers,
-            activation="relu",
-            solver="adam",
-            max_iter=fidelity['iter'],  # a fidelity being used during initialization
-            random_state=rng
+            loss="log",  # performs Logistic Regression
+            max_iter=fidelity["iter"],
+            learning_rate="adaptive",
+            tol=None,
+            random_state=rng,
+
         )
         return model
 
 
-class NNBenchmarkBB(NNBenchmark):
+class LRBenchmarkBB(LRBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # black-box setting (full fidelity)
-            NNBenchmarkBB._get_fidelity_choices(iter_choice='fixed', subsample_choice='fixed')
+            LRBenchmark._get_fidelity_choices(iter_choice='fixed', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-class NNBenchmarkMF(NNBenchmark):
+class LRBenchmarkMF(LRBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-fidelity) - iterations
-            NNBenchmarkMF._get_fidelity_choices(iter_choice='variable', subsample_choice='fixed')
+            LRBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-__all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF']
+__all__ = ['LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF']

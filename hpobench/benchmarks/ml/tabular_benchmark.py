@@ -6,7 +6,7 @@ import numpy as np
 from ConfigSpace.read_and_write import json as json_cs
 
 from hpobench.abstract_benchmark import AbstractBenchmark
-from hpobench.dependencies.ml_mmfb.ml_benchmark_template import metrics
+from hpobench.dependencies.ml.ml_benchmark_template import metrics
 from hpobench.util.data_manager import TabularDataManager
 
 

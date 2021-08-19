@@ -13,7 +13,7 @@ VERSION v0.0.1
     && git clone https://github.com/automl/HPOBench.git \
     && cd HPOBench \
     && git checkout development \
-    && pip install ".[ml_mfbb]" \
+    && pip install ".[ml_tabular_benchmarks]" \
     && cd / \
     && mkdir /var/lib/hpobench/ \
     && chmod -R 777 /var/lib/hpobench/ \
@@ -22,4 +22,4 @@ VERSION v0.0.1
 
 
 %runscript
-    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py ml_mmfb $@
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py ml $@
