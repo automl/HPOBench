@@ -17,7 +17,7 @@ class TabularBenchmark(AbstractBenchmark):
                  data_dir: Union[Path, str, None] = None,
                  rng: Union[int, np.random.RandomState, None] = None, **kwargs):
 
-        assert model in ['lr', 'svm', 'xgb'], f'Parameter `model` has to be one of [lr, svm, xgb] but was {model}'
+        assert model in ['lr', 'svm', 'xgb', 'rf', 'nn'], f'Parameter `model` has to be one of [lr, svm, xgb] but was {model}'
 
         self.task_id = task_id
         self.model = model
