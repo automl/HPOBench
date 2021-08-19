@@ -948,9 +948,9 @@ class TabularDataManager(DataManager):
         self.url_to_use = url_dict.get(model)
 
         if data_dir is None:
-            data_dir = hpobench.config_file.data_dir
+            data_dir = hpobench.config_file.data_dir / "TabularData"
 
-        self._save_dir = Path(data_dir) / "TabularData" / self.model
+        self._save_dir = Path(data_dir) / self.model
         self.create_save_directory(self._save_dir)
 
         self.parquet_file = self._save_dir / self.task_id / f'{self.model}_{self.task_id}_data.parquet.gzip'

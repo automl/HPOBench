@@ -30,4 +30,4 @@ class RandomForestBenchmarkMF(AbstractBenchmarkClient):
         super(RandomForestBenchmarkMF, self).__init__(**kwargs)
 
 
-__all__ = [RandomForestBenchmark, RandomForestBenchmarkBB, RandomForestBenchmarkMF]
+__all__ = ['RandomForestBenchmark', 'RandomForestBenchmarkBB', 'RandomForestBenchmarkMF']

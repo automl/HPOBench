@@ -24,7 +24,7 @@ def test_debug_container():
 
     set_log_level(True)
 
-    from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+    from hpobench.container.benchmarks.ml.xgboost_benchmark_old import XGBoostBenchmark as Benchmark
     from hpobench.util.openml_data_manager import get_openmlcc18_taskids
 
     task_id = get_openmlcc18_taskids()[0]

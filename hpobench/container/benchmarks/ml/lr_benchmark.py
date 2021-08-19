@@ -30,4 +30,4 @@ class LRBenchmarkMF(AbstractBenchmarkClient):
         super(LRBenchmarkMF, self).__init__(**kwargs)
 
 
-__all__ = [LRBenchmark, LRBenchmarkBB, LRBenchmarkMF]
+__all__ = ['LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF']

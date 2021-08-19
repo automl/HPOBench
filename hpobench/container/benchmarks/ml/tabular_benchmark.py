@@ -14,4 +14,4 @@ class TabularBenchmark(AbstractBenchmarkClient):
         super(TabularBenchmark, self).__init__(**kwargs)
 
 
-__all__ = [TabularBenchmark]
+__all__ = ['TabularBenchmark']

@@ -9,7 +9,7 @@ from sklearn.metrics import make_scorer, accuracy_score, balanced_accuracy_score
     precision_score, f1_score
 
 from hpobench.abstract_benchmark import AbstractBenchmark
-from hpobench.dependencies.ml_mmfb.data_manager import OpenMLDataManager
+from hpobench.dependencies.ml.data_manager import OpenMLDataManager
 from hpobench.util.rng_helper import get_rng
 
 metrics = dict(
@@ -286,7 +286,7 @@ class MLBenchmark(AbstractBenchmark):
         }
 
         return {
-            'function_value': info['test_loss'],
-            'cost': model_fit_time + info['test_costs']['acc'],
+            'function_value': float(info['test_loss']),
+            'cost': float(model_fit_time + info['test_costs']['acc']),
             'info': info
         }

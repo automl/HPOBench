@@ -2,38 +2,39 @@ from typing import Union, Tuple, Dict
 
 import ConfigSpace as CS
 import numpy as np
-import xgboost as xgb
 from ConfigSpace.hyperparameters import Hyperparameter
+# https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
+from sklearn.ensemble import HistGradientBoostingClassifier
 
-from hpobench.dependencies.ml_mmfb.ml_benchmark_template import MLBenchmark
+from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
 
-class XGBoostBenchmark(MLBenchmark):
+class HistGBBenchmark(MLBenchmark):
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
-        super(XGBoostBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        super(HistGBBenchmark, self).__init__(task_id, rng, valid_size, data_path)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        """Parameter space to be optimized --- contains the hyperparameters
-        """
+        """Parameter space to be optimized --- contains the hyperparameters"""
         cs = CS.ConfigurationSpace(seed=seed)
 
         cs.add_hyperparameters([
-            CS.UniformFloatHyperparameter(
-                'eta', lower=2**-10, upper=1., default_value=0.3, log=True
-            ),  # learning rate
             CS.UniformIntegerHyperparameter(
-                'max_depth', lower=1, upper=50, default_value=10, log=True
+                'max_depth', lower=6, upper=30, default_value=6, log=True
+            ),
+            CS.UniformIntegerHyperparameter(
+                'max_leaf_nodes', lower=2, upper=64, default_value=32, log=True
             ),
             CS.UniformFloatHyperparameter(
-                'colsample_bytree', lower=0.1, upper=1., default_value=1., log=False
+                'learning_rate', lower=2**-10, upper=1, default_value=0.1, log=True
             ),
             CS.UniformFloatHyperparameter(
-                'reg_lambda', lower=2**-10, upper=2**10, default_value=1, log=True
+                'l2_regularization', lower=2**-10, upper=2**10, default_value=0.1, log=True
             )
         ])
         return cs
@@ -43,20 +44,21 @@ class XGBoostBenchmark(MLBenchmark):
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-multi-fidelity) - ntrees + data subsample
-            XGBoostBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='variable')
+            HistGBBenchmark._get_fidelity_choices(ntrees_choice='variable', subsample_choice='variable')
         )
         return fidelity_space
 
     @staticmethod
-    def _get_fidelity_choices(n_estimators_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
+    def _get_fidelity_choices(ntrees_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
 
-        assert n_estimators_choice in ['fixed', 'variable']
+        assert ntrees_choice in ['fixed', 'variable']
         assert subsample_choice in ['fixed', 'variable']
 
         fidelity1 = dict(
-            fixed=CS.Constant('n_estimators', value=2000),
+            # TODO: this value was 100 in the original code. Please check if 100 or 1000.
+            fixed=CS.Constant('n_estimators', value=1000),
             variable=CS.UniformIntegerHyperparameter(
-                'n_estimators', lower=50, upper=2000, default_value=2000, log=False
+                'n_estimators', lower=100, upper=1000, default_value=1000, log=False
             )
         )
         fidelity2 = dict(
@@ -65,59 +67,49 @@ class XGBoostBenchmark(MLBenchmark):
                 'subsample', lower=0.1, upper=1, default_value=1, log=False
             )
         )
-
-        n_estimators = fidelity1[n_estimators_choice]
+        ntrees = fidelity1[ntrees_choice]
         subsample = fidelity2[subsample_choice]
-        return n_estimators, subsample
+        return ntrees, subsample
 
-    def init_model(self,
-                   config: Union[CS.Configuration, Dict],
+    def init_model(self, config: Union[CS.Configuration, Dict],
                    fidelity: Union[CS.Configuration, Dict, None] = None,
                    rng: Union[int, np.random.RandomState, None] = None):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
+        rng = self.rng if rng is None else rng
+
         if isinstance(config, CS.Configuration):
             config = config.get_dictionary()
         if isinstance(fidelity, CS.Configuration):
             fidelity = fidelity.get_dictionary()
 
-        rng = rng if (rng is None or isinstance(rng, int)) else self.seed
-        extra_args = dict(
-            booster="gbtree",
-            n_estimators=fidelity['n_estimators'],
-            objective="binary:logistic",
-            random_state=rng,
-            subsample=1
-        )
-        if self.n_classes > 2:
-            extra_args["objective"] = "multi:softmax"
-            extra_args.update({"num_class": self.n_classes})
-
-        model = xgb.XGBClassifier(
+        model = HistGradientBoostingClassifier(
             **config,
-            **extra_args
+            max_iter=fidelity['n_estimators'],  # a fidelity being used during initialization
+            early_stopping=False,
+            random_state=rng
         )
         return model
 
 
-class XGBoostBenchmarkBB(XGBoostBenchmark):
+class HistGBBenchmarkBB(HistGBBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # black-box setting (full fidelity)
-            XGBoostBenchmark._get_fidelity_choices(n_estimators_choice='fixed', subsample_choice='fixed')
+            HistGBBenchmark._get_fidelity_choices(ntrees_choice='fixed', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-class XGBoostBenchmarkMF(XGBoostBenchmark):
+class HistGBBenchmarkMF(HistGBBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-fidelity) - ntrees
-            XGBoostBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='fixed')
+            HistGBBenchmark._get_fidelity_choices(ntrees_choice='variable', subsample_choice='fixed')
         )
         return fidelity_space
 
 
-__all__ = ['XGBoostBenchmarkBB', 'XGBoostBenchmarkMF', 'XGBoostBenchmark']
+__all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF']

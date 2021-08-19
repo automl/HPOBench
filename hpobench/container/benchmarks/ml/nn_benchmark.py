@@ -30,4 +30,4 @@ class NNBenchmarkMF(AbstractBenchmarkClient):
         super(NNBenchmarkMF, self).__init__(**kwargs)
 
 
-__all__ = [NNBenchmark, NNBenchmarkBB, NNBenchmarkMF]
+__all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF']
