@@ -6,8 +6,6 @@ from hpobench.benchmarks.ml.rf_benchmark import RandomForestBenchmark, RandomFor
 from hpobench.benchmarks.ml.svm_benchmark import SVMBenchmark, SVMBenchmarkBB, SVMBenchmarkMF
 from hpobench.benchmarks.ml.tabular_benchmark import TabularBenchmark
 from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark, XGBoostBenchmarkBB, XGBoostBenchmarkMF
-from hpobench.benchmarks.ml.pybnn import BNNOnToyFunction, BNNOnProteinStructure, BNNOnProteinStructure, \
-    BNNOnYearPrediction
 
 
 __all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF',
@@ -17,5 +15,4 @@ __all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF',
            'SVMBenchmark', 'SVMBenchmarkBB', 'SVMBenchmarkMF',
            'TabularBenchmark',
            'XGBoostBenchmark', 'XGBoostBenchmarkBB', 'XGBoostBenchmarkMF',
-           'BNNOnToyFunction', 'BNNOnProteinStructure', 'BNNOnProteinStructure', 'BNNOnYearPrediction'
            ]
