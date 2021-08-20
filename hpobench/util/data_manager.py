@@ -42,11 +42,11 @@ import hpobench
 
 
 tabular_multi_fidelity_urls = dict(
-    xgb="https://figshare.com/articles/dataset/XGBoost/15155919",
-    svm="https://figshare.com/articles/dataset/SupportVectorMachine/15098280",
-    lr="https://figshare.com/articles/dataset/LogisticRegression/15098283",
-    rf="https://figshare.com/articles/dataset/RandomForest/15173517",
-    nn="https://figshare.com/articles/dataset/NeuralNetwork/15156915"
+    xgb="https://ndownloader.figshare.com/files/29469231",
+    svm="https://ndownloader.figshare.com/files/29471790",
+    lr="https://ndownloader.figshare.com/files/29470119",
+    rf="https://ndownloader.figshare.com/files/29466012",
+    nn="https://ndownloader.figshare.com/files/29467902"
 )
 
 class DataManager(abc.ABC, metaclass=abc.ABCMeta):
@@ -938,7 +938,8 @@ class TabularDataManager(DataManager):
     def __init__(self, model: str, task_id: [int, str], data_dir: [str, Path, None] = None):
         super(TabularDataManager, self).__init__()
 
-        assert model in tabular_multi_fidelity_urls.keys(), f'Model has to be one of [lr, svm, xgb] but was {model}'
+        assert model in tabular_multi_fidelity_urls.keys(), \
+            f'Model has to be one of {list(tabular_multi_fidelity_urls.keys())} but was {model}'
 
         self.model = model
         self.task_id = str(task_id)
