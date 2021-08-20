@@ -930,14 +930,19 @@ class TabularDataManager(DataManager):
     def __init__(self, model: str, task_id: [int, str], data_dir: [str, Path, None] = None):
         super(TabularDataManager, self).__init__()
 
-        assert model in ['lr', 'svm', 'xgb'], f'Model has to be one of [lr, svm, xgb] but was {model}'
+        url_dict = dict(
+            xgb="https://ndownloader.figshare.com/files/29469231",
+            svm="https://ndownloader.figshare.com/files/29471790",
+            lr="https://ndownloader.figshare.com/files/29470119",
+            rf="https://ndownloader.figshare.com/files/29466012",
+            nn="https://ndownloader.figshare.com/files/29467902"
+        )
+
+        assert model in url_dict.keys(), \
+            f'Model has to be one of {list(url_dict.keys())} but was {model}'
 
         self.model = model
         self.task_id = str(task_id)
-
-        url_dict = dict(xgb='https://ndownloader.figshare.com/files/29113257?private_link=c817bed4e7efc6daee91',
-                        svm='https://ndownloader.figshare.com/files/29102307?private_link=5a0929ad9b2ccd8dda58',
-                        lr='https://ndownloader.figshare.com/files/29027112?private_link=d644493a93dbab4b4ee1')
 
         self.url_to_use = url_dict.get(model)
 
