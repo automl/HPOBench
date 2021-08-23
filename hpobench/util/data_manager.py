@@ -42,11 +42,11 @@ import hpobench
 
 
 tabular_multi_fidelity_urls = dict(
-    xgb="https://ndownloader.figshare.com/files/29469231",
-    svm="https://ndownloader.figshare.com/files/30300531",
-    lr="https://ndownloader.figshare.com/files/29470119",
-    rf="https://ndownloader.figshare.com/files/29466012",
-    nn="https://ndownloader.figshare.com/files/29467902"
+    xgb="https://ndownloader.figshare.com/files/30378972",
+    svm="https://ndownloader.figshare.com/files/30379359",
+    lr="https://ndownloader.figshare.com/files/30379038",
+    rf="https://ndownloader.figshare.com/files/30378930",
+    nn="https://ndownloader.figshare.com/files/30379005"
 )
 
 class DataManager(abc.ABC, metaclass=abc.ABCMeta):
