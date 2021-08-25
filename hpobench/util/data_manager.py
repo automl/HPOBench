@@ -931,11 +931,11 @@ class TabularDataManager(DataManager):
         super(TabularDataManager, self).__init__()
 
         url_dict = dict(
-            xgb="https://ndownloader.figshare.com/files/29469231",
-            svm="https://ndownloader.figshare.com/files/29471790",
-            lr="https://ndownloader.figshare.com/files/29470119",
-            rf="https://ndownloader.figshare.com/files/29466012",
-            nn="https://ndownloader.figshare.com/files/29467902"
+            xgb="https://ndownloader.figshare.com/files/30378972",
+            svm="https://ndownloader.figshare.com/files/30379359",
+            lr="https://ndownloader.figshare.com/files/30379038",
+            rf="https://ndownloader.figshare.com/files/30378930",
+            nn="https://ndownloader.figshare.com/files/30379005"
         )
 
         assert model in url_dict.keys(), \
