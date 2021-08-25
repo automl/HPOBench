@@ -39,7 +39,7 @@ def test_whitebox_without_container_xgb():
 
 @pytest.mark.skipif(skip_container_test, reason="Requires singularity and flask")
 def test_whitebox_with_container():
-    from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+    from hpobench.container.benchmarks.ml.xgboost_benchmark_old import XGBoostBenchmark as Benchmark
     b = Benchmark(container_name='xgboost_benchmark',
                   task_id=167199,
                   rng=0)
