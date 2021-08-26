@@ -45,7 +45,7 @@ tabular_multi_fidelity_urls = dict(
     xgb="https://ndownloader.figshare.com/files/30378972",
     svm="https://ndownloader.figshare.com/files/30379359",
     lr="https://ndownloader.figshare.com/files/30379038",
-    rf="https://ndownloader.figshare.com/files/30378930",
+    rf="https://ndownloader.figshare.com/files/30469089",
     nn="https://ndownloader.figshare.com/files/30379005"
 )
 
