@@ -42,7 +42,7 @@ import hpobench
 
 
 tabular_multi_fidelity_urls = dict(
-    xgb="https://ndownloader.figshare.com/files/30378972",
+    xgb="https://ndownloader.figshare.com/files/30469920",
     svm="https://ndownloader.figshare.com/files/30379359",
     lr="https://ndownloader.figshare.com/files/30379038",
     rf="https://ndownloader.figshare.com/files/30469089",
