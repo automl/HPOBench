@@ -931,10 +931,10 @@ class TabularDataManager(DataManager):
         super(TabularDataManager, self).__init__()
 
         url_dict = dict(
-            xgb="https://ndownloader.figshare.com/files/30378972",
+            xgb="https://ndownloader.figshare.com/files/30469920",
             svm="https://ndownloader.figshare.com/files/30379359",
             lr="https://ndownloader.figshare.com/files/30379038",
-            rf="https://ndownloader.figshare.com/files/30378930",
+            rf="https://ndownloader.figshare.com/files/30469089",
             nn="https://ndownloader.figshare.com/files/30379005"
         )
 
