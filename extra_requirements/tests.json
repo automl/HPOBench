@@ -2,5 +2,5 @@
   "codestyle": ["pycodestyle","flake8","pylint"],
   "pytest": ["pytest>=4.6","pytest-cov"],
   "test_paramnet": ["tqdm", "scikit-learn==0.23.2"],
-  "test_tabular_datamanager": ["pyarrow"]
+  "test_tabular_datamanager": ["pyarrow", "fastparquet"]
 }
