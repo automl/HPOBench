@@ -65,7 +65,6 @@ if [[ "$USE_SINGULARITY" == "true" ]]; then
       sudo make -C builddir install
 
     cd ..
-    install_packages="${install_packages}singularity,"
 else
     echo "Skip installing Singularity"
 fi
