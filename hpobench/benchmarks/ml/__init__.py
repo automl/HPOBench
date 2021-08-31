@@ -5,7 +5,11 @@ from hpobench.benchmarks.ml.rf_benchmark import RandomForestBenchmark, RandomFor
     RandomForestBenchmarkMF
 from hpobench.benchmarks.ml.svm_benchmark import SVMBenchmark, SVMBenchmarkBB, SVMBenchmarkMF
 from hpobench.benchmarks.ml.tabular_benchmark import TabularBenchmark
-from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark, XGBoostBenchmarkBB, XGBoostBenchmarkMF
+
+try:
+    from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark, XGBoostBenchmarkBB, XGBoostBenchmarkMF
+except ImportError:
+    pass
 
 
 __all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF',

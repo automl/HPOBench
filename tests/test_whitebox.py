@@ -32,14 +32,14 @@ def test_whitebox_without_container_xgb():
     result_dict = b.objective_function_test(configuration, fidelity=dict(n_estimators=n_estimator), rng=0)
     test_loss = result_dict['function_value']
 
-    assert np.isclose(train_loss, 0.0223, atol=0.001)
-    assert np.isclose(valid_loss, 0.4234, atol=0.001)
+    assert np.isclose(train_loss, 0.02678, atol=0.001)
+    assert np.isclose(valid_loss, 0.49549, atol=0.001)
     assert np.isclose(test_loss, 0.43636, atol=0.001)
 
 
 @pytest.mark.skipif(skip_container_test, reason="Requires singularity and flask")
 def test_whitebox_with_container():
-    from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
+    from hpobench.container.benchmarks.ml.xgboost_benchmark_old import XGBoostBenchmark as Benchmark
     b = Benchmark(container_name='xgboost_benchmark',
                   task_id=167199,
                   rng=0)

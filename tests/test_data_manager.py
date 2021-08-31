@@ -108,7 +108,7 @@ def test_tabular_datamanager():
 
     table, meta_data = dm.load()
 
-    assert (hpobench.config_file.data_dir / "TabularData" / str(3) / f'lr_3_data.parquet.gzip').exists()
-    assert (hpobench.config_file.data_dir / "TabularData" / str(3) / f'lr_3_metadata.json').exists()
+    assert (hpobench.config_file.data_dir / "TabularData" / 'lr' / str(3) / f'lr_3_data.parquet.gzip').exists()
+    assert (hpobench.config_file.data_dir / "TabularData" / 'lr' / str(3) / f'lr_3_metadata.json').exists()
 
     table_2, meta_data_2 = dm.load()
