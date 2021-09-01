@@ -28,7 +28,8 @@ result_dict = b.objective_function(configuration=config, rng=1)
 ```
 
 Containerized benchmarks do not rely on external dependencies and thus do not change. To do so, we rely on [Singularity (version 3.5)](https://sylabs.io/guides/3.5/user-guide/).
- 
+**Note:** All containers are uploaded to a [gitlab registry](https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry)
+
 Further requirements are: [ConfigSpace](https://github.com/automl/ConfigSpace), *scipy* and *numpy* 
 
 **Note:** Each benchmark can also be run locally, but the dependencies must be installed manually and might conflict with other benchmarks. 
@@ -57,33 +58,6 @@ pip install .
 ```
 
 **Note:** This does not install *singularity (version 3.5)*. Please follow the steps described here: [user-guide](https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps).   
-
-## Available Containerized Benchmarks
-
-| Benchmark Name                    | Container Name     | Additional Info                      |
-| :-------------------------------- | ------------------ | ------------------------------------ |
-| BNNOn*                            | pybnn              | There are 4 benchmark in total (ToyFunction, BostonHousing, ProteinStructure, YearPrediction) |
-| CartpoleFull                      | cartpole           | Not deterministic.                    |
-| CartpoleReduced                   | cartpole           | Not deterministic.                    |
-| SliceLocalizationBenchmark        | tabular_benchmarks | Loading may take several minutes.     |
-| ProteinStructureBenchmark         | tabular_benchmarks | Loading may take several minutes.     |
-| NavalPropulsionBenchmark          | tabular_benchmarks | Loading may take several minutes.     |
-| ParkinsonsTelemonitoringBenchmark | tabular_benchmarks | Loading may take several minutes.     |
-| NASCifar10*Benchmark              | nasbench_101       | Loading may take several minutes. There are 3 benchmark in total (A, B, C) |
-| *NasBench201Benchmark             | nasbench_201       | Loading may take several minutes. There are 3 benchmarks in total (Cifar10Valid, Cifar100, ImageNet)    |
-| NASBench1shot1SearchSpace*Benchmark | nasbench_1shot1  | Loading may take several minutes. There are 3 benchmarks in total (1,2,3) |
-| ParamNet*OnStepsBenchmark       | paramnet         | There are 6 benchmarks in total (Adult, Higgs, Letter, Mnist, Optdigits, Poker) |
-| ParamNet*OnTimeBenchmark        | paramnet         | There are 6 benchmarks in total (Adult, Higgs, Letter, Mnist, Optdigits, Poker) |
-| SurrogateSVMBenchmark              | surrogate_svm      | Random Forest Surrogate of a SVM on MNIST | 
-| Learna⁺                            | learna_benchmark   | Not deterministic.                    |
-| MetaLearna⁺                        | learna_benchmark   | Not deterministic.                    |
-| XGBoostBenchmark⁺                  | xgboost_benchmark  | Works with OpenML task ids. |
-| XGBoostExtendedBenchmark⁺          | xgboost_benchmark  | Works with OpenML task ids + Contains Additional Parameter `Booster |
-| SupportVectorMachine⁺              | svm_benchmark      | Works with OpenML task ids. |
-
-⁺ these benchmarks are not yet final and might change
-
-**Note:** All containers are uploaded [here](https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry)
 
 ## Further Notes
 
