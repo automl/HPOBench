@@ -1,0 +1,25 @@
+Bootstrap: docker
+From: python:3.8-slim
+
+%labels
+MAINTAINER muelleph@cs.uni-freiburg.de
+VERSION v0.0.1
+
+%post
+    apt update -y \
+    && apt install build-essential git -y \
+
+    cd /home \
+    && git clone https://github.com/automl/HPOBench.git \
+    && cd HPOBench \
+    && git checkout development \
+    && pip install ".[ml_tabular_benchmarks]" \
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/ \
+    && pip cache purge \
+    && rm -rf /var/lib/apt/lists/*
+
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py ml $@

@@ -136,3 +136,4 @@ experiments/
 # Vagrant
 .vagrant
 Vagrantfile
+/hpobench/container/recipes_local/

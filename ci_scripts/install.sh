@@ -4,7 +4,7 @@ install_packages=""
 
 if [[ "$RUN_TESTS" == "true" ]]; then
     echo "Install tools for testing"
-    install_packages="${install_packages}xgboost,pytest,test_paramnet,"
+    install_packages="${install_packages}xgboost,pytest,test_paramnet,test_tabular_datamanager,"
     pip install codecov
 
     # The param net benchmark does not work with a scikit-learn version != 0.23.2. (See notes in the benchmark)
@@ -63,9 +63,8 @@ if [[ "$USE_SINGULARITY" == "true" ]]; then
     ./mconfig && \
       make -C builddir && \
       sudo make -C builddir install
-
+      install_packages="${install_packages}placeholder,"
     cd ..
-    install_packages="${install_packages}singularity,"
 else
     echo "Skip installing Singularity"
 fi

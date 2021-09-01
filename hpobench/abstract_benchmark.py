@@ -36,8 +36,8 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
         """
 
         self.rng = rng_helper.get_rng(rng=rng)
-        self.configuration_space = self.get_configuration_space()
-        self.fidelity_space = self.get_fidelity_space()
+        self.configuration_space = self.get_configuration_space(self.rng.randint(0, 10000))
+        self.fidelity_space = self.get_fidelity_space(self.rng.randint(0, 10000))
 
     @abc.abstractmethod
     def objective_function(self, configuration: Union[ConfigSpace.Configuration, Dict],
