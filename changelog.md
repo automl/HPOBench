@@ -1,9 +1,10 @@
 # 0.0.9
-  * Add new Benchmarks: Tabular Benchmarks:
-    LR, Tabular benchmarks.
+  * Add new Benchmarks: Tabular Benchmarks.
     Provided by @Neeratyoy. 
   * New Benchmark: ML Benchmark Class
-    This new benchmark class offers a unified interface for XGB, SVM, MLP, HISTGB, RF benchmarks operating on OPENML tasks. 
+    This new benchmark class offers a unified interface for XGB, SVM, MLP, HISTGB, RF, LR benchmarks operating on OpenML 
+    tasks.
+    Provided by @Neeratyoy.  
   * This version is the used for the paper: 
     "HPOBench: A Collection of Reproducible Multi-Fidelity Benchmark Problems for HPO" (Eggensperger et al.)    
     https://openreview.net/forum?id=1k4rJYEwda-
