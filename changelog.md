@@ -1,5 +1,13 @@
 # 0.0.9
-
+  * Add new Benchmarks: Tabular Benchmarks:
+    LR, Tabular benchmarks.
+    Provided by @Neeratyoy. 
+  * New Benchmark: ML Benchmark Class
+    This new benchmark class offers a unified interface for XGB, SVM, MLP, HISTGB, RF benchmarks operating on OPENML tasks. 
+  * This version is the used for the paper: 
+    "HPOBench: A Collection of Reproducible Multi-Fidelity Benchmark Problems for HPO" (Eggensperger et al.)    
+    https://openreview.net/forum?id=1k4rJYEwda-
+    
 # 0.0.8
   * Improve container integration
     The containers had some problems when the file system was read-only. In this case, the home directory, which contains the 
