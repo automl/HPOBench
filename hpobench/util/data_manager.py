@@ -945,6 +945,7 @@ class TabularDataManager(DataManager):
         url_dict = tabular_multi_fidelity_urls
         assert model in url_dict.keys(), \
             f'Model has to be one of {list(url_dict.keys())} but was {model}'
+
         self.url_to_use = url_dict.get(model)
 
         if data_dir is None:
