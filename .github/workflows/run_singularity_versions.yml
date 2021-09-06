@@ -25,10 +25,10 @@ jobs:
             USE_SINGULARITY: false
             SINGULARITY_VERSION: "3.7"
           - python-version: 3.7
-              DISPLAY_NAME: "Singularity Container Examples with S3.7"
-              RUN_CONTAINER_EXAMPLES: true
-              USE_SINGULARITY: false
-              SINGULARITY_VERSION: "3.8"
+            DISPLAY_NAME: "Singularity Container Examples with S3.8"
+            RUN_CONTAINER_EXAMPLES: true
+            USE_SINGULARITY: false
+            SINGULARITY_VERSION: "3.8"
 
       fail-fast: false
 
