@@ -1,3 +1,11 @@
+"""
+Changelog:
+==========
+
+0.0.1:
+* First implementation of the RF Benchmarks.
+"""
+
 from copy import deepcopy
 from typing import Union, Tuple, Dict
 
@@ -7,6 +15,8 @@ from ConfigSpace.hyperparameters import Hyperparameter
 from sklearn.ensemble import RandomForestClassifier
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+
+__version__ = '0.0.1'
 
 
 class RandomForestBenchmark(MLBenchmark):
