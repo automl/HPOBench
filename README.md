@@ -1,15 +1,20 @@
 # HPOBench
 
-HPOBench is a library for hyperparameter optimization and black-box optimization benchmark with a focus on reproducibility.
+HPOBench is a library for providing benchmarks for (multi-fidelity) hyperparameter optimization and with a focus on reproducibility.
 
-**Note:** HPOBench is under active construction. Stay tuned for more benchmarks. Information on how to contribute a new benchmark will follow shortly.
+## Status
 
-**Note:** If you are looking for a different or older version of our benchmarking library, you might be looking for
- [HPOlib1.5](https://github.com/automl/HPOlib1.5) 
+Status for Master Branch: 
+[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=master)](https://https://github.com/automl/HPOBench/actions)
+[![codecov](https://codecov.io/gh/automl/HPOBench/branch/master/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)
+
+Status for Development Branch: 
+[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=development)](https://https://github.com/automl/HPOBench/actions)
+[![codecov](https://codecov.io/gh/automl/HPOBench/branch/development/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)
 
 ## In 4 lines of code
 
-Run a random configuration within a singularity container
+Evaluate a random configuration using a singularity container
 ```python
 from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl', rng=1)
@@ -137,13 +142,8 @@ the used container. When starting an experiment, HPOBench writes automatically t
   - **A Benchmark fails with `SystemError: Could not start an instance of the benchmark. Retried 5 times` but the container 
 can be started locally with `singularity instance start <pathtocontainer> test`**
 See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that does not end with '}'. If yes delete this file and retry.   
-  
-## Status
 
-Status for Master Branch: 
-[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=master)](https://https://github.com/automl/HPOBench/actions)
-[![codecov](https://codecov.io/gh/automl/HPOBench/branch/master/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)
+**Note:** If you are looking for a different or older version of our benchmarking library, you might be looking for
+ [HPOlib1.5](https://github.com/automl/HPOlib1.5) 
 
-Status for Development Branch: 
-[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=development)](https://https://github.com/automl/HPOBench/actions)
-[![codecov](https://codecov.io/gh/automl/HPOBench/branch/development/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)
+
