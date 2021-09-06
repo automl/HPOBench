@@ -2,16 +2,16 @@
 
 HPOBench is a library for providing benchmarks for (multi-fidelity) hyperparameter optimization and with a focus on reproducibility.
 
-A list of benchmarks can be found in the [wiki](https://github.com/automl/HPOBench/wiki/Available-Containerized-Benchmarks) and a guide on howto contribute benchmarks is avaiable [here](https://github.com/automl/HPOBench/wiki/https://github.com/automl/HPOBench/wiki/How-to-add-a-new-benchmark-step-by-step)
+A list of benchmarks can be found in the [wiki](https://github.com/automl/HPOBench/wiki/Available-Containerized-Benchmarks) and a guide on howto contribute benchmarks is avaiable [here](https://github.com/automl/HPOBench/wiki/How-to-add-a-new-benchmark-step-by-step)
 
 ## Status
 
 Status for Master Branch: 
-[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=master)](https://https://github.com/automl/HPOBench/actions)
+[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=master)](https://github.com/automl/HPOBench/actions)
 [![codecov](https://codecov.io/gh/automl/HPOBench/branch/master/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)
 
 Status for Development Branch: 
-[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=development)](https://https://github.com/automl/HPOBench/actions)
+[![Build Status](https://github.com/automl/HPOBench/workflows/Test%20Pull%20Requests/badge.svg?branch=development)](https://github.com/automl/HPOBench/actions)
 [![codecov](https://codecov.io/gh/automl/HPOBench/branch/development/graph/badge.svg)](https://codecov.io/gh/automl/HPOBench)
 
 ## In 4 lines of code
