@@ -20,6 +20,8 @@ elif [[ "$SINGULARITY_VERSION" == "3.6" ]]; then
     export VERSION=3.6.4
 elif [[ "$SINGULARITY_VERSION" == "3.7" ]]; then
     export VERSION=3.7.3
+elif [[ "$SINGULARITY_VERSION" == "3.8" ]]; then
+    export VERSION=3.8.0
 else
     echo "Skip installing Singularity"
 fi
