@@ -2,6 +2,8 @@
 
 HPOBench is a library for providing benchmarks for (multi-fidelity) hyperparameter optimization and with a focus on reproducibility.
 
+A list of benchmarks can be found in the [wiki](https://github.com/automl/HPOBench/wiki/Available-Containerized-Benchmarks) and a guide on howto contribute benchmarks is avaiable [here](https://github.com/automl/HPOBench/wiki/https://github.com/automl/HPOBench/wiki/How-to-add-a-new-benchmark-step-by-step)
+
 ## Status
 
 Status for Master Branch: 
@@ -32,13 +34,28 @@ result_dict = b.objective_function(configuration=config, fidelity={"n_estimators
 result_dict = b.objective_function(configuration=config, rng=1)
 ```
 
-Containerized benchmarks do not rely on external dependencies and thus do not change. To do so, we rely on [Singularity (version 3.5)](https://sylabs.io/guides/3.5/user-guide/).
-**Note:** All containers are uploaded to a [gitlab registry](https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry)
+For more examples see `/example/`.
 
-Further requirements are: [ConfigSpace](https://github.com/automl/ConfigSpace), *scipy* and *numpy* 
+## Installation
 
-**Note:** Each benchmark can also be run locally, but the dependencies must be installed manually and might conflict with other benchmarks. 
- This can be arbitrarily complex and further information can be found in the docstring of the benchmark.
+We recommend using a virtual environment. To install HPOBench, please run the following:
+```
+git clone https://github.com/automl/HPOBench.git
+cd HPOBench 
+pip install .
+```
+
+**Note:** This does not install *singularity (version 3.5)*. Please follow the steps described here: [user-guide](https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps).   
+
+## Containerized Benchmarks
+
+We provide all benchmarks as containerized versions to (i) isolate their dependencies and (ii) keep them reproducible. Our containerized benchmarks do not rely on external dependencies and thus do not change over time. For this, we rely on [Singularity (version 3.5)](https://sylabs.io/guides/3.5/user-guide/) and for now upload all containers to a [gitlab registry](https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry)
+
+The only other requirements are: [ConfigSpace](https://github.com/automl/ConfigSpace), *scipy* and *numpy* 
+
+### Run a Benchmark Locally
+
+Each benchmark can also be run locally, but the dependencies must be installed manually and might conflict with other benchmarks. This can be arbitrarily complex and further information can be found in the docstring of the benchmark.
  
 A simple example is the XGBoost benchmark which can be installed with `pip install .[xgboost]`
 
@@ -52,36 +69,9 @@ result_dict = b.objective_function(configuration=config,
 
 ```
 
-## Installation
+### How to Build a Container Locally
 
-Before we start, we recommend using a virtual environment. To run any benchmark using its singularity container, 
-run the following:
-```
-git clone https://github.com/automl/HPOBench.git
-cd HPOBench 
-pip install .
-```
-
-**Note:** This does not install *singularity (version 3.5)*. Please follow the steps described here: [user-guide](https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps).   
-
-## Further Notes
-
-### Configure the HPOBench
-
-All of HPOBench's settings are stored in a file, the `hpobenchrc`-file. 
-It is a yaml file, which is automatically generated at the first use of HPOBench. 
-By default, it is placed in `$XDG_CONFIG_HOME`. If `$XDG_CONFIG_HOME` is not set, then the
-`hpobenchrc`-file is saved to `'~/.config/hpobench'`. When using the containerized benchmarks, the Unix socket is 
-defined via `$TEMP_DIR`. This is by default `\tmp`. Make sure to have write permissions in those directories. 
-
-In the `hpobenchrc`, you can specify for example the directory, in that the benchmark containers are
-downloaded. We encourage you to take a look into the `hpobenchrc`, to find out more about all
-possible settings. 
-
-
-### How to build a container locally
-
-With singularity installed run the following to built the xgboost container
+With singularity installed run the following to built the, e.g. xgboost container
 
 ```bash
 cd hpobench/container/recipes/ml
@@ -98,18 +88,23 @@ config = b.get_configuration_space(seed=1).sample_configuration()
 result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5})
 ```
 
+## Configure HPOBench
+
+All of HPOBench's settings are stored in a file, the `hpobenchrc`-file. It is a .yaml file, which is automatically generated at the first use of HPOBench. 
+By default, it is placed in `$XDG_CONFIG_HOME` (or if not set this defaults to `'~/.config/hpobench'`). This file defines where to store containers and datasets and much more. We highly recommend to have a look at this file once it's created. Furthermore, please make sure to have write permission in these directories or adapt if necessary. For more information on where data is stored, please see the section on `HPOBench Data` below.
+
+Furthermore, for running containers, we rely on Unix sockets which by default are located in `$TEMP_DIR` (or if not set this defaults to `\tmp`). 
+
 ### Remove all data, containers, and caches
 
-Update: In version 0.0.8, we have added the script `hpobench/util/clean_up_script.py`. It allows to easily remove all
-data, downloaded containers, and caches. To get more information, you can use the following command. 
+Feel free to use `hpobench/util/clean_up_script.py` to remove all data, downloaded containers and caches:
 ```bash
 python ./hpobench/util/clean_up_script.py --help
 ``` 
 
-If you like to delete only specific parts, i.e. a single container,
-you can find the benchmark's data, container, and caches in the following directories:
+If you like to delete only specific parts, i.e. a single container, you can find the benchmark's data, container, and caches in the following directories:
 
-#### HPOBench data
+#### HPOBench Data
 HPOBench stores downloaded containers and datasets at the following locations:
 
 ```bash
@@ -120,20 +115,20 @@ $XDG_DATA_HOME # ~/.local/share/hpobench
 
 For crashes or when not properly shutting down containers, there might be socket files left under `/tmp/hpobench_socket`.
 
-#### OpenML data
+#### OpenML Data
 
 OpenML data additionally maintains its cache which is located at `~/.openml/`
 
-#### Singularity container
+#### Singularity Containers
 
 Singularity additionally maintains its cache which can be removed with `singularity cache clean`
 
-### Use HPOBench benchmarks in research projects
+### Use HPOBench Benchmarks in Research Projects
 
 If you use a benchmark in your experiments, please specify the version number of the HPOBench as well as the version of 
-the used container. When starting an experiment, HPOBench writes automatically the 2 version numbers to the log. 
+the used container to ensure reproducibility. When starting an experiment, HPOBench writes automatically these two version numbers to the log. 
 
-### Troubleshooting
+### Troubleshooting and Further Notes
 
   - **Singularity throws an 'Invalid Image format' exception**
   Use a singularity version > 3. For users of the Meta-Cluster in Freiburg, you have to set the following path:
@@ -145,5 +140,3 @@ See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that
 
 **Note:** If you are looking for a different or older version of our benchmarking library, you might be looking for
  [HPOlib1.5](https://github.com/automl/HPOlib1.5) 
-
-
