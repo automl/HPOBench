@@ -63,8 +63,9 @@ if [[ "$USE_SINGULARITY" == "true" ]]; then
     ./mconfig && \
       make -C builddir && \
       sudo make -C builddir install
-      install_packages="${install_packages}placeholder,"
+
     cd ..
+    install_packages="${install_packages}placeholder,"
 else
     echo "Skip installing Singularity"
 fi

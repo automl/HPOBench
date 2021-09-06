@@ -1,3 +1,11 @@
+"""
+Changelog:
+==========
+
+0.0.1:
+* First implementation of the NN Benchmarks.
+"""
+
 from copy import deepcopy
 from typing import Union, Tuple, Dict
 
@@ -7,6 +15,8 @@ from ConfigSpace.hyperparameters import Hyperparameter
 from sklearn.neural_network import MLPClassifier
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+
+__version__ = '0.0.1'
 
 
 class NNBenchmark(MLBenchmark):

@@ -1,3 +1,10 @@
+"""
+Changelog:
+==========
+
+0.0.1:
+* First implementation of the new XGB Benchmarks.
+"""
 from typing import Union, Tuple, Dict
 
 import ConfigSpace as CS
@@ -6,6 +13,8 @@ import xgboost as xgb
 from ConfigSpace.hyperparameters import Hyperparameter
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+
+__version__ = '0.0.1'
 
 
 class XGBoostBenchmark(MLBenchmark):

@@ -1,3 +1,11 @@
+"""
+Changelog:
+==========
+
+0.0.1:
+* First implementation of the Tabular Benchmark.
+"""
+
 from pathlib import Path
 from typing import Union, List, Dict
 
@@ -8,6 +16,8 @@ from ConfigSpace.read_and_write import json as json_cs
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.dependencies.ml.ml_benchmark_template import metrics
 from hpobench.util.data_manager import TabularDataManager
+
+__version__ = '0.0.1'
 
 
 class TabularBenchmark(AbstractBenchmark):
