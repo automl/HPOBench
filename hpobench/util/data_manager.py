@@ -13,24 +13,30 @@ hpobench.util.openml_data_manager.
 
 import abc
 import gzip
+import json
 import logging
 import pickle
 import tarfile
-import requests
-
 from io import BytesIO
 from pathlib import Path
+from time import time
 from typing import Tuple, Dict, Any, Union
 from urllib.request import urlretrieve, urlopen
 from zipfile import ZipFile
-from time import time
 
 import numpy as np
+import requests
 
 try:
     from oslo_concurrency import lockutils
 except ImportError:
     print("oslo_concurrency not installed, can't download datasets for nasbench201 (not needed for containers)")
+
+try:
+    import pandas as pd
+except ImportError:
+    print("pandas is not installed, can't download datasets for the ml.tabular_benchmarks (not needed for containers)")
+
 
 import hpobench
 
@@ -65,6 +71,49 @@ class DataManager(abc.ABC, metaclass=abc.ABCMeta):
         if not save_dir.is_dir():
             self.logger.debug(f'Create directory {save_dir}')
             save_dir.mkdir(parents=True, exist_ok=True)
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_download_file', delay=0.5)
+    def _download_file_with_progressbar(self, data_url: str, data_file: Path):
+        data_file = Path(data_file)
+
+        if data_file.exists():
+            self.logger.info('Data File already exists. Skip downloading.')
+            return
+
+        self.logger.info(f"Download the file from {data_url} to {data_file}")
+        data_file.parent.mkdir(parents=True, exist_ok=True)
+
+        from tqdm import tqdm
+        r = requests.get(data_url, stream=True)
+        with open(data_file, 'wb') as f:
+            total_length = int(r.headers.get('content-length'))
+            for chunk in tqdm(r.iter_content(chunk_size=1024),
+                              unit_divisor=1024, unit='kB', total=int(total_length / 1024) + 1):
+                if chunk:
+                    _ = f.write(chunk)
+                    f.flush()
+        self.logger.info(f"Finished downloading to {data_file}")
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_unzip_file', delay=0.5)
+    def _untar_data(self, compressed_file: Path, save_dir: Union[Path, None] = None):
+        self.logger.debug('Extract the compressed data')
+        with tarfile.open(compressed_file, 'r') as fh:
+            if save_dir is None:
+                save_dir = compressed_file.parent
+            fh.extractall(save_dir)
+        self.logger.debug(f'Successfully extracted the data to {save_dir}')
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_unzip_file', delay=0.5)
+    def _unzip_data(self, compressed_file: Path, save_dir: Union[Path, None] = None):
+        self.logger.debug('Extract the compressed data')
+        with ZipFile(compressed_file, 'r') as fh:
+            if save_dir is None:
+                save_dir = compressed_file.parent
+            fh.extractall(save_dir)
+        self.logger.debug(f'Successfully extracted the data to {save_dir}')
 
 
 class HoldoutDataManager(DataManager):
@@ -597,6 +646,7 @@ class SurrogateDataManger(DataManager):
                     f.flush()
         self.logger.info("Finished downloading")
 
+    # pylint: disable=arguments-differ
     @lockutils.synchronized('not_thread_process_safe', external=True,
                             lock_path=f'{hpobench.config_file.cache_dir}/lock_surrogates_unzip_data', delay=0.5)
     def _unzip_data(self):
@@ -874,3 +924,59 @@ class YearPredictionMSDData(HoldoutDataManager):
         X_tst, y_tst = data[n_trn + n_val:, 1:], data[n_trn + n_val:, 0]
 
         return X_trn, y_trn, X_val, y_val, X_tst, y_tst
+
+
+class TabularDataManager(DataManager):
+    def __init__(self, model: str, task_id: [int, str], data_dir: [str, Path, None] = None):
+        super(TabularDataManager, self).__init__()
+
+        url_dict = dict(
+            xgb="https://ndownloader.figshare.com/files/30469920",
+            svm="https://ndownloader.figshare.com/files/30379359",
+            lr="https://ndownloader.figshare.com/files/30379038",
+            rf="https://ndownloader.figshare.com/files/30469089",
+            nn="https://ndownloader.figshare.com/files/30379005"
+        )
+
+        assert model in url_dict.keys(), \
+            f'Model has to be one of {list(url_dict.keys())} but was {model}'
+
+        self.model = model
+        self.task_id = str(task_id)
+
+        self.url_to_use = url_dict.get(model)
+
+        if data_dir is None:
+            data_dir = hpobench.config_file.data_dir / "TabularData"
+
+        self._save_dir = Path(data_dir) / self.model
+        self.create_save_directory(self._save_dir)
+
+        self.parquet_file = self._save_dir / self.task_id / f'{self.model}_{self.task_id}_data.parquet.gzip'
+        self.metadata_file = self._save_dir / self.task_id / f'{self.model}_{self.task_id}_metadata.json'
+
+    # pylint: disable=arguments-differ
+    def load(self):
+        # Can we directly load the files?
+        if self.parquet_file.exists() and self.metadata_file.exists():
+            table = self._load_parquet(self.parquet_file)
+            metadata = self._load_json(self.metadata_file)
+            return table, metadata
+
+        # We have to download the entire zip file and etract then extract the parquet file.
+        self._download_file_with_progressbar(self.url_to_use, self._save_dir / f'{self.model}.zip')
+        self._unzip_data(self._save_dir / f'{self.model}.zip', self._save_dir)
+        table = self._load_parquet(self.parquet_file)
+        metadata = self._load_json(self.metadata_file)
+        return table, metadata
+
+    @staticmethod
+    def _load_parquet(path):
+        data = pd.read_parquet(path)
+        return data
+
+    @staticmethod
+    def _load_json(path):
+        with open(path, "r") as f:
+            data = json.load(f)
+        return data

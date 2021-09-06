@@ -131,3 +131,9 @@ dmypy.json
 # Misc
 .idea/
 experiments/
+.DS_Store
+
+# Vagrant
+.vagrant
+Vagrantfile
+/hpobench/container/recipes_local/

@@ -64,7 +64,7 @@ def test_rng_serialization():
 def test_rng_serialization_xgb():
     import json
     from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
-    from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
+    from hpobench.benchmarks.ml.xgboost_benchmark_old import XGBoostBenchmark
 
     b = XGBoostBenchmark(task_id=167149, rng=0)
     meta = b.get_meta_information()

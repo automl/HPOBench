@@ -99,3 +99,16 @@ def test_boston_data():
     assert 0 < len(x_test) == len(y_test)
     assert 0 < len(x_valid) == len(y_valid)
     assert len(y_valid) < len(x_train) == len(y_train)
+
+
+def test_tabular_datamanager():
+    from hpobench.util.data_manager import TabularDataManager
+    dm = TabularDataManager(model='lr',
+                            task_id='3')
+
+    table, meta_data = dm.load()
+
+    assert (hpobench.config_file.data_dir / "TabularData" / 'lr' / str(3) / f'lr_3_data.parquet.gzip').exists()
+    assert (hpobench.config_file.data_dir / "TabularData" / 'lr' / str(3) / f'lr_3_metadata.json').exists()
+
+    table_2, meta_data_2 = dm.load()

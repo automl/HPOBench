@@ -3,7 +3,6 @@ from typing import Dict, Union
 
 import numpy as np
 import pytest
-import ConfigSpace as CS
 
 from ConfigSpace import ConfigurationSpace, Configuration, \
     UniformFloatHyperparameter, UniformIntegerHyperparameter, \
