@@ -2,7 +2,7 @@
 
 HPOBench is a library for providing benchmarks for (multi-fidelity) hyperparameter optimization and with a focus on reproducibility.
 
-A list of benchmarks can be found in the [wiki](https://github.com/automl/HPOBench/wiki/Available-Containerized-Benchmarks) and a guide on howto contribute benchmarks is avaiable [here](https://github.com/automl/HPOBench/wiki/https://github.com/automl/HPOBench/wiki/How-to-add-a-new-benchmark-step-by-step)
+A list of benchmarks can be found in the [wiki](https://github.com/automl/HPOBench/wiki/Available-Containerized-Benchmarks) and a guide on howto contribute benchmarks is avaiable [here](https://github.com/automl/HPOBench/wiki/How-to-add-a-new-benchmark-step-by-step)
 
 ## Status
 
