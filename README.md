@@ -2,7 +2,9 @@
 
 HPOBench is a library for providing benchmarks for (multi-fidelity) hyperparameter optimization and with a focus on reproducibility.
 
-A list of benchmarks can be found in the [wiki](https://github.com/automl/HPOBench/wiki/Available-Containerized-Benchmarks) and a guide on howto contribute benchmarks is avaiable [here](https://github.com/automl/HPOBench/wiki/How-to-add-a-new-benchmark-step-by-step)
+Further info:
+  * list of [benchmarks](https://github.com/automl/HPOBench/wiki/Available-Containerized-Benchmarks)
+  * [howto](https://github.com/automl/HPOBench/wiki/How-to-add-a-new-benchmark-step-by-step) contribute benchmarks
 
 ## Status
 
@@ -18,23 +20,32 @@ Status for Development Branch:
 
 Evaluate a random configuration using a singularity container
 ```python
-from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
-b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl', rng=1)
+from hpobench.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark
+b = SliceLocalizationBenchmark(rng=1)
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5}, rng=1)
+result_dict = b.objective_function(configuration=config, fidelity={"budget": 100}, rng=1)
 ```
 
 All benchmarks can also be queried with fewer or no fidelities:
 
 ```python
-from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
-b = XGBoostBenchmark(task_id=167149, container_source='library://phmueller/automl', rng=1)
+from hpobench.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark
+b = SliceLocalizationBenchmark(rng=1)
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function(configuration=config, fidelity={"n_estimators": 128,}, rng=1)
+result_dict = b.objective_function(configuration=config, fidelity={"budget": 50}, rng=1)
+# returns results on the highest budget
 result_dict = b.objective_function(configuration=config, rng=1)
 ```
 
-For more examples see `/example/`.
+For each benchmark further info on the searchspace and fidelity space can be obtained:
+
+```python
+from hpobench.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark
+b = SliceLocalizationBenchmark(task_id=167149, rng=1)
+cs = b.get_configuration_space(seed=1)
+fs = b.get_fidelity_space(seed=1)
+meta = b.get_meta_information()
+```
 
 ## Installation
 
