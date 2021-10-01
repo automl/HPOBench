@@ -1,6 +1,9 @@
 """
 Changelog:
 ==========
+0.0.4
+* Remove redundant hyperparameter from Reduced.
+
 0.0.3
 * New container release due to a general change in the communication between container and HPOBench.
   Works with HPOBench >= v0.0.8
@@ -30,7 +33,7 @@ from tensorforce.execution import Runner  # noqa: E402
 from hpobench.abstract_benchmark import AbstractBenchmark  # noqa: E402
 from hpobench.util import rng_helper  # noqa: E402
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 logger = logging.getLogger('CartpoleBenchmark')
 tf.logging.set_verbosity(tf.logging.ERROR)
@@ -279,7 +282,7 @@ class CartpoleFull(CartpoleBase):
             CS.UniformIntegerHyperparameter("batch_size", lower=8, default_value=64, upper=256, log=True),
             CS.UniformFloatHyperparameter("learning_rate", lower=1e-7, default_value=1e-3, upper=1e-1, log=True),
             CS.UniformFloatHyperparameter("discount", lower=0, default_value=.99, upper=1),
-            CS.UniformFloatHyperparameter("likelihood_ratio_clipping", lower=0, default_value=.2, upper=1),
+            CS.UniformFloatHyperparameter("likelihood_ratio_clipping", lower=1e-7, default_value=.2, upper=1),
             CS.CategoricalHyperparameter("activation_1", ["tanh", "relu"]),
             CS.CategoricalHyperparameter("activation_2", ["tanh", "relu"]),
             CS.CategoricalHyperparameter("optimizer_type", ["adam", "rmsprop"]),
@@ -327,8 +330,7 @@ class CartpoleReduced(CartpoleBase):
             CS.UniformIntegerHyperparameter("batch_size", lower=8, default_value=64, upper=256, log=True),
             CS.UniformFloatHyperparameter("learning_rate", lower=1e-7, default_value=1e-3, upper=1e-1, log=True),
             CS.UniformFloatHyperparameter("discount", lower=0, default_value=.99, upper=1),
-            CS.UniformFloatHyperparameter("likelihood_ratio_clipping", lower=0, default_value=.2, upper=1),
-            CS.UniformFloatHyperparameter("entropy_regularization", lower=0, default_value=0.01, upper=1)
+            CS.UniformFloatHyperparameter("likelihood_ratio_clipping", lower=1e-7, default_value=.2, upper=1),
         ])
         return cs
 
