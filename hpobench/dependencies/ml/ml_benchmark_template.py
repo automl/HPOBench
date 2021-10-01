@@ -154,7 +154,7 @@ class MLBenchmark(AbstractBenchmark):
         model = self.init_model(config, fidelity, rng)
 
         # preparing data
-        if eval == "valid":
+        if evaluation == "valid":
             train_X = self.train_X
             train_y = self.train_y
             train_idx = self.train_idx
@@ -208,7 +208,7 @@ class MLBenchmark(AbstractBenchmark):
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
         """
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
-            configuration, fidelity, shuffle, rng, evaluation="val"
+            configuration, fidelity, shuffle, rng, evaluation="valid"
         )
         val_scores = dict()
         val_score_cost = dict()
