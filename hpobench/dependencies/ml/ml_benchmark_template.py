@@ -134,7 +134,9 @@ class MLBenchmark(AbstractBenchmark):
             return self.fidelity_space.sample_configuration()
         return [self.fidelity_space.sample_configuration() for i in range(size)]
 
-    def shuffle_data_idx(self, train_idx: Iterable = None, rng: Union[np.random.RandomState, None] = None) -> Iterable:
+    def shuffle_data_idx(
+            self, train_idx: Iterable = None, rng: Union[np.random.RandomState, None] = None
+    ) -> Iterable:
         rng = self.rng if rng is None else rng
         train_idx = self.train_idx if train_idx is None else train_idx
         rng.shuffle(train_idx)
@@ -154,14 +156,16 @@ class MLBenchmark(AbstractBenchmark):
         model = self.init_model(config, fidelity, rng)
 
         # preparing data
-        if eval == "valid":
+        if evaluation == "valid":
             train_X = self.train_X
             train_y = self.train_y
             train_idx = self.train_idx
-        else:
+        elif evaluation == "test":
             train_X = np.vstack((self.train_X, self.valid_X))
             train_y = pd.concat((self.train_y, self.valid_y))
             train_idx = np.arange(len(train_X))
+        else:
+            raise ValueError("{} not in ['valid', 'test']".format(evaluation))
 
         # shuffling data
         if shuffle:
@@ -190,10 +194,9 @@ class MLBenchmark(AbstractBenchmark):
         for k, v in self.scorers.items():
             scores[k] = 0.0
             score_cost[k] = 0.0
-            if evaluation == "test":
-                _start = time.time()
-                scores[k] = v(model, train_X, train_y)
-                score_cost[k] = time.time() - _start
+            _start = time.time()
+            scores[k] = v(model, train_X, train_y)
+            score_cost[k] = time.time() - _start
         train_loss = 1 - scores["acc"]
         return model, model_fit_time, train_loss, scores, score_cost
 
@@ -208,7 +211,7 @@ class MLBenchmark(AbstractBenchmark):
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
         """
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
-            configuration, fidelity, shuffle, rng, evaluation="val"
+            configuration, fidelity, shuffle, rng, evaluation="valid"
         )
         val_scores = dict()
         val_score_cost = dict()
@@ -218,33 +221,29 @@ class MLBenchmark(AbstractBenchmark):
             val_score_cost[k] = time.time() - _start
         val_loss = 1 - val_scores["acc"]
 
-        test_scores = dict()
-        test_score_cost = dict()
-        for k, v in self.scorers.items():
-            _start = time.time()
-            test_scores[k] = v(model, self.test_X, self.test_y)
-            test_score_cost[k] = time.time() - _start
-        test_loss = 1 - test_scores["acc"]
+        fidelity = fidelity.get_dictionary() if isinstance(fidelity, CS.Configuration) else fidelity
+        configuration = configuration.get_dictionary() \
+            if isinstance(configuration, CS.Configuration) else configuration
 
         info = {
             'train_loss': train_loss,
             'val_loss': val_loss,
-            'test_loss': test_loss,
+            'test_loss': None,
             'model_cost': model_fit_time,
             'train_scores': train_scores,
             'train_costs': train_score_cost,
             'val_scores': val_scores,
             'val_costs': val_score_cost,
-            'test_scores': test_scores,
-            'test_costs': test_score_cost,
+            'test_scores': None,
+            'test_costs': None,
             # storing as dictionary and not ConfigSpace saves tremendous memory
             'fidelity': fidelity,
             'config': configuration,
         }
 
         return {
-            'function_value': info['val_loss'],
-            'cost': model_fit_time + info['val_costs']['acc'],
+            'function_value': float(info['val_loss']),
+            'cost': float(model_fit_time + info['val_costs']['acc']),
             'info': info
         }
 
@@ -276,8 +275,8 @@ class MLBenchmark(AbstractBenchmark):
             'model_cost': model_fit_time,
             'train_scores': train_scores,
             'train_costs': train_score_cost,
-            'val_scores': dict(),
-            'val_costs': dict(),
+            'val_scores': None,
+            'val_costs': None,
             'test_scores': test_scores,
             'test_costs': test_score_cost,
             # storing as dictionary and not ConfigSpace saves tremendous memory
