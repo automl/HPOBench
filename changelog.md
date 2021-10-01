@@ -1,5 +1,7 @@
 # 0.0.10
-
+  * Update ML Benchmarks v0.0.2:
+    There was a bug in the train/valid split. 
+    
 # 0.0.9
   * Add new Benchmarks: Tabular Benchmarks.
     Provided by @Neeratyoy. 

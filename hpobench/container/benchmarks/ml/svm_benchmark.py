@@ -10,7 +10,7 @@ class SVMBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SVMBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.2')
         super(SVMBenchmark, self).__init__(**kwargs)
 
 
@@ -18,7 +18,7 @@ class SVMBenchmarkMF(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SVMBenchmarkMF')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.2')
         super(SVMBenchmarkMF, self).__init__(**kwargs)
 
 
@@ -26,7 +26,7 @@ class SVMBenchmarkBB(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SVMBenchmarkBB')
         kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.2')
         super(SVMBenchmarkBB, self).__init__(**kwargs)
 
 
