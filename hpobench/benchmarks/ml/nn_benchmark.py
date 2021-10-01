@@ -1,6 +1,8 @@
 """
 Changelog:
 ==========
+0.0.2:
+Fix error in MLBenchmark
 
 0.0.1:
 * First implementation of the NN Benchmarks.
@@ -16,7 +18,7 @@ from sklearn.neural_network import MLPClassifier
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class NNBenchmark(MLBenchmark):
@@ -131,3 +133,14 @@ class NNBenchmarkMF(NNBenchmark):
 
 
 __all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF']
+
+
+if __name__ == '__main__':
+    b = NNBenchmarkBB(task_id=9952)
+    times = []
+    for i in range(5):
+        r = b.objective_function(configuration={'depth': 3, 'width': 1024, 'batch_size': 4, 'alpha': 1, 'learning_rate_init': 10**-5})
+        times.append(r['cost'])
+        print(i, r['cost'])
+    print('test')
+    print(times)
