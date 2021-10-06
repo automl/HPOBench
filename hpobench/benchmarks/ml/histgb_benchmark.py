@@ -1,3 +1,11 @@
+"""
+Changelog:
+==========
+
+0.0.1:
+* First implementation of the HistGB Benchmarks.
+"""
+
 from typing import Union, Tuple, Dict
 
 import ConfigSpace as CS
@@ -8,6 +16,8 @@ from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+
+__version__ = '0.0.1'
 
 
 class HistGBBenchmark(MLBenchmark):
