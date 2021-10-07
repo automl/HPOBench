@@ -2,7 +2,10 @@
 Changelog:
 ==========
 0.0.4
-* Remove redundant hyperparameter from Reduced.
+* Set the lower bound of the hp `likelihood_ratio_clipping` to a small number instead of 0.
+  The PPO agent does not accept a value of 0 here and will raise an error.
+* Pass the hp `entropy_regularization` to the agent.
+* Add the hp `entropy_regularization` to the ConfigSpace of the CartpoleFull Benchmark.
 
 0.0.3
 * New container release due to a general change in the communication between container and HPOBench.
@@ -187,7 +190,8 @@ class CartpoleBase(AbstractBenchmark):
                                                                "learning_rate":
                                                                    configuration["baseline_learning_rate"]},
                                                  "num_steps": configuration["baseline_optimization_steps"]},
-                             likelihood_ratio_clipping=configuration["likelihood_ratio_clipping"]
+                             likelihood_ratio_clipping=configuration["likelihood_ratio_clipping"],
+                             entropy_regularization=configuration["entropy_regularization"],
                              )
 
             def episode_finished(record):
@@ -283,6 +287,7 @@ class CartpoleFull(CartpoleBase):
             CS.UniformFloatHyperparameter("learning_rate", lower=1e-7, default_value=1e-3, upper=1e-1, log=True),
             CS.UniformFloatHyperparameter("discount", lower=0, default_value=.99, upper=1),
             CS.UniformFloatHyperparameter("likelihood_ratio_clipping", lower=1e-7, default_value=.2, upper=1),
+            CS.UniformFloatHyperparameter("entropy_regularization", lower=0, default_value=0.01, upper=1),
             CS.CategoricalHyperparameter("activation_1", ["tanh", "relu"]),
             CS.CategoricalHyperparameter("activation_2", ["tanh", "relu"]),
             CS.CategoricalHyperparameter("optimizer_type", ["adam", "rmsprop"]),
@@ -331,6 +336,7 @@ class CartpoleReduced(CartpoleBase):
             CS.UniformFloatHyperparameter("learning_rate", lower=1e-7, default_value=1e-3, upper=1e-1, log=True),
             CS.UniformFloatHyperparameter("discount", lower=0, default_value=.99, upper=1),
             CS.UniformFloatHyperparameter("likelihood_ratio_clipping", lower=1e-7, default_value=.2, upper=1),
+            CS.UniformFloatHyperparameter("entropy_regularization", lower=0, default_value=0.01, upper=1),
         ])
         return cs
 
