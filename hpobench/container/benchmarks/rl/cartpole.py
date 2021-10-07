@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-""" Benchmark for the Cartpole Benchmark from hpobench/benchmarks/rl/cartpole_hyperband.py """
+""" Benchmark for the Cartpole Benchmark from hpobench/benchmarks/rl/cartpole.py """
 
 from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
 

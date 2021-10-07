@@ -1,11 +1,13 @@
 """
-SMAC on Cartpole with BOHB
+BOHB on Cartpole
 ==========================
 
 This example shows the usage of an Hyperparameter Tuner, such as BOHB on the cartpole benchmark.
 BOHB is a combination of Bayesian optimization and Hyperband.
 
-Please install the necessary dependencies via ``pip install .`` and singularity (v3.5).
+**Note**: This is a raw benchmark, i.e. it actually runs an algorithms, and will take some time
+
+Please install the necessary dependencies via ``pip install .[examples]`` and singularity (v3.5).
 https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-steps
 
 """
@@ -48,16 +50,15 @@ class CustomWorker(Worker):
 def run_experiment(out_path, on_travis):
 
     settings = {'min_budget': 1,
-                'max_budget': 5,  # Number of Agents, which are trained to solve the cartpole experiment
-                'num_iterations': 10,  # Number of HB brackets
+                'max_budget': 9,  # number of repetitions; this is the fidelity for this bench
+                'num_iterations': 10,  # Set this to a low number for demonstration
                 'eta': 3,
                 'output_dir': Path(out_path)
                 }
     if on_travis:
         settings.update(get_travis_settings('bohb'))
 
-    b = Benchmark(container_source='library://phmueller/automl',
-                  container_name='cartpole')
+    b = Benchmark(rng=1)
 
     b.get_configuration_space(seed=1)
     settings.get('output_dir').mkdir(exist_ok=True)
@@ -105,11 +106,6 @@ def run_experiment(out_path, on_travis):
 
     if not on_travis:
         benchmark = Benchmark(container_source='library://phmueller/automl')
-        # Old API ---- NO LONGER SUPPORTED ---- This will simply ignore the fidelities
-        # incumbent_result = benchmark.objective_function_test(configuration=inc_cfg,
-        #                                                      budget=settings['max_budget'])
-        
-        # New API ---- Use this
         incumbent_result = benchmark.objective_function_test(configuration=inc_cfg,
                                                              fidelity={"budget": settings['max_budget']})
         print(incumbent_result)
