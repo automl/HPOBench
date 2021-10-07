@@ -498,8 +498,9 @@ class _NasBench201OriginalBaseBenchmark(NasBench201BaseBenchmark):
         the NAS Benchmark 201.
 
         This fidelity space differs from the one above in its lower bound.
-        The benchmark above enables the user to access the entire dataset while this one is meant to reproduce the
-        experiments from DEHB (TODO LINK).
+        The benchmark above enables the user to access the entire dataset, while this one reproduces the
+        experiments from DEHB
+        [DEHB](https://github.com/automl/DEHB/tree/937dd5cf48e79f6d587ea2ff408cb5ad9a8dce46/dehb/examples)
 
         Fidelities:
         epoch: int
@@ -528,8 +529,9 @@ class _NasBench201OriginalBaseBenchmark(NasBench201BaseBenchmark):
     def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
         meta_information = NasBench201BaseBenchmark.get_meta_information()
-        meta_information['note'] = 'This version of the benchmark implements the fidelity space defined in the DEHB' \
-                                   'paper. See TODO LINK. '
+        meta_information['note'] = \
+            'This version of the benchmark implements the fidelity space defined in the DEHB paper.' \
+            'See [DEHB](https://github.com/automl/DEHB/tree/937dd5cf48e79f6d587ea2ff408cb5ad9a8dce46/dehb/examples)'
         return meta_information
 
 
