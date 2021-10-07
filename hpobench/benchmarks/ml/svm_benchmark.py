@@ -1,6 +1,8 @@
 """
 Changelog:
 ==========
+0.0.2:
+Fix error in MLBenchmark
 
 0.0.1:
 * First implementation of the new SVM Benchmarks.
@@ -15,7 +17,7 @@ from sklearn.svm import SVC
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class SVMBenchmark(MLBenchmark):

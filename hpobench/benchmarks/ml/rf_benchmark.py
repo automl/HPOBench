@@ -1,6 +1,8 @@
 """
 Changelog:
 ==========
+0.0.2:
+Fix error in MLBenchmark
 
 0.0.1:
 * First implementation of the RF Benchmarks.
@@ -16,7 +18,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class RandomForestBenchmark(MLBenchmark):
