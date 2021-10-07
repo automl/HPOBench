@@ -327,7 +327,7 @@ class _FCNetBaseOriginalBenchmark(FCNetBaseBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
 
         fidel_space.add_hyperparameters([
-            CS.UniformIntegerHyperparameter('budget', lower=4, upper=100, default_value=100)
+            CS.UniformIntegerHyperparameter('budget', lower=3, upper=100, default_value=100)
         ])
 
         return fidel_space

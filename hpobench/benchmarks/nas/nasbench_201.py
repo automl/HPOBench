@@ -519,7 +519,7 @@ class _NasBench201OriginalBaseBenchmark(NasBench201BaseBenchmark):
 
         # We use here the lower bound of 4 instead of 1.
         fidel_space.add_hyperparameters([
-            CS.UniformIntegerHyperparameter('epoch', lower=4, upper=200, default_value=200)
+            CS.UniformIntegerHyperparameter('epoch', lower=12, upper=200, default_value=200)
         ])
 
         return fidel_space
