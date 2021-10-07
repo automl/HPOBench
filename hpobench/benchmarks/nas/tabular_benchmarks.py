@@ -305,7 +305,7 @@ class ParkinsonsTelemonitoringBenchmark(FCNetBaseBenchmark):
                                                                 **kwargs)
 
 
-class _FCNetBaseOriginalBenchmark(FCNetBaseBenchmark):
+class _FCNetBaseBenchmarkOriginal(FCNetBaseBenchmark):
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -343,7 +343,7 @@ class _FCNetBaseOriginalBenchmark(FCNetBaseBenchmark):
         return meta_information
 
 
-class SliceLocalizationOriginalBenchmark(_FCNetBaseOriginalBenchmark):
+class SliceLocalizationBenchmarkOriginal(_FCNetBaseBenchmarkOriginal):
 
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
@@ -353,11 +353,11 @@ class SliceLocalizationOriginalBenchmark(_FCNetBaseOriginalBenchmark):
         from tabular_benchmarks import FCNetSliceLocalizationBenchmark
 
         benchmark = FCNetSliceLocalizationBenchmark(data_dir=str(data_path))
-        super(SliceLocalizationOriginalBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
+        super(SliceLocalizationBenchmarkOriginal, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
                                                                  **kwargs)
 
 
-class ProteinStructureOriginalBenchmark(_FCNetBaseOriginalBenchmark):
+class ProteinStructureBenchmarkOriginal(_FCNetBaseBenchmarkOriginal):
 
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
@@ -366,11 +366,11 @@ class ProteinStructureOriginalBenchmark(_FCNetBaseOriginalBenchmark):
 
         from tabular_benchmarks import FCNetProteinStructureBenchmark
         benchmark = FCNetProteinStructureBenchmark(data_dir=str(data_path))
-        super(ProteinStructureOriginalBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
+        super(ProteinStructureBenchmarkOriginal, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
                                                                 **kwargs)
 
 
-class NavalPropulsionOriginalBenchmark(_FCNetBaseOriginalBenchmark):
+class NavalPropulsionBenchmarkOriginal(_FCNetBaseBenchmarkOriginal):
 
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
@@ -379,11 +379,11 @@ class NavalPropulsionOriginalBenchmark(_FCNetBaseOriginalBenchmark):
 
         from tabular_benchmarks import FCNetNavalPropulsionBenchmark
         benchmark = FCNetNavalPropulsionBenchmark(data_dir=str(data_path))
-        super(NavalPropulsionOriginalBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
+        super(NavalPropulsionBenchmarkOriginal, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
                                                                **kwargs)
 
 
-class ParkinsonsTelemonitoringOriginalBenchmark(_FCNetBaseOriginalBenchmark):
+class ParkinsonsTelemonitoringBenchmarkOriginal(_FCNetBaseBenchmarkOriginal):
 
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
@@ -392,11 +392,11 @@ class ParkinsonsTelemonitoringOriginalBenchmark(_FCNetBaseOriginalBenchmark):
 
         from tabular_benchmarks import FCNetParkinsonsTelemonitoringBenchmark
         benchmark = FCNetParkinsonsTelemonitoringBenchmark(data_dir=str(data_path))
-        super(ParkinsonsTelemonitoringOriginalBenchmark, self).__init__(benchmark=benchmark, data_path=data_path,
+        super(ParkinsonsTelemonitoringBenchmarkOriginal, self).__init__(benchmark=benchmark, data_path=data_path,
                                                                         rng=rng, **kwargs)
 
 
-__all__ = ["SliceLocalizationBenchmark", "SliceLocalizationOriginalBenchmark",
-           "ProteinStructureBenchmark", "ProteinStructureOriginalBenchmark",
-           "NavalPropulsionBenchmark", "NavalPropulsionOriginalBenchmark",
-           "ParkinsonsTelemonitoringBenchmark", "ParkinsonsTelemonitoringOriginalBenchmark"]
+__all__ = ["SliceLocalizationBenchmark", "SliceLocalizationBenchmarkOriginal",
+           "ProteinStructureBenchmark", "ProteinStructureBenchmarkOriginal",
+           "NavalPropulsionBenchmark", "NavalPropulsionBenchmarkOriginal",
+           "ParkinsonsTelemonitoringBenchmark", "ParkinsonsTelemonitoringBenchmarkOriginal"]

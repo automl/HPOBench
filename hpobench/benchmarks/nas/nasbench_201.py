@@ -535,27 +535,27 @@ class _NasBench201OriginalBaseBenchmark(NasBench201BaseBenchmark):
         return meta_information
 
 
-class Cifar10ValidNasBench201OriginalBenchmark(NasBench201BaseBenchmark):
+class Cifar10ValidNasBench201BenchmarkOriginal(NasBench201BaseBenchmark):
 
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        super(Cifar10ValidNasBench201OriginalBenchmark, self).__init__(dataset='cifar10-valid', rng=rng, **kwargs)
+        super(Cifar10ValidNasBench201BenchmarkOriginal, self).__init__(dataset='cifar10-valid', rng=rng, **kwargs)
 
 
-class Cifar100NasBench201OriginalBenchmark(NasBench201BaseBenchmark):
-
-    def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        super(Cifar100NasBench201OriginalBenchmark, self).__init__(dataset='cifar100', rng=rng, **kwargs)
-
-
-class ImageNetNasBench201OriginalBenchmark(NasBench201BaseBenchmark):
+class Cifar100NasBench201BenchmarkOriginal(NasBench201BaseBenchmark):
 
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        super(ImageNetNasBench201OriginalBenchmark, self).__init__(dataset='ImageNet16-120', rng=rng, **kwargs)
+        super(Cifar100NasBench201BenchmarkOriginal, self).__init__(dataset='cifar100', rng=rng, **kwargs)
+
+
+class ImageNetNasBench201BenchmarkOriginal(NasBench201BaseBenchmark):
+
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        super(ImageNetNasBench201BenchmarkOriginal, self).__init__(dataset='ImageNet16-120', rng=rng, **kwargs)
 
 
 __all__ = ["Cifar10ValidNasBench201Benchmark",
            "Cifar100NasBench201Benchmark",
            "ImageNetNasBench201Benchmark",
-           "Cifar10ValidNasBench201OriginalBenchmark",
-           "Cifar100NasBench201OriginalBenchmark",
-           "ImageNetNasBench201OriginalBenchmark"]
+           "Cifar10ValidNasBench201BenchmarkOriginal",
+           "Cifar100NasBench201BenchmarkOriginal",
+           "ImageNetNasBench201BenchmarkOriginal"]

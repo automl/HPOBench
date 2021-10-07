@@ -42,43 +42,43 @@ class ParkinsonsTelemonitoringBenchmark(AbstractBenchmarkClient):
         super(ParkinsonsTelemonitoringBenchmark, self).__init__(**kwargs)
 
 
-class SliceLocalizationOriginalBenchmark(AbstractBenchmarkClient):
+class SliceLocalizationBenchmarkOriginal(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['data_path'] = '/home/fcnet_tabular_benchmarks'
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SliceLocalizationOriginalBenchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SliceLocalizationBenchmarkOriginal')
         kwargs['container_name'] = kwargs.get('container_name', 'tabular_benchmarks')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.5')
-        super(SliceLocalizationOriginalBenchmark, self).__init__(**kwargs)
+        super(SliceLocalizationBenchmarkOriginal, self).__init__(**kwargs)
 
 
-class ProteinStructureOriginalBenchmark(AbstractBenchmarkClient):
+class ProteinStructureBenchmarkOriginal(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['data_path'] = '/home/fcnet_tabular_benchmarks'
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ProteinStructureOriginalBenchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ProteinStructureBenchmarkOriginal')
         kwargs['container_name'] = kwargs.get('container_name', 'tabular_benchmarks')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.5')
-        super(ProteinStructureOriginalBenchmark, self).__init__(**kwargs)
+        super(ProteinStructureBenchmarkOriginal, self).__init__(**kwargs)
 
 
-class NavalPropulsionOriginalBenchmark(AbstractBenchmarkClient):
+class NavalPropulsionBenchmarkOriginal(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['data_path'] = '/home/fcnet_tabular_benchmarks'
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NavalPropulsionOriginalBenchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NavalPropulsionBenchmarkOriginal')
         kwargs['container_name'] = kwargs.get('container_name', 'tabular_benchmarks')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.5')
-        super(NavalPropulsionOriginalBenchmark, self).__init__(**kwargs)
+        super(NavalPropulsionBenchmarkOriginal, self).__init__(**kwargs)
 
 
-class ParkinsonsTelemonitoringOriginalBenchmark(AbstractBenchmarkClient):
+class ParkinsonsTelemonitoringBenchmarkOriginal(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['data_path'] = '/home/fcnet_tabular_benchmarks'
-        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParkinsonsTelemonitoringOriginalBenchmark')
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'ParkinsonsTelemonitoringBenchmarkOriginal')
         kwargs['container_name'] = kwargs.get('container_name', 'tabular_benchmarks')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.5')
-        super(ParkinsonsTelemonitoringOriginalBenchmark, self).__init__(**kwargs)
+        super(ParkinsonsTelemonitoringBenchmarkOriginal, self).__init__(**kwargs)
 
 
-__all__ = ["SliceLocalizationBenchmark", "SliceLocalizationOriginalBenchmark",
-           "ProteinStructureBenchmark", "ProteinStructureOriginalBenchmark",
-           "NavalPropulsionBenchmark", "NavalPropulsionOriginalBenchmark",
-           "ParkinsonsTelemonitoringBenchmark", "ParkinsonsTelemonitoringOriginalBenchmark"]
+__all__ = ["SliceLocalizationBenchmark", "SliceLocalizationBenchmarkOriginal",
+           "ProteinStructureBenchmark", "ProteinStructureBenchmarkOriginal",
+           "NavalPropulsionBenchmark", "NavalPropulsionBenchmarkOriginal",
+           "ParkinsonsTelemonitoringBenchmark", "ParkinsonsTelemonitoringBenchmarkOriginal"]
