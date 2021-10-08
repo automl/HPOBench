@@ -1,8 +1,12 @@
 # 0.0.10
   * Cartpole Benchmark Version 0.0.4:
     Fix: Pass the hp `entropy_regularization` to the PPO Agent. 
-    Set the lower limit of an hyperparameter from 0 to 10e-7 (0 is invalid.)
-    
+    Set the lower limit of an hyperparameter from 0 to 10e-7 (0 is invalid.)K
+  * Tabular Benchmark (NAS) Version 0.0.5 + NAS201 Version 0.0.5:
+    We add for each benchmark in the tabular nas benchmarks and the NAS201 a new version with a modified fidelity space. 
+    These new benchmarks implement the fidelity space used in the experiments of DEHB. 
+    We introduce a new benchmark version for both benchmark classes. The "old" benchmarks remain unchanged.  
+  
 # 0.0.9
   * Add new Benchmarks: Tabular Benchmarks.
     Provided by @Neeratyoy. 
