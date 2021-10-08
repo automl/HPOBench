@@ -1,5 +1,8 @@
 # 0.0.10
-
+  * Cartpole Benchmark Version 0.0.4:
+    Fix: Pass the hp `entropy_regularization` to the PPO Agent. 
+    Set the lower limit of an hyperparameter from 0 to 10e-7 (0 is invalid.)
+    
 # 0.0.9
   * Add new Benchmarks: Tabular Benchmarks.
     Provided by @Neeratyoy. 
