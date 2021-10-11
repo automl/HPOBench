@@ -30,6 +30,10 @@ python setup.py install
 
 Changelog:
 ==========
+0.0.5
+* Add for each benchmark a new one with a different fidelity space.
+  The new fidelity space corresponds to the fidelity space in the DEHB paper.
+
 0.0.4
 * New container release due to a general change in the communication between container and HPOBench.
   Works with HPOBench >= v0.0.8
@@ -57,7 +61,7 @@ from tabular_benchmarks.fcnet_benchmark import FCNetBenchmark
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 logger = logging.getLogger('TabularBenchmark')
 
 
@@ -299,3 +303,100 @@ class ParkinsonsTelemonitoringBenchmark(FCNetBaseBenchmark):
         benchmark = FCNetParkinsonsTelemonitoringBenchmark(data_dir=str(data_path))
         super(ParkinsonsTelemonitoringBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
                                                                 **kwargs)
+
+
+class _FCNetBaseBenchmarkOriginal(FCNetBaseBenchmark):
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        This fidelity space differs from the one above in its lower bound.
+        The benchmark above enables the user to access the entire dataset, while this one reproduces the
+        experiments from DEHB
+        [DEHB](https://github.com/automl/DEHB/tree/937dd5cf48e79f6d587ea2ff408cb5ad9a8dce46/dehb/examples)
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        fidel_space.add_hyperparameters([
+            CS.UniformIntegerHyperparameter('budget', lower=3, upper=100, default_value=100)
+        ])
+
+        return fidel_space
+
+    @staticmethod
+    def get_meta_information() -> Dict:
+        """ Returns the meta information for the benchmark """
+        meta_information = FCNetBaseBenchmark.get_meta_information()
+        meta_information['note'] = \
+            'This version of the benchmark implements the fidelity space defined in the DEHB paper. ' \
+            'See [DEHB](https://github.com/automl/DEHB/tree/937dd5cf48e79f6d587ea2ff408cb5ad9a8dce46/dehb/examples)'
+        return meta_information
+
+
+class SliceLocalizationBenchmarkOriginal(_FCNetBaseBenchmarkOriginal):
+
+    def __init__(self, data_path: Union[Path, str, None] = None,
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        from hpobench import config_file
+        data_path = Path(data_path) if data_path is not None else config_file.data_dir / 'fcnet_tabular_benchmarks'
+
+        from tabular_benchmarks import FCNetSliceLocalizationBenchmark
+
+        benchmark = FCNetSliceLocalizationBenchmark(data_dir=str(data_path))
+        super(SliceLocalizationBenchmarkOriginal, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
+                                                                 **kwargs)
+
+
+class ProteinStructureBenchmarkOriginal(_FCNetBaseBenchmarkOriginal):
+
+    def __init__(self, data_path: Union[Path, str, None] = None,
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        from hpobench import config_file
+        data_path = Path(data_path) if data_path is not None else config_file.data_dir / 'fcnet_tabular_benchmarks'
+
+        from tabular_benchmarks import FCNetProteinStructureBenchmark
+        benchmark = FCNetProteinStructureBenchmark(data_dir=str(data_path))
+        super(ProteinStructureBenchmarkOriginal, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
+                                                                **kwargs)
+
+
+class NavalPropulsionBenchmarkOriginal(_FCNetBaseBenchmarkOriginal):
+
+    def __init__(self, data_path: Union[Path, str, None] = None,
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        from hpobench import config_file
+        data_path = Path(data_path) if data_path is not None else config_file.data_dir / 'fcnet_tabular_benchmarks'
+
+        from tabular_benchmarks import FCNetNavalPropulsionBenchmark
+        benchmark = FCNetNavalPropulsionBenchmark(data_dir=str(data_path))
+        super(NavalPropulsionBenchmarkOriginal, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng,
+                                                               **kwargs)
+
+
+class ParkinsonsTelemonitoringBenchmarkOriginal(_FCNetBaseBenchmarkOriginal):
+
+    def __init__(self, data_path: Union[Path, str, None] = None,
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        from hpobench import config_file
+        data_path = Path(data_path) if data_path is not None else config_file.data_dir / 'fcnet_tabular_benchmarks'
+
+        from tabular_benchmarks import FCNetParkinsonsTelemonitoringBenchmark
+        benchmark = FCNetParkinsonsTelemonitoringBenchmark(data_dir=str(data_path))
+        super(ParkinsonsTelemonitoringBenchmarkOriginal, self).__init__(benchmark=benchmark, data_path=data_path,
+                                                                        rng=rng, **kwargs)
+
+
+__all__ = ["SliceLocalizationBenchmark", "SliceLocalizationBenchmarkOriginal",
+           "ProteinStructureBenchmark", "ProteinStructureBenchmarkOriginal",
+           "NavalPropulsionBenchmark", "NavalPropulsionBenchmarkOriginal",
+           "ParkinsonsTelemonitoringBenchmark", "ParkinsonsTelemonitoringBenchmarkOriginal"]
