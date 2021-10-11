@@ -1,11 +1,11 @@
 # 0.0.10
   * Cartpole Benchmark Version 0.0.4:
     Fix: Pass the hp `entropy_regularization` to the PPO Agent. 
-    Set the lower limit of an hyperparameter from 0 to 10e-7 (0 is invalid.)K
+    Increase the lower limit of `likelihood_ratio_clipping` from 0 to 10e-7 (0 is invalid.)
   * Tabular Benchmark (NAS) Version 0.0.5 + NAS201 Version 0.0.5:
-    We add for each benchmark in the tabular nas benchmarks and the NAS201 a new version with a modified fidelity space. 
-    These new benchmarks implement the fidelity space used in the experiments of DEHB. 
-    We introduce a new benchmark version for both benchmark classes. The "old" benchmarks remain unchanged.  
+    We add for each benchmark in nas/tabular_benchmarks and nas/nasbench_201 a new benchmark class with a modified fidelity space. The new benchmark are called _Original_, e.g. _SliceLocalizationBenchmarkOriginal_ compared to _SliceLocalizationBenchmark_
+    These new benchmarks have the same fidelity space as used in previous experiments by [DEHB](https://ml.informatik.uni-freiburg.de/wp-content/uploads/papers/21-IJCAI-DEHB.pdf) and [BOHB](http://proceedings.mlr.press/v80/falkner18a/falkner18a.pdf).
+    Specifically, we increase the lowest fidelity from 1 to 3 for nas/tabular_benchmarks and from 1 to 12 for nas/nasbench_201. The upper fidelity and the old benchmarks remain unchanged.
   
 # 0.0.9
   * Add new Benchmarks: Tabular Benchmarks.
