@@ -15,7 +15,6 @@ from hpobench.container.benchmarks.nas.tabular_benchmarks import SliceLocalizati
 class TestTabularBenchmark(unittest.TestCase):
     def setUp(self) -> None:
         self.benchmark = SliceLocalizationBenchmark(
-            container_source='/media/philipp/Volume/Code/Container/new_container/tabular_benchmarks',
             rng=1,
             )
         self.default_config = self.benchmark.get_configuration_space(seed=1).get_default_configuration()
@@ -97,7 +96,7 @@ class TestTabularBenchmark(unittest.TestCase):
         assert runtimes == pytest.approx(runtime, abs=0.0001)
 
     def test_protein_benchmark(self):
-        default_config = self.setUp()
+        default_config = self.default_config
 
         benchmark = ProteinStructureBenchmark(
             socket_id=self.socket_id
@@ -120,7 +119,7 @@ class TestTabularBenchmark(unittest.TestCase):
         assert calculated_runtime == pytest.approx(runtime, abs=0.0001)
 
     def test_parkinson_benchmark(self):
-        default_config = self.socket_id
+        default_config = self.default_config
 
         benchmark = ParkinsonsTelemonitoringBenchmark(
             socket_id=self.socket_id

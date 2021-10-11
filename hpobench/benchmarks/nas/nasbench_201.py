@@ -489,7 +489,7 @@ class ImageNetNasBench201Benchmark(NasBench201BaseBenchmark):
         super(ImageNetNasBench201Benchmark, self).__init__(dataset='ImageNet16-120', rng=rng, **kwargs)
 
 
-class _NasBench201OriginalBaseBenchmark(NasBench201BaseBenchmark):
+class _NasBench201BaseBenchmarkOriginal(NasBench201BaseBenchmark):
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -535,19 +535,19 @@ class _NasBench201OriginalBaseBenchmark(NasBench201BaseBenchmark):
         return meta_information
 
 
-class Cifar10ValidNasBench201BenchmarkOriginal(NasBench201BaseBenchmark):
+class Cifar10ValidNasBench201BenchmarkOriginal(_NasBench201BaseBenchmarkOriginal):
 
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         super(Cifar10ValidNasBench201BenchmarkOriginal, self).__init__(dataset='cifar10-valid', rng=rng, **kwargs)
 
 
-class Cifar100NasBench201BenchmarkOriginal(NasBench201BaseBenchmark):
+class Cifar100NasBench201BenchmarkOriginal(_NasBench201BaseBenchmarkOriginal):
 
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         super(Cifar100NasBench201BenchmarkOriginal, self).__init__(dataset='cifar100', rng=rng, **kwargs)
 
 
-class ImageNetNasBench201BenchmarkOriginal(NasBench201BaseBenchmark):
+class ImageNetNasBench201BenchmarkOriginal(_NasBench201BaseBenchmarkOriginal):
 
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         super(ImageNetNasBench201BenchmarkOriginal, self).__init__(dataset='ImageNet16-120', rng=rng, **kwargs)
