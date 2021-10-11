@@ -55,7 +55,7 @@ class TestTabularBenchmark(unittest.TestCase):
         default_config = self.default_config
 
         benchmark = SliceLocalizationBenchmark(
-            socket_id=self.socket_id
+            rng=1,
         )
         result = benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1),
                                               run_index=[0, 1, 2, 3])
@@ -77,7 +77,7 @@ class TestTabularBenchmark(unittest.TestCase):
         default_config = self.default_config
 
         benchmark = NavalPropulsionBenchmark(
-            socket_id=self.socket_id
+            rng=1,
         )
         result = benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1),
                                               run_index=[0, 1, 2, 3])
@@ -99,7 +99,7 @@ class TestTabularBenchmark(unittest.TestCase):
         default_config = self.default_config
 
         benchmark = ProteinStructureBenchmark(
-            socket_id=self.socket_id
+            rng=1,
         )
         result = benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1),
                                               run_index=[0, 1, 2, 3])
@@ -122,7 +122,7 @@ class TestTabularBenchmark(unittest.TestCase):
         default_config = self.default_config
 
         benchmark = ParkinsonsTelemonitoringBenchmark(
-            socket_id=self.socket_id
+            rng=1,
         )
         result = benchmark.objective_function(configuration=default_config, fidelity=dict(budget=1),
                                               run_index=[0, 1, 2, 3])
