@@ -27,6 +27,10 @@ https://github.com/D-X-Y/AutoDL-Projects/blob/master/docs/NAS-Bench-201.md
 
 Changelog:
 ==========
+0.0.5
+* Add for each benchmark a new one with a different fidelity space.
+  The new fidelity space corresponds to the fidelity space in the DEHB paper.
+
 0.0.4
 * New container release due to a general change in the communication between container and HPOBench.
   Works with HPOBench >= v0.0.8
@@ -53,7 +57,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.util.data_manager import NASBench_201Data
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 MAX_NODES = 4
 
 logger = logging.getLogger('NASBENCH201')
@@ -483,3 +487,75 @@ class ImageNetNasBench201Benchmark(NasBench201BaseBenchmark):
 
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         super(ImageNetNasBench201Benchmark, self).__init__(dataset='ImageNet16-120', rng=rng, **kwargs)
+
+
+class _NasBench201BaseBenchmarkOriginal(NasBench201BaseBenchmark):
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        the NAS Benchmark 201.
+
+        This fidelity space differs from the one above in its lower bound.
+        The benchmark above enables the user to access the entire dataset, while this one reproduces the
+        experiments from DEHB
+        [DEHB](https://github.com/automl/DEHB/tree/937dd5cf48e79f6d587ea2ff408cb5ad9a8dce46/dehb/examples)
+
+        Fidelities:
+        epoch: int
+            The loss / accuracy at `epoch`.
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        seed = seed if seed is not None else np.random.randint(1, 100000)
+        fidel_space = CS.ConfigurationSpace(seed=seed)
+
+        # We use here the lower bound of 4 instead of 1.
+        fidel_space.add_hyperparameters([
+            CS.UniformIntegerHyperparameter('epoch', lower=12, upper=200, default_value=200)
+        ])
+
+        return fidel_space
+
+    @staticmethod
+    def get_meta_information() -> Dict:
+        """ Returns the meta information for the benchmark """
+        meta_information = NasBench201BaseBenchmark.get_meta_information()
+        meta_information['note'] = \
+            'This version of the benchmark implements the fidelity space defined in the DEHB paper.' \
+            'See [DEHB](https://github.com/automl/DEHB/tree/937dd5cf48e79f6d587ea2ff408cb5ad9a8dce46/dehb/examples)'
+        return meta_information
+
+
+class Cifar10ValidNasBench201BenchmarkOriginal(_NasBench201BaseBenchmarkOriginal):
+
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        super(Cifar10ValidNasBench201BenchmarkOriginal, self).__init__(dataset='cifar10-valid', rng=rng, **kwargs)
+
+
+class Cifar100NasBench201BenchmarkOriginal(_NasBench201BaseBenchmarkOriginal):
+
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        super(Cifar100NasBench201BenchmarkOriginal, self).__init__(dataset='cifar100', rng=rng, **kwargs)
+
+
+class ImageNetNasBench201BenchmarkOriginal(_NasBench201BaseBenchmarkOriginal):
+
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        super(ImageNetNasBench201BenchmarkOriginal, self).__init__(dataset='ImageNet16-120', rng=rng, **kwargs)
+
+
+__all__ = ["Cifar10ValidNasBench201Benchmark",
+           "Cifar100NasBench201Benchmark",
+           "ImageNetNasBench201Benchmark",
+           "Cifar10ValidNasBench201BenchmarkOriginal",
+           "Cifar100NasBench201BenchmarkOriginal",
+           "ImageNetNasBench201BenchmarkOriginal"]
