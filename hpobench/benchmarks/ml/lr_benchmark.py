@@ -103,7 +103,6 @@ class LRBenchmark(MLBenchmark):
             learning_rate="adaptive",
             tol=None,
             random_state=rng,
-
         )
         return model
 

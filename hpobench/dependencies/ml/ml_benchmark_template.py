@@ -49,9 +49,8 @@ class MLBenchmark(AbstractBenchmark):
 
         self.task_id = task_id
         self.valid_size = valid_size
-        self.scorers = dict()
-        for k, v in metrics.items():
-            self.scorers[k] = make_scorer(v, **metrics_kwargs[k])
+        self.scorers = metrics
+        self.scorer_args = metrics_kwargs
 
         if data_path is None:
             from hpobench import config_file
@@ -188,6 +187,10 @@ class MLBenchmark(AbstractBenchmark):
         start = time.time()
         model.fit(train_X[train_idx], train_y.iloc[train_idx])
         model_fit_time = time.time() - start
+        # model inference
+        start = time.time()
+        pred_train = model.predict(train_X)
+        inference_time = time.time() - start
         # computing statistics on training data
         scores = dict()
         score_cost = dict()
@@ -195,8 +198,8 @@ class MLBenchmark(AbstractBenchmark):
             scores[k] = 0.0
             score_cost[k] = 0.0
             _start = time.time()
-            scores[k] = v(model, train_X, train_y)
-            score_cost[k] = time.time() - _start
+            scores[k] = v(train_y, pred_train, **self.scorer_args[k])
+            score_cost[k] = time.time() - _start + inference_time
         train_loss = 1 - scores["acc"]
         return model, model_fit_time, train_loss, scores, score_cost
 
@@ -213,13 +216,34 @@ class MLBenchmark(AbstractBenchmark):
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
             configuration, fidelity, shuffle, rng, evaluation="valid"
         )
+
+        # model inference on validation set
+        start = time.time()
+        pred_val = model.predict(self.valid_X)
+        val_inference_time = time.time() - start
         val_scores = dict()
         val_score_cost = dict()
         for k, v in self.scorers.items():
+            val_scores[k] = 0.0
+            val_score_cost[k] = 0.0
             _start = time.time()
-            val_scores[k] = v(model, self.valid_X, self.valid_y)
-            val_score_cost[k] = time.time() - _start
+            val_scores[k] = v(self.valid_y, pred_val, **self.scorer_args[k])
+            val_score_cost[k] = time.time() - _start + val_inference_time
         val_loss = 1 - val_scores["acc"]
+
+        # model inference on test set
+        start = time.time()
+        pred_test = model.predict(self.test_X)
+        test_inference_time = time.time() - start
+        test_scores = dict()
+        test_score_cost = dict()
+        for k, v in self.scorers.items():
+            test_scores[k] = 0.0
+            test_score_cost[k] = 0.0
+            _start = time.time()
+            test_scores[k] = v(self.test_y, pred_test, **self.scorer_args[k])
+            test_score_cost[k] = time.time() - _start + test_inference_time
+        test_loss = 1 - test_scores["acc"]
 
         fidelity = fidelity.get_dictionary() if isinstance(fidelity, CS.Configuration) else fidelity
         configuration = configuration.get_dictionary() \
@@ -228,14 +252,14 @@ class MLBenchmark(AbstractBenchmark):
         info = {
             'train_loss': train_loss,
             'val_loss': val_loss,
-            'test_loss': None,
+            'test_loss': test_loss,
             'model_cost': model_fit_time,
             'train_scores': train_scores,
             'train_costs': train_score_cost,
             'val_scores': val_scores,
             'val_costs': val_score_cost,
-            'test_scores': None,
-            'test_costs': None,
+            'test_scores': test_scores,
+            'test_costs': test_score_cost,
             # storing as dictionary and not ConfigSpace saves tremendous memory
             'fidelity': fidelity,
             'config': configuration,
@@ -260,12 +284,19 @@ class MLBenchmark(AbstractBenchmark):
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
             configuration, fidelity, shuffle, rng, evaluation="test"
         )
+
+        # model inference on test set
+        start = time.time()
+        pred_test = model.predict(self.test_X)
+        test_inference_time = time.time() - start
         test_scores = dict()
         test_score_cost = dict()
         for k, v in self.scorers.items():
+            test_scores[k] = 0.0
+            test_score_cost[k] = 0.0
             _start = time.time()
-            test_scores[k] = v(model, self.test_X, self.test_y)
-            test_score_cost[k] = time.time() - _start
+            test_scores[k] = v(self.test_y, pred_test, **self.scorer_args[k])
+            test_score_cost[k] = time.time() - _start + test_inference_time
         test_loss = 1 - test_scores["acc"]
 
         info = {
