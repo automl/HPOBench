@@ -33,17 +33,33 @@ class MLBenchmark(AbstractBenchmark):
     def __init__(
             self,
             task_id: int,
-            rng: Union[np.random.RandomState, int, None] = None,
             valid_size: float = 0.33,
+            rng: Union[np.random.RandomState, int, None] = None,
             data_path: Union[str, Path, None] = None,
             global_seed: int = 1
     ):
+        """ Base template for the ML multi-fidelity benchmarks.
+
+        Parameters
+        ----------
+        task_id : int
+            A valid OpenML Task ID.
+        valid_size : float
+            The fraction of training set to be used as validation split.
+        rng : np.random.RandomState, int (optional)
+            The random seed that will be passed to the ML model if not explicitly passed.
+        data_path : str, Path (optional)
+            The path from where the training-validation-testing splits may be loaded.
+        global_seed : int
+            The fixed global seed that is used for creating validation splits if not available.
+        """
         super(MLBenchmark, self).__init__(rng=rng)
 
         if isinstance(rng, int):
             self.seed = rng
         else:
             self.seed = self.rng.randint(1, 10**6)
+        self.rng = get_rng(self.seed)
 
         self.global_seed = global_seed  # used for fixed training-validation splits
 
@@ -58,7 +74,7 @@ class MLBenchmark(AbstractBenchmark):
 
         self.data_path = Path(data_path)
 
-        dm = OpenMLDataManager(task_id, valid_size, data_path, global_seed)
+        dm = OpenMLDataManager(self.task_id, self.valid_size, self.data_path, self.global_seed)
         dm.load()
 
         # Data variables
@@ -89,32 +105,27 @@ class MLBenchmark(AbstractBenchmark):
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         """Fidelity space available --- specifies the fidelity dimensions
-
-        If fidelity_choice is 0
-            Fidelity space is the maximal fidelity, akin to a black-box function
-        If fidelity_choice is 1
-            Fidelity space is a single fidelity, in this case the number of trees (n_estimators)
-        If fidelity_choice is 2
-            Fidelity space is a single fidelity, in this case the fraction of dataset (subsample)
-        If fidelity_choice is >2
-            Fidelity space is multi-multi fidelity, all possible fidelities
         """
         raise NotImplementedError()
 
     def get_meta_information(self):
-        """ Returns the meta information for the benchmark """
+        """ Returns the meta information for the benchmark
+        """
         return {
             'name': 'Support Vector Machine',
             'shape of train data': self.train_X.shape,
             'shape of test data': self.test_X.shape,
             'shape of valid data': self.valid_X.shape,
-            'initial random seed': self.seed,
+            'initial random seed': self.rng,
             'task_id': self.task_id
         }
 
-    def init_model(self, config: Union[CS.Configuration, Dict],
-                   fidelity: Union[CS.Configuration, Dict, None] = None,
-                   rng: Union[int, np.random.RandomState, None] = None):
+    def init_model(
+            self,
+            config: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            rng: Union[int, np.random.RandomState, None] = None
+    ):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
         raise NotImplementedError()
@@ -141,13 +152,15 @@ class MLBenchmark(AbstractBenchmark):
         rng.shuffle(train_idx)
         return train_idx
 
-    def _train_objective(self,
-                         config: Dict,
-                         fidelity: Dict,
-                         shuffle: bool,
-                         rng: Union[np.random.RandomState, int, None] = None,
-                         evaluation: Union[str, None] = "valid"):
-
+    def _train_objective(
+            self,
+            config: Dict,
+            fidelity: Dict,
+            shuffle: bool,
+            rng: Union[np.random.RandomState, int, None] = None,
+            evaluation: Union[str, None] = "valid",
+            record_stats: bool = False
+    ):
         if rng is not None:
             rng = get_rng(rng, self.rng)
 
@@ -158,13 +171,12 @@ class MLBenchmark(AbstractBenchmark):
         if evaluation == "valid":
             train_X = self.train_X
             train_y = self.train_y
-            train_idx = self.train_idx
         elif evaluation == "test":
             train_X = np.vstack((self.train_X, self.valid_X))
             train_y = pd.concat((self.train_y, self.valid_y))
-            train_idx = np.arange(len(train_X))
         else:
             raise ValueError("{} not in ['valid', 'test']".format(evaluation))
+        train_idx = np.arange(len(train_X)) if self.train_idx is None else self.train_idx
 
         # shuffling data
         if shuffle:
@@ -188,9 +200,12 @@ class MLBenchmark(AbstractBenchmark):
         model.fit(train_X[train_idx], train_y.iloc[train_idx])
         model_fit_time = time.time() - start
         # model inference
-        start = time.time()
-        pred_train = model.predict(train_X)
-        inference_time = time.time() - start
+        inference_time = 0.0
+        # can optionally not record evaluation metrics on training set to save compute
+        if record_stats:
+            start = time.time()
+            pred_train = model.predict(train_X)
+            inference_time = time.time() - start
         # computing statistics on training data
         scores = dict()
         score_cost = dict()
@@ -198,23 +213,28 @@ class MLBenchmark(AbstractBenchmark):
             scores[k] = 0.0
             score_cost[k] = 0.0
             _start = time.time()
-            scores[k] = v(train_y, pred_train, **self.scorer_args[k])
+            if record_stats:
+                scores[k] = v(train_y, pred_train, **self.scorer_args[k])
             score_cost[k] = time.time() - _start + inference_time
         train_loss = 1 - scores["acc"]
         return model, model_fit_time, train_loss, scores, score_cost
 
     # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
-    def objective_function(self,
-                           configuration: Union[CS.Configuration, Dict],
-                           fidelity: Union[CS.Configuration, Dict, None] = None,
-                           shuffle: bool = False,
-                           rng: Union[np.random.RandomState, int, None] = None,
-                           **kwargs) -> Dict:
+    def objective_function(
+            self,
+            configuration: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            shuffle: bool = False,
+            rng: Union[np.random.RandomState, int, None] = None,
+            record_train: bool = False,
+            **kwargs
+    ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
         """
+        # obtaining model and training statistics
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
-            configuration, fidelity, shuffle, rng, evaluation="valid"
+            configuration, fidelity, shuffle, rng, evaluation="valid", record_stats=record_train
         )
 
         # model inference on validation set
@@ -273,16 +293,20 @@ class MLBenchmark(AbstractBenchmark):
 
     # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
-    def objective_function_test(self,
-                                configuration: Union[CS.Configuration, Dict],
-                                fidelity: Union[CS.Configuration, Dict, None] = None,
-                                shuffle: bool = False,
-                                rng: Union[np.random.RandomState, int, None] = None,
-                                **kwargs) -> Dict:
+    def objective_function_test(
+            self,
+            configuration: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            shuffle: bool = False,
+            rng: Union[np.random.RandomState, int, None] = None,
+            record_train: bool = False,
+            **kwargs
+    ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the test set
         """
+        # obtaining model and training statistics
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
-            configuration, fidelity, shuffle, rng, evaluation="test"
+            configuration, fidelity, shuffle, rng, evaluation="test", record_stats=record_train
         )
 
         # model inference on test set

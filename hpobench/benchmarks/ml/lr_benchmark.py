@@ -22,11 +22,11 @@ __version__ = '0.0.1'
 class LRBenchmark(MLBenchmark):
     def __init__(self,
                  task_id: int,
-                 rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
+                 rng: Union[np.random.RandomState, int, None] = None,
                  data_path: Union[str, None] = None):
 
-        super(LRBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        super(LRBenchmark, self).__init__(task_id, valid_size, rng, data_path)
         self.cache_size = 500
 
     @staticmethod
