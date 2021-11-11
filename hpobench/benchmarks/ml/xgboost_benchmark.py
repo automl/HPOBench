@@ -4,6 +4,8 @@ Changelog:
 
 0.0.1:
 * First implementation of the new XGB Benchmarks.
+0.0.2:
+* Restructuring for consistency and to match ML Benchmark Template updates.
 """
 from typing import Union, Tuple, Dict
 
@@ -14,16 +16,20 @@ from ConfigSpace.hyperparameters import Hyperparameter
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class XGBoostBenchmark(MLBenchmark):
-    def __init__(self,
-                 task_id: int,
-                 rng: Union[np.random.RandomState, int, None] = None,
-                 valid_size: float = 0.33,
-                 data_path: Union[str, None] = None):
-        super(XGBoostBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+    """ Multi-multi-fidelity XGBoost Benchmark
+    """
+    def __init__(
+            self,
+            task_id: int,
+            valid_size: float = 0.33,
+            rng: Union[np.random.RandomState, int, None] = None,
+            data_path: Union[str, None] = None
+    ):
+        super(XGBoostBenchmark, self).__init__(task_id, valid_size, rng, data_path)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -74,23 +80,24 @@ class XGBoostBenchmark(MLBenchmark):
                 'subsample', lower=0.1, upper=1, default_value=1, log=False
             )
         )
-
         n_estimators = fidelity1[n_estimators_choice]
         subsample = fidelity2[subsample_choice]
         return n_estimators, subsample
 
-    def init_model(self,
-                   config: Union[CS.Configuration, Dict],
-                   fidelity: Union[CS.Configuration, Dict, None] = None,
-                   rng: Union[int, np.random.RandomState, None] = None):
-        """ Function that returns the model initialized based on the configuration and fidelity
-        """
+    def init_model(
+            self,
+            config: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            rng: Union[int, np.random.RandomState, None] = None
+    ):
+        # initializing model
+        # rng = rng if (rng is None or isinstance(rng, int)) else self.seed
+        rng = rng if isinstance(rng, int) else self.seed
+
         if isinstance(config, CS.Configuration):
             config = config.get_dictionary()
         if isinstance(fidelity, CS.Configuration):
             fidelity = fidelity.get_dictionary()
-
-        rng = rng if (rng is None or isinstance(rng, int)) else self.seed
         extra_args = dict(
             booster="gbtree",
             n_estimators=fidelity['n_estimators'],
@@ -110,6 +117,8 @@ class XGBoostBenchmark(MLBenchmark):
 
 
 class XGBoostBenchmarkBB(XGBoostBenchmark):
+    """ Black-box version of the XGBoostBenchmark
+    """
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
@@ -120,6 +129,8 @@ class XGBoostBenchmarkBB(XGBoostBenchmark):
 
 
 class XGBoostBenchmarkMF(XGBoostBenchmark):
+    """ Multi-fidelity version of the XGBoostBenchmark
+    """
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(

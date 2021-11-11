@@ -4,6 +4,8 @@ Changelog:
 
 0.0.1:
 * First implementation of the new SVM Benchmarks.
+0.0.2:
+* Restructuring for consistency and to match ML Benchmark Template updates.
 """
 
 from typing import Union, Dict
@@ -15,18 +17,21 @@ from sklearn.svm import SVC
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class SVMBenchmark(MLBenchmark):
-    def __init__(self,
-                 task_id: int,
-                 rng: Union[np.random.RandomState, int, None] = None,
-                 valid_size: float = 0.33,
-                 data_path: Union[str, None] = None):
-        super(SVMBenchmark, self).__init__(task_id, rng, valid_size, data_path)
-
-        self.cache_size = 200
+    """ Multi-multi-fidelity SVM Benchmark
+    """
+    def __init__(
+            self,
+            task_id: int,
+            valid_size: float = 0.33,
+            rng: Union[np.random.RandomState, int, None] = None,
+            data_path: Union[str, None] = None
+    ):
+        super(SVMBenchmark, self).__init__(task_id, valid_size, rng, data_path)
+        self.cache_size = 1024  # in MB
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -54,7 +59,8 @@ class SVMBenchmark(MLBenchmark):
 
     @staticmethod
     def _get_fidelity_choices(subsample_choice: str) -> Hyperparameter:
-
+        """Fidelity space available --- specifies the fidelity dimensions
+        """
         assert subsample_choice in ['fixed', 'variable']
 
         fidelity = dict(
@@ -64,12 +70,14 @@ class SVMBenchmark(MLBenchmark):
             )
         )
         subsample = fidelity[subsample_choice]
-
         return subsample
 
-    def init_model(self, config: Union[CS.Configuration, Dict],
-                   fidelity: Union[CS.Configuration, Dict, None] = None,
-                   rng: Union[int, np.random.RandomState, None] = None):
+    def init_model(
+            self,
+            config: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            rng: Union[int, np.random.RandomState, None] = None
+    ):
         # initializing model
         rng = self.rng if rng is None else rng
         if isinstance(config, CS.Configuration):
@@ -83,6 +91,8 @@ class SVMBenchmark(MLBenchmark):
 
 
 class SVMBenchmarkBB(SVMBenchmark):
+    """ Black-box version of the SVMBenchmark
+    """
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameter(

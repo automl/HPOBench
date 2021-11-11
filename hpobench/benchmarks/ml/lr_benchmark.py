@@ -4,6 +4,8 @@ Changelog:
 
 0.0.1:
 * First implementation of the LR Benchmarks.
+0.0.2:
+* Restructuring for consistency and to match ML Benchmark Template updates.
 """
 
 
@@ -16,18 +18,20 @@ from sklearn.linear_model import SGDClassifier
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class LRBenchmark(MLBenchmark):
-    def __init__(self,
-                 task_id: int,
-                 valid_size: float = 0.33,
-                 rng: Union[np.random.RandomState, int, None] = None,
-                 data_path: Union[str, None] = None):
-
+    """ Multi-multi-fidelity Logisitic Regression Benchmark
+    """
+    def __init__(
+            self,
+            task_id: int,
+            valid_size: float = 0.33,
+            rng: Union[np.random.RandomState, int, None] = None,
+            data_path: Union[str, None] = None
+    ):
         super(LRBenchmark, self).__init__(task_id, valid_size, rng, data_path)
-        self.cache_size = 500
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -44,6 +48,7 @@ class LRBenchmark(MLBenchmark):
         ])
         return cs
 
+    @staticmethod
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
@@ -55,15 +60,7 @@ class LRBenchmark(MLBenchmark):
     @staticmethod
     def _get_fidelity_choices(iter_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
         """Fidelity space available --- specifies the fidelity dimensions
-
-        For SVM, only a single fidelity exists, i.e., subsample fraction.
-        if fidelity_choice == 0
-            uses the entire data (subsample=1), reflecting the black-box setup
-        else
-            parameterizes the fraction of data to subsample
-
         """
-
         assert iter_choice in ['fixed', 'variable']
         assert subsample_choice in ['fixed', 'variable']
 
@@ -79,14 +76,16 @@ class LRBenchmark(MLBenchmark):
                 'subsample', lower=0.1, upper=1.0, default_value=1.0, log=False
             )
         )
-
         iter = fidelity1[iter_choice]
         subsample = fidelity2[subsample_choice]
         return iter, subsample
 
-    def init_model(self, config: Union[CS.Configuration, Dict],
-                   fidelity: Union[CS.Configuration, Dict, None] = None,
-                   rng: Union[int, np.random.RandomState, None] = None):
+    def init_model(
+            self,
+            config: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            rng: Union[int, np.random.RandomState, None] = None
+    ):
         # initializing model
         rng = self.rng if rng is None else rng
 
@@ -108,6 +107,8 @@ class LRBenchmark(MLBenchmark):
 
 
 class LRBenchmarkBB(LRBenchmark):
+    """ Black-box version of the LRBenchmark
+    """
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
@@ -118,6 +119,8 @@ class LRBenchmarkBB(LRBenchmark):
 
 
 class LRBenchmarkMF(LRBenchmark):
+    """ Multi-fidelity version of the LRBenchmark
+    """
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(

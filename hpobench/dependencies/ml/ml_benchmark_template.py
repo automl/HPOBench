@@ -181,7 +181,10 @@ class MLBenchmark(AbstractBenchmark):
         # shuffling data
         if shuffle:
             train_idx = self.shuffle_data_idx(train_idx, rng)
-            train_X = train_X.iloc[train_idx]
+            if isinstance(train_idx, np.ndarray):
+                train_X = train_X[train_idx]
+            else:
+                train_X = train_X.iloc[train_idx]
             train_y = train_y.iloc[train_idx]
 
         # subsample here:
@@ -231,6 +234,23 @@ class MLBenchmark(AbstractBenchmark):
             **kwargs
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
+
+        The ML model is trained on the training split, and evaluated on the valid and test splits.
+
+        Parameters
+        ----------
+        configuration : CS.Configuration, Dict
+            The hyperparameter configuration.
+        fidelity : CS.Configuration, Dict
+            The fidelity configuration.
+        shuffle : bool (optional)
+            If True, shuffles the training split before fitting the ML model.
+        rng : np.random.RandomState, int (optional)
+            The random seed passed to the ML model and if applicable, used for shuffling the data
+            and subsampling the dataset fraction.
+        record_train : bool (optional)
+            If True, records the evaluation metrics of the trained ML model on the training set.
+            This is set to False by default to reduce overall compute time.
         """
         # obtaining model and training statistics
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
@@ -303,6 +323,23 @@ class MLBenchmark(AbstractBenchmark):
             **kwargs
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the test set
+
+        The ML model is trained on the training+valid split, and evaluated on the test split.
+
+        Parameters
+        ----------
+        configuration : CS.Configuration, Dict
+            The hyperparameter configuration.
+        fidelity : CS.Configuration, Dict
+            The fidelity configuration.
+        shuffle : bool (optional)
+            If True, shuffles the training split before fitting the ML model.
+        rng : np.random.RandomState, int (optional)
+            The random seed passed to the ML model and if applicable, used for shuffling the data
+            and subsampling the dataset fraction.
+        record_train : bool (optional)
+            If True, records the evaluation metrics of the trained ML model on the training set.
+            This is set to False by default to reduce overall compute time.
         """
         # obtaining model and training statistics
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
@@ -344,3 +381,14 @@ class MLBenchmark(AbstractBenchmark):
             'cost': float(model_fit_time + info['test_costs']['acc']),
             'info': info
         }
+
+
+if __name__ == "__main__":
+    from hpobench.benchmarks.ml import XGBoostBenchmarkMF
+    benchmark = XGBoostBenchmarkMF(task_id=10101)
+    config = benchmark.configuration_space.sample_configuration()
+    print(config)
+    fidelity = benchmark.fidelity_space.sample_configuration()
+    print(fidelity)
+    res = benchmark.objective_function(config, fidelity, shuffle=True, record_train=True, rng=123)
+    print(res)

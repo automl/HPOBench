@@ -4,6 +4,8 @@ Changelog:
 
 0.0.1:
 * First implementation of the RF Benchmarks.
+0.0.2:
+* Restructuring for consistency and to match ML Benchmark Template updates.
 """
 
 from copy import deepcopy
@@ -16,16 +18,20 @@ from sklearn.ensemble import RandomForestClassifier
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class RandomForestBenchmark(MLBenchmark):
-    def __init__(self,
-                 task_id: int,
-                 rng: Union[np.random.RandomState, int, None] = None,
-                 valid_size: float = 0.33,
-                 data_path: Union[str, None] = None):
-        super(RandomForestBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+    """ Multi-multi-fidelity Random Forest Benchmark
+    """
+    def __init__(
+            self,
+            task_id: int,
+            valid_size: float = 0.33,
+            rng: Union[np.random.RandomState, int, None] = None,
+            data_path: Union[str, None] = None
+    ):
+        super(RandomForestBenchmark, self).__init__(task_id, valid_size, rng, data_path)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -70,7 +76,6 @@ class RandomForestBenchmark(MLBenchmark):
                 'n_estimators', lower=16, upper=512, default_value=512, log=False
             )
         )
-
         fidelity2 = dict(
             fixed=CS.Constant('subsample', value=1),
             variable=CS.UniformFloatHyperparameter(
@@ -81,11 +86,13 @@ class RandomForestBenchmark(MLBenchmark):
         subsample = fidelity2[subsample_choice]
         return n_estimators, subsample
 
-    def init_model(self, config: Union[CS.Configuration, Dict],
-                   fidelity: Union[CS.Configuration, Dict, None] = None,
-                   rng: Union[int, np.random.RandomState, None] = None):
-        """ Function that returns the model initialized based on the configuration and fidelity
-        """
+    def init_model(
+            self,
+            config: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            rng: Union[int, np.random.RandomState, None] = None
+    ):
+        # initializing model
         rng = self.rng if rng is None else rng
         if isinstance(config, CS.Configuration):
             config = config.get_dictionary()
@@ -105,6 +112,8 @@ class RandomForestBenchmark(MLBenchmark):
 
 
 class RandomForestBenchmarkBB(RandomForestBenchmark):
+    """ Black-box version of the RandomForestBenchmark
+    """
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
@@ -115,6 +124,8 @@ class RandomForestBenchmarkBB(RandomForestBenchmark):
 
 
 class RandomForestBenchmarkMF(RandomForestBenchmark):
+    """ Multi-fidelity version of the RandomForestBenchmark
+    """
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
