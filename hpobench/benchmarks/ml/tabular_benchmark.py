@@ -4,6 +4,8 @@ Changelog:
 
 0.0.1:
 * First implementation of the Tabular Benchmark.
+0.0.2:
+* Restructuring for consistency and to match ML Benchmark Template updates.
 """
 
 from pathlib import Path
@@ -17,7 +19,7 @@ from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.dependencies.ml.ml_benchmark_template import metrics
 from hpobench.util.data_manager import TabularDataManager
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class TabularBenchmark(AbstractBenchmark):
