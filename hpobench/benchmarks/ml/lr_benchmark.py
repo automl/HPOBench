@@ -105,6 +105,25 @@ class LRBenchmark(MLBenchmark):
         )
         return model
 
+    def get_model_size(self, model: SGDClassifier) -> float:
+        """ Returns the dimensionality as a proxy for the number of model parameters
+
+        Logistic Regression models have a fixed number of parameters given a dataset. Model size is
+        being approximated as the number of beta parameters required as the model support plus the
+        intercept. This depends on the dataset and not on the trained model.
+
+        Parameters
+        ----------
+        model : SGDClassifier
+            Trained LR model. This parameter is required to maintain function signature.
+
+        Returns
+        -------
+        float
+        """
+        ndims = self.train_X.shape[1]
+        return ndims + 1
+
 
 class LRBenchmarkBB(LRBenchmark):
     """ Black-box version of the LRBenchmark

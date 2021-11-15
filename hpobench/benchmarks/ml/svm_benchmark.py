@@ -89,6 +89,21 @@ class SVMBenchmark(MLBenchmark):
         )
         return model
 
+    def get_model_size(self, model: SVC) -> float:
+        """ Returns the number of support vectors in the SVM model
+
+        Parameters
+        ----------
+        model : SVC
+            Trained SVM model.
+
+        Returns
+        -------
+        float
+        """
+        nsupport = model.support_.shape[0]
+        return nsupport
+
 
 class SVMBenchmarkBB(SVMBenchmark):
     """ Black-box version of the SVMBenchmark

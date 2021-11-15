@@ -118,6 +118,25 @@ class NNBenchmark(MLBenchmark):
         )
         return model
 
+    def get_model_size(self, model: MLPClassifier) -> float:
+        """ Returns the number of trained parameters in the MLP model
+
+        Parameters
+        ----------
+        model : MLPClassifier
+            Trained MLP model.
+
+        Returns
+        -------
+        float
+        """
+        nparams = 1
+        for layer in model.coefs_:
+            nparams += layer.shape[0] * layer.shape[1]
+        for layer in model.intercepts_:
+            nparams += layer.shape[0]
+        return nparams
+
 
 class NNBenchmarkBB(NNBenchmark):
     """ Black-box version of the NNBenchmark

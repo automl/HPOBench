@@ -120,6 +120,11 @@ class MLBenchmark(AbstractBenchmark):
             'task_id': self.task_id
         }
 
+    def get_model_size(self, model):
+        """ Returns a custom model size specific to the ML model, if applicable
+        """
+        raise NotImplementedError
+
     def init_model(
             self,
             config: Union[CS.Configuration, Dict],
@@ -256,6 +261,7 @@ class MLBenchmark(AbstractBenchmark):
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
             configuration, fidelity, shuffle, rng, evaluation="valid", record_stats=record_train
         )
+        model_size = self.get_model_size(model)
 
         # model inference on validation set
         start = time.time()
@@ -294,6 +300,7 @@ class MLBenchmark(AbstractBenchmark):
             'val_loss': val_loss,
             'test_loss': test_loss,
             'model_cost': model_fit_time,
+            'model_size': model_size,
             'train_scores': train_scores,
             'train_costs': train_score_cost,
             'val_scores': val_scores,
@@ -345,6 +352,7 @@ class MLBenchmark(AbstractBenchmark):
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
             configuration, fidelity, shuffle, rng, evaluation="test", record_stats=record_train
         )
+        model_size = self.get_model_size(model)
 
         # model inference on test set
         start = time.time()
@@ -365,6 +373,7 @@ class MLBenchmark(AbstractBenchmark):
             'val_loss': None,
             'test_loss': test_loss,
             'model_cost': model_fit_time,
+            'model_size': model_size,
             'train_scores': train_scores,
             'train_costs': train_score_cost,
             'val_scores': None,
