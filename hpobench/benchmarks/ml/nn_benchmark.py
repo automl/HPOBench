@@ -119,7 +119,7 @@ class NNBenchmark(MLBenchmark):
         return model
 
     def get_model_size(self, model: MLPClassifier) -> float:
-        """ Returns the number of trained parameters in the MLP model
+        """ Returns the total number of trained parameters in the MLP model
 
         Parameters
         ----------

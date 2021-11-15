@@ -91,7 +91,6 @@ class XGBoostBenchmark(MLBenchmark):
             rng: Union[int, np.random.RandomState, None] = None
     ):
         # initializing model
-        # rng = rng if (rng is None or isinstance(rng, int)) else self.seed
         rng = rng if isinstance(rng, int) else self.seed
 
         if isinstance(config, CS.Configuration):
@@ -114,6 +113,21 @@ class XGBoostBenchmark(MLBenchmark):
             **extra_args
         )
         return model
+
+    def get_model_size(self, model: xgb.XGBClassifier) -> float:
+        """ Returns the total number of decision nodes in the sequence of Gradient Boosted trees
+
+        Parameters
+        ----------
+        model : xgb.XGBClassifier
+            Trained XGB model.
+
+        Returns
+        -------
+        float
+        """
+        nodes = model.get_booster().trees_to_dataframe().shape[0]
+        return nodes
 
 
 class XGBoostBenchmarkBB(XGBoostBenchmark):

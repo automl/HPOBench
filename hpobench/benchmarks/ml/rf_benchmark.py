@@ -110,6 +110,24 @@ class RandomForestBenchmark(MLBenchmark):
         )
         return model
 
+    def get_model_size(self, model: RandomForestClassifier) -> float:
+        """ Returns the total number of decision nodes in the entire Random Forest model
+
+        Parameters
+        ----------
+        model : RandomForestClassifier
+            Trained RF model.
+
+        Returns
+        -------
+        float
+        """
+        nodes = 0
+        for tree in model.estimators_:
+            # total number of nodes in the tree (internal + leaf)
+            nodes += tree.tree_.node_count
+        return nodes
+
 
 class RandomForestBenchmarkBB(RandomForestBenchmark):
     """ Black-box version of the RandomForestBenchmark
