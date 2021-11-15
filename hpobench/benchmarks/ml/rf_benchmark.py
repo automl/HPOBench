@@ -60,12 +60,16 @@ class RandomForestBenchmark(MLBenchmark):
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-multi-fidelity) - ntrees + data subsample
-            RandomForestBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='variable')
+            RandomForestBenchmark._get_fidelity_choices(
+                n_estimators_choice='variable', subsample_choice='variable'
+            )
         )
         return fidelity_space
 
     @staticmethod
-    def _get_fidelity_choices(n_estimators_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
+    def _get_fidelity_choices(
+            n_estimators_choice: str, subsample_choice: str
+    ) -> Tuple[Hyperparameter, Hyperparameter]:
 
         assert n_estimators_choice in ['fixed', 'variable']
         assert subsample_choice in ['fixed', 'variable']
@@ -136,7 +140,9 @@ class RandomForestBenchmarkBB(RandomForestBenchmark):
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # black-box setting (full fidelity)
-            RandomForestBenchmark._get_fidelity_choices(n_estimators_choice='fixed', subsample_choice='fixed')
+            RandomForestBenchmark._get_fidelity_choices(
+                n_estimators_choice='fixed', subsample_choice='fixed'
+            )
         )
         return fidelity_space
 
@@ -148,7 +154,9 @@ class RandomForestBenchmarkMF(RandomForestBenchmark):
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-fidelity) - ntrees
-            RandomForestBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='fixed')
+            RandomForestBenchmark._get_fidelity_choices(
+                n_estimators_choice='variable', subsample_choice='fixed'
+            )
         )
         return fidelity_space
 

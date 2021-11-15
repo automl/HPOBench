@@ -69,7 +69,9 @@ class NNBenchmark(MLBenchmark):
         return fidelity_space
 
     @staticmethod
-    def _get_fidelity_choices(iter_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
+    def _get_fidelity_choices(
+            iter_choice: str, subsample_choice: str
+    ) -> Tuple[Hyperparameter, Hyperparameter]:
         """Fidelity space available --- specifies the fidelity dimensions
         """
         fidelity1 = dict(
