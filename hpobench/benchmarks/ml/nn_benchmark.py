@@ -132,7 +132,7 @@ class NNBenchmark(MLBenchmark):
         -------
         float
         """
-        nparams = 1
+        nparams = 0
         for layer in model.coefs_:
             nparams += layer.shape[0] * layer.shape[1]
         for layer in model.intercepts_:
