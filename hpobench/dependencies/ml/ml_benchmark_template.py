@@ -164,7 +164,9 @@ class MLBenchmark(AbstractBenchmark):
             shuffle: bool,
             rng: Union[np.random.RandomState, int, None] = None,
             evaluation: Union[str, None] = "valid",
-            record_stats: bool = False
+            record_stats: bool = False,
+            get_learning_curve: bool = False,
+            **kwargs
     ):
         if rng is not None:
             rng = get_rng(rng, self.rng)
@@ -236,6 +238,7 @@ class MLBenchmark(AbstractBenchmark):
             shuffle: bool = False,
             rng: Union[np.random.RandomState, int, None] = None,
             record_train: bool = False,
+            get_learning_curve: bool = False,
             **kwargs
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
@@ -256,6 +259,8 @@ class MLBenchmark(AbstractBenchmark):
         record_train : bool (optional)
             If True, records the evaluation metrics of the trained ML model on the training set.
             This is set to False by default to reduce overall compute time.
+        get_learning_curve : bool (optional)
+            If True, records the learning curve using partial_fit or warm starting, if applicable.
         """
         # obtaining model and training statistics
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
@@ -327,6 +332,7 @@ class MLBenchmark(AbstractBenchmark):
             shuffle: bool = False,
             rng: Union[np.random.RandomState, int, None] = None,
             record_train: bool = False,
+            get_learning_curve: bool = False,
             **kwargs
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the test set
@@ -347,6 +353,8 @@ class MLBenchmark(AbstractBenchmark):
         record_train : bool (optional)
             If True, records the evaluation metrics of the trained ML model on the training set.
             This is set to False by default to reduce overall compute time.
+        get_learning_curve : bool (optional)
+            If True, records the learning curve using partial_fit or warm starting, if applicable.
         """
         # obtaining model and training statistics
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
@@ -393,11 +401,15 @@ class MLBenchmark(AbstractBenchmark):
 
 
 if __name__ == "__main__":
-    from hpobench.benchmarks.ml import XGBoostBenchmarkMF
-    benchmark = XGBoostBenchmarkMF(task_id=10101)
+    from hpobench.benchmarks.ml import RandomForestBenchmarkMF
+    benchmark = RandomForestBenchmarkMF(task_id=10101)
     config = benchmark.configuration_space.sample_configuration()
     print(config)
     fidelity = benchmark.fidelity_space.sample_configuration()
     print(fidelity)
-    res = benchmark.objective_function(config, fidelity, shuffle=True, record_train=True, rng=123)
+    start = time.time()
+    res = benchmark.objective_function(
+        config, fidelity, record_train=True, rng=123, get_learning_curve=True
+    )
     print(res)
+    print(time.time() - start)

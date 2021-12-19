@@ -9,13 +9,16 @@ Changelog:
 """
 
 
+import time
 from typing import Union, Tuple, Dict
 
 import ConfigSpace as CS
 import numpy as np
+import pandas as pd
 from ConfigSpace.hyperparameters import Hyperparameter
 from sklearn.linear_model import SGDClassifier
 
+from hpobench.util.rng_helper import get_rng
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
 __version__ = '0.0.2'
@@ -127,6 +130,204 @@ class LRBenchmark(MLBenchmark):
         # accounting for the intercept
         ndims += 1
         return ndims
+
+    def _train_objective(
+            self,
+            config: Dict,
+            fidelity: Dict,
+            shuffle: bool,
+            rng: Union[np.random.RandomState, int, None] = None,
+            evaluation: Union[str, None] = "valid",
+            record_stats: bool = False,
+            get_learning_curve: bool = False,
+            **kwargs
+    ):
+        if rng is not None:
+            rng = get_rng(rng, self.rng)
+
+        # initializing model
+        model = self.init_model(config, fidelity, rng)
+
+        # preparing data
+        if evaluation == "valid":
+            train_X = self.train_X
+            train_y = self.train_y
+        elif evaluation == "test":
+            train_X = np.vstack((self.train_X, self.valid_X))
+            train_y = pd.concat((self.train_y, self.valid_y))
+        else:
+            raise ValueError("{} not in ['valid', 'test']".format(evaluation))
+        train_idx = np.arange(len(train_X)) if self.train_idx is None else self.train_idx
+
+        # shuffling data
+        if shuffle:
+            train_idx = self.shuffle_data_idx(train_idx, rng)
+            if isinstance(train_idx, np.ndarray):
+                train_X = train_X[train_idx]
+            else:
+                train_X = train_X.iloc[train_idx]
+            train_y = train_y.iloc[train_idx]
+
+        # subsample here:
+        # application of the other fidelity to the dataset that the model interfaces
+        if self.lower_bound_train_size is None:
+            self.lower_bound_train_size = (10 * self.n_classes) / self.train_X.shape[0]
+            self.lower_bound_train_size = np.max((1 / 512, self.lower_bound_train_size))
+        subsample = np.max((fidelity['subsample'], self.lower_bound_train_size))
+        train_idx = self.rng.choice(
+            np.arange(len(train_X)), size=int(
+                subsample * len(train_X)
+            )
+        )
+        # fitting the model with subsampled data
+        if get_learning_curve:
+            model.warm_start = True
+            lc_time = 0.0
+            model_fit_time = 0.0
+            learning_curves = dict(train=[], valid=[], test=[])
+            for i in range(model.max_iter):
+                start = time.time()
+                model.partial_fit(
+                    train_X[train_idx], train_y.iloc[train_idx], np.unique(train_y.iloc[train_idx])
+                )
+                model_fit_time += time.time() - start
+                lc_start = time.time()
+                if record_stats:
+                    train_pred = model.predict(train_X)
+                    train_loss = 1 - self.scorers['acc'](
+                        train_y, train_pred, **self.scorer_args['acc']
+                    )
+                    learning_curves['train'].append(train_loss)
+                val_pred = model.predict(self.valid_X)
+                val_loss = 1 - self.scorers['acc'](
+                    self.valid_y, val_pred, **self.scorer_args['acc']
+                )
+                learning_curves['valid'].append(val_loss)
+                test_pred = model.predict(self.test_X)
+                test_loss = 1 - self.scorers['acc'](
+                    self.test_y, test_pred, **self.scorer_args['acc']
+                )
+                learning_curves['test'].append(test_loss)
+                lc_time += time.time() - lc_start
+        else:
+            learning_curves = None
+            start = time.time()
+            model.fit(train_X[train_idx], train_y.iloc[train_idx])
+            model_fit_time = time.time() - start
+        # model inference
+        inference_time = 0.0
+        # can optionally not record evaluation metrics on training set to save compute
+        if record_stats:
+            start = time.time()
+            pred_train = model.predict(train_X)
+            inference_time = time.time() - start
+        # computing statistics on training data
+        scores = dict()
+        score_cost = dict()
+        for k, v in self.scorers.items():
+            scores[k] = 0.0
+            score_cost[k] = 0.0
+            _start = time.time()
+            if record_stats:
+                scores[k] = v(train_y, pred_train, **self.scorer_args[k])
+            score_cost[k] = time.time() - _start + inference_time
+        train_loss = 1 - scores["acc"]
+        return model, model_fit_time, train_loss, scores, score_cost, learning_curves
+
+    def objective_function(
+            self,
+            configuration: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            shuffle: bool = False,
+            rng: Union[np.random.RandomState, int, None] = None,
+            record_train: bool = False,
+            get_learning_curve: bool = False,
+            **kwargs
+    ) -> Dict:
+        """Function that evaluates a 'config' on a 'fidelity' on the validation set
+
+        The ML model is trained on the training split, and evaluated on the valid and test splits.
+
+        Parameters
+        ----------
+        configuration : CS.Configuration, Dict
+            The hyperparameter configuration.
+        fidelity : CS.Configuration, Dict
+            The fidelity configuration.
+        shuffle : bool (optional)
+            If True, shuffles the training split before fitting the ML model.
+        rng : np.random.RandomState, int (optional)
+            The random seed passed to the ML model and if applicable, used for shuffling the data
+            and subsampling the dataset fraction.
+        record_train : bool (optional)
+            If True, records the evaluation metrics of the trained ML model on the training set.
+            This is set to False by default to reduce overall compute time.
+        get_learning_curve : bool (optional)
+            If True, records the learning curve using partial_fit or warm starting, if applicable.
+        """
+        # obtaining model and training statistics
+        model, model_fit_time, train_loss, train_scores, train_score_cost, lcs = \
+            self._train_objective(
+                configuration, fidelity, shuffle, rng, evaluation="valid",
+                record_stats=record_train, get_learning_curve=get_learning_curve
+            )
+        model_size = self.get_model_size(model)
+
+        # model inference on validation set
+        start = time.time()
+        pred_val = model.predict(self.valid_X)
+        val_inference_time = time.time() - start
+        val_scores = dict()
+        val_score_cost = dict()
+        for k, v in self.scorers.items():
+            val_scores[k] = 0.0
+            val_score_cost[k] = 0.0
+            _start = time.time()
+            val_scores[k] = v(self.valid_y, pred_val, **self.scorer_args[k])
+            val_score_cost[k] = time.time() - _start + val_inference_time
+        val_loss = 1 - val_scores["acc"]
+
+        # model inference on test set
+        start = time.time()
+        pred_test = model.predict(self.test_X)
+        test_inference_time = time.time() - start
+        test_scores = dict()
+        test_score_cost = dict()
+        for k, v in self.scorers.items():
+            test_scores[k] = 0.0
+            test_score_cost[k] = 0.0
+            _start = time.time()
+            test_scores[k] = v(self.test_y, pred_test, **self.scorer_args[k])
+            test_score_cost[k] = time.time() - _start + test_inference_time
+        test_loss = 1 - test_scores["acc"]
+
+        fidelity = fidelity.get_dictionary() if isinstance(fidelity, CS.Configuration) else fidelity
+        configuration = configuration.get_dictionary() \
+            if isinstance(configuration, CS.Configuration) else configuration
+
+        info = {
+            'train_loss': train_loss,
+            'val_loss': val_loss,
+            'test_loss': test_loss,
+            'model_cost': model_fit_time,
+            'model_size': model_size,
+            'train_scores': train_scores,
+            'train_costs': train_score_cost,
+            'val_scores': val_scores,
+            'val_costs': val_score_cost,
+            'test_scores': test_scores,
+            'test_costs': test_score_cost,
+            'learning_curves': lcs,
+            # storing as dictionary and not ConfigSpace saves tremendous memory
+            'fidelity': fidelity,
+            'config': configuration,
+        }
+
+        return {
+            'function_value': float(info['val_loss']),
+            'cost': float(model_fit_time + info['val_costs']['acc']),
+            'info': info
+        }
 
 
 class LRBenchmarkBB(LRBenchmark):
