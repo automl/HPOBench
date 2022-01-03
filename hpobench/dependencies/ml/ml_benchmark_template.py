@@ -165,9 +165,31 @@ class MLBenchmark(AbstractBenchmark):
             rng: Union[np.random.RandomState, int, None] = None,
             evaluation: Union[str, None] = "valid",
             record_stats: bool = False,
-            get_learning_curve: bool = False,
             **kwargs
     ):
+        """Function that instantiates a 'config' on a 'fidelity' and trains it
+
+        The ML model is instantiated and trained on the training split. Optionally, the model is
+        evaluated on the training set.
+
+        Parameters
+        ----------
+        config : CS.Configuration, Dict
+            The hyperparameter configuration.
+        fidelity : CS.Configuration, Dict
+            The fidelity configuration.
+        shuffle : bool (optional)
+            If True, shuffles the training split before fitting the ML model.
+        rng : np.random.RandomState, int (optional)
+            The random seed passed to the ML model and if applicable, used for shuffling the data
+            and subsampling the dataset fraction.
+        evaluation : str (optional)
+            If "valid", the ML model is trained on the training set alone.
+            If "test", the ML model is trained on the training + validation sets.
+        record_stats : bool (optional)
+            If True, records the evaluation metrics of the trained ML model on the training set.
+            This is set to False by default to reduce overall compute time.
+        """
         if rng is not None:
             rng = get_rng(rng, self.rng)
 
@@ -196,9 +218,11 @@ class MLBenchmark(AbstractBenchmark):
 
         # subsample here:
         # application of the other fidelity to the dataset that the model interfaces
+        # carried over from previous HPOBench code that borrowed from FABOLAS' SVM
+        lower_bound_lim = 1.0 / 512.0
         if self.lower_bound_train_size is None:
             self.lower_bound_train_size = (10 * self.n_classes) / self.train_X.shape[0]
-            self.lower_bound_train_size = np.max((1 / 512, self.lower_bound_train_size))
+            self.lower_bound_train_size = np.max((lower_bound_lim, self.lower_bound_train_size))
         subsample = np.max((fidelity['subsample'], self.lower_bound_train_size))
         train_idx = self.rng.choice(
             np.arange(len(train_X)), size=int(
@@ -238,7 +262,6 @@ class MLBenchmark(AbstractBenchmark):
             shuffle: bool = False,
             rng: Union[np.random.RandomState, int, None] = None,
             record_train: bool = False,
-            get_learning_curve: bool = False,
             **kwargs
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
@@ -259,8 +282,6 @@ class MLBenchmark(AbstractBenchmark):
         record_train : bool (optional)
             If True, records the evaluation metrics of the trained ML model on the training set.
             This is set to False by default to reduce overall compute time.
-        get_learning_curve : bool (optional)
-            If True, records the learning curve using partial_fit or warm starting, if applicable.
         """
         # obtaining model and training statistics
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
@@ -332,7 +353,6 @@ class MLBenchmark(AbstractBenchmark):
             shuffle: bool = False,
             rng: Union[np.random.RandomState, int, None] = None,
             record_train: bool = False,
-            get_learning_curve: bool = False,
             **kwargs
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the test set
@@ -353,8 +373,6 @@ class MLBenchmark(AbstractBenchmark):
         record_train : bool (optional)
             If True, records the evaluation metrics of the trained ML model on the training set.
             This is set to False by default to reduce overall compute time.
-        get_learning_curve : bool (optional)
-            If True, records the learning curve using partial_fit or warm starting, if applicable.
         """
         # obtaining model and training statistics
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(

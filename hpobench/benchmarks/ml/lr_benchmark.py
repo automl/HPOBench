@@ -142,6 +142,34 @@ class LRBenchmark(MLBenchmark):
             get_learning_curve: bool = False,
             **kwargs
     ):
+        """Function that instantiates a 'config' on a 'fidelity' and trains it
+
+        The ML model is instantiated and trained on the training split. Optionally, the model is
+        evaluated on the training set. Optionally, the learning curves are collected.
+
+        Parameters
+        ----------
+        config : CS.Configuration, Dict
+            The hyperparameter configuration.
+        fidelity : CS.Configuration, Dict
+            The fidelity configuration.
+        shuffle : bool (optional)
+            If True, shuffles the training split before fitting the ML model.
+        rng : np.random.RandomState, int (optional)
+            The random seed passed to the ML model and if applicable, used for shuffling the data
+            and subsampling the dataset fraction.
+        evaluation : str (optional)
+            If "valid", the ML model is trained on the training set alone.
+            If "test", the ML model is trained on the training + validation sets.
+        record_stats : bool (optional)
+            If True, records the evaluation metrics of the trained ML model on the training set.
+            This is set to False by default to reduce overall compute time.
+        get_learning_curve : bool (optional)
+            If True, records the learning curve using partial_fit or warm starting, if applicable.
+            This is set to False by default to reduce overall compute time.
+            Enabling True, implies that the for each iteration, the model will be evaluated on both
+            the validation and test sets, optionally on the training set also.
+        """
         if rng is not None:
             rng = get_rng(rng, self.rng)
 
@@ -170,9 +198,11 @@ class LRBenchmark(MLBenchmark):
 
         # subsample here:
         # application of the other fidelity to the dataset that the model interfaces
+        # carried over from previous HPOBench code that borrowed from FABOLAS' SVM
+        lower_bound_lim = 1.0 / 512.0
         if self.lower_bound_train_size is None:
             self.lower_bound_train_size = (10 * self.n_classes) / self.train_X.shape[0]
-            self.lower_bound_train_size = np.max((1 / 512, self.lower_bound_train_size))
+            self.lower_bound_train_size = np.max((lower_bound_lim, self.lower_bound_train_size))
         subsample = np.max((fidelity['subsample'], self.lower_bound_train_size))
         train_idx = self.rng.choice(
             np.arange(len(train_X)), size=int(
@@ -180,6 +210,8 @@ class LRBenchmark(MLBenchmark):
             )
         )
         # fitting the model with subsampled data
+        learning_curves = None
+        lc_time = None
         if get_learning_curve:
             model.warm_start = True
             lc_time = 0.0
@@ -190,6 +222,7 @@ class LRBenchmark(MLBenchmark):
                 model.partial_fit(
                     train_X[train_idx], train_y.iloc[train_idx], np.unique(train_y.iloc[train_idx])
                 )
+                # adding all partial fit times
                 model_fit_time += time.time() - start
                 lc_start = time.time()
                 if record_stats:
@@ -208,8 +241,10 @@ class LRBenchmark(MLBenchmark):
                     self.test_y, test_pred, **self.scorer_args['acc']
                 )
                 learning_curves['test'].append(test_loss)
+                # sums the time taken to evaluate and collect data for the learning curves
                 lc_time += time.time() - lc_start
         else:
+            # default training as per the base benchmark template
             learning_curves = None
             start = time.time()
             model.fit(train_X[train_idx], train_y.iloc[train_idx])
@@ -232,7 +267,7 @@ class LRBenchmark(MLBenchmark):
                 scores[k] = v(train_y, pred_train, **self.scorer_args[k])
             score_cost[k] = time.time() - _start + inference_time
         train_loss = 1 - scores["acc"]
-        return model, model_fit_time, train_loss, scores, score_cost, learning_curves
+        return model, model_fit_time, train_loss, scores, score_cost, learning_curves, lc_time
 
     def objective_function(
             self,
@@ -264,9 +299,10 @@ class LRBenchmark(MLBenchmark):
             This is set to False by default to reduce overall compute time.
         get_learning_curve : bool (optional)
             If True, records the learning curve using partial_fit or warm starting, if applicable.
+            This is set to False by default to reduce overall compute time.
         """
         # obtaining model and training statistics
-        model, model_fit_time, train_loss, train_scores, train_score_cost, lcs = \
+        model, model_fit_time, train_loss, train_scores, train_score_cost, lcs, lc_time = \
             self._train_objective(
                 configuration, fidelity, shuffle, rng, evaluation="valid",
                 record_stats=record_train, get_learning_curve=get_learning_curve
@@ -318,6 +354,7 @@ class LRBenchmark(MLBenchmark):
             'test_scores': test_scores,
             'test_costs': test_score_cost,
             'learning_curves': lcs,
+            'learning_curves_cost': lc_time,
             # storing as dictionary and not ConfigSpace saves tremendous memory
             'fidelity': fidelity,
             'config': configuration,
@@ -326,6 +363,89 @@ class LRBenchmark(MLBenchmark):
         return {
             'function_value': float(info['val_loss']),
             'cost': float(model_fit_time + info['val_costs']['acc']),
+            'info': info
+        }
+
+    def objective_function_test(
+            self,
+            configuration: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            shuffle: bool = False,
+            rng: Union[np.random.RandomState, int, None] = None,
+            record_train: bool = False,
+            get_learning_curve: bool = False,
+            **kwargs
+    ) -> Dict:
+        """Function that evaluates a 'config' on a 'fidelity' on the test set
+
+        The ML model is trained on the training+valid split, and evaluated on the test split.
+
+        Parameters
+        ----------
+        configuration : CS.Configuration, Dict
+            The hyperparameter configuration.
+        fidelity : CS.Configuration, Dict
+            The fidelity configuration.
+        shuffle : bool (optional)
+            If True, shuffles the training split before fitting the ML model.
+        rng : np.random.RandomState, int (optional)
+            The random seed passed to the ML model and if applicable, used for shuffling the data
+            and subsampling the dataset fraction.
+        record_train : bool (optional)
+            If True, records the evaluation metrics of the trained ML model on the training set.
+            This is set to False by default to reduce overall compute time.
+        get_learning_curve : bool (optional)
+            If True, records the learning curve using partial_fit or warm starting, if applicable.
+            This is set to False by default to reduce overall compute time.
+        """
+        # obtaining model and training statistics
+        model, model_fit_time, train_loss, train_scores, train_score_cost, lcs, lc_time = \
+            self._train_objective(
+                configuration, fidelity, shuffle, rng, evaluation="test",
+                record_stats=record_train, get_learning_curve=get_learning_curve
+            )
+        model_size = self.get_model_size(model)
+
+        # model inference on test set
+        start = time.time()
+        pred_test = model.predict(self.test_X)
+        test_inference_time = time.time() - start
+        test_scores = dict()
+        test_score_cost = dict()
+        for k, v in self.scorers.items():
+            test_scores[k] = 0.0
+            test_score_cost[k] = 0.0
+            _start = time.time()
+            test_scores[k] = v(self.test_y, pred_test, **self.scorer_args[k])
+            test_score_cost[k] = time.time() - _start + test_inference_time
+        test_loss = 1 - test_scores["acc"]
+
+        fidelity = fidelity.get_dictionary() if isinstance(fidelity, CS.Configuration) else fidelity
+        configuration = configuration.get_dictionary() \
+            if isinstance(configuration, CS.Configuration) else configuration
+
+        info = {
+            'train_loss': train_loss,
+            'val_loss': None,
+            'test_loss': test_loss,
+            'model_cost': model_fit_time,
+            'model_size': model_size,
+            'train_scores': train_scores,
+            'train_costs': train_score_cost,
+            'val_scores': None,
+            'val_costs': None,
+            'test_scores': test_scores,
+            'test_costs': test_score_cost,
+            'learning_curves': lcs,
+            'learning_curves_cost': lc_time,
+            # storing as dictionary and not ConfigSpace saves tremendous memory
+            'fidelity': fidelity,
+            'config': configuration,
+        }
+
+        return {
+            'function_value': float(info['test_loss']),
+            'cost': float(model_fit_time + info['test_costs']['acc']),
             'info': info
         }
 
