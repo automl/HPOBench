@@ -210,8 +210,6 @@ class LRBenchmark(MLBenchmark):
             )
         )
         # fitting the model with subsampled data
-        learning_curves = None
-        lc_time = None
         if get_learning_curve:
             model.warm_start = True
             lc_time = 0.0
@@ -246,6 +244,7 @@ class LRBenchmark(MLBenchmark):
         else:
             # default training as per the base benchmark template
             learning_curves = None
+            lc_time = None
             start = time.time()
             model.fit(train_X[train_idx], train_y.iloc[train_idx])
             model_fit_time = time.time() - start
