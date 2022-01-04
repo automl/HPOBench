@@ -368,6 +368,10 @@ class MLBenchmark(AbstractBenchmark):
             test_score_cost[k] = time.time() - _start + test_inference_time
         test_loss = 1 - test_scores["acc"]
 
+        fidelity = fidelity.get_dictionary() if isinstance(fidelity, CS.Configuration) else fidelity
+        configuration = configuration.get_dictionary() \
+            if isinstance(configuration, CS.Configuration) else configuration
+
         info = {
             'train_loss': train_loss,
             'val_loss': None,
