@@ -6,8 +6,9 @@ Changelog:
 * First implementation of the LR Benchmarks.
 0.0.2:
 * Restructuring for consistency and to match ML Benchmark Template updates.
+0.0.3:
+* Adding Learning Curve support.
 """
-
 
 import time
 from typing import Union, Tuple, Dict
@@ -21,7 +22,7 @@ from sklearn.linear_model import SGDClassifier
 from hpobench.util.rng_helper import get_rng
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 
 class LRBenchmark(MLBenchmark):

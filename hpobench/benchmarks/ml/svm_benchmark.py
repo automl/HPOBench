@@ -6,6 +6,8 @@ Changelog:
 * First implementation of the new SVM Benchmarks.
 0.0.2:
 * Restructuring for consistency and to match ML Benchmark Template updates.
+0.0.3:
+* Adding Learning Curve support.
 """
 
 from typing import Union, Dict
@@ -17,7 +19,7 @@ from sklearn.svm import SVC
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 
 class SVMBenchmark(MLBenchmark):

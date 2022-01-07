@@ -6,6 +6,8 @@ Changelog:
 * First implementation of the NN Benchmarks.
 0.0.2:
 * Restructuring for consistency and to match ML Benchmark Template updates.
+0.0.3:
+* Adding Learning Curve support.
 """
 
 import time
@@ -21,7 +23,7 @@ from sklearn.neural_network import MLPClassifier
 from hpobench.util.rng_helper import get_rng
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 
 class NNBenchmark(MLBenchmark):

@@ -6,7 +6,10 @@ Changelog:
 * First implementation of the new XGB Benchmarks.
 0.0.2:
 * Restructuring for consistency and to match ML Benchmark Template updates.
+0.0.3:
+* Adding Learning Curve support.
 """
+
 from typing import Union, Tuple, Dict
 
 import ConfigSpace as CS
@@ -17,7 +20,7 @@ from ConfigSpace.hyperparameters import Hyperparameter
 from hpobench.util.rng_helper import get_rng
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 
 class XGBoostBenchmark(MLBenchmark):
