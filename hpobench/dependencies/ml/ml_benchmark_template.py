@@ -165,6 +165,7 @@ class MLBenchmark(AbstractBenchmark):
             rng: Union[np.random.RandomState, int, None] = None,
             evaluation: Union[str, None] = "valid",
             record_stats: bool = False,
+            get_learning_curve: bool = False,
             **kwargs
     ):
         """Function that instantiates a 'config' on a 'fidelity' and trains it
@@ -189,7 +190,17 @@ class MLBenchmark(AbstractBenchmark):
         record_stats : bool (optional)
             If True, records the evaluation metrics of the trained ML model on the training set.
             This is set to False by default to reduce overall compute time.
+        get_learning_curve : bool (optional)
+            If True, records the learning curve using partial_fit or warm starting, if applicable.
+            This is set to False by default to reduce overall compute time.
         """
+        if get_learning_curve:
+            raise NotImplementedError(
+                "Need to implement partial or intermediate training to record Learning curves"
+            )
+        learning_curves = None
+        lc_time = None
+
         if rng is not None:
             rng = get_rng(rng, self.rng)
 
@@ -251,7 +262,7 @@ class MLBenchmark(AbstractBenchmark):
                 scores[k] = v(train_y, pred_train, **self.scorer_args[k])
             score_cost[k] = time.time() - _start + inference_time
         train_loss = 1 - scores["acc"]
-        return model, model_fit_time, train_loss, scores, score_cost
+        return model, model_fit_time, train_loss, scores, score_cost, learning_curves, lc_time
 
     # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
@@ -262,6 +273,7 @@ class MLBenchmark(AbstractBenchmark):
             shuffle: bool = False,
             rng: Union[np.random.RandomState, int, None] = None,
             record_train: bool = False,
+            get_learning_curve: bool = False,
             **kwargs
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
@@ -282,11 +294,16 @@ class MLBenchmark(AbstractBenchmark):
         record_train : bool (optional)
             If True, records the evaluation metrics of the trained ML model on the training set.
             This is set to False by default to reduce overall compute time.
+        get_learning_curve : bool (optional)
+            If True, records the learning curve using partial_fit or warm starting, if applicable.
+            This is set to False by default to reduce overall compute time.
         """
         # obtaining model and training statistics
-        model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
-            configuration, fidelity, shuffle, rng, evaluation="valid", record_stats=record_train
-        )
+        model, model_fit_time, train_loss, train_scores, train_score_cost, lcs, lc_time = \
+            self._train_objective(
+                configuration, fidelity, shuffle, rng, evaluation="valid",
+                record_stats=record_train, get_learning_curve=get_learning_curve
+            )
         model_size = self.get_model_size(model)
 
         # model inference on validation set
@@ -333,6 +350,8 @@ class MLBenchmark(AbstractBenchmark):
             'val_costs': val_score_cost,
             'test_scores': test_scores,
             'test_costs': test_score_cost,
+            'learning_curves': lcs,
+            'learning_curves_cost': lc_time,
             # storing as dictionary and not ConfigSpace saves tremendous memory
             'fidelity': fidelity,
             'config': configuration,
@@ -353,6 +372,7 @@ class MLBenchmark(AbstractBenchmark):
             shuffle: bool = False,
             rng: Union[np.random.RandomState, int, None] = None,
             record_train: bool = False,
+            get_learning_curve: bool = False,
             **kwargs
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the test set
@@ -373,11 +393,16 @@ class MLBenchmark(AbstractBenchmark):
         record_train : bool (optional)
             If True, records the evaluation metrics of the trained ML model on the training set.
             This is set to False by default to reduce overall compute time.
+        get_learning_curve : bool (optional)
+            If True, records the learning curve using partial_fit or warm starting, if applicable.
+            This is set to False by default to reduce overall compute time.
         """
         # obtaining model and training statistics
-        model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
-            configuration, fidelity, shuffle, rng, evaluation="test", record_stats=record_train
-        )
+        model, model_fit_time, train_loss, train_scores, train_score_cost, lcs, lc_time = \
+            self._train_objective(
+                configuration, fidelity, shuffle, rng, evaluation="test",
+                record_stats=record_train, get_learning_curve=get_learning_curve
+            )
         model_size = self.get_model_size(model)
 
         # model inference on test set
@@ -394,6 +419,10 @@ class MLBenchmark(AbstractBenchmark):
             test_score_cost[k] = time.time() - _start + test_inference_time
         test_loss = 1 - test_scores["acc"]
 
+        fidelity = fidelity.get_dictionary() if isinstance(fidelity, CS.Configuration) else fidelity
+        configuration = configuration.get_dictionary() \
+            if isinstance(configuration, CS.Configuration) else configuration
+
         info = {
             'train_loss': train_loss,
             'val_loss': None,
@@ -406,6 +435,8 @@ class MLBenchmark(AbstractBenchmark):
             'val_costs': None,
             'test_scores': test_scores,
             'test_costs': test_score_cost,
+            'learning_curves': lcs,
+            'learning_curves_cost': lc_time,
             # storing as dictionary and not ConfigSpace saves tremendous memory
             'fidelity': fidelity,
             'config': configuration,
