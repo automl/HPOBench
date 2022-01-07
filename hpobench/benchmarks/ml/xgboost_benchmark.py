@@ -14,6 +14,7 @@ import numpy as np
 import xgboost as xgb
 from ConfigSpace.hyperparameters import Hyperparameter
 
+from hpobench.util.rng_helper import get_rng
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
 __version__ = '0.0.2'
@@ -95,7 +96,10 @@ class XGBoostBenchmark(MLBenchmark):
             rng: Union[int, np.random.RandomState, None] = None
     ):
         # initializing model
-        rng = rng if isinstance(rng, int) else self.seed
+        rng = self.rng if rng is None else get_rng(rng)
+        # xgb.XGBClassifier when trainied using the scikit-learn API of `fit`, requires
+        # random_state to be an integer and doesn't accept a RandomState
+        seed = rng.randint(1, 10**6)
 
         if isinstance(config, CS.Configuration):
             config = config.get_dictionary()
@@ -105,7 +109,7 @@ class XGBoostBenchmark(MLBenchmark):
             booster="gbtree",
             n_estimators=fidelity['n_estimators'],
             objective="binary:logistic",
-            random_state=rng,
+            random_state=seed,
             subsample=1
         )
         if self.n_classes > 2:

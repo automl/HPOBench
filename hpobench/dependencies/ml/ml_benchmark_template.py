@@ -55,12 +55,6 @@ class MLBenchmark(AbstractBenchmark):
         """
         super(MLBenchmark, self).__init__(rng=rng)
 
-        if isinstance(rng, int):
-            self.seed = rng
-        else:
-            self.seed = self.rng.randint(1, 10**6)
-        self.rng = get_rng(self.seed)
-
         self.global_seed = global_seed  # used for fixed training-validation splits
 
         self.task_id = task_id
@@ -91,10 +85,6 @@ class MLBenchmark(AbstractBenchmark):
         self.preprocessor = dm.preprocessor
         self.lower_bound_train_size = dm.lower_bound_train_size
         self.n_classes = dm.n_classes
-
-        # Observation and fidelity spaces
-        self.fidelity_space = self.get_fidelity_space(self.seed)
-        self.configuration_space = self.get_configuration_space(self.seed)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
