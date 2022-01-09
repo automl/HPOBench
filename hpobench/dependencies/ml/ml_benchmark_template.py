@@ -147,6 +147,19 @@ class MLBenchmark(AbstractBenchmark):
         rng.shuffle(train_idx)
         return train_idx
 
+    def _get_lc_spacing(self, max_iter, k):
+        """ Creates an integer sequence to record Learning Curves for every k iteration.
+
+        Designed to include the maximum iteration. A k-spaced iteration sequence may not include
+        the endpoint implicitly.
+        """
+        assert k > 0, "Spacing needs to be at >=1"
+        spacing = np.arange(0, max_iter + 1, step=k).tolist()
+        spacing = spacing[1:]  # eliminating 0
+        if spacing[-1] != max_iter:
+            spacing.append(max_iter)
+        return spacing
+
     def _train_objective(
             self,
             config: Dict,
@@ -156,6 +169,7 @@ class MLBenchmark(AbstractBenchmark):
             evaluation: Union[str, None] = "valid",
             record_stats: bool = False,
             get_learning_curve: bool = False,
+            lc_every_k: int = 1,
             **kwargs
     ):
         """Function that instantiates a 'config' on a 'fidelity' and trains it
@@ -183,6 +197,8 @@ class MLBenchmark(AbstractBenchmark):
         get_learning_curve : bool (optional)
             If True, records the learning curve using partial_fit or warm starting, if applicable.
             This is set to False by default to reduce overall compute time.
+        lc_every_k : int (optional)
+            If True, records the learning curve after every k iterations.
         """
         if get_learning_curve:
             raise NotImplementedError(
@@ -264,6 +280,7 @@ class MLBenchmark(AbstractBenchmark):
             rng: Union[np.random.RandomState, int, None] = None,
             record_train: bool = False,
             get_learning_curve: bool = False,
+            lc_every_k: int = 1,
             **kwargs
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
@@ -287,12 +304,15 @@ class MLBenchmark(AbstractBenchmark):
         get_learning_curve : bool (optional)
             If True, records the learning curve using partial_fit or warm starting, if applicable.
             This is set to False by default to reduce overall compute time.
+        lc_every_k : int (optional)
+            If True, records the learning curve after every k iterations.
         """
         # obtaining model and training statistics
         model, model_fit_time, train_loss, train_scores, train_score_cost, lcs, lc_time = \
             self._train_objective(
-                configuration, fidelity, shuffle, rng, evaluation="valid",
-                record_stats=record_train, get_learning_curve=get_learning_curve
+                configuration, fidelity, shuffle, rng,
+                evaluation="valid", record_stats=record_train,
+                get_learning_curve=get_learning_curve, lc_every_k=lc_every_k
             )
         model_size = self.get_model_size(model)
 
@@ -363,6 +383,7 @@ class MLBenchmark(AbstractBenchmark):
             rng: Union[np.random.RandomState, int, None] = None,
             record_train: bool = False,
             get_learning_curve: bool = False,
+            lc_every_k: int = 1,
             **kwargs
     ) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the test set
@@ -386,12 +407,15 @@ class MLBenchmark(AbstractBenchmark):
         get_learning_curve : bool (optional)
             If True, records the learning curve using partial_fit or warm starting, if applicable.
             This is set to False by default to reduce overall compute time.
+        lc_every_k : int (optional)
+            If True, records the learning curve after every k iterations.
         """
         # obtaining model and training statistics
         model, model_fit_time, train_loss, train_scores, train_score_cost, lcs, lc_time = \
             self._train_objective(
-                configuration, fidelity, shuffle, rng, evaluation="test",
-                record_stats=record_train, get_learning_curve=get_learning_curve
+                configuration, fidelity, shuffle, rng,
+                evaluation="test", record_stats=record_train,
+                get_learning_curve=get_learning_curve, lc_every_k=lc_every_k
             )
         model_size = self.get_model_size(model)
 
