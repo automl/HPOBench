@@ -141,6 +141,7 @@ class LRBenchmark(MLBenchmark):
             evaluation: Union[str, None] = "valid",
             record_stats: bool = False,
             get_learning_curve: bool = False,
+            lc_every_k: int = 1,
             **kwargs
     ):
         """Function that instantiates a 'config' on a 'fidelity' and trains it
@@ -170,6 +171,8 @@ class LRBenchmark(MLBenchmark):
             This is set to False by default to reduce overall compute time.
             Enabling True, implies that the for each iteration, the model will be evaluated on both
             the validation and test sets, optionally on the training set also.
+        lc_every_k : int (optional)
+            If True, records the learning curve after every k iterations.
         """
         if rng is not None:
             rng = get_rng(rng, self.rng)
@@ -217,13 +220,21 @@ class LRBenchmark(MLBenchmark):
             lc_time = 0.0
             model_fit_time = 0.0
             learning_curves = dict(train=[], valid=[], test=[])
-            for i in range(model.max_iter):
+            lc_spacings = self._get_lc_spacing(model.max_iter, lc_every_k)
+            iter_start = 0
+            for i in range(len(lc_spacings)):
+                iter_end = lc_spacings[i]
                 start = time.time()
-                model.partial_fit(
-                    train_X[train_idx], train_y.iloc[train_idx], np.unique(train_y.iloc[train_idx])
-                )
+                # trains model for k steps
+                for j in range(iter_end - iter_start):
+                    model.partial_fit(
+                        train_X[train_idx],
+                        train_y.iloc[train_idx],
+                        np.unique(train_y.iloc[train_idx])
+                    )
                 # adding all partial fit times
                 model_fit_time += time.time() - start
+                iter_start = iter_end
                 lc_start = time.time()
                 if record_stats:
                     train_pred = model.predict(train_X)

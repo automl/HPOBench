@@ -362,6 +362,7 @@ class MLBenchmark(AbstractBenchmark):
             'test_costs': test_score_cost,
             'learning_curves': lcs,
             'learning_curves_cost': lc_time,
+            'learning_curves_spacing': lc_every_k,
             # storing as dictionary and not ConfigSpace saves tremendous memory
             'fidelity': fidelity,
             'config': configuration,
@@ -451,6 +452,7 @@ class MLBenchmark(AbstractBenchmark):
             'test_costs': test_score_cost,
             'learning_curves': lcs,
             'learning_curves_cost': lc_time,
+            'learning_curves_spacing': lc_every_k,
             # storing as dictionary and not ConfigSpace saves tremendous memory
             'fidelity': fidelity,
             'config': configuration,
