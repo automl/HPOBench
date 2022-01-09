@@ -154,6 +154,7 @@ class MLBenchmark(AbstractBenchmark):
         the endpoint implicitly.
         """
         assert k > 0, "Spacing needs to be at >=1"
+        assert k < max_iter, "Spacing should be in {1, 2, ..., max_iter-1}"
         spacing = np.arange(0, max_iter + 1, step=k).tolist()
         spacing = spacing[1:]  # eliminating 0
         if spacing[-1] != max_iter:

@@ -146,6 +146,7 @@ class RandomForestBenchmark(MLBenchmark):
             evaluation: Union[str, None] = "valid",
             record_stats: bool = False,
             get_learning_curve: bool = False,
+            lc_every_k: int = 1,
             **kwargs
     ):
         """Function that instantiates a 'config' on a 'fidelity' and trains it
@@ -175,6 +176,8 @@ class RandomForestBenchmark(MLBenchmark):
             This is set to False by default to reduce overall compute time.
             Enabling True, implies that the for each iteration, the model will be evaluated on both
             the validation and test sets, optionally on the training set also.
+        lc_every_k : int (optional)
+            If True, records the learning curve after every k iterations.
         """
         if rng is not None:
             rng = get_rng(rng, self.rng)
@@ -217,15 +220,20 @@ class RandomForestBenchmark(MLBenchmark):
         )
         # fitting the model with subsampled data
         if get_learning_curve:
-            # IMPORTANT to allow partial_fit
+            lc_spacings = self._get_lc_spacing(model.n_estimators, lc_every_k)
+            # IMPORTANT to allow refitting with more estimators
             model.warm_start = True
             model.n_estimators = 0
             lc_time = 0.0
             model_fit_time = 0.0
             learning_curves = dict(train=[], valid=[], test=[])
-            for i in range(fidelity['n_estimators']):
-                model.n_estimators += 1
+            iter_start = 0
+            # for i in range(fidelity['n_estimators']):
+            for i in range(len(lc_spacings)):
+                iter_end = lc_spacings[i]
                 start = time.time()
+                # adds k new estimators to the model for training
+                model.n_estimators += iter_end - iter_start
                 model.fit(train_X[train_idx], train_y.iloc[train_idx])
                 model_fit_time += time.time() - start
                 lc_start = time.time()
