@@ -152,3 +152,19 @@ See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that
 
 **Note:** If you are looking for a different or older version of our benchmarking library, you might be looking for
  [HPOlib1.5](https://github.com/automl/HPOlib1.5) 
+ 
+## Reference
+
+If you use HPObench, please cite the following paper:
+
+```bibtex
+@inproceedings{
+  eggensperger2021hpobench,
+  title={{HPOB}ench: A Collection of Reproducible Multi-Fidelity Benchmark Problems for {HPO}},
+  author={Katharina Eggensperger and Philipp M{\"u}ller and Neeratyoy Mallik and Matthias Feurer and Rene Sass and Aaron Klein and Noor Awad and Marius Lindauer and Frank Hutter},
+  booktitle={Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2)},
+  year={2021},
+  url={https://openreview.net/forum?id=1k4rJYEwda-}
+}
+```
+
