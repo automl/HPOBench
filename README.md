@@ -155,7 +155,7 @@ See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that
  
 ## Reference
 
-If you use HPObench, please cite the following paper:
+If you use HPOBench, please cite the following paper:
 
 ```bibtex
 @inproceedings{
