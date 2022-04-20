@@ -32,7 +32,7 @@ Changelog:
 0.0.1:
 * First implementation
 """
-
+import os
 import warnings
 import logging
 from typing import Union, Dict
@@ -67,6 +67,14 @@ class YAHPOGymBenchmark(AbstractBenchmark):
             Initialized to None, picks the first element in y_names.
         rng : np.random.RandomState, int, None
         """
+
+        # When in the containerized version, redirect to the data inside the container.
+        if 'YAHPO_CONTAINER' in os.environ:
+            from yahpo_gym.local_config import LocalConfiguration
+            local_config = LocalConfiguration()
+            local_config.init_config(data_path='/home/data/yahpo_data')
+            print(local_config.data_path)
+
         self.scenario = scenario
         self.instance = instance
         self.benchset = BenchmarkSet(scenario, active_session = True)
