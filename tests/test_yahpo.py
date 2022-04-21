@@ -27,5 +27,3 @@ def test_yahpo_init():
     assert result['function_value'] == pytest.approx(61.297, abs=0.1)
     assert result['cost'] == pytest.approx(119.4965, abs = 0.1)
     assert isinstance(result['info'], typing.Dict)
-    assert [k for k in result['info']['objectives'].keys()] == b.config.y_names
-
