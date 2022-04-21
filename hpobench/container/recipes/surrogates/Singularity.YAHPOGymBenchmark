@@ -8,6 +8,10 @@ VERSION v0.0.1
 %help
     This is a template for a Singularity recipe
 
+%environment
+    YAHPO_CONTAINER=1
+    export YAHPO_CONTAINER
+
 %post
     apt update -y
     apt install build-essential git wget -y
@@ -16,7 +20,6 @@ VERSION v0.0.1
 
     cd /home \
     && mkdir data && cd data \
-    && echo "data_path: /home/data/yahpo_data" > ~/.config/yahpo_gym \
     && git clone --depth 1 -b main https://github.com/pfistfl/yahpo_data.git\
 
     cd /home \

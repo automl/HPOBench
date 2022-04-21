@@ -32,8 +32,7 @@ Changelog:
 0.0.1:
 * First implementation
 """
-
-import warnings
+import os
 import logging
 from typing import Union, Dict
 
@@ -41,7 +40,6 @@ import ConfigSpace as CS
 import numpy as np
 
 from yahpo_gym.benchmark_set import BenchmarkSet
-import yahpo_gym.benchmarks
 
 from hpobench.abstract_benchmark import AbstractBenchmark
 __version__ = '0.0.1'
@@ -54,7 +52,8 @@ class YAHPOGymBenchmark(AbstractBenchmark):
     def __init__(self, scenario: str, instance: str, objective: str = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         """
-        For a list of available scenarios and instances see 'https://slds-lmu.github.io/yahpo_gym/scenarios.html' 
+        For a list of available scenarios and instances see
+        'https://slds-lmu.github.io/yahpo_gym/scenarios.html'
         Parameters
         ----------
         scenario : str
@@ -67,16 +66,23 @@ class YAHPOGymBenchmark(AbstractBenchmark):
             Initialized to None, picks the first element in y_names.
         rng : np.random.RandomState, int, None
         """
+
+        # When in the containerized version, redirect to the data inside the container.
+        if 'YAHPO_CONTAINER' in os.environ:
+            from yahpo_gym.local_config import LocalConfiguration
+            local_config = LocalConfiguration()
+            local_config.init_config(data_path='/home/data/yahpo_data')
+
         self.scenario = scenario
         self.instance = instance
-        self.benchset = BenchmarkSet(scenario, active_session = True)
+        self.benchset = BenchmarkSet(scenario, active_session=True)
         self.benchset.set_instance(instance)
         self.objective = objective
         logger.info(f'Start Benchmark for scenario {scenario} and instance {instance}')
         super(YAHPOGymBenchmark, self).__init__(rng=rng)
 
     def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        return self.benchset.get_opt_space(drop_fidelity_params = True)
+        return self.benchset.get_opt_space(drop_fidelity_params=True)
 
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         return self.benchset.get_fidelity_space()
@@ -89,7 +95,7 @@ class YAHPOGymBenchmark(AbstractBenchmark):
         # No batch predicts, so we can grab the first item
         out = self.benchset.objective_function({**configuration, **fidelity})[0]
         # Convert to float for serialization
-        out = {k:float(v) for k,v in out.items()}
+        out = {k: float(v) for k, v in out.items()}
 
         # Get runtime name
         cost = out[self.benchset.config.runtime_name]
@@ -101,22 +107,25 @@ class YAHPOGymBenchmark(AbstractBenchmark):
 
         return {'function_value': obj_value,
                 "cost": cost,
-                'info': {'fidelity': fidelity, 'objectives':out}}
+                'info': {'fidelity': fidelity, 'objectives': out}}
 
     @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
-                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) \
+            -> Dict:
         return self.objective_function(configuration, fidelity=fidelity, rng=rng)
-
 
     @staticmethod
     def get_meta_information():
         """ Returns the meta information for the benchmark """
         return {'name': 'YAHPO Gym',
                 'references': ['@misc{pfisterer2021yahpo,',
-                               'title={YAHPO Gym -- Design Criteria and a new Multifidelity Benchmark for Hyperparameter Optimization},',
-                               'author    = {Florian Pfisterer and Lennart Schneider and Julia Moosbauer and Martin Binder and Bernd Bischl},',
+                               'title={YAHPO Gym -- Design Criteria and a new Multifidelity '
+                               '       Benchmark for Hyperparameter Optimization},',
+                               'author    = {Florian Pfisterer and Lennart Schneider and'
+                               '             Julia Moosbauer and Martin Binder'
+                               '             and Bernd Bischl},',
                                'eprint={2109.03670},',
                                'archivePrefix={arXiv},',
                                'year      = {2021}}'],
