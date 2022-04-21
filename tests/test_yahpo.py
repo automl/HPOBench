@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def test_yahpo_init():
-    benchmark = YAHPOGymBenchmark(scenario="lcbench",  instance = "167152", objective = "val_accuracy")
+    b = YAHPOGymBenchmark(scenario="lcbench",  instance="167152", objective="val_accuracy")
 
     fs = b.get_fidelity_space(seed = 0)
     fidelity = fs.sample_configuration().get_dictionary()
