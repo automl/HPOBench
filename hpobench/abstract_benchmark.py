@@ -251,3 +251,73 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
 
         """
         raise NotImplementedError()
+
+
+class AbstractMultiObjectiveBenchmark(AbstractBenchmark):
+    """
+    Abstract Benchmark class for multi-objective benchmarks.
+    The only purpose of this class is to point out to users that this benchmark returns multiple
+    objective function values.
+
+    When writing a benchmark, please make sure to inherit from the correct abstract class.
+    """
+    @abc.abstractmethod
+    def objective_function(self, configuration: Union[ConfigSpace.Configuration, Dict],
+                           fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
+                           rng: Union[np.random.RandomState, int, None] = None,
+                           **kwargs) -> Dict:
+        """
+        Objective function.
+
+        Override this function to provide your multi-objective benchmark function. This
+        function will be called by one of the evaluate functions. For
+        flexibility, you have to return a dictionary with the only mandatory
+        key being `function_values`, the objective function values for the
+        `configuration` which was passed. By convention, all benchmarks are
+        minimization problems.
+
+        `function_value` is a dictionary that contains all available criteria.
+
+        Parameters
+        ----------
+        configuration : Dict
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        rng : np.random.RandomState, int, None
+            It might be useful to pass a `rng` argument to the function call to
+            bypass the default "seed" generator. Only using the default random
+            state (`self.rng`) could lead to an overfitting towards the
+            `self.rng`'s seed.
+
+        Returns
+        -------
+        Dict
+            Must contain at least the key `function_value` and `cost`.
+            Note that `function_value` should be a Dict here.
+        """
+        NotImplementedError()
+
+    @abc.abstractmethod
+    def objective_function_test(self, configuration: Union[ConfigSpace.Configuration, Dict],
+                                fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
+                                rng: Union[np.random.RandomState, int, None] = None,
+                                **kwargs) -> Dict:
+        """
+        If there is a different objective function for offline testing, e.g
+        testing a machine learning on a hold extra test set instead
+        on a validation set override this function here.
+
+        Parameters
+        ----------
+        configuration : Dict
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        rng : np.random.RandomState, int, None
+            see :py:func:`~HPOBench.abstract_benchmark.objective_function`
+
+        Returns
+        -------
+        Dict
+            Must contain at least the key `function_value` and `cost`.
+        """
+        NotImplementedError()
