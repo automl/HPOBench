@@ -37,4 +37,4 @@ def test_ae():
     print(config['dropout_rate'], result['function_value'])
 
     # assert config['dropout_rate'] == pytest.approx(0.69512, abs=0.00001)
-    assert result['function_value'] == pytest.approx(0.81378, abs=0.0001)
+    assert result['function_value'] == pytest.approx(0.81349, abs=0.0001)
