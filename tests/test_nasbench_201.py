@@ -84,10 +84,11 @@ def test_nasbench201_config():
     func = Cifar10ValidNasBench201Benchmark.config_to_structure_func(4)
     struct = func(c)
 
-    assert struct.__repr__() == '_Structure(4 nodes with |avg_pool_3x3~0|+|none~0|nor_conv_3x3~1|+' \
-                                '|nor_conv_3x3~0|nor_conv_3x3~1|skip_connect~2|)'
+    assert struct.__repr__() == '_Structure(4 nodes with |nor_conv_1x1~0|+|nor_conv_3x3~0|nor_conv_3x3~1|+' \
+                                '|nor_conv_1x1~0|nor_conv_1x1~1|nor_conv_3x3~2|)'
     assert len(struct) == 4
-    assert struct[0] == (('avg_pool_3x3', 0),)
+    assert struct[0] == (('nor_conv_1x1', 0),)
 
     struct_str = struct.tostr()
-    assert struct_str == '|avg_pool_3x3~0|+|none~0|nor_conv_3x3~1|+|nor_conv_3x3~0|nor_conv_3x3~1|skip_connect~2|'
+    assert struct_str == '|nor_conv_1x1~0|+|nor_conv_3x3~0|nor_conv_3x3~1|+' \
+                         '|nor_conv_1x1~0|nor_conv_1x1~1|nor_conv_3x3~2|'
