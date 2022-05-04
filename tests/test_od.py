@@ -41,4 +41,4 @@ def test_ae():
                    'weight_decay': 0.07358821063486902, 'num_units_layer_1': 16}
 
     result = benchmark.objective_function(configuration=test_config, rng=seed)
-    assert result['function_value'] == pytest.approx(0.81363, abs=0.0001)
+    assert result['function_value'] == pytest.approx(0.81378, abs=0.0001)
