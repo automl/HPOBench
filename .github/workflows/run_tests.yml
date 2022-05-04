@@ -11,10 +11,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - python-version: 3.6
-            DISPLAY_NAME: "Singularity Tests"
-            RUN_TESTS: true
-            USE_SINGULARITY: true
           - python-version: 3.7
             DISPLAY_NAME: "Singularity Tests + CODECOV"
             RUN_TESTS: true
