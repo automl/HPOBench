@@ -126,7 +126,11 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
             # All benchmarks should work on dictionaries. Cast the both objects to dictionaries.
             return_values = wrapped_function(self, configuration.get_dictionary(), fidelity.get_dictionary(), **kwargs)
 
-            return_values = AbstractBenchmark._check_return_values(return_values)
+            # Make sure that every benchmark returns a well-shaped return object.
+            # Every benchmark have to have the fields 'function_value' and 'cost'.
+            # Multi-Objective benchmarks have to return collections of values for the 'function_value' field.
+            return_values = type(self)._check_return_values(return_values)
+            return return_values
         return wrapper
 
     @staticmethod
