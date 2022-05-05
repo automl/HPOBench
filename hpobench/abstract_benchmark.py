@@ -311,7 +311,7 @@ class AbstractMultiObjectiveBenchmark(AbstractBenchmark):
             Must contain at least the key `function_value` and `cost`.
             Note that `function_value` should be a Dict here.
         """
-        NotImplementedError()
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def objective_function_test(self, configuration: Union[ConfigSpace.Configuration, Dict],
@@ -336,7 +336,7 @@ class AbstractMultiObjectiveBenchmark(AbstractBenchmark):
         Dict
             Must contain at least the key `function_value` and `cost`.
         """
-        NotImplementedError()
+        raise NotImplementedError()
 
     @staticmethod
     def _check_return_values(return_values: Dict) -> Dict:
@@ -355,4 +355,4 @@ class AbstractMultiObjectiveBenchmark(AbstractBenchmark):
         """
         Return the names of supported targets
         """
-        NotImplementedError()
+        raise NotImplementedError()
