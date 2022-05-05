@@ -1,6 +1,9 @@
 # 0.0.11
   * Drop Support for 3.6:
     Although most of the functionality should still work, we drop the official support for 3.6.
+  * Add an interface for Multi-Objective Benchmarks.
+  * Add a check for the return values of the objective_functions
+    The returned dictionary of the objective functions have to fulfill now some criteria. 
 
 # 0.0.10
   * Cartpole Benchmark Version 0.0.4:
