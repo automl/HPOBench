@@ -53,8 +53,8 @@ class Net(nn.Module):
         super(Net, self).__init__()
         inp_ch = input_shape[0]
         layers = []
-        for i in range(config['n_conv_layer']):
-            out_ch = config['n_conv_{}'.format(i)]
+        for i in range(config['n_conv_layers']):
+            out_ch = config['conv_layer_{}'.format(i)]
             ks = config['kernel_size']
             layers.append(nn.Conv2d(inp_ch, out_ch, kernel_size=ks, padding=(ks - 1) // 2))
             layers.append(nn.ReLU())
@@ -72,8 +72,8 @@ class Net(nn.Module):
         inp_n = self._get_conv_output(input_shape)
 
         layers = [nn.Flatten()]
-        for i in range(config['n_fc_l']):
-            out_n = config['n_fc_{}'.format(i)]
+        for i in range(config['n_fc_layers']):
+            out_n = config['fc_layer_{}'.format(i)]
 
             layers.append(nn.Linear(inp_n, out_n))
             layers.append(nn.ReLU())
@@ -168,7 +168,8 @@ class CNNBenchmark(AbstractBenchmark):
         assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
                                             f'{", ".join(allowed_datasets)}, but was {dataset}'
         logger.info(f'Start Benchmark on dataset {dataset}')
-
+        
+        self.dataset=dataset
         # Dataset loading
 
         data_manager = CNNDataManager(dataset=self.dataset)
@@ -185,25 +186,25 @@ class CNNBenchmark(AbstractBenchmark):
                 'n_conv_layers', default_value=3, lower=1, upper=3, log=False
             ),
             CS.UniformIntegerHyperparameter(
+                'conv_layer_0', default_value=128, lower=16, upper=1024, log=True
+            ),
+            CS.UniformIntegerHyperparameter(
                 'conv_layer_1', default_value=128, lower=16, upper=1024, log=True
             ),
             CS.UniformIntegerHyperparameter(
                 'conv_layer_2', default_value=128, lower=16, upper=1024, log=True
             ),
             CS.UniformIntegerHyperparameter(
-                'conv_layer_3', default_value=128, lower=16, upper=1024, log=True
+                'n_fc_layers', default_value=3, lower=1, upper=3, log=False
             ),
             CS.UniformIntegerHyperparameter(
-                'n_fc_layers', default_value=3, lower=1, upper=3, log=False
+                'fc_layer_0', default_value=32, lower=2, upper=512, log=True
             ),
             CS.UniformIntegerHyperparameter(
                 'fc_layer_1', default_value=32, lower=2, upper=512, log=True
             ),
             CS.UniformIntegerHyperparameter(
                 'fc_layer_2', default_value=32, lower=2, upper=512, log=True
-            ),
-            CS.UniformIntegerHyperparameter(
-                'fc_layer_3', default_value=32, lower=2, upper=512, log=True
             ),
             CS.UniformIntegerHyperparameter(
                 'batch_size', lower=1, upper=512, default_value=128, log=True
@@ -244,7 +245,7 @@ class CNNBenchmark(AbstractBenchmark):
         fidelity1 = dict(
             fixed=CS.Constant('budget', value=50),
             variable=CS.UniformIntegerHyperparameter(
-                'iter', lower=1, upper=50, default_value=50, log=False
+                'budget', lower=1, upper=50, default_value=50, log=False
             )
         )
         fidelity2 = dict(
@@ -253,9 +254,9 @@ class CNNBenchmark(AbstractBenchmark):
                 'subsample', lower=0.1, upper=1, default_value=1, log=False
             )
         )
-        iter = fidelity1[iter_choice]
+        budget = fidelity1[iter_choice]
         subsample = fidelity2[subsample_choice]
-        return iter, subsample
+        return budget, subsample
 
     @staticmethod
     def get_meta_information() -> Dict:
@@ -280,7 +281,9 @@ class CNNBenchmark(AbstractBenchmark):
 
         if isinstance(config, CS.Configuration):
             config = config.get_dictionary()
-        return Net(config)
+        if isinstance(fidelity, CS.Configuration):
+            fidelity = config.get_dictionary()
+        return Net(config, (3, 16, 16), 17)
 
     @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
@@ -328,19 +331,19 @@ class CNNBenchmark(AbstractBenchmark):
                     used fidelities in this evaluation
         """
         self.rng = rng_helper.get_rng(rng)
-
+        print("fid",fidelity)
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         # initializing model
         model = self.init_model(configuration, fidelity, rng).to(device)
-        epochs = fidelity['epoch'] - 1
+        epochs = fidelity['budget'] - 1
 
-        optimizer = torch.optim.Adam(model.parameters(), lr=configuration['lr_init'])
+        optimizer = torch.optim.Adam(model.parameters(), lr=configuration['learning_rate_init'])
         criterion = torch.nn.CrossEntropyLoss()
         
         self.X_train = torch.tensor(self.X_train).float()
         self.X_train = self.X_train.permute(0, 3, 1, 2)
         self.y_train = torch.tensor(self.y_train).long()
-        self.y_train = self.y_train.permute(0, 3, 1, 2)
+        
 
         ds_train = torch.utils.data.TensorDataset(self.X_train, self.y_train)
         ds_train = torch.utils.data.DataLoader(ds_train, batch_size=configuration['batch_size'], shuffle=True)
@@ -348,14 +351,14 @@ class CNNBenchmark(AbstractBenchmark):
         self.X_valid = torch.tensor(self.X_valid).float()
         self.X_valid = self.X_valid.permute(0, 3, 1, 2)
         self.y_valid = torch.tensor(self.y_valid).long()
-        self.y_valid = self.y_valid.permute(0, 3, 1, 2)
+        
         ds_val = torch.utils.data.TensorDataset(self.X_valid, self.y_valid)
         ds_val = torch.utils.data.DataLoader(ds_val, batch_size=configuration['batch_size'], shuffle=True)
 
         self.X_test = torch.tensor(self.X_test).float()
         self.X_test = self.X_test.permute(0, 3, 1, 2)
         self.y_test = torch.tensor(self.y_test).long()
-        self.y_test = self.y_test.permute(0, 3, 1, 2)
+        
         ds_test = torch.utils.data.TensorDataset(self.X_test, self.y_test)
         ds_test = torch.utils.data.DataLoader(ds_test, batch_size=configuration['batch_size'], shuffle=True)
 
@@ -457,20 +460,20 @@ class CNNBenchmark(AbstractBenchmark):
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         # initializing model
         model = self.init_model(configuration, fidelity, rng).to(device)
-        epochs = fidelity['epoch'] - 1
+        epochs = fidelity['budget'] - 1
 
-        optimizer = torch.optim.Adam(model.parameters(), lr=configuration['lr_init'])
+        optimizer = torch.optim.Adam(model.parameters(), lr=configuration['learning_rate_init'])
         criterion = torch.nn.CrossEntropyLoss()
 
         train_X = torch.tensor(train_X).float()
         train_X = train_X.permute(0, 3, 1, 2)
         self.y_train = torch.tensor(self.y_train).long()
-        self.y_train = self.y_train.permute(0, 3, 1, 2)
+        
 
         self.X_test = torch.tensor(self.X_test).float()
         self.X_test = self.X_test.permute(0, 3, 1, 2)
         self.y_test = torch.tensor(self.y_test).long()
-        self.y_test = self.y_test.permute(0, 3, 1, 2)
+        
         
 
         ds_train = torch.utils.data.TensorDataset(train_X, self.y_train)
