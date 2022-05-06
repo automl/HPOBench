@@ -37,7 +37,6 @@ try:
 except ImportError:
     print("pandas is not installed, can't download datasets for the ml.tabular_benchmarks (not needed for containers)")
 
-
 import hpobench
 
 
@@ -845,32 +844,29 @@ class ProteinStructureData(HoldoutDataManager):
         X_train, y_train = data[:n_train, 1:], data[:n_train, 0]
         X_val, y_val = data[n_train:n_train + n_val, 1:], data[n_train:n_train + n_val, 0]
         X_test, y_test = data[n_train + n_val:, 1:], data[n_train + n_val:, 0]
-
         return X_train, y_train, X_val, y_val, X_test, y_test
+
+
 class CNNDataManager(HoldoutDataManager):
 
-    def __init__(self,dataset:str ):
-        
-        super(CNNDataManager,self).__init__()
+    def __init__(self, dataset: str):
+
+        super(CNNDataManager, self).__init__()
         self.logger.debug('CNNDataManager: Starting to load data')
 
         allowed_datasets = ["fashion", "flower"]
         assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
                                             f'{", ".join(allowed_datasets)}, but was {dataset}'
 
-
         self.url_source = f'https://github.com/ayushi-3536/DatasetHost/blob/main/{dataset}.tar.gz?raw=true'
-        print(self.url_source)
         self.dataset = dataset
         self.save_dir = hpobench.config_file.data_dir / "CNN" / f'{dataset}'
-        print(self.save_dir)
         self.compressed_data = self.save_dir / f'{dataset}.tar.gz'
-        print(self.compressed_data)
         self.create_save_directory(self.save_dir)
 
     def load(self):
         """
-        Loads BostonHousing from data directory as defined in hpobenchrc.data_directory.
+        Loads CNN Benchmark from data directory as defined in hpobenchrc.data_directory.
         Downloads data if necessary.
 
         Returns
@@ -882,12 +878,9 @@ class CNNDataManager(HoldoutDataManager):
         X_test: np.ndarray
         y_test: np.ndarray
         """
-        
+
         t = time()
-
         self._download()
-
-
         X_trn, y_trn, X_val, y_val, X_tst, y_tst = self._load()
         self.logger.info(f'CNNDataManager: Data successfully loaded after {time() - t:.2f}')
 
@@ -896,7 +889,7 @@ class CNNDataManager(HoldoutDataManager):
     @lockutils.synchronized('not_thread_process_safe', external=True,
                             lock_path=f'{hpobench.config_file.cache_dir}/lock_protein_structure_data', delay=0.5)
     def _download(self):
-    
+
         # Check if data is already downloaded.
         # Use a file lock to ensure that no two processes try to download the same files at the same time.
         if (self.compressed_data).exists():
@@ -909,7 +902,7 @@ class CNNDataManager(HoldoutDataManager):
             urlretrieve(self.url_source, self.compressed_data)
             tar = tarfile.open(self.compressed_data)
             tar.extractall(self.save_dir)
-    
+
     def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Load the data from file and split it into train, test and validation split.
@@ -923,19 +916,17 @@ class CNNDataManager(HoldoutDataManager):
         X_test: np.ndarray
         y_test: np.ndarray
         """
-        #path = lambda x: str(pathlib.Path(__file__).parent.absolute().joinpath('data').joinpath(x))
-        
+
         data_extract_path = self.save_dir / "data"
         X_train = np.load(data_extract_path / 'x_train.npy')
         y_train = np.load(data_extract_path / 'y_train.npy')
-       
+
         X_val = np.load(data_extract_path / 'x_val.npy')
         y_val = np.load(data_extract_path / 'y_val.npy')
 
         # Read Test datasets
         X_test = np.load(data_extract_path / 'x_test.npy')
         y_test = np.load(data_extract_path / 'y_test.npy')
-        
 
         return X_train, y_train, X_val, y_val, X_test, y_test
 
