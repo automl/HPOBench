@@ -103,7 +103,6 @@ class YAHPOGymMOBenchmark(AbstractMultiObjectiveBenchmark):
                 "cost": cost,
                 'info': {'fidelity': fidelity}}
 
-    @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) \

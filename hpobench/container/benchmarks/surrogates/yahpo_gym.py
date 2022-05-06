@@ -11,7 +11,7 @@ class YAHPOGymBenchmark(AbstractBenchmarkClient):
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
         super(YAHPOGymBenchmark, self).__init__(**kwargs)
 
-
+        
 class YAHPOGymMOBenchmark(AbstractMOBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'YAHPOGymMOBenchmark')
