@@ -22,8 +22,8 @@ import time
 
 __version__ = '0.0.1'
 
-
 logger = logging.getLogger('MO_CNN')
+
 
 class AccuracyTop1:
 
@@ -159,6 +159,7 @@ class CNNBenchmark(AbstractBenchmark):
         rng : np.random.RandomState, int, None
             Random seed for the benchmark's random state.
     """
+
     def __init__(self, dataset: str,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         super(CNNBenchmark, self).__init__(rng=rng)
@@ -170,9 +171,8 @@ class CNNBenchmark(AbstractBenchmark):
 
         # Dataset loading
 
-        self.dataset = dataset
         data_manager = CNNDataManager(dataset=self.dataset)
-        self.data = data_manager.load()
+        self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test = data_manager.load()
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -260,16 +260,16 @@ class CNNBenchmark(AbstractBenchmark):
     @staticmethod
     def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
-        return {'name': 'Bag of baselines for multi-objective joint neural architecture search and hyperparameter optimization',
-                'references': ['@article{guerrero2021bag,'
-                               'title   = {Bag of baselines for multi - objective joint neural architecture search and hyperparameter optimization},'
-                               'author  = {Guerrero-Viu, Julia and Hauns, Sven and Izquierdo, Sergio and Miotto, Guilherme and Schrodi, Simon and Biedenkapp, Andre and Elsken, Thomas and Deng, Difan and Lindauer, Marius and Hutter, Frank},},'
-                               'journal = {arXiv preprint arXiv:2105.01015},'
-                               'year    = {2021}}',
-                               ],
-                'code': 'https://github.com/automl/multi-obj-baselines',
-                }
-
+        return {
+            'name': 'Bag of baselines for multi-objective joint neural architecture search and hyperparameter optimization',
+            'references': ['@article{guerrero2021bag,'
+                           'title   = {Bag of baselines for multi - objective joint neural architecture search and hyperparameter optimization},'
+                           'author  = {Guerrero-Viu, Julia and Hauns, Sven and Izquierdo, Sergio and Miotto, Guilherme and Schrodi, Simon and Biedenkapp, Andre and Elsken, Thomas and Deng, Difan and Lindauer, Marius and Hutter, Frank},},'
+                           'journal = {arXiv preprint arXiv:2105.01015},'
+                           'year    = {2021}}',
+                           ],
+            'code': 'https://github.com/automl/multi-obj-baselines',
+        }
 
     def init_model(self, config: Union[CS.Configuration, Dict],
                    fidelity: Union[CS.Configuration, Dict, None] = None,
@@ -329,16 +329,6 @@ class CNNBenchmark(AbstractBenchmark):
         """
         self.rng = rng_helper.get_rng(rng)
 
-        train_X = self.train_X
-        train_y = self.train_y
-        train_idx = self.train_idx
-
-        # shuffling data
-        if shuffle:
-            train_idx = self.shuffle_data_idx(train_idx, rng)
-            train_X = train_X.iloc[train_idx]
-            train_y = train_y.iloc[train_idx]
-
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         # initializing model
         model = self.init_model(configuration, fidelity, rng).to(device)
@@ -346,14 +336,27 @@ class CNNBenchmark(AbstractBenchmark):
 
         optimizer = torch.optim.Adam(model.parameters(), lr=configuration['lr_init'])
         criterion = torch.nn.CrossEntropyLoss()
+        
+        self.X_train = torch.tensor(self.X_train).float()
+        self.X_train = self.X_train.permute(0, 3, 1, 2)
+        self.y_train = torch.tensor(self.y_train).long()
+        self.y_train = self.y_train.permute(0, 3, 1, 2)
 
-        ds_train = torch.utils.data.TensorDataset(train_X, train_y)
+        ds_train = torch.utils.data.TensorDataset(self.X_train, self.y_train)
         ds_train = torch.utils.data.DataLoader(ds_train, batch_size=configuration['batch_size'], shuffle=True)
 
-        ds_val = torch.utils.data.TensorDataset(self.valid_X, self.valid_Y)
+        self.X_valid = torch.tensor(self.X_valid).float()
+        self.X_valid = self.X_valid.permute(0, 3, 1, 2)
+        self.y_valid = torch.tensor(self.y_valid).long()
+        self.y_valid = self.y_valid.permute(0, 3, 1, 2)
+        ds_val = torch.utils.data.TensorDataset(self.X_valid, self.y_valid)
         ds_val = torch.utils.data.DataLoader(ds_val, batch_size=configuration['batch_size'], shuffle=True)
 
-        ds_test = torch.utils.data.TensorDataset(self.test_X, self.test_Y)
+        self.X_test = torch.tensor(self.X_test).float()
+        self.X_test = self.X_test.permute(0, 3, 1, 2)
+        self.y_test = torch.tensor(self.y_test).long()
+        self.y_test = self.y_test.permute(0, 3, 1, 2)
+        ds_test = torch.utils.data.TensorDataset(self.X_test, self.y_test)
         ds_test = torch.utils.data.DataLoader(ds_test, batch_size=configuration['batch_size'], shuffle=True)
 
         start = time.time()
@@ -448,15 +451,8 @@ class CNNBenchmark(AbstractBenchmark):
 
         self.rng = rng_helper.get_rng(rng)
 
-        train_X = np.vstack((self.train_X, self.valid_X))
-        train_y = pd.concat((self.train_y, self.valid_y))
-        train_idx = np.arange(len(train_X))
-
-        # shuffling data
-        if shuffle:
-            train_idx = self.shuffle_data_idx(train_idx, rng)
-            train_X = train_X.iloc[train_idx]
-            train_y = train_y.iloc[train_idx]
+        train_X = np.vstack((self.X_train, self.X_valid))
+        self.y_train = pd.concat((self.y_train, self.y_valid))
 
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         # initializing model
@@ -466,10 +462,21 @@ class CNNBenchmark(AbstractBenchmark):
         optimizer = torch.optim.Adam(model.parameters(), lr=configuration['lr_init'])
         criterion = torch.nn.CrossEntropyLoss()
 
-        ds_train = torch.utils.data.TensorDataset(train_X, train_y)
+        train_X = torch.tensor(train_X).float()
+        train_X = train_X.permute(0, 3, 1, 2)
+        self.y_train = torch.tensor(self.y_train).long()
+        self.y_train = self.y_train.permute(0, 3, 1, 2)
+
+        self.X_test = torch.tensor(self.X_test).float()
+        self.X_test = self.X_test.permute(0, 3, 1, 2)
+        self.y_test = torch.tensor(self.y_test).long()
+        self.y_test = self.y_test.permute(0, 3, 1, 2)
+        
+
+        ds_train = torch.utils.data.TensorDataset(train_X, self.y_train)
         ds_train = torch.utils.data.DataLoader(ds_train, batch_size=configuration['batch_size'], shuffle=True)
 
-        ds_test = torch.utils.data.TensorDataset(self.test_X, self.test_Y)
+        ds_test = torch.utils.data.TensorDataset(self.X_test, self.y_test)
         ds_test = torch.utils.data.DataLoader(ds_test, batch_size=configuration['batch_size'], shuffle=True)
 
         start = time.time()
