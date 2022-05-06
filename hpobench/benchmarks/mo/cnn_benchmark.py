@@ -212,13 +212,13 @@ class CNNBenchmark(AbstractBenchmark):
                 'learning_rate_init', lower=10 ** -5, upper=1, default_value=10 ** -3, log=True
             ),
             CS.CategoricalHyperparameter(
-                'batch_norm', default_value=False, choices=[False, True], log=False
+                'batch_norm', default_value=False, choices=[False, True]
             ),
             CS.CategoricalHyperparameter(
-                'global_avg_pooling', default_value=True, choices=[False, True], log=False
+                'global_avg_pooling', default_value=True, choices=[False, True]
             ),
             CS.CategoricalHyperparameter(
-                'kernel_size', default_value=5, choices=[7, 5, 3], log=False
+                'kernel_size', default_value=5, choices=[7, 5, 3]
             )
 
         ])
