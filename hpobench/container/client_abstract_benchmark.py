@@ -22,8 +22,7 @@ import logging
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional
-from typing import Union, Dict
+from typing import Optional, Union, Dict, List, Tuple
 from uuid import uuid1
 
 import ConfigSpace as CS
@@ -512,3 +511,9 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
     def _id_generator() -> str:
         """ Helper function: Creates unique socket ids for the benchmark server """
         return str(uuid1())
+
+
+class AbstractMOBenchmarkClient(AbstractBenchmarkClient):
+    def get_objective_names(self) -> Union[Tuple, List, Dict]:
+        json_str = self.benchmark.get_objective_names()
+        return json.loads(json_str, cls=BenchmarkDecoder)
