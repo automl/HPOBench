@@ -1,0 +1,36 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+%labels
+MAINTAINER sharmaa@informatik.uni-freiburg.de
+VERSION v0.0.1
+
+%post
+    apt update -y
+    apt install build-essential git wget -y
+
+    cd /home \
+    && mkdir data && cd data \
+    && echo "Here you could download data e.g. using wget" \
+    && wget https://github.com/ayushi-3536/DatasetHost/blob/main/flower.tar.gz?raw=true
+    && wget https://github.com/ayushi-3536/DatasetHost/blob/main/fashion.tar.gz?raw=true
+    cd /home \
+    && echo "Here you can install everything you need, e.g. dependencies not available on pypi" \
+    && echo "Next, we clone and install HPOBench" \
+    && git clone https://github.com/ayushi-3536/HPOBench.git \
+    && cd HPOBench \
+    && echo "Please never push a recipe that checks out any other branch than development or master" \
+    && git checkout mo_cnn \
+    && echo "Here you can install extra requirements additional to singularity" \
+    && pip install .[mo_cnn] \
+    && echo "Please don't touch the following lines"
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/ \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge
+
+    echo "Finally, please change the benchmark in the runscript to point to your benchmark"
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py mo.cnn_benchmark $@
