@@ -5,7 +5,7 @@ Changelog:
 0.0.1:
 * First implementation of the Multi-Objective CNN Benchmark.
 """
-
+import pathlib
 from typing import Union, Tuple, Dict, List
 import ConfigSpace as CS
 import numpy as np
@@ -161,8 +161,6 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
     """
 
     def __init__(self, dataset: str,
-                 input_size: Tuple,
-                 output_class: int,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         super(CNNBenchmark, self).__init__(rng=rng)
 
@@ -173,11 +171,9 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         self.dataset = dataset
         # Dataset loading
+
         data_manager = CNNDataManager(dataset=self.dataset)
         self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test = data_manager.load()
-
-        self.input_size = input_size
-        self.output_class = output_class
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -238,12 +234,13 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
-            CNNBenchmark._get_fidelity_choices(epoch_choice='variable')
+            # gray-box setting (multi-multi-fidelity) - iterations + data subsample
+            CNNBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='variable')
         )
         return fidelity_space
 
     @staticmethod
-    def _get_fidelity_choices(epoch_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
+    def _get_fidelity_choices(iter_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
 
         fidelity1 = dict(
             fixed=CS.Constant('budget', value=50),
@@ -251,8 +248,15 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
                 'budget', lower=1, upper=50, default_value=50, log=False
             )
         )
-        budget = fidelity1[epoch_choice]
-        return budget
+        fidelity2 = dict(
+            fixed=CS.Constant('subsample', value=1),
+            variable=CS.UniformFloatHyperparameter(
+                'subsample', lower=0.1, upper=1, default_value=1, log=False
+            )
+        )
+        budget = fidelity1[iter_choice]
+        subsample = fidelity2[subsample_choice]
+        return budget, subsample
 
     @staticmethod
     def get_meta_information() -> Dict:
@@ -277,7 +281,9 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         if isinstance(config, CS.Configuration):
             config = config.get_dictionary()
-        return Net(config, self.input_size, self.output_class)
+        if isinstance(fidelity, CS.Configuration):
+            fidelity = config.get_dictionary()
+        return Net(config, (3, 16, 16), 17)
 
     @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
@@ -374,7 +380,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
             train_acc=train_accuracy,
             val_acc=val_accuracy,
             tst_acc=test_accuracy,
-            len=num_params,
+            len=np.log10(num_params),
             train_runtime=training_runtime,
             eval_valid_runtime=eval_valid_runtime,
             eval_test_runtime=eval_test_runtime,
@@ -487,7 +493,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         t.set_postfix(
             train_acc=train_accuracy,
             tst_acc=test_accuracy,
-            len=num_params,
+            len=np.log10(num_params),
             eval_train_runtime=training_runtime,
             eval_test_runtime=eval_test_runtime,
 
@@ -511,15 +517,13 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 class FashionCNNBenchmark(CNNBenchmark):
 
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        super(FashionCNNBenchmark, self).__init__(dataset='fashion', input_size=(3, 16, 16), output_classes=17, rng=rng,
-                                                  **kwargs)
+        super(FashionCNNBenchmark, self).__init__(dataset='fashion', rng=rng, **kwargs)
 
 
 class FlowerCNNBenchmark(CNNBenchmark):
 
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        super(FlowerCNNBenchmark, self).__init__(dataset='flower', input_size=(3, 28, 28), output_classes=10, rng=rng,
-                                                 **kwargs)
+        super(FlowerCNNBenchmark, self).__init__(dataset='flower', rng=rng, **kwargs)
 
 
 __all__ = ["FashionCNNBenchmark",
