@@ -214,6 +214,7 @@ class ODTraditional(AbstractBenchmark):
         fidel_space = CS.ConfigurationSpace(seed=seed)
         return fidel_space
 
+    # pylint: disable=arguments-differ
     def get_meta_information(self):
         """ Returns the meta information for the benchmark """
         X_train, y_train = self.datamanager.dataset.get_train_data()
