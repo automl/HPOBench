@@ -14,7 +14,6 @@ VERSION v0.0.1
     && echo "Here you could download data e.g. using wget" \
     && wget https://github.com/ayushi-3536/DatasetHost/blob/main/flower.tar.gz?raw=true \
     && wget https://github.com/ayushi-3536/DatasetHost/blob/main/fashion.tar.gz?raw=true \
-    cd /home \
     && echo "Here you can install everything you need, e.g. dependencies not available on pypi" \
     && echo "Next, we clone and install HPOBench" \
     && git clone https://github.com/ayushi-3536/HPOBench.git \
