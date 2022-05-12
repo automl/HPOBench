@@ -887,7 +887,7 @@ class CNNDataManager(HoldoutDataManager):
         return X_trn, y_trn, X_val, y_val, X_tst, y_tst
 
     @lockutils.synchronized('not_thread_process_safe', external=True,
-                            lock_path=f'{hpobench.config_file.cache_dir}/lock_protein_structure_data', delay=0.5)
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_mo_cnn_data', delay=0.5)
     def _download(self):
 
         # Check if data is already downloaded.

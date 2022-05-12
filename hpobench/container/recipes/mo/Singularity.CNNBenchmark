@@ -13,7 +13,7 @@ VERSION v0.0.1
     && mkdir data && cd data \
     && wget https://github.com/ayushi-3536/DatasetHost/blob/main/flower.tar.gz?raw=true \
     && wget https://github.com/ayushi-3536/DatasetHost/blob/main/fashion.tar.gz?raw=true \
-    cd /home \
+    && cd /home \
     && git clone https://github.com/ayushi-3536/HPOBench.git \
     && cd HPOBench \
     && git checkout mo_cnn \

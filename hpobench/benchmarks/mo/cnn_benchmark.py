@@ -6,7 +6,7 @@ Changelog:
 * First implementation of the Multi-Objective CNN Benchmark.
 """
 import pathlib
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, List
 import ConfigSpace as CS
 import numpy as np
 import torch
@@ -16,7 +16,7 @@ import pandas as pd
 import logging
 from ConfigSpace.hyperparameters import Hyperparameter
 import hpobench.util.rng_helper as rng_helper
-from hpobench.abstract_benchmark import AbstractBenchmark
+from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark
 from hpobench.util.data_manager import CNNDataManager
 import time
 
@@ -150,7 +150,7 @@ class Net(nn.Module):
         return acc
 
 
-class CNNBenchmark(AbstractBenchmark):
+class CNNBenchmark(AbstractMultiObjectiveBenchmark):
     """
     Parameters
         ----------
@@ -168,8 +168,8 @@ class CNNBenchmark(AbstractBenchmark):
         assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
                                             f'{", ".join(allowed_datasets)}, but was {dataset}'
         logger.info(f'Start Benchmark on dataset {dataset}')
-        
-        self.dataset=dataset
+
+        self.dataset = dataset
         # Dataset loading
 
         data_manager = CNNDataManager(dataset=self.dataset)
@@ -226,7 +226,7 @@ class CNNBenchmark(AbstractBenchmark):
         return cs
 
     @staticmethod
-    def get_objectives():
+    def get_objective_names(self) -> List[str]:
         return ['accuracy', 'model_size']
 
     @staticmethod
@@ -285,7 +285,7 @@ class CNNBenchmark(AbstractBenchmark):
             fidelity = config.get_dictionary()
         return Net(config, (3, 16, 16), 17)
 
-    @AbstractBenchmark.check_parameters
+    @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[Dict, CS.Configuration, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
@@ -331,7 +331,6 @@ class CNNBenchmark(AbstractBenchmark):
                     used fidelities in this evaluation
         """
         self.rng = rng_helper.get_rng(rng)
-        print("fid",fidelity)
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         # initializing model
         model = self.init_model(configuration, fidelity, rng).to(device)
@@ -339,11 +338,10 @@ class CNNBenchmark(AbstractBenchmark):
 
         optimizer = torch.optim.Adam(model.parameters(), lr=configuration['learning_rate_init'])
         criterion = torch.nn.CrossEntropyLoss()
-        
+
         self.X_train = torch.tensor(self.X_train).float()
         self.X_train = self.X_train.permute(0, 3, 1, 2)
         self.y_train = torch.tensor(self.y_train).long()
-        
 
         ds_train = torch.utils.data.TensorDataset(self.X_train, self.y_train)
         ds_train = torch.utils.data.DataLoader(ds_train, batch_size=configuration['batch_size'], shuffle=True)
@@ -351,14 +349,14 @@ class CNNBenchmark(AbstractBenchmark):
         self.X_valid = torch.tensor(self.X_valid).float()
         self.X_valid = self.X_valid.permute(0, 3, 1, 2)
         self.y_valid = torch.tensor(self.y_valid).long()
-        
+
         ds_val = torch.utils.data.TensorDataset(self.X_valid, self.y_valid)
         ds_val = torch.utils.data.DataLoader(ds_val, batch_size=configuration['batch_size'], shuffle=True)
 
         self.X_test = torch.tensor(self.X_test).float()
         self.X_test = self.X_test.permute(0, 3, 1, 2)
         self.y_test = torch.tensor(self.y_test).long()
-        
+
         ds_test = torch.utils.data.TensorDataset(self.X_test, self.y_test)
         ds_test = torch.utils.data.DataLoader(ds_test, batch_size=configuration['batch_size'], shuffle=True)
 
@@ -405,7 +403,7 @@ class CNNBenchmark(AbstractBenchmark):
                          }
                 }
 
-    @AbstractBenchmark.check_parameters
+    @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
@@ -468,13 +466,10 @@ class CNNBenchmark(AbstractBenchmark):
         train_X = torch.tensor(train_X).float()
         train_X = train_X.permute(0, 3, 1, 2)
         self.y_train = torch.tensor(self.y_train).long()
-        
 
         self.X_test = torch.tensor(self.X_test).float()
         self.X_test = self.X_test.permute(0, 3, 1, 2)
         self.y_test = torch.tensor(self.y_test).long()
-        
-        
 
         ds_train = torch.utils.data.TensorDataset(train_X, self.y_train)
         ds_train = torch.utils.data.DataLoader(ds_train, batch_size=configuration['batch_size'], shuffle=True)
