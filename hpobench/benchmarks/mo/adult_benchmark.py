@@ -42,8 +42,8 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         data_manager = AdultDataManager()
         self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test = data_manager.load()
         self.output_class = np.unique(self.y_train)
-        self.feature_name = data_manager.feature_names
-        self.sensitive_features = data_manager.sensitive_names
+        self.feature_names = data_manager.feature_names
+        self.sensitive_feature = data_manager.sensitive_names
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -74,10 +74,10 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                 'learning_rate_init', lower=10 ** -5, upper=1, default_value=10 ** -3, log=True
             ),
             CS.UniformFloatHyperparameter(
-                'beta1', lower=10 ** -3, upper=0.99, default_value=10 ** -3, log=True
+                'beta_1', lower=10 ** -3, upper=0.99, default_value=10 ** -3, log=True
             ),
             CS.UniformFloatHyperparameter(
-                'beta2', lower=10 ** -3, upper=0.99, default_value=10 ** -3, log=True
+                'beta_2', lower=10 ** -3, upper=0.99, default_value=10 ** -3, log=True
             ),
             CS.UniformFloatHyperparameter(
                 'tol', lower=10 ** -5, upper=10 ** -2, default_value=10 ** -3, log=True
@@ -189,7 +189,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         sensitive_rows_test = self.X_test[:, self.feature_names.index(self.sensitive_feature)]
 
         # Normalize data
-        scaler = get_fitted_scaler(self.X_train, configuration["scaler"])
+        scaler = get_fitted_scaler(self.X_train, "Standard")
         if scaler is not None:
             X_train = scaler(self.X_train)
             X_val = scaler(self.X_valid)
@@ -198,6 +198,12 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         # Create model
         hidden = [configuration['fc_layer_0'], configuration['fc_layer_1'],
                   configuration['fc_layer_2'], configuration['fc_layer_3']][:configuration['n_fc_layers']]
+
+        configuration.pop("fc_layer_0")
+        configuration.pop("fc_layer_1")
+        configuration.pop("fc_layer_2")
+        configuration.pop("fc_layer_3")
+        configuration.pop("n_fc_layers")
         mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden)
 
         start = time.time()
@@ -210,7 +216,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         start = time.time()
         y_pred_valid = mlp.predict(X_val)
-        val_accuracy = accuracy_score(self.y_val, y_pred_valid)
+        val_accuracy = accuracy_score(self.y_valid, y_pred_valid)
         eval_valid_runtime = time.time() - start
 
         start = time.time()
@@ -218,9 +224,9 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         test_accuracy = accuracy_score(self.y_test, y_pred_test)
         eval_test_runtime = time.time() - start
 
-        val_statistical_disparity = fairness_risk(X_val, self.y_val, sensitive_rows_val, mlp, STATISTICAL_DISPARITY)
-        val_unequal_opportunity = fairness_risk(X_val, self.y_val, sensitive_rows_val, mlp, UNEQUAL_OPPORTUNITY)
-        val_unequalized_odds = fairness_risk(X_val, self.y_val, sensitive_rows_val, mlp, UNEQUALIZED_ODDS)
+        val_statistical_disparity = fairness_risk(X_val, self.y_valid, sensitive_rows_val, mlp, STATISTICAL_DISPARITY)
+        val_unequal_opportunity = fairness_risk(X_val, self.y_valid, sensitive_rows_val, mlp, UNEQUAL_OPPORTUNITY)
+        val_unequalized_odds = fairness_risk(X_val, self.y_valid, sensitive_rows_val, mlp, UNEQUALIZED_ODDS)
 
         test_statistical_disparity = fairness_risk(X_test, self.y_test, sensitive_rows_test, mlp, STATISTICAL_DISPARITY)
         test_unequal_opportunity = fairness_risk(X_test, self.y_test, sensitive_rows_test, mlp, UNEQUAL_OPPORTUNITY)

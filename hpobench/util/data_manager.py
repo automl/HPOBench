@@ -931,8 +931,8 @@ class AdultDataManager(HoldoutDataManager):
     def __init__(self):
         super(AdultDataManager, self).__init__()
         self.logger.debug('AdultDataManager: Starting to load data')
-        self.urls = ["http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data",
-                     "https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test"]
+        self.urls = {"data": "http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data",
+                     "test_data": "https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test"}
 
         self.feature_names = ['age', 'fnlwgt', 'education-num', 'marital-status', 'relationship', 'race',
                               'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'country',
@@ -965,13 +965,10 @@ class AdultDataManager(HoldoutDataManager):
         return X_trn, y_trn, X_val, y_val, X_tst, y_tst
 
 
-    @lockutils.synchronized('not_thread_process_safe', external=True,
-                            lock_path=f'{hpobench.config_file.cache_dir}/lock_fair_adult_data', delay=0.5)
     def _download(self):
-        # Check if data is already downloaded.
-        # Use a file lock to ensure that no two processes try to download the same files at the same time.
-        for url in self.urls:
-            self._download_file_with_progressbar(url, self.save_dir)
+        self._download_file_with_progressbar(self.urls["data"], self.save_dir / "adult.data")
+        self._download_file_with_progressbar(self.urls["test_data"], self.save_dir / "adult.test")
+
 
     def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -1002,8 +999,8 @@ class AdultDataManager(HoldoutDataManager):
 
         return X_train, y_train, X_valid, y_valid, X_test, y_test
 
-    def _process_adult_data(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
 
+    def _process_adult_data(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         # mapping all categories of marital status to Single(1) or Couple(0)
         df['marital-status'] = df['marital-status'].replace(
             [' Divorced', ' Married-spouse-absent', ' Never-married', ' Separated', ' Widowed'], 'Single')
@@ -1041,7 +1038,7 @@ class AdultDataManager(HoldoutDataManager):
         df.loc[(df['capital-loss'] == 0, 'capital-loss')] = 0
 
         # defining salary map
-        salary_map = {' <=50K': 1, ' >50K': 0}
+        salary_map = {' <=50K': 1, ' >50K': 0, ' <=50K.': 1, ' >50K.': 0, }
         df['salary'] = df['salary'].map(salary_map).astype(int)
 
         df['sex'] = df['sex'].map({' Male': 1, ' Female': 0}).astype(int)
@@ -1060,7 +1057,7 @@ class AdultDataManager(HoldoutDataManager):
         X = df.drop(['salary'], axis=1)
         y = df['salary']
 
-        return X, y
+        return X.to_numpy(), y.to_numpy()
 
 
 class TabularDataManager(DataManager):
