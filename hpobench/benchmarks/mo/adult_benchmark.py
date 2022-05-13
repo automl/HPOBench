@@ -3,7 +3,7 @@ Changelog:
 ==========
 
 0.0.1:
-* First implementation of the Multi-Objective CNN Benchmark.
+* First implementation of the Multi-Objective Fair Adult Benchmark.
 """
 from typing import Union, Tuple, Dict, List
 import ConfigSpace as CS
@@ -15,7 +15,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark
 from sklearn.metrics import accuracy_score
 from sklearn.neural_network import MLPClassifier
-from hpobench.util.scaler import get_fitted_scaler
+from hpobench.util.scalar import get_fitted_scaler
 from hpobench.util.fairness_metrics import fairness_risk, STATISTICAL_DISPARITY, UNEQUALIZED_ODDS, UNEQUAL_OPPORTUNITY
 from hpobench.util.data_manager import AdultDataManager
 import time
@@ -37,9 +37,9 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
     def __init__(self,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        super(AdultDataManager, self).__init__(rng=rng)
+        super(AdultBenchmark, self).__init__(rng=rng)
 
-        data_manager = AdultDataManager(dataset=self.dataset)
+        data_manager = AdultDataManager()
         self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test = data_manager.load()
         self.output_class = np.unique(self.y_train)
         self.feature_name = data_manager.feature_names
@@ -96,8 +96,9 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-multi-fidelity) - iterations + data subsample
-            AdultDataManager._get_fidelity_choices(epoch_choice='variable')
+            AdultBenchmark._get_fidelity_choices(epoch_choice='variable')
         )
+        print(fidelity_space)
         return fidelity_space
 
     @staticmethod
@@ -110,7 +111,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
             )
         )
         budget = fidelity1[epoch_choice]
-        return budget
+        return [budget]
 
     @staticmethod
     def get_meta_information() -> Dict:
@@ -232,7 +233,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                      val_unequal_opportunity,
                      val_unequalized_odds)
 
-        return {'function_value': {'valid_accuracy': val_accuracy,
+        return {'function_value': {'accuracy': val_accuracy,
                                    'DSO': val_statistical_disparity,
                                    'DEO': val_unequal_opportunity,
                                    'DFP': val_unequalized_odds
@@ -356,7 +357,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                      configuration, test_accuracy, train_accuracy, test_statistical_disparity, test_unequal_opportunity,
                      test_unequalized_odds)
 
-        return {'function_value': {'test_accuracy': test_accuracy,
+        return {'function_value': {'accuracy': test_accuracy,
                                    'DSO': test_statistical_disparity,
                                    'DEO': test_unequal_opportunity,
                                    'DFP': test_unequalized_odds
