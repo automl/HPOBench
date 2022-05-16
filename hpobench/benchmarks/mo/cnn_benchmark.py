@@ -171,9 +171,10 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         self.dataset = dataset
         # Dataset loading
-
         data_manager = CNNDataManager(dataset=self.dataset)
         self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test = data_manager.load()
+        self.output_classes = self.y_train.shape[1]
+        self.input_shape = self.X_train.shape[1:4][::-1]
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -233,30 +234,23 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
 
         fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-multi-fidelity) - iterations + data subsample
-            CNNBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='variable')
-        )
+        fidelity_space.add_hyperparameters([
+            CNNBenchmark._get_fidelity_choices(iter_choice='variable')
+        ])
         return fidelity_space
 
     @staticmethod
-    def _get_fidelity_choices(iter_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
+    def _get_fidelity_choices(iter_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
 
         fidelity1 = dict(
-            fixed=CS.Constant('budget', value=50),
+            fixed=CS.Constant('budget', value=25),
             variable=CS.UniformIntegerHyperparameter(
-                'budget', lower=1, upper=50, default_value=50, log=False
+                'budget', lower=1, upper=25, default_value=25, log=False
             )
         )
-        fidelity2 = dict(
-            fixed=CS.Constant('subsample', value=1),
-            variable=CS.UniformFloatHyperparameter(
-                'subsample', lower=0.1, upper=1, default_value=1, log=False
-            )
-        )
+
         budget = fidelity1[iter_choice]
-        subsample = fidelity2[subsample_choice]
-        return budget, subsample
+        return budget
 
     @staticmethod
     def get_meta_information() -> Dict:
@@ -273,17 +267,13 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         }
 
     def init_model(self, config: Union[CS.Configuration, Dict],
-                   fidelity: Union[CS.Configuration, Dict, None] = None,
                    rng: Union[int, np.random.RandomState, None] = None):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
         rng = self.rng if rng is None else rng
-
         if isinstance(config, CS.Configuration):
             config = config.get_dictionary()
-        if isinstance(fidelity, CS.Configuration):
-            fidelity = config.get_dictionary()
-        return Net(config, (3, 16, 16), 17)
+        return Net(config, self.input_shape, self.output_classes)
 
     @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
@@ -333,8 +323,8 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         self.rng = rng_helper.get_rng(rng)
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         # initializing model
-        model = self.init_model(configuration, fidelity, rng).to(device)
-        epochs = fidelity['budget'] - 1
+        model = self.init_model(configuration, rng).to(device)
+        epochs = fidelity['budget']
 
         optimizer = torch.optim.Adam(model.parameters(), lr=configuration['learning_rate_init'])
         criterion = torch.nn.CrossEntropyLoss()
@@ -363,17 +353,17 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         start = time.time()
         t = tqdm.tqdm(total=epochs)
         for epoch in range(epochs):
-            train_accuracy = model.train_fn(optimizer, criterion, ds_train, device)
+            train_accuracy = model.train_fn(optimizer, criterion, ds_train, device).item()
             t.set_postfix(train_accuracy=train_accuracy)
             t.update()
         training_runtime = time.time() - start
 
         num_params = np.sum(p.numel() for p in model.parameters())
         start = time.time()
-        val_accuracy = model.eval_fn(ds_val, device)
+        val_accuracy = model.eval_fn(ds_val, device).item()
         eval_valid_runtime = time.time() - start
         start = time.time()
-        test_accuracy = model.eval_fn(ds_test, device)
+        test_accuracy = model.eval_fn(ds_test, device).item()
         eval_test_runtime = time.time() - start
 
         t.set_postfix(
@@ -448,7 +438,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         # The result dict should contain already all necessary information -> Just swap the function value from valid
         # to test and the corresponding time cost
-        assert fidelity['epoch'] == 50, 'Only test data for the 50. epoch is available. '
+        assert fidelity['epoch'] == 25, 'Only test data for the 50. epoch is available. '
 
         self.rng = rng_helper.get_rng(rng)
 
@@ -458,7 +448,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         # initializing model
         model = self.init_model(configuration, fidelity, rng).to(device)
-        epochs = fidelity['budget'] - 1
+        epochs = fidelity['budget']
 
         optimizer = torch.optim.Adam(model.parameters(), lr=configuration['learning_rate_init'])
         criterion = torch.nn.CrossEntropyLoss()
@@ -480,14 +470,14 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         start = time.time()
         t = tqdm.tqdm(total=epochs)
         for epoch in range(epochs):
-            train_accuracy = model.train_fn(optimizer, criterion, ds_train, device)
+            train_accuracy = model.train_fn(optimizer, criterion, ds_train, device).item()
             t.set_postfix(train_accuracy=train_accuracy)
             t.update()
         training_runtime = time.time() - start
 
         num_params = np.sum(p.numel() for p in model.parameters())
         start = time.time()
-        test_accuracy = model.eval_fn(ds_test, device)
+        test_accuracy = model.eval_fn(ds_test, device).item()
         eval_test_runtime = time.time() - start
 
         t.set_postfix(
