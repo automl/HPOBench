@@ -198,7 +198,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
             epoch_start_time = time.time()
             model.train_fun(model, self.corpus, criterion, train_data, learning_rate, batch_size, clip)
 
-            val_loss, val_acc = model.evaluate(model, self.corpus, criterion, val_data)
+            val_loss, val_acc = model.eval_fun(model, self.corpus, criterion, val_data)
             val_loss = np.clip(val_loss, 1e-10, 10)
 
             ts_now = time.time()
