@@ -23,7 +23,7 @@ import tqdm
 
 __version__ = '0.0.1'
 
-logger = logging.getLogger('MO_CNN')
+logger = logging.getLogger('LM_Bench')
 
 
 class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
@@ -75,7 +75,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
 
     @staticmethod
     def get_objective_names(self) -> List[str]:
-        return ['perplexity', 'error', 'time']
+        return ['log_perplexity', 'accuracy', 'time']
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -232,6 +232,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
 
         return {'function_value': {'log_perplexity': log_perplexity,
                                    'accuracy': val_acc,
+                                   'time': train_eval_time
                                    },
                 'cost': elapsed_time,
                 'info': {'validation_accuracy': val_acc,
@@ -258,7 +259,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
         ----------
         configuration
         fidelity: Dict, None
-            epoch: int - Values: [1, 50]
+            epoch: int - Values: [1, 81]
                 Number of epochs an architecture was trained.
                 Note: the number of epoch is 1 indexed. (Results after the first epoch: epoch = 1)
 
@@ -327,6 +328,8 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
             ts_now = time.time()
             train_eval_time += ts_now - epoch_start_time
 
+            t.set_postfix(test_accuracy=test_acc)
+            t.update()
             if not np.isfinite(test_loss):
                 test_loss = 7
 
@@ -348,6 +351,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
 
         return {'function_value': {'log_perplexity': log_perplexity,
                                    'accuracy': test_acc,
+                                   'time': train_eval_time
                                    },
                 'cost': elapsed_time,
                 'info': {'test_accuracy': test_acc,
