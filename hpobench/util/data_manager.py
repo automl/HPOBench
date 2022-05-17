@@ -886,22 +886,18 @@ class CNNDataManager(HoldoutDataManager):
 
         return X_trn, y_trn, X_val, y_val, X_tst, y_tst
 
-    @lockutils.synchronized('not_thread_process_safe', external=True,
-                            lock_path=f'{hpobench.config_file.cache_dir}/lock_mo_cnn_data', delay=0.5)
     def _download(self):
 
         # Check if data is already downloaded.
         # Use a file lock to ensure that no two processes try to download the same files at the same time.
-        if (self.compressed_data).exists():
+        if self.compressed_data.exists():
             self.logger.debug('CNNDataManager: Data already downloaded')
         else:
 
             self.logger.info(f'CNNDataManager: Start downloading data from {self.url_source} '
                              f'to {self.save_dir}')
-            self.compressed_data.parent.mkdir(parents=True, exist_ok=True)
-            urlretrieve(self.url_source, self.compressed_data)
-            tar = tarfile.open(self.compressed_data)
-            tar.extractall(self.save_dir)
+            self._download_file_with_progressbar(data_url=self.url_source, data_file=self.compressed_data)
+            self._untar_data(compressed_file=self.compressed_data, save_dir=self.save_dir)
 
     def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -927,6 +923,14 @@ class CNNDataManager(HoldoutDataManager):
         # Read Test datasets
         X_test = np.load(data_extract_path / 'x_test.npy')
         y_test = np.load(data_extract_path / 'y_test.npy')
+
+        def __cast_x_y(x, y) -> Tuple:
+            import torch
+            return torch.tensor(x).float().permute(0, 3, 1, 2), torch.tensor(y).long()
+
+        X_train, y_train = __cast_x_y(X_train, y_train)
+        X_val, y_val = __cast_x_y(X_val, y_val)
+        X_test, y_test = __cast_x_y(X_test, y_test)
 
         return X_train, y_train, X_val, y_val, X_test, y_test
 

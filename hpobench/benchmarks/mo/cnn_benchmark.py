@@ -5,20 +5,21 @@ Changelog:
 0.0.1:
 * First implementation of the Multi-Objective CNN Benchmark.
 """
-import pathlib
+import logging
+import time
 from typing import Union, Tuple, Dict, List
+
 import ConfigSpace as CS
 import numpy as np
 import torch
-import tqdm
 import torch.nn as nn
-import pandas as pd
-import logging
+import tqdm
 from ConfigSpace.hyperparameters import Hyperparameter
+from torch.utils.data import TensorDataset, DataLoader
+
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark
 from hpobench.util.data_manager import CNNDataManager
-import time
 
 __version__ = '0.0.1'
 
@@ -83,8 +84,6 @@ class Net(nn.Module):
         layers.append(nn.Linear(inp_n, num_classes))
         self.fc_layers = nn.Sequential(*layers)
 
-        self.time_train = 0
-
     # generate input sample and forward to get shape
     def _get_conv_output(self, shape):
         bs = 1
@@ -112,6 +111,7 @@ class Net(nn.Module):
         accuracy = AccuracyTop1()
         self.train()
 
+        acc = 0
         for images, labels in loader:
             images = images.to(device)
             labels = labels.to(device)
@@ -139,6 +139,7 @@ class Net(nn.Module):
         accuracy = AccuracyTop1()
         self.eval()
 
+        acc = 0
         with torch.no_grad():  # no gradient needed
             for images, labels in loader:
                 images = images.to(device)
@@ -174,7 +175,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         data_manager = CNNDataManager(dataset=self.dataset)
         self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test = data_manager.load()
         self.output_classes = self.y_train.shape[1]
-        self.input_shape = self.X_train.shape[1:4][::-1]
+        self.input_shape = self.X_train.shape[1:4]
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -227,7 +228,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         return cs
 
     @staticmethod
-    def get_objective_names(self) -> List[str]:
+    def get_objective_names() -> List[str]:
         return ['accuracy', 'model_size']
 
     @staticmethod
@@ -256,10 +257,14 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
     def get_meta_information() -> Dict:
         """ Returns the meta information for the benchmark """
         return {
-            'name': 'Bag of baselines for multi-objective joint neural architecture search and hyperparameter optimization',
+            'name': 'Bag of baselines for multi-objective joint neural architecture search and '
+                    'hyperparameter optimization',
             'references': ['@article{guerrero2021bag,'
-                           'title   = {Bag of baselines for multi - objective joint neural architecture search and hyperparameter optimization},'
-                           'author  = {Guerrero-Viu, Julia and Hauns, Sven and Izquierdo, Sergio and Miotto, Guilherme and Schrodi, Simon and Biedenkapp, Andre and Elsken, Thomas and Deng, Difan and Lindauer, Marius and Hutter, Frank},},'
+                           'title   = {Bag of baselines for multi - objective joint neural architecture search and '
+                           'hyperparameter optimization},'
+                           'author  = {Guerrero-Viu, Julia and Hauns, Sven and Izquierdo, Sergio and Miotto, '
+                           'Guilherme and Schrodi, Simon and Biedenkapp, Andre and Elsken, Thomas and Deng, '
+                           'Difan and Lindauer, Marius and Hutter, Frank},},'
                            'journal = {arXiv preprint arXiv:2105.01015},'
                            'year    = {2021}}',
                            ],
@@ -329,26 +334,14 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         optimizer = torch.optim.Adam(model.parameters(), lr=configuration['learning_rate_init'])
         criterion = torch.nn.CrossEntropyLoss()
 
-        self.X_train = torch.tensor(self.X_train).float()
-        self.X_train = self.X_train.permute(0, 3, 1, 2)
-        self.y_train = torch.tensor(self.y_train).long()
+        ds_train = TensorDataset(self.X_train, self.y_train)
+        ds_train = DataLoader(ds_train, batch_size=configuration['batch_size'], shuffle=True)
 
-        ds_train = torch.utils.data.TensorDataset(self.X_train, self.y_train)
-        ds_train = torch.utils.data.DataLoader(ds_train, batch_size=configuration['batch_size'], shuffle=True)
+        ds_val = TensorDataset(self.X_valid, self.y_valid)
+        ds_val = DataLoader(ds_val, batch_size=configuration['batch_size'], shuffle=True)
 
-        self.X_valid = torch.tensor(self.X_valid).float()
-        self.X_valid = self.X_valid.permute(0, 3, 1, 2)
-        self.y_valid = torch.tensor(self.y_valid).long()
-
-        ds_val = torch.utils.data.TensorDataset(self.X_valid, self.y_valid)
-        ds_val = torch.utils.data.DataLoader(ds_val, batch_size=configuration['batch_size'], shuffle=True)
-
-        self.X_test = torch.tensor(self.X_test).float()
-        self.X_test = self.X_test.permute(0, 3, 1, 2)
-        self.y_test = torch.tensor(self.y_test).long()
-
-        ds_test = torch.utils.data.TensorDataset(self.X_test, self.y_test)
-        ds_test = torch.utils.data.DataLoader(ds_test, batch_size=configuration['batch_size'], shuffle=True)
+        ds_test = TensorDataset(self.X_test, self.y_test)
+        ds_test = DataLoader(ds_test, batch_size=configuration['batch_size'], shuffle=True)
 
         start = time.time()
         t = tqdm.tqdm(total=epochs)
@@ -358,7 +351,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
             t.update()
         training_runtime = time.time() - start
 
-        num_params = np.sum(p.numel() for p in model.parameters())
+        num_params = np.sum([p.numel() for p in model.parameters()]).item()
         start = time.time()
         val_accuracy = model.eval_fn(ds_val, device).item()
         eval_valid_runtime = time.time() - start
@@ -379,8 +372,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         t.close()
 
         return {'function_value': {'accuracy': val_accuracy,
-                                   'model_size': num_params,
-                                   },
+                                   'model_size': num_params},
                 'cost': float(training_runtime + eval_valid_runtime),
                 'info': {'train_accuracy': train_accuracy,
                          'training_cost': training_runtime,
@@ -442,30 +434,22 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         self.rng = rng_helper.get_rng(rng)
 
-        train_X = np.vstack((self.X_train, self.X_valid))
-        self.y_train = pd.concat((self.y_train, self.y_valid))
+        train_X = torch.vstack((self.X_train, self.X_valid))
+        y_train = torch.cat((self.y_train, self.y_valid))
 
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         # initializing model
-        model = self.init_model(configuration, fidelity, rng).to(device)
+        model = self.init_model(configuration, rng).to(device)
         epochs = fidelity['budget']
 
         optimizer = torch.optim.Adam(model.parameters(), lr=configuration['learning_rate_init'])
         criterion = torch.nn.CrossEntropyLoss()
 
-        train_X = torch.tensor(train_X).float()
-        train_X = train_X.permute(0, 3, 1, 2)
-        self.y_train = torch.tensor(self.y_train).long()
+        ds_train = TensorDataset(train_X, y_train)
+        ds_train = DataLoader(ds_train, batch_size=configuration['batch_size'], shuffle=True)
 
-        self.X_test = torch.tensor(self.X_test).float()
-        self.X_test = self.X_test.permute(0, 3, 1, 2)
-        self.y_test = torch.tensor(self.y_test).long()
-
-        ds_train = torch.utils.data.TensorDataset(train_X, self.y_train)
-        ds_train = torch.utils.data.DataLoader(ds_train, batch_size=configuration['batch_size'], shuffle=True)
-
-        ds_test = torch.utils.data.TensorDataset(self.X_test, self.y_test)
-        ds_test = torch.utils.data.DataLoader(ds_test, batch_size=configuration['batch_size'], shuffle=True)
+        ds_test = TensorDataset(self.X_test, self.y_test)
+        ds_test = DataLoader(ds_test, batch_size=configuration['batch_size'], shuffle=True)
 
         start = time.time()
         t = tqdm.tqdm(total=epochs)
@@ -475,7 +459,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
             t.update()
         training_runtime = time.time() - start
 
-        num_params = np.sum(p.numel() for p in model.parameters())
+        num_params = np.sum([p.numel() for p in model.parameters()])
         start = time.time()
         test_accuracy = model.eval_fn(ds_test, device).item()
         eval_test_runtime = time.time() - start

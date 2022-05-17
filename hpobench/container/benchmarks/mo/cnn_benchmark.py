@@ -8,13 +8,13 @@ class FlowerCNNBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'FlowerCNNBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'mo_cnn')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
         super(FlowerCNNBenchmark, self).__init__(**kwargs)
 
 
-class FashioCNNBenchmark(AbstractBenchmarkClient):
+class FashionCNNBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'FashionCNNBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'mo_cnn')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
-        super(FashioCNNBenchmark, self).__init__(**kwargs)
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        super(FashionCNNBenchmark, self).__init__(**kwargs)
