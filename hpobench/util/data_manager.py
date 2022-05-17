@@ -935,6 +935,65 @@ class CNNDataManager(HoldoutDataManager):
         return X_train, y_train, X_val, y_val, X_test, y_test
 
 
+class LanguageModelDataManager(HoldoutDataManager):
+    def __init__(self):
+        from hpobench.dependencies.lm.tokenize_util import Corpus
+        super(LanguageModelDataManager, self).__init__()
+        self.logger.debug('LanguageModelDataManager: Starting to load data')
+
+        self.urls = {
+            "train_data": "https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/train.txt",
+            "valid_data": "https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/valid.txt",
+            "test_data": "https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/test.txt",
+        }
+
+        self.save_dir = hpobench.config_file.data_dir / "wikitext"
+        self.create_save_directory(self.save_dir)
+        self.corpus = Corpus(logger=self.logger)
+
+    def load(self):
+        """
+        Loads Adult Fair Datasets from data directory as defined in hpobenchrc.data_directory.
+        Downloads data if necessary.
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+
+        t = time()
+        self._download()
+        self.X_train, self.X_valid, self.X_test = self._load()
+        self.logger.info(f'LanguageModelDataManager: Data successfully loaded after {time() - t:.2f}')
+        return self.X_train, self.X_valid, self.X_test
+
+    def _download(self):
+        self._download_file_with_progressbar(self.urls["train_data"], self.save_dir / "train.txt")
+        self._download_file_with_progressbar(self.urls["valid_data"], self.save_dir / "valid.txt")
+        self._download_file_with_progressbar(self.urls["test_data"], self.save_dir / "test.txt")
+
+    def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Load the data from file and split it into train, test and validation split.
+        Returns
+        -------
+        X_train: np.ndarray
+        X_valid: np.ndarray
+        X_test: np.ndarray
+        """
+
+
+        X_train = self.corpus.tokenize(self.save_dir / "train.txt")
+        X_valid = self.corpus.tokenize(self.save_dir / "valid.txt")
+        X_test = self.corpus.tokenize(self.save_dir / "test.txt")
+
+        return X_train, X_valid, X_test
+
+
 class YearPredictionMSDData(HoldoutDataManager):
 
     def __init__(self):
