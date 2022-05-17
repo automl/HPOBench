@@ -14,6 +14,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import tqdm
+import random
 from ConfigSpace.hyperparameters import Hyperparameter
 from torch.utils.data import TensorDataset, DataLoader
 
@@ -164,16 +165,18 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
     def __init__(self, dataset: str,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         super(CNNBenchmark, self).__init__(rng=rng)
-
         allowed_datasets = ["fashion", "flower"]
         assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
                                             f'{", ".join(allowed_datasets)}, but was {dataset}'
         logger.info(f'Start Benchmark on dataset {dataset}')
 
         self.dataset = dataset
+        self.__seed_everything()
+
         # Dataset loading
         data_manager = CNNDataManager(dataset=self.dataset)
         self.X_train, self.y_train, self.X_valid, self.y_valid, self.X_test, self.y_test = data_manager.load()
+
         self.output_classes = self.y_train.shape[1]
         self.input_shape = self.X_train.shape[1:4]
 
@@ -280,6 +283,15 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
             config = config.get_dictionary()
         return Net(config, self.input_shape, self.output_classes)
 
+    def __seed_everything(self):
+        """Helperfunction: Make the benchmark deterministic by setting the correct seeds"""
+        seed = self.rng.randint(0, 100000)
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+
     @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[Dict, CS.Configuration, None] = None,
@@ -326,6 +338,8 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
                     used fidelities in this evaluation
         """
         self.rng = rng_helper.get_rng(rng)
+        self.__seed_everything()
+
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         # initializing model
         model = self.init_model(configuration, rng).to(device)
@@ -345,6 +359,8 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         start = time.time()
         t = tqdm.tqdm(total=epochs)
+
+        train_accuracy = 0
         for epoch in range(epochs):
             train_accuracy = model.train_fn(optimizer, criterion, ds_train, device).item()
             t.set_postfix(train_accuracy=train_accuracy)
@@ -430,9 +446,10 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         # The result dict should contain already all necessary information -> Just swap the function value from valid
         # to test and the corresponding time cost
-        assert fidelity['epoch'] == 25, 'Only test data for the 50. epoch is available. '
+        assert fidelity['budget'] == 25, 'Only test data for the 50. epoch is available. '
 
         self.rng = rng_helper.get_rng(rng)
+        self.__seed_everything()
 
         train_X = torch.vstack((self.X_train, self.X_valid))
         y_train = torch.cat((self.y_train, self.y_valid))
@@ -453,6 +470,8 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         start = time.time()
         t = tqdm.tqdm(total=epochs)
+
+        train_accuracy = 0
         for epoch in range(epochs):
             train_accuracy = model.train_fn(optimizer, criterion, ds_train, device).item()
             t.set_postfix(train_accuracy=train_accuracy)
@@ -475,8 +494,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         t.close()
 
         return {'function_value': {'accuracy': test_accuracy,
-                                   'model_size': num_params,
-                                   },
+                                   'model_size': num_params},
                 'cost': float(training_runtime + eval_test_runtime),
                 'info': {'train_accuracy': train_accuracy,
                          'training_cost': training_runtime,
