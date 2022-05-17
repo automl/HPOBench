@@ -849,20 +849,22 @@ class ProteinStructureData(HoldoutDataManager):
 
 
 class LanguageModelDataManager(HoldoutDataManager):
-    def __init__(self):
+    def __init__(self, device):
         from hpobench.dependencies.lm.tokenize_util import Corpus
         super(LanguageModelDataManager, self).__init__()
         self.logger.debug('LanguageModelDataManager: Starting to load data')
 
         self.urls = {
-            "train_data": "https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/train.txt",
-            "valid_data": "https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/valid.txt",
-            "test_data": "https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/test.txt",
+            "train": "https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/train.txt",
+            "valid": "https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/valid.txt",
+            "test": "https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/test.txt",
         }
 
         self.save_dir = hpobench.config_file.data_dir / "wikitext"
         self.create_save_directory(self.save_dir)
         self.corpus = Corpus(logger=self.logger)
+        self.device = device
+        self.tokenize_path = self.save_dir / "tokenize"
 
     def load(self):
         """
@@ -885,9 +887,12 @@ class LanguageModelDataManager(HoldoutDataManager):
         return self.X_train, self.X_valid, self.X_test
 
     def _download(self):
-        self._download_file_with_progressbar(self.urls["train_data"], self.save_dir / "train.txt")
-        self._download_file_with_progressbar(self.urls["valid_data"], self.save_dir / "valid.txt")
-        self._download_file_with_progressbar(self.urls["test_data"], self.save_dir / "test.txt")
+
+        for data in self.urls:
+            if (self.save_dir / f'{data}.txt').exists():
+                self.logger.debug(f'LanguageModelDataManager : tokenized {data}.txt already exist')
+            else:
+                self._download_file_with_progressbar(self.urls[data], self.save_dir / f"{data}.txt")
 
     def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -899,10 +904,18 @@ class LanguageModelDataManager(HoldoutDataManager):
         X_test: np.ndarray
         """
 
+        import torch
+        for data in self.urls:
+            if (self.tokenize_path / f'{data}.pt').exists():
+                self.logger.debug(f'LanguageModelDataManager : {data}.txt already exist')
 
-        X_train = self.corpus.tokenize(self.save_dir / "train.txt")
-        X_valid = self.corpus.tokenize(self.save_dir / "valid.txt")
-        X_test = self.corpus.tokenize(self.save_dir / "test.txt")
+            else:
+                tokenized_data = self.corpus.tokenize(self.save_dir / "train.txt")
+                torch.save(tokenized_data, self.tokenize_path / f'{data}.pt')
+
+        X_train = torch.load(self.tokenize_path / 'train.pt', map_location=self.device)
+        X_valid = torch.load(self.tokenize_path / 'valid.pt', map_location=self.device)
+        X_test = torch.load(self.tokenize_path / 'test.pt', map_location=self.device)
 
         return X_train, X_valid, X_test
 
