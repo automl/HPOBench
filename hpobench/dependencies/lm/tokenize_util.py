@@ -27,7 +27,6 @@ class Corpus(object):
         with open(path, 'r', encoding="utf8") as f:
             for line in f:
                 words = line.split() + ['<eos>']
-                print("words", words)
                 for word in words:
                     self.dictionary.add_word(word)
         # Tokenize file content

@@ -31,7 +31,8 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         super(LanguageModelBenchmark, self).__init__(rng=rng)
 
-        data_manager = LanguageModelDataManager()
+        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        data_manager = LanguageModelDataManager(device)
         self.X_train, self.X_valid, self.X_test = data_manager.load()
         self.corpus = data_manager.corpus
 
@@ -195,9 +196,10 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
 
         t = tqdm.tqdm(total=epochs)
         for epoch in range(epochs):
+            print("epoch training started",epoch)
             epoch_start_time = time.time()
             model.train_fun(model, self.corpus, criterion, train_data, learning_rate, batch_size, clip)
-
+            print("epoch traing done")
             val_loss, val_acc = model.eval_fun(model, self.corpus, criterion, val_data)
             val_loss = np.clip(val_loss, 1e-10, 10)
 
@@ -295,7 +297,6 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
         # to test and the corresponding time cost
         assert fidelity['epoch'] == 81, 'Only test data for the 50. epoch is available. '
 
-        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         ts_start = time.time()
 
         # batchify data
