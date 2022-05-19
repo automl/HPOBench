@@ -3,15 +3,14 @@ Changelog:
 ==========
 
 0.0.1:
-* First implementation of the Multi-Objective CNN Benchmark.
+* First implementation of the Multi-Objective Language Model Benchmark.
 """
-from typing import Union, Tuple, Dict, List
+from typing import Union, Dict, List
 import ConfigSpace as CS
 import numpy as np
 import torch
 import torch.nn as nn
 import logging
-from ConfigSpace.hyperparameters import Hyperparameter
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark
 from hpobench.util.data_manager import LanguageModelDataManager
@@ -31,19 +30,20 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         super(LanguageModelBenchmark, self).__init__(rng=rng)
 
-        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-        data_manager = LanguageModelDataManager(device)
+        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        data_manager = LanguageModelDataManager(self.device)
         self.X_train, self.X_valid, self.X_test = data_manager.load()
-        self.corpus = data_manager.corpus
+        self.ntokens = len(data_manager.corpus.dictionary)
 
         self.variable = {"eval_batch_size": 10,
                          "nlayers": 2,
                          "bptt": 35,
                          "tied": True,
+                         # number of attention head
                          "nhead": 2,
-                         "ntoken": len(self.corpus.dictionary)
+                         "ntoken": self.ntokens
                          }
-        print("len of corpus dict", len(self.corpus.dictionary))
+        print("len of corpus dict", self.ntokens)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -83,23 +83,11 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
 
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters([
-            # gray-box setting (multi-multi-fidelity) - iterations + data subsample
-            LanguageModelBenchmark._get_fidelity_choices(iter_choice='variable')
-        ])
-        return fidelity_space
-
-    @staticmethod
-    def _get_fidelity_choices(iter_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
-
-        fidelity1 = dict(
-            fixed=CS.Constant('budget', value=81),
-            variable=CS.UniformIntegerHyperparameter(
+            CS.UniformIntegerHyperparameter(
                 'budget', lower=1, upper=81, default_value=81, log=False
             )
-        )
-
-        budget = fidelity1[iter_choice]
-        return budget
+        ])
+        return fidelity_space
 
     @staticmethod
     def get_meta_information() -> Dict:
@@ -108,7 +96,8 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
             'name': 'Multi-objective Asynchronous Successive Halving',
             'references': ['@article{schmucker2021multi,'
                            'title={Multi-objective Asynchronous Successive Halving},'
-                           'author={Schmucker, Robin and Donini, Michele and Zafar, Muhammad Bilal and Salinas, David and Archambeau, C{\'e}dric},'
+                           'author={Schmucker, Robin and Donini, Michele and Zafar, Muhammad Bilal and Salinas,'
+                           ' David and Archambeau, C{\'e}dric},'
                            'journal={arXiv preprint arXiv:2106.12639},'
                            'year={2021}',
                            ],
@@ -121,6 +110,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
         if isinstance(config, CS.Configuration):
             config = config.get_dictionary()
 
+        # all sublayers and embedding layers have same dim
         model = TransformerModel(
             self.variable['ntoken'], config['emsize'], self.variable['nhead'], config['emsize'],
             self.variable['nlayers'], config['dropout'])
@@ -196,11 +186,9 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
 
         t = tqdm.tqdm(total=epochs)
         for epoch in range(epochs):
-            print("epoch training started",epoch)
             epoch_start_time = time.time()
-            model.train_fun(model, self.corpus, criterion, train_data, learning_rate, batch_size, clip)
-            print("epoch traing done")
-            val_loss, val_acc = model.eval_fun(model, self.corpus, criterion, val_data)
+            train_loss, train_acc = model.train_fun(model, self.ntokens, criterion, train_data, learning_rate, clip)
+            val_loss, val_acc = model.eval_fun(model, self.ntokens, criterion, val_data)
             val_loss = np.clip(val_loss, 1e-10, 10)
 
             ts_now = time.time()
@@ -220,11 +208,11 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
                 learning_rate /= learning_rate_factor
 
         start_time = time.time()
-        _, val_acc = model.eval_fun(model, self.corpus, criterion, val_data)
+        _, val_acc = model.eval_fun(model, self.ntokens, criterion, val_data)
         eval_valid_runtime = time.time() - start_time
 
         start_time = time.time()
-        _, test_acc = model.eval_fun(model, self.corpus, criterion, test_data)
+        _, test_acc = model.eval_fun(model, self.ntokens, criterion, test_data)
         eval_test_runtime = time.time() - start_time
 
         perplexity = math.exp(best_val_loss)
@@ -237,7 +225,8 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
                                    'time': train_eval_time
                                    },
                 'cost': elapsed_time,
-                'info': {'validation_accuracy': val_acc,
+                'info': {'train_accuracy': train_acc,
+                         'validation_accuracy': val_acc,
                          'test_accuracy': test_acc,
                          'log_perplexity': log_perplexity,
                          'perplexity': perplexity,
@@ -301,15 +290,15 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
 
         # batchify data
         batch_size = configuration['batch_size']
-        train_data = batchify(self.X_train, batch_size=batch_size).to(device)
-        val_data = batchify(self.X_valid, batch_size=self.variable["eval_batch_size"]).to(device)
+        train_data = batchify(self.X_train, batch_size=batch_size).to(self.device)
+        val_data = batchify(self.X_valid, batch_size=self.variable["eval_batch_size"]).to(self.device)
 
         train_data = np.vstack(train_data, val_data)
-        test_data = batchify(self.X_test, batch_size=self.variable["eval_batch_size"]).to(device)
+        test_data = batchify(self.X_test, batch_size=self.variable["eval_batch_size"]).to(self.device)
 
         epochs = fidelity['budget']
 
-        model = self.init_model(configuration).to(device)
+        model = self.init_model(configuration).to(self.device)
 
         criterion = nn.CrossEntropyLoss()
 
@@ -321,9 +310,10 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
         t = tqdm.tqdm(total=epochs)
         for epoch in range(1, epochs + 1):
             epoch_start_time = time.time()
-            model.train_fun(model, self.corpus, criterion, train_data, learning_rate, batch_size, clip)
+            train_loss, train_acc = model.train_fun(model, self.ntokens, criterion, train_data, learning_rate,
+                                                    batch_size, clip)
 
-            test_loss, test_acc = model.eval_fun(model, self.corpus, criterion, test_data)
+            test_loss, test_acc = model.eval_fun(model, self.ntokens, criterion, test_data)
             test_loss = np.clip(test_loss, 1e-10, 10)
 
             ts_now = time.time()
@@ -342,7 +332,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
                 learning_rate /= learning_rate_factor
 
         start_time = time.time()
-        _, test_acc = model.eval_fun(model, self.corpus, criterion, test_data)
+        _, test_acc = model.eval_fun(model, self.ntokens, criterion, test_data)
         eval_test_runtime = time.time() - start_time
 
         perplexity = math.exp(best_test_loss)
@@ -355,7 +345,8 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
                                    'time': train_eval_time
                                    },
                 'cost': elapsed_time,
-                'info': {'test_accuracy': test_acc,
+                'info': {'train_accuracy': train_acc,
+                         'test_accuracy': test_acc,
                          'log_perplexity': log_perplexity,
                          'perplexity': perplexity,
                          'negative_log_perplexity': neg_log_perplexity,
