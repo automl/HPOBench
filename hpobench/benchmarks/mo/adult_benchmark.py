@@ -5,7 +5,7 @@ Changelog:
 0.0.1:
 * First implementation of the Multi-Objective Fair Adult Benchmark.
 """
-from typing import Union, Tuple, Dict, List
+from typing import Union, Dict, List
 import ConfigSpace as CS
 import numpy as np
 import logging
