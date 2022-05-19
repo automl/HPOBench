@@ -38,7 +38,7 @@ class Corpus(object):
                 try:
                     for word in words:
                         ids.append(self.dictionary.word2idx[word])
-                except:
+                except Exception:
                     self.logger.debug("word2idx:{}", self.dictionary.word2idx)
                 idss.append(torch.tensor(ids).type(torch.int64))
             ids = torch.cat(idss)
