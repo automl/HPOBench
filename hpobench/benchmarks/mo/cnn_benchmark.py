@@ -238,23 +238,11 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
 
         fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters([
-            CNNBenchmark._get_fidelity_choices(iter_choice='variable')
+        fidelity_space.add_hyperparameters([CS.UniformIntegerHyperparameter(
+            'budget', lower=1, upper=25, default_value=25, log=False
+        )
         ])
         return fidelity_space
-
-    @staticmethod
-    def _get_fidelity_choices(iter_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
-
-        fidelity1 = dict(
-            fixed=CS.Constant('budget', value=25),
-            variable=CS.UniformIntegerHyperparameter(
-                'budget', lower=1, upper=25, default_value=25, log=False
-            )
-        )
-
-        budget = fidelity1[iter_choice]
-        return budget
 
     @staticmethod
     def get_meta_information() -> Dict:
@@ -337,6 +325,8 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
                 fidelity : Dict
                     used fidelities in this evaluation
         """
+
+        time_in = time.time()
         self.rng = rng_helper.get_rng(rng)
         self.__seed_everything()
 
@@ -387,9 +377,11 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         )
         t.close()
 
+        elapsed_time = time.time() - time_in
+
         return {'function_value': {'accuracy': val_accuracy,
                                    'model_size': num_params},
-                'cost': float(training_runtime + eval_valid_runtime),
+                'cost': float(elapsed_time),
                 'info': {'train_accuracy': train_accuracy,
                          'training_cost': training_runtime,
                          'valid_accuracy': val_accuracy,
@@ -444,6 +436,8 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
                     used fidelities in this evaluation
         """
 
+        time_in = time.time()
+
         # The result dict should contain already all necessary information -> Just swap the function value from valid
         # to test and the corresponding time cost
         assert fidelity['budget'] == 25, 'Only test data for the 50. epoch is available. '
@@ -493,9 +487,11 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         )
         t.close()
 
+        elapsed_time = time.time() - time_in
+
         return {'function_value': {'accuracy': test_accuracy,
                                    'model_size': num_params},
-                'cost': float(training_runtime + eval_test_runtime),
+                'cost': float(elapsed_time),
                 'info': {'train_accuracy': train_accuracy,
                          'training_cost': training_runtime,
                          'test_accuracy': test_accuracy,
