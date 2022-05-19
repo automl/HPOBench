@@ -1,0 +1,29 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+%labels
+MAINTAINER sharmaa@informatik.uni-freiburg.de
+VERSION v0.0.1
+
+%post
+    apt update -y
+    apt install build-essential git wget -y
+
+    cd /home \
+    && mkdir data && cd data \
+    && wget http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data \
+    && wget https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test \
+    && cd /home \
+    && git clone https://github.com/ayushi-3536/HPOBench.git \
+    && cd HPOBench \
+    && git checkout fair_adult \
+    && pip install .[adult] \
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/ \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge
+
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py mo.adult_benchmark $@

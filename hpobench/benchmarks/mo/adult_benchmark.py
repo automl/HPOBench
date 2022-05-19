@@ -120,7 +120,8 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
             'name': 'Multi-objective Asynchronous Successive Halving',
             'references': ['@article{schmucker2021multi,'
                            'title={Multi-objective Asynchronous Successive Halving},'
-                           'author={Schmucker, Robin and Donini, Michele and Zafar, Muhammad Bilal and Salinas, David and Archambeau, C{\'e}dric},'
+                           'author={Schmucker, Robin and Donini, Michele and Zafar, Muhammad Bilal and Salinas,'
+                           ' David and Archambeau, C{\'e}dric},'
                            'journal={arXiv preprint arXiv:2106.12639},'
                            'year={2021}',
                            ],

@@ -964,11 +964,9 @@ class AdultDataManager(HoldoutDataManager):
 
         return X_trn, y_trn, X_val, y_val, X_tst, y_tst
 
-
     def _download(self):
         self._download_file_with_progressbar(self.urls["data"], self.save_dir / "adult.data")
         self._download_file_with_progressbar(self.urls["test_data"], self.save_dir / "adult.test")
-
 
     def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -998,7 +996,6 @@ class AdultDataManager(HoldoutDataManager):
         X_valid, y_valid = X[n_trn:], y[n_trn:]
 
         return X_train, y_train, X_valid, y_valid, X_test, y_test
-
 
     def _process_adult_data(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         # mapping all categories of marital status to Single(1) or Couple(0)
