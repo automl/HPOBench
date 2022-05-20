@@ -26,9 +26,9 @@ else
     echo "Skip installing Singularity"
 fi
 
-wget https://github.com/singularityware/singularity/releases/download/v${VERSION}/singularity-{VERSION}.tar.gz
-tar -xzf singularity-${VERSION}.tar.gz && \
-cd singularity-{VERSION} && \
+wget https://github.com/singularityware/singularity/releases/download/v"${VERSION}"/singularity-"${VERSION}".tar.gz && \
+tar -xzf singularity-"${VERSION}".tar.gz && \
+cd singularity-"${VERSION}" && \
 ./mconfig && \
 make -C builddir && \
 sudo make -C builddir install
