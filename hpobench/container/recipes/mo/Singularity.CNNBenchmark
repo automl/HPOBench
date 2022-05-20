@@ -10,13 +10,10 @@ VERSION v0.0.1
     apt install build-essential git wget -y
 
     cd /home \
-    && mkdir data && cd data \
-    && wget https://github.com/ayushi-3536/DatasetHost/blob/main/flower.tar.gz?raw=true \
-    && wget https://github.com/ayushi-3536/DatasetHost/blob/main/fashion.tar.gz?raw=true \
     && cd /home \
-    && git clone https://github.com/ayushi-3536/HPOBench.git \
+    && git clone https://github.com/automl/HPOBench.git \
     && cd HPOBench \
-    && git checkout mo_cnn \
+    && git checkout master \
     && pip install .[mo_cnn] \
     && cd / \
     && mkdir /var/lib/hpobench/ \
