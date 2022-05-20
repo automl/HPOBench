@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-echo "Install Singularity"
+echo "Inside Singularity Installation Script"
 
 sudo apt-get update && sudo apt-get install -y \
   build-essential \
@@ -22,6 +22,10 @@ elif [[ "$SINGULARITY_VERSION" == "3.7" ]]; then
     export VERSION=3.7.3
 elif [[ "$SINGULARITY_VERSION" == "3.8" ]]; then
     export VERSION=3.8.4
+elif [[ "$SINGULARITY_VERSION" == "3.9" ]]; then
+    export VERSION=3.9.3
+elif [[ "$SINGULARITY_VERSION" == "3.10" ]]; then
+    export VERSION=3.10.1
 else
     echo "Skip installing Singularity"
 fi
