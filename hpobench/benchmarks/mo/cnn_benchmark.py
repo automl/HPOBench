@@ -331,6 +331,8 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         self.__seed_everything()
 
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        logger.info(f'We use the device: {device}')
+
         # initializing model
         model = self.init_model(configuration, rng).to(device)
         epochs = fidelity['budget']
