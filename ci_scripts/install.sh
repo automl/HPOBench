@@ -41,30 +41,6 @@ else
 fi
 
 if [[ "$USE_SINGULARITY" == "true" ]]; then
-    echo "Install Singularity"
-
-    sudo apt-get update && sudo apt-get install -y \
-      build-essential \
-      libssl-dev \
-      uuid-dev \
-      libgpgme11-dev \
-      squashfs-tools \
-      libseccomp-dev \
-      wget \
-      pkg-config \
-      git \
-      cryptsetup
-
-    export VERSION=3.5.3 && # adjust this as necessary \
-      wget https://github.com/sylabs/singularity/archive/refs/tags/v${VERSION}.tar.gz && \
-      tar -xzf v${VERSION}.tar.gz && \
-      cd singularity-${VERSION}
-
-    ./mconfig && \
-      make -C builddir && \
-      sudo make -C builddir install
-
-    cd ..
     install_packages="${install_packages}placeholder,"
 else
     echo "Skip installing Singularity"

@@ -21,14 +21,14 @@ elif [[ "$SINGULARITY_VERSION" == "3.6" ]]; then
 elif [[ "$SINGULARITY_VERSION" == "3.7" ]]; then
     export VERSION=3.7.3
 elif [[ "$SINGULARITY_VERSION" == "3.8" ]]; then
-    export VERSION=3.8.0
+    export VERSION=3.8.4
 else
     echo "Skip installing Singularity"
 fi
 
-wget https://github.com/sylabs/singularity/archive/refs/tags/v${VERSION}.tar.gz && \
-tar -xzf v${VERSION}.tar.gz && \
-cd singularity-${VERSION} && \
+wget https://github.com/singularityware/singularity/releases/download/v${VERSION}/singularity-{VERSION}.tar.gz
+tar -xzf singularity-${VERSION}.tar.gz && \
+cd singularity-{VERSION} && \
 ./mconfig && \
 make -C builddir && \
 sudo make -C builddir install
