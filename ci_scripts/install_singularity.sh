@@ -16,23 +16,36 @@ sudo apt-get update && sudo apt-get install -y \
 
 if [[ "$SINGULARITY_VERSION" == "3.5" ]]; then
     export VERSION=3.5.3
+    export FILENAME=singularity-"${VERSION}"
+
 elif [[ "$SINGULARITY_VERSION" == "3.6" ]]; then
     export VERSION=3.6.4
+    export FILENAME=singularity-"${VERSION}"
+
 elif [[ "$SINGULARITY_VERSION" == "3.7" ]]; then
     export VERSION=3.7.3
+    export FILENAME=singularity-"${VERSION}"
+
 elif [[ "$SINGULARITY_VERSION" == "3.8" ]]; then
     export VERSION=3.8.4
+    export FILENAME=singularity-ce-"${VERSION}"
+
 elif [[ "$SINGULARITY_VERSION" == "3.9" ]]; then
     export VERSION=3.9.3
+    export FILENAME=singularity-ce-"${VERSION}"
+
+
 elif [[ "$SINGULARITY_VERSION" == "3.10" ]]; then
-    export VERSION=3.10.1
+    export VERSION=3.10.0
+    export FILENAME=singularity-ce-"${VERSION}"
+
 else
     echo "Skip installing Singularity"
 fi
 
-wget https://github.com/singularityware/singularity/releases/download/v"${VERSION}"/singularity-"${VERSION}".tar.gz && \
-tar -xzf singularity-"${VERSION}".tar.gz && \
-cd singularity-"${VERSION}" && \
+wget https://github.com/sylabs/singularity/releases/download/v"${VERSION}"/"${FILENAME}".tar.gz && \
+tar -xzf "${FILENAME}".tar.gz && \
+cd "${FILENAME}" && \
 ./mconfig && \
 make -C builddir && \
 sudo make -C builddir install

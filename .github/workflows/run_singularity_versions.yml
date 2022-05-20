@@ -10,11 +10,6 @@ jobs:
       matrix:
         include:
           - python-version: 3.7
-            DISPLAY_NAME: "Singularity Container Examples with S3.5"
-            RUN_CONTAINER_EXAMPLES: true
-            USE_SINGULARITY: false
-            SINGULARITY_VERSION: "3.5"
-          - python-version: 3.7
             DISPLAY_NAME: "Singularity Container Examples with S3.6"
             RUN_CONTAINER_EXAMPLES: true
             USE_SINGULARITY: false
@@ -29,6 +24,16 @@ jobs:
             RUN_CONTAINER_EXAMPLES: true
             USE_SINGULARITY: false
             SINGULARITY_VERSION: "3.8"
+          - python-version: 3.7
+            DISPLAY_NAME: "Singularity Container Examples with S3.9"
+            RUN_CONTAINER_EXAMPLES: true
+            USE_SINGULARITY: false
+            SINGULARITY_VERSION: "3.9"
+          - python-version: 3.7
+            DISPLAY_NAME: "Singularity Container Examples with S3.10"
+            RUN_CONTAINER_EXAMPLES: true
+            USE_SINGULARITY: false
+            SINGULARITY_VERSION: "3.10"
 
       fail-fast: false
 

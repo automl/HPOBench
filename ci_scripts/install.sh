@@ -40,12 +40,6 @@ else
     echo "Skip installing packages for local examples"
 fi
 
-if [[ "$USE_SINGULARITY" == "true" ]]; then
-    install_packages="${install_packages}placeholder,"
-else
-    echo "Skip installing Singularity"
-fi
-
 # remove the trailing comma
 install_packages="$(echo ${install_packages} | sed 's/,*\r*$//')"
 echo "Install HPOBench with options: ${install_packages}"
