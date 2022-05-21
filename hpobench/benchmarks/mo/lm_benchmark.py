@@ -67,7 +67,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
                 'batch_size', default_value=128, lower=8, upper=256
             ),
             CS.UniformIntegerHyperparameter(
-                'emsize', default_value=128, lower=32, upper=1024
+                'emsize', default_value=128, lower=32, upper=1024, log=True
             ),
             CS.UniformIntegerHyperparameter(
                 'lr_factor', default_value=50, lower=1, upper=100, log=True
