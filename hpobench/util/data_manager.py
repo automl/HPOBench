@@ -939,8 +939,11 @@ class AdultDataManager(HoldoutDataManager):
                               'employment_type']
         self.sensitive_names = 'sex'
 
-        self.save_dir = hpobench.config_file.data_dir / "adult"
-        self.create_save_directory(self.save_dir)
+        self._save_dir = hpobench.config_file.data_dir / "adult"
+
+        self._data_extract_path = self._save_dir / "processed_data"
+
+        self.create_save_directory(self._data_extract_path)
 
     def load(self):
         """
@@ -964,11 +967,13 @@ class AdultDataManager(HoldoutDataManager):
 
         return X_trn, y_trn, X_val, y_val, X_tst, y_tst
 
-
     def _download(self):
-        self._download_file_with_progressbar(self.urls["data"], self.save_dir / "adult.data")
-        self._download_file_with_progressbar(self.urls["test_data"], self.save_dir / "adult.test")
 
+        if not (self._save_dir / "adult.data").exists():
+            self._download_file_with_progressbar(self.urls["data"], self._save_dir / "adult.data")
+
+        if not (self._save_dir / "adult.test").exists():
+            self._download_file_with_progressbar(self.urls["test_data"], self._save_dir / "adult.test")
 
     def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -983,22 +988,42 @@ class AdultDataManager(HoldoutDataManager):
         X_test: np.ndarray
         y_test: np.ndarray
         """
-        columns = ["age", "workclass", "fnlwgt", "education", "education-num", "marital-status",
-                   "occupation", "relationship", "race", "sex", "capital-gain", "capital-loss",
-                   "hours-per-week", "country", "salary"]
-        train_data = pd.read_csv(self.save_dir / 'adult.data', names=columns, sep=',', na_values='?')
-        test_data = pd.read_csv(self.save_dir / 'adult.test', names=columns, sep=',', skiprows=1, na_values='?')
+        processed_files = ['x_train', 'x_valid', 'x_test', 'y_train', 'y_valid', 'y_test']
+        file_is_missing = not all([(self._data_extract_path / f'{file}.npy').exists() for file in processed_files])
 
-        X, y = self._process_adult_data(train_data)
-        X_test, y_test = self._process_adult_data(test_data)
+        if file_is_missing:
+            columns = ["age", "workclass", "fnlwgt", "education", "education-num", "marital-status",
+                       "occupation", "relationship", "race", "sex", "capital-gain", "capital-loss",
+                       "hours-per-week", "country", "salary"]
+            train_data = pd.read_csv(self._save_dir / 'adult.data', names=columns, sep=',', na_values='?')
+            test_data = pd.read_csv(self._save_dir / 'adult.test', names=columns, sep=',', skiprows=1, na_values='?')
 
-        n_trn = int(X.shape[0] * 0.7)
-        # Creation of Train and Test dataset
-        X_train, y_train = X[:n_trn], y[:n_trn]
-        X_valid, y_valid = X[n_trn:], y[n_trn:]
+            X, y = self._process_adult_data(train_data)
+            X_test, y_test = self._process_adult_data(test_data)
+
+            n_trn = int(X.shape[0] * 0.7)
+            # Creation of Train and Test dataset
+            X_train, y_train = X[:n_trn], y[:n_trn]
+            X_valid, y_valid = X[n_trn:], y[n_trn:]
+
+            X_train = np.save(self._data_extract_path / 'x_train.npy', X_train)
+            X_valid = np.save(self._data_extract_path / 'x_valid.npy', X_valid)
+            X_test = np.save(self._data_extract_path / 'x_test.npy', X_test)
+
+            y_train = np.save(self._data_extract_path / 'y_train.npy', y_train)
+            y_valid = np.save(self._data_extract_path / 'y_valid.npy', y_valid)
+            y_test = np.save(self._data_extract_path / 'y_test.npy', y_test)
+
+        else:
+            X_train = np.load(self._data_extract_path / 'x_train.npy')
+            X_valid = np.load(self._data_extract_path / 'x_valid.npy')
+            X_test = np.load(self._data_extract_path / 'x_test.npy')
+
+            y_train = np.load(self._data_extract_path / 'y_train.npy')
+            y_valid = np.load(self._data_extract_path / 'y_valid.npy')
+            y_test = np.load(self._data_extract_path / 'y_test.npy')
 
         return X_train, y_train, X_valid, y_valid, X_test, y_test
-
 
     def _process_adult_data(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         # mapping all categories of marital status to Single(1) or Couple(0)

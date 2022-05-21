@@ -5,12 +5,10 @@ Changelog:
 0.0.1:
 * First implementation of the Multi-Objective Fair Adult Benchmark.
 """
-from typing import Union, Tuple, Dict, List
+from typing import Union, Dict, List
 import ConfigSpace as CS
 import numpy as np
-import pandas as pd
 import logging
-from ConfigSpace.hyperparameters import Hyperparameter
 import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark
 from sklearn.metrics import accuracy_score
@@ -94,24 +92,13 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
 
         fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters(
-            # gray-box setting (multi-multi-fidelity) - iterations + data subsample
-            AdultBenchmark._get_fidelity_choices(epoch_choice='variable')
-        )
-        print(fidelity_space)
-        return fidelity_space
-
-    @staticmethod
-    def _get_fidelity_choices(epoch_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
-
-        fidelity1 = dict(
-            fixed=CS.Constant('budget', value=200),
-            variable=CS.UniformIntegerHyperparameter(
+        fidelity_space.add_hyperparameters([
+            CS.UniformIntegerHyperparameter(
                 'budget', lower=1, upper=200, default_value=200, log=False
             )
-        )
-        budget = fidelity1[epoch_choice]
-        return [budget]
+        ])
+        print(fidelity_space)
+        return fidelity_space
 
     @staticmethod
     def get_meta_information() -> Dict:
@@ -120,7 +107,8 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
             'name': 'Multi-objective Asynchronous Successive Halving',
             'references': ['@article{schmucker2021multi,'
                            'title={Multi-objective Asynchronous Successive Halving},'
-                           'author={Schmucker, Robin and Donini, Michele and Zafar, Muhammad Bilal and Salinas, David and Archambeau, C{\'e}dric},'
+                           'author={Schmucker, Robin and Donini, Michele and Zafar, Muhammad Bilal and Salinas,'
+                           ' David and Archambeau, C{\'e}dric},'
                            'journal={arXiv preprint arXiv:2106.12639},'
                            'year={2021}',
                            ],
@@ -181,7 +169,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         self.rng = rng_helper.get_rng(rng)
         ts_start = time.time()
 
-        budget = fidelity['budget'] - 1
+        budget = fidelity['budget']
         logger.debug("budget for evaluation of config:{}", budget)
         logger.debug("config for evaluation:{}", configuration)
 
@@ -204,7 +192,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         configuration.pop("fc_layer_2")
         configuration.pop("fc_layer_3")
         configuration.pop("n_fc_layers")
-        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden)
+        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, random_state=rng)
 
         start = time.time()
         for e in range(budget):
@@ -232,12 +220,12 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         test_unequal_opportunity = fairness_risk(X_test, self.y_test, sensitive_rows_test, mlp, UNEQUAL_OPPORTUNITY)
         test_unequalized_odds = fairness_risk(X_test, self.y_test, sensitive_rows_test, mlp, UNEQUALIZED_ODDS)
 
-        elapsed_time = ts_start - time.time()
-
         logger.debug("config:{}, val_acc:{}, test_score :{}, train score:{}, dsp:{}, deo :{}, dfp :{}",
                      configuration, val_accuracy, test_accuracy, train_accuracy, val_statistical_disparity,
                      val_unequal_opportunity,
                      val_unequalized_odds)
+
+        elapsed_time = ts_start - time.time()
 
         return {'function_value': {'accuracy': val_accuracy,
                                    'DSO': val_statistical_disparity,
@@ -317,20 +305,21 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         # The result dict should contain already all necessary information -> Just swap the function value from valid
         # to test and the corresponding time cost
-        assert fidelity['budget'] == 200, 'Only test data for the 50. epoch is available. '
+        assert fidelity['budget'] == 200, 'Only test data for the 200. epoch is available. '
 
         self.rng = rng_helper.get_rng(rng)
 
         X_train = np.vstack((self.X_train, self.X_valid))
-        self.y_train = pd.concat((self.y_train, self.y_valid))
+
+        self.y_train = np.vstack((self.y_train[:, np.newaxis], self.y_valid[:, np.newaxis])).ravel()
 
         ts_start = time.time()
-        budget = fidelity['budget'] - 1
+        budget = fidelity['budget']
 
         sensitive_rows = self.X_test[:, self.feature_names.index(self.sensitive_feature)]
 
         # Normalize data
-        scaler = get_fitted_scaler(X_train, configuration["scaler"])
+        scaler = get_fitted_scaler(X_train, "Standard")
         if scaler is not None:
             X_train = scaler(X_train)
             X_test = scaler(self.X_test)
@@ -338,7 +327,14 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         # Create model
         hidden = [configuration['fc_layer_0'], configuration['fc_layer_1'],
                   configuration['fc_layer_2'], configuration['fc_layer_3']][:configuration['n_fc_layers']]
-        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden)
+
+        configuration.pop("fc_layer_0")
+        configuration.pop("fc_layer_1")
+        configuration.pop("fc_layer_2")
+        configuration.pop("fc_layer_3")
+        configuration.pop("n_fc_layers")
+
+        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, random_state=rng)
 
         start = time.time()
         for e in range(budget):
