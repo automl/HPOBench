@@ -981,8 +981,9 @@ class LanguageModelDataManager(HoldoutDataManager):
         print(self.X_test.shape)
         return self.X_train, self.X_valid, self.X_test
 
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpobench.config_file.cache_dir}/language_model', delay=0.5)
     def _download(self):
-
         for data in self.urls:
             if (self.save_dir / f'{data}.txt').exists():
                 self.logger.debug(f'LanguageModelDataManager : tokenized {data}.txt already exist')
@@ -999,24 +1000,9 @@ class LanguageModelDataManager(HoldoutDataManager):
         X_test: np.ndarray
         """
 
-        import torch
-        for data in self.urls:
-        #     if (self.tokenize_path / f'{data}.pt').exists():
-        #         self.logger.debug(f'LanguageModelDataManager : {data}.txt already exist')
-        #     else:
-            tokenized_data = self.corpus.tokenize(self.save_dir / f'{data}.txt')
-            torch.save(tokenized_data, self.tokenize_path / f'{data}.pt')
-
         X_train = self.corpus.tokenize(self.save_dir / 'train.txt')
-
         X_valid = self.corpus.tokenize(self.save_dir / 'valid.txt')
-
         X_test = self.corpus.tokenize(self.save_dir / 'test.txt')
-        #
-        # X_train = torch.load(self.tokenize_path / 'train.pt', map_location=self.device)
-        # X_valid = torch.load(self.tokenize_path / 'valid.pt', map_location=self.device)
-        # X_test = torch.load(self.tokenize_path / 'test.pt', map_location=self.device)
-        print(len(self.corpus.dictionary))
         return X_train, X_valid, X_test
 
 
