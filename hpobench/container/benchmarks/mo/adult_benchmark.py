@@ -1,4 +1,4 @@
-""" Benchmark for the Multi-Objective CNN Benchmark from hpobench/benchmarks/mo/cnn_benchmark.py
+""" Benchmark for the Multi-Objective Adult Benchmark from hpobench/benchmarks/mo/adult_benchmark.py
 """
 
 from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
