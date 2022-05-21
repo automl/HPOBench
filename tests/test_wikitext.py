@@ -17,10 +17,6 @@ def test_wikitext_benchmark():
 
     assert cfg_1 == cfg_2
 
-    print("cfg1", cfg_1)
-    print("cfg2", cfg_2)
-
-
     test_config = {
         'batch_size': 144, 'clip': 1.458859796107597, 'dropout': 0.5967357423109274,
         'emsize': 575, 'lr': 5.245378070737081, 'lr_factor': 15
@@ -28,8 +24,5 @@ def test_wikitext_benchmark():
 
     result_1 = benchmark.objective_function(test_config, rng=1, fidelity={'budget': 1})
     result_2 = benchmark.objective_function(test_config, rng=1, fidelity={'budget': 1})
-    print("r1", result_1)
-    print("r2", result_2)
-
     assert result_1['info']['train_accuracy'] == pytest.approx(0.76145, rel=0.001)
     assert result_1['info']['train_accuracy'] == result_2['info']['train_accuracy']
