@@ -27,9 +27,6 @@ class PositionalEncoding(nn.Module):
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
         pe[:, 0::2] = torch.sin(position * div_term)
-        print("shape pe",pe[:,0::2].shape)
-
-        print("shape after pe",pe[:,1::2].shape)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0).transpose(0, 1)
         self.register_buffer('pe', pe)
@@ -51,7 +48,7 @@ class PositionalEncoding(nn.Module):
 class TransformerModel(nn.Module):
     """Container module with an encoder, a transformer module, and a decoder."""
 
-    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, bptt=35):
+    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.5, bptt=35, rng=None):
         super(TransformerModel, self).__init__()
         try:
             from torch.nn import TransformerEncoder, TransformerEncoderLayer
@@ -99,7 +96,7 @@ class TransformerModel(nn.Module):
         output = self.decoder(output)
         return F.log_softmax(output, dim=-1)
 
-    def train_fun(self, model, ntokens, criterion, train_data, lr, clip):
+    def train_fun(self, ntokens, criterion, train_data, lr, clip):
         # Turn on training mode which enables dropout.
         self.train()
         total_loss = 0.
@@ -108,8 +105,8 @@ class TransformerModel(nn.Module):
             data, targets = self.get_batch(train_data, i)
             # Starting each batch, we detach the hidden state from how it was previously produced.
             # If we didn't, the model would try backpropagating all the way to start of the dataset.
-            model.zero_grad()
-            output = model(data)
+            self.zero_grad()
+            output = self(data)
             output_flat = output.view(-1, ntokens)
             loss = criterion(output_flat, targets)
             loss.backward()
@@ -122,14 +119,14 @@ class TransformerModel(nn.Module):
             total_acc += len(data) * accuracy
 
             # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
-            torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
-            for p in model.parameters():
+            torch.nn.utils.clip_grad_norm_(self.parameters(), clip)
+            for p in self.parameters():
                 p.data.add_(-lr, p.grad.data)
 
         avg_acc = total_acc / (len(train_data) - 1)
         return total_loss / (len(train_data) - 1), avg_acc
 
-    def eval_fun(self, model, ntokens, criterion, data_source):
+    def eval_fun(self, ntokens, criterion, data_source):
         # Turn on evaluation mode which disables dropout.
         self.eval()
         total_loss = 0.
@@ -137,7 +134,7 @@ class TransformerModel(nn.Module):
         with torch.no_grad():
             for i in range(0, data_source.size(0) - 1, self.bptt):
                 data, targets = self.get_batch(data_source, i)
-                output = model(data)
+                output = self(data)
                 output_flat = output.view(-1, ntokens)
                 total_loss += len(data) * criterion(output_flat, targets).item()
 
