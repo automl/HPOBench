@@ -40,8 +40,6 @@ import ConfigSpace as CS
 import numpy as np
 
 from yahpo_gym.benchmark_set import BenchmarkSet
-
-from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark, AbstractBenchmark
 
 __version__ = '0.0.1'

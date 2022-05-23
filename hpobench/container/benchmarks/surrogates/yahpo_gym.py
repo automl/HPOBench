@@ -4,7 +4,6 @@
 from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient, AbstractMOBenchmarkClient
 
 
-
 class YAHPOGymBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'YAHPOGymBenchmark')
