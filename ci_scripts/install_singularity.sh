@@ -16,7 +16,7 @@ sudo apt-get update && sudo apt-get install -y \
 
 if [[ "$SINGULARITY_VERSION" == "3.7" ]]; then
     export VERSION=3.7.3
-    export FILENAME=singularity-"${VERSION}"
+    export FILENAME=singularity
 
 elif [[ "$SINGULARITY_VERSION" == "3.8" ]]; then
     export VERSION=3.8.4
