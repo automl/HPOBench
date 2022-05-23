@@ -1,6 +1,16 @@
 name: Test Support for different Singularity Versions
 
-on: [push]
+on:
+  pull_request:
+    types: [ready_for_review]
+
+  pull_request_review:
+    types: [submitted]
+
+  push:
+    branches:
+      - 'main'
+      - 'development'
 
 jobs:
   Tests:
@@ -9,11 +19,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - python-version: 3.7
-            DISPLAY_NAME: "Singularity Container Examples with S3.6"
-            RUN_CONTAINER_EXAMPLES: true
-            USE_SINGULARITY: false
-            SINGULARITY_VERSION: "3.6"
           - python-version: 3.7
             DISPLAY_NAME: "Singularity Container Examples with S3.7"
             RUN_CONTAINER_EXAMPLES: true

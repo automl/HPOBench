@@ -14,15 +14,7 @@ sudo apt-get update && sudo apt-get install -y \
   git \
   cryptsetup
 
-if [[ "$SINGULARITY_VERSION" == "3.5" ]]; then
-    export VERSION=3.5.3
-    export FILENAME=singularity-"${VERSION}"
-
-elif [[ "$SINGULARITY_VERSION" == "3.6" ]]; then
-    export VERSION=3.6.4
-    export FILENAME=singularity-"${VERSION}"
-
-elif [[ "$SINGULARITY_VERSION" == "3.7" ]]; then
+if [[ "$SINGULARITY_VERSION" == "3.7" ]]; then
     export VERSION=3.7.3
     export FILENAME=singularity-"${VERSION}"
 
@@ -33,7 +25,6 @@ elif [[ "$SINGULARITY_VERSION" == "3.8" ]]; then
 elif [[ "$SINGULARITY_VERSION" == "3.9" ]]; then
     export VERSION=3.9.3
     export FILENAME=singularity-ce-"${VERSION}"
-
 
 elif [[ "$SINGULARITY_VERSION" == "3.10" ]]; then
     export VERSION=3.10.0
