@@ -40,6 +40,10 @@ else
     echo "Skip installing packages for local examples"
 fi
 
+# We add a placeholder / No-OP operator. When running the container examples, we don't install any
+# additional packages. That causes an error, since `pip install .[]` does not work.
+install_packages="${install_packages}NOP,"
+
 # remove the trailing comma
 install_packages="$(echo ${install_packages} | sed 's/,*\r*$//')"
 echo "Install HPOBench with options: ${install_packages}"
