@@ -5,19 +5,21 @@ Changelog:
 0.0.1:
 * First implementation of the Multi-Objective Fair Adult Benchmark.
 """
+import logging
+import time
 from typing import Union, Dict, List
+
 import ConfigSpace as CS
 import numpy as np
-import logging
-import hpobench.util.rng_helper as rng_helper
-from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark
 from sklearn.metrics import accuracy_score
 from sklearn.neural_network import MLPClassifier
-from hpobench.dependencies.mo.scalar import get_fitted_scaler
-from hpobench.dependencies.mo.fairness_metrics import fairness_risk, STATISTICAL_DISPARITY, UNEQUALIZED_ODDS,\
+
+import hpobench.util.rng_helper as rng_helper
+from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark
+from hpobench.dependencies.mo.fairness_metrics import fairness_risk, STATISTICAL_DISPARITY, UNEQUALIZED_ODDS, \
     UNEQUAL_OPPORTUNITY
+from hpobench.dependencies.mo.scalar import get_fitted_scaler
 from hpobench.util.data_manager import AdultDataManager
-import time
 
 __version__ = '0.0.1'
 
