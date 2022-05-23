@@ -22,11 +22,23 @@ def fairness_risk(x, y, sensitive_rows, model, unfairness_metric):
     """
     Returns the fairness_risk based on the definition of the unfairness_metric, currently supporting:
     statistical_disparity: P(positive prediction | group A) = P(positive prediction | group B)
-    :param x: inputs
-    :param y: labels in {0, 1} such that 0 is a "positive" label, 1 "negative"
-    :param sensitive_rows: binary array indicating which rows correspond to the protected group
-    :param model: trained sklearn model
-    :param unfairness_metric: string with unfairness condition
+
+    Parameters
+    ----------
+    x: np.ndarray
+        inputs
+    y: np.ndarray
+        labels in {0, 1} such that 0 is a "positive" label, 1 "negative"
+    sensitive_rows: np.ndarray
+        binary array indicating which rows correspond to the protected group
+    model:
+        trained sklearn model
+    unfairness_metric: str
+        string with unfairness condition
+
+    Returns
+    -------
+        float
     """
     predicted_probs = model.predict_proba(x)
     if unfairness_metric == STATISTICAL_DISPARITY:
@@ -92,5 +104,7 @@ def fairness_risk(x, y, sensitive_rows, model, unfairness_metric):
         tpr1 = tp1 / (tp1 + fn1)
         return min(tpr0, tpr1)
     else:
-        raise ValueError('{} is not a valid unfairness condition. Please specify one among ({}, {}, {})'.format(
-            unfairness_metric, STATISTICAL_DISPARITY, UNEQUAL_OPPORTUNITY, UNEQUALIZED_ODDS))
+        raise ValueError(
+            f'{unfairness_metric} is not a valid unfairness condition. '
+            f'Please specify one among ({STATISTICAL_DISPARITY}, {UNEQUAL_OPPORTUNITY}, {UNEQUALIZED_ODDS})'
+        )

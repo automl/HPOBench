@@ -1006,13 +1006,13 @@ class AdultDataManager(HoldoutDataManager):
             X_train, y_train = X[:n_trn], y[:n_trn]
             X_valid, y_valid = X[n_trn:], y[n_trn:]
 
-            X_train = np.save(self._data_extract_path / 'x_train.npy', X_train)
-            X_valid = np.save(self._data_extract_path / 'x_valid.npy', X_valid)
-            X_test = np.save(self._data_extract_path / 'x_test.npy', X_test)
+            np.save(self._data_extract_path / 'x_train.npy', X_train)
+            np.save(self._data_extract_path / 'x_valid.npy', X_valid)
+            np.save(self._data_extract_path / 'x_test.npy', X_test)
 
-            y_train = np.save(self._data_extract_path / 'y_train.npy', y_train)
-            y_valid = np.save(self._data_extract_path / 'y_valid.npy', y_valid)
-            y_test = np.save(self._data_extract_path / 'y_test.npy', y_test)
+            np.save(self._data_extract_path / 'y_train.npy', y_train)
+            np.save(self._data_extract_path / 'y_valid.npy', y_valid)
+            np.save(self._data_extract_path / 'y_test.npy', y_test)
 
         else:
             X_train = np.load(self._data_extract_path / 'x_train.npy')
