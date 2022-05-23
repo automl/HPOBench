@@ -139,11 +139,6 @@ If you use a benchmark in your experiments, please specify the version number of
 the used container to ensure reproducibility. When starting an experiment, HPOBench writes automatically these two version numbers to the log. 
 
 ### Troubleshooting and Further Notes
-
-  - **Singularity throws an 'Invalid Image format' exception**
-  Use a singularity version > 3. For users of the Meta-Cluster in Freiburg, you have to set the following path:
-  ```export PATH=/usr/local/kislurm/singularity-3.5/bin/:$PATH```
-
   - **A Benchmark fails with `SystemError: Could not start an instance of the benchmark. Retried 5 times` but the container 
 can be started locally with `singularity instance start <pathtocontainer> test`**
 See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that does not end with '}'. If yes delete this file and retry.   
