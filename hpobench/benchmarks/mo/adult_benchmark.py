@@ -34,8 +34,6 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         Parameters
         ----------
-        dataset : str
-            One of fashion, flower.
         rng : np.random.RandomState, int, None
             Random seed for the benchmark's random state.
         """
@@ -158,9 +156,8 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         Parameters
         ----------
-        configuration: Dict, CS.Configuration, None
+        configuration: Dict, CS.Configuration
             Configuration for the MLP model.
-            Use default configuration if None.
         fidelity: Dict, None
             budget: int - Values: [1, 200]
                 Number of epochs an architecture was trained.
@@ -201,7 +198,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                  test_DFP : float,
                  fidelity : int,
         """
-        self.rng = rng_helper.get_rng(rng)
+        self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
         if shuffle:
             self._shuffle_data(rng=self.rng, shuffle_valid=False)
 
@@ -232,7 +229,8 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         # We deviate here from the original implementation. They have called `budget`-times mlp.partial_fit().
         # We call `.fit()` due to efficiency aspects.
-        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, random_state=rng, max_iter=budget)
+        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, shuffle=shuffle,
+                            random_state=self.rng, max_iter=budget)
         start = time.time()
         mlp.fit(X_train, self.y_train)
         y_pred_train = mlp.predict(X_train)
@@ -300,7 +298,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         Parameters
         ----------
-        configuration: Dict, CS.Configuration, None
+        configuration: Dict, CS.Configuration
             Configuration for the MLP model.
             Use default configuration if None.
         fidelity: Dict, CS.Configuration, None
@@ -343,7 +341,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                  test_DFP : float,
                  fidelity : int,
         """
-        self.rng = rng_helper.get_rng(rng, self.rng)
+        self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
         if shuffle:
             self._shuffle_data(self.rng, shuffle_valid=True)
@@ -373,7 +371,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         # We deviate here from the original implementation. They have called `budget`-times mlp.partial_fit().
         # We call `.fit()` due to efficiency aspects.
-        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, random_state=rng, max_iter=budget)
+        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, shuffle=shuffle, random_state=rng, max_iter=budget)
         start = time.time()
         mlp.fit(X_train, y_train)
         y_pred_train = mlp.predict(X_train)
