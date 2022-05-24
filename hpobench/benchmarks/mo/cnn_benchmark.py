@@ -6,16 +6,15 @@ Changelog:
 * First implementation of the Multi-Objective CNN Benchmark.
 """
 import logging
+import random
 import time
-from typing import Union, Tuple, Dict, List
+from typing import Union, Dict, List
 
 import ConfigSpace as CS
 import numpy as np
 import torch
 import torch.nn as nn
 import tqdm
-import random
-from ConfigSpace.hyperparameters import Hyperparameter
 from torch.utils.data import TensorDataset, DataLoader
 
 import hpobench.util.rng_helper as rng_helper
@@ -103,11 +102,20 @@ class Net(nn.Module):
     def train_fn(self, optimizer, criterion, loader, device):
         """
         Training method
-        :param optimizer: optimization algorithm
-        :param criterion: loss function
-        :param loader: data loader for either training or testing set
-        :param device: torch device
-        :return: accuracy on the data
+
+        Parameters
+        ----------
+        optimizer
+            optimization algorithm
+        criterion
+            loss function
+        loader
+            data loader for either training or testing set
+        device
+            Either CPU or GPU
+        Returns
+        -------
+        accuracy on the data
         """
         accuracy = AccuracyTop1()
         self.train()
@@ -117,7 +125,6 @@ class Net(nn.Module):
             images = images.to(device)
             labels = labels.to(device)
 
-            # Step
             optimizer.zero_grad()
             logits = self(images)
 
@@ -132,10 +139,17 @@ class Net(nn.Module):
     def eval_fn(self, loader, device):
         """
         Evaluation method
-        :param loader: data loader for either training or testing set
-        :param device: torch device
-        :param train: boolean to indicate if training or test set is used
-        :return: accuracy on the data
+
+        Parameters
+        ----------
+        loader:
+            data loader for either training or testing set
+        device:
+            torch device
+
+        Returns
+        -------
+        accuracy on the data
         """
         accuracy = AccuracyTop1()
         self.eval()
@@ -153,17 +167,17 @@ class Net(nn.Module):
 
 
 class CNNBenchmark(AbstractMultiObjectiveBenchmark):
-    """
-    Parameters
+    def __init__(self, dataset: str,
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        """
+        Parameters
         ----------
         dataset : str
             One of fashion, flower.
         rng : np.random.RandomState, int, None
             Random seed for the benchmark's random state.
-    """
+        """
 
-    def __init__(self, dataset: str,
-                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         super(CNNBenchmark, self).__init__(rng=rng)
         allowed_datasets = ["fashion", "flower"]
         assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
@@ -182,7 +196,18 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        """Parameter space to be optimized --- contains the hyperparameters
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all parameters for
+        the CNN model.
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
         """
         cs = CS.ConfigurationSpace(seed=seed)
 
@@ -231,12 +256,24 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         return cs
 
     @staticmethod
-    def get_objective_names() -> List[str]:
-        return ['accuracy', 'model_size']
-
-    @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters
 
+        Fidelities
+        ----------
+        budget: int - [1, 25]
+            Number of epochs to train
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters([CS.UniformIntegerHyperparameter(
             'budget', lower=1, upper=25, default_value=25, log=False
@@ -262,9 +299,15 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
             'code': 'https://github.com/automl/multi-obj-baselines',
         }
 
+    @staticmethod
+    def get_objective_names() -> List[str]:
+        """Get the names of the objectives reported in the objective function."""
+        return ['accuracy', 'model_size']
+
     def init_model(self, config: Union[CS.Configuration, Dict],
                    rng: Union[int, np.random.RandomState, None] = None):
-        """ Function that returns the model initialized based on the configuration and fidelity
+        """
+        Function that returns the model initialized based on the configuration and fidelity
         """
         rng = self.rng if rng is None else rng
         if isinstance(config, CS.Configuration):
@@ -280,6 +323,30 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
 
+    def _shuffle_data(self, rng=None, shuffle_valid=False) -> None:
+        """
+        Reshuffle the training data.
+
+        Parameters
+        ----------
+        rng
+            If 'rng' is None, the training idx are shuffled according to the class-random-state
+        shuffle_valid: bool, None
+            If true, shuffle the validation data. Defaults to False.
+        """
+        random_state = rng_helper.get_rng(rng, self.rng)
+
+        train_idx = np.arange(len(self.X_train))
+        random_state.shuffle(train_idx)
+        self.X_train = self.X_train[train_idx]
+        self.y_train = self.y_train[train_idx]
+
+        if shuffle_valid:
+            valid_idx = np.arange(len(self.X_valid))
+            random_state.shuffle(valid_idx)
+            self.X_valid = self.X_valid[valid_idx]
+            self.y_valid = self.y_valid[valid_idx]
+
     @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[Dict, CS.Configuration, None] = None,
@@ -287,24 +354,26 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
                            shuffle: bool = False,
                            **kwargs) -> Dict:
         """
+        Train a CNN on either the flower or the fashion data set and return the performance on the validation
+        data split.
 
         Parameters
         ----------
-        configuration
-        fidelity: Dict, None
+        configuration : Dict, CS.Configuration
+            Configuration for the CNN Model
+        fidelity: Dict, CS.Configuration, None
             epoch: int - Values: [1, 50]
                 Number of epochs an architecture was trained.
                 Note: the number of epoch is 1 indexed! (Results after the first epoch: epoch = 1)
-
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark.
-
             To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
             If this parameter is not given, the default random state is used.
-
-
+        shuffle: bool, None
+            If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
+            Defaults to ``False``.
         kwargs
 
         Returns
@@ -325,10 +394,13 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
                 fidelity : Dict
                     used fidelities in this evaluation
         """
+        self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
+        self.__seed_everything()
+
+        if shuffle:
+            self._shuffle_data(rng=self.rng, shuffle_valid=False)
 
         time_in = time.time()
-        self.rng = rng_helper.get_rng(rng)
-        self.__seed_everything()
 
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         logger.info(f'We use the device: {device}')
@@ -397,28 +469,28 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
     @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
-                                fidelity: Union[Dict, None] = None,
+                                fidelity: Union[Dict, CS.Configuration, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
                                 shuffle: bool = False,
                                 **kwargs) -> Dict:
         """
-        Get the validated results. Runs a given configuration on the largest budget (here: 50).
+        Train a CNN on both the train adn validation split of either the flower or the fashion data set and
+        get the test results. Runs a given configuration on the largest budget (here: 50).
         Parameters
         ----------
-        configuration
-        fidelity: Dict, None
-            epoch: int - Values: [1, 50]
+        configuration : Dict, CS.Configuration
+            Configuration for the CNN Model
+        fidelity: Dict, CS.Configuration, None
+            epoch: int - Values: [50]
                 Number of epochs an architecture was trained.
-                Note: the number of epoch is 1 indexed. (Results after the first epoch: epoch = 1)
-
-            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark.
-
             To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
             If this parameter is not given, the default random state is used.
-
+        shuffle: bool, None
+            If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
+            Defaults to ``False``.
         kwargs
 
         Returns
@@ -444,8 +516,11 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         # to test and the corresponding time cost
         assert fidelity['budget'] == 25, 'Only test data for the 50. epoch is available. '
 
-        self.rng = rng_helper.get_rng(rng)
+        self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
         self.__seed_everything()
+
+        if shuffle:
+            self._shuffle_data(rng=self.rng, shuffle_valid=False)
 
         train_X = torch.vstack((self.X_train, self.X_valid))
         y_train = torch.cat((self.y_train, self.y_valid))
