@@ -1025,7 +1025,7 @@ class AdultDataManager(HoldoutDataManager):
 
         return X_train, y_train, X_valid, y_valid, X_test, y_test
 
-    def _process_adult_data(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    def _process_adult_data(self, df) -> Tuple[np.ndarray, np.ndarray]:
         # mapping all categories of marital status to Single(1) or Couple(0)
         df['marital-status'] = df['marital-status'].replace(
             [' Divorced', ' Married-spouse-absent', ' Never-married', ' Separated', ' Widowed'], 'Single')
