@@ -411,13 +411,3 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
 
 __all__ = ['AdultBenchmark']
-
-
-if __name__ == '__main__':
-    b = AdultBenchmark()
-    cfg = b.get_configuration_space().get_default_configuration()
-    fs = b.get_fidelity_space()
-
-    names = b.get_objective_names()
-
-    result = b.objective_function(cfg)
