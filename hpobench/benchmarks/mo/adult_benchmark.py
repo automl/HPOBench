@@ -198,14 +198,13 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         for item in ['fc_layer_0', 'fc_layer_1', 'fc_layer_2', 'fc_layer_3', 'n_fc_layers']:
             configuration.pop(item)
 
-        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, random_state=rng)
-
+        # We deviate here from the original implementation. They have called `budget`-times mlp.partial_fit().
+        # We call `.fit()` due to efficiency aspects.
+        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, random_state=rng, max_iter=budget)
         start = time.time()
-        for e in range(budget):
-            mlp.partial_fit(X_train, self.y_train, self.output_class)
-            y_pred_train = mlp.predict(X_train)
-            train_accuracy = accuracy_score(self.y_train, y_pred_train)
-
+        mlp.fit(X_train, self.y_train)
+        y_pred_train = mlp.predict(X_train)
+        train_accuracy = accuracy_score(self.y_train, y_pred_train)
         training_cost = time.time() - start
 
         start = time.time()
@@ -345,14 +344,13 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         for item in ['fc_layer_0', 'fc_layer_1', 'fc_layer_2', 'fc_layer_3', 'n_fc_layers']:
             configuration.pop(item)
 
-        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, random_state=rng)
-
+        # We deviate here from the original implementation. They have called `budget`-times mlp.partial_fit().
+        # We call `.fit()` due to efficiency aspects.
+        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, random_state=rng, max_iter=budget)
         start = time.time()
-        for e in range(budget):
-            mlp.partial_fit(X_train, y_train, self.output_class)
-            y_pred_train = mlp.predict(X_train)
-            train_accuracy = accuracy_score(y_train, y_pred_train)
-
+        mlp.fit(X_train, y_train)
+        y_pred_train = mlp.predict(X_train)
+        train_accuracy = accuracy_score(y_train, y_pred_train)
         training_cost = time.time() - start
 
         start = time.time()
