@@ -229,7 +229,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                      f"train score: {train_accuracy}, dsp: {val_statistical_disparity}, "
                      f"deo :{val_unequal_opportunity}, dfp :{val_unequalized_odds}")
 
-        elapsed_time = ts_start - time.time()
+        elapsed_time = time.time() - ts_start
 
         return {'function_value': {'accuracy': float(val_accuracy),
                                    'DSO': float(val_statistical_disparity),
@@ -362,7 +362,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         test_unequal_opportunity = fairness_risk(X_test, self.y_test, sensitive_rows, mlp, UNEQUAL_OPPORTUNITY)
         test_unequalized_odds = fairness_risk(X_test, self.y_test, sensitive_rows, mlp, UNEQUALIZED_ODDS)
 
-        elapsed_time = ts_start - time.time()
+        elapsed_time = time.time() - ts_start
 
         logger.debug(f"config:{configuration}, test_score: {test_accuracy}, train score:{train_accuracy},"
                      f"dsp:{test_statistical_disparity}, deo :{test_unequal_opportunity}, dfp :{test_unequalized_odds}")
