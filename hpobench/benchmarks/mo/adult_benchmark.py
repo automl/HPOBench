@@ -231,25 +231,25 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         elapsed_time = ts_start - time.time()
 
-        return {'function_value': {'accuracy': val_accuracy,
-                                   'DSO': val_statistical_disparity,
-                                   'DEO': val_unequal_opportunity,
-                                   'DFP': val_unequalized_odds
+        return {'function_value': {'accuracy': float(val_accuracy),
+                                   'DSO': float(val_statistical_disparity),
+                                   'DEO': float(val_unequal_opportunity),
+                                   'DFP': float(val_unequalized_odds)
                                    },
-                'cost': float(elapsed_time),
-                'info': {'train_accuracy': train_accuracy,
-                         'valid_accuracy': val_accuracy,
-                         'test_accuracy': test_accuracy,
+                'cost': elapsed_time,
+                'info': {'train_accuracy': float(train_accuracy),
+                         'valid_accuracy': float(val_accuracy),
+                         'test_accuracy': float(test_accuracy),
                          'training_cost': training_cost,
                          'valid_cost': eval_valid_runtime,
                          'test_cost': eval_test_runtime,
                          'elapsed_time': elapsed_time,
-                         'DSO': val_statistical_disparity,
-                         'DEO': val_unequal_opportunity,
-                         'DFP': val_unequalized_odds,
-                         'test_DSO': test_statistical_disparity,
-                         'test_DEO': test_unequal_opportunity,
-                         'test_DFP': test_unequalized_odds,
+                         'DSO': float(val_statistical_disparity),
+                         'DEO': float(val_unequal_opportunity),
+                         'DFP': float(val_unequalized_odds),
+                         'test_DSO': float(test_statistical_disparity),
+                         'test_DEO': float(test_unequal_opportunity),
+                         'test_DFP': float(test_unequalized_odds),
                          'fidelity': budget
                          }
                 }
@@ -367,20 +367,20 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         logger.debug(f"config:{configuration}, test_score: {test_accuracy}, train score:{train_accuracy},"
                      f"dsp:{test_statistical_disparity}, deo :{test_unequal_opportunity}, dfp :{test_unequalized_odds}")
 
-        return {'function_value': {'accuracy': test_accuracy,
-                                   'DSO': test_statistical_disparity,
-                                   'DEO': test_unequal_opportunity,
-                                   'DFP': test_unequalized_odds
+        return {'function_value': {'accuracy': float(test_accuracy),
+                                   'DSO': float(test_statistical_disparity),
+                                   'DEO': float(test_unequal_opportunity),
+                                   'DFP': float(test_unequalized_odds)
                                    },
-                'cost': float(elapsed_time),
-                'info': {'train_score': train_accuracy,
-                         'test_score': test_accuracy,
+                'cost': elapsed_time,
+                'info': {'train_score': float(train_accuracy),
+                         'test_score': float(test_accuracy),
                          'training_cost': training_cost,
                          'test_cost': eval_test_runtime,
                          'elapsed_time': elapsed_time,
-                         'DSO': test_statistical_disparity,
-                         'DEO': test_unequal_opportunity,
-                         'DFP': test_unequalized_odds,
+                         'DSO': float(test_statistical_disparity),
+                         'DEO': float(test_unequal_opportunity),
+                         'DFP': float(test_unequalized_odds),
                          'fidelity': budget
                          }
                 }
@@ -411,3 +411,13 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
 
 __all__ = ['AdultBenchmark']
+
+
+if __name__ == '__main__':
+    b = AdultBenchmark()
+    cfg = b.get_configuration_space().get_default_configuration()
+    fs = b.get_fidelity_space()
+
+    names = b.get_objective_names()
+
+    result = b.objective_function(cfg)
