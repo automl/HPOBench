@@ -10,14 +10,10 @@ VERSION v0.0.1
     apt install build-essential git wget -y
 
     cd /home \
-    && mkdir data && cd data \
-    && wget http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data \
-    && wget https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test \
-    && cd /home \
-    && git clone https://github.com/ayushi-3536/HPOBench.git \
+    && git clone https://github.com/automl/HPOBench.git \
     && cd HPOBench \
-    && git checkout fair_adult \
-    && pip install .[adult] \
+    && git checkout master \
+    && pip install .[mo_adult] \
     && cd / \
     && mkdir /var/lib/hpobench/ \
     && chmod -R 777 /var/lib/hpobench/ \
