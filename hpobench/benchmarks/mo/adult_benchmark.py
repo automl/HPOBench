@@ -49,7 +49,17 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        """Parameter space to be optimized --- contains the hyperparameters
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all parameters for the MLP.
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
         """
         cs = CS.ConfigurationSpace(seed=seed)
 
@@ -89,14 +99,30 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters.
 
+        Fidelities
+        ----------
+        budget: int - Values: [1, 200]
+            Number of epochs an architecture was trained.
+            Note: the number of epoch is 1 indexed! (Results after the first epoch: epoch = 1)
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
         fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters([
+        fidelity_space.add_hyperparameter(
             CS.UniformIntegerHyperparameter(
                 'budget', lower=1, upper=200, default_value=200, log=False
             )
-        ])
-        print(fidelity_space)
+        )
         return fidelity_space
 
     @staticmethod
@@ -114,6 +140,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
     @staticmethod
     def get_objective_names() -> List[str]:
+        """Get a list of objectives evaluated in the objective_function. """
         return ['accuracy', 'DSP', 'DEO', 'DFP']
 
     @AbstractMultiObjectiveBenchmark.check_parameters
@@ -123,6 +150,11 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                            shuffle: bool = False,
                            **kwargs) -> Dict:
         """
+        Objective function for the multi-objective adult benchmark.
+
+        We train a NN and evaluate its performance using fairness metrics.
+        This function returns the performance on the validation set.
+        However, we report also train and test performance.
 
         Parameters
         ----------
@@ -130,7 +162,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
             Configuration for the MLP model.
             Use default configuration if None.
         fidelity: Dict, None
-            epoch: int - Values: [1, 200]
+            budget: int - Values: [1, 200]
                 Number of epochs an architecture was trained.
                 Note: the number of epoch is 1 indexed! (Results after the first epoch: epoch = 1)
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
@@ -264,8 +296,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         Objective function for the multi-objective adult benchmark.
 
         We train a NN and evaluate its performance using fairness metrics.
-        This function returns mainly the performance on the validations set.
-        However, we report also train and test performance.
+        This function returns the performance on the test set.
 
         Parameters
         ----------
@@ -312,10 +343,6 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                  test_DFP : float,
                  fidelity : int,
         """
-        # The result dict should contain already all necessary information -> Just swap the function value from valid
-        # to test and the corresponding time cost
-        assert fidelity['budget'] == 200, 'Only test data for the 200. epoch is available. '
-
         self.rng = rng_helper.get_rng(rng, self.rng)
 
         if shuffle:
