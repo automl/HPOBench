@@ -475,13 +475,13 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
                                 **kwargs) -> Dict:
         """
         Train a CNN on both the train adn validation split of either the flower or the fashion data set and
-        get the test results. Runs a given configuration on the largest budget (here: 50).
+        get the test results.
         Parameters
         ----------
         configuration : Dict, CS.Configuration
             Configuration for the CNN Model
         fidelity: Dict, CS.Configuration, None
-            epoch: int - Values: [50]
+            epoch: int - Values: [1, 50]
                 Number of epochs an architecture was trained.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark.
@@ -511,10 +511,6 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         """
 
         time_in = time.time()
-
-        # The result dict should contain already all necessary information -> Just swap the function value from valid
-        # to test and the corresponding time cost
-        assert fidelity['budget'] == 25, 'Only test data for the 50. epoch is available. '
 
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
         self.__seed_everything()
