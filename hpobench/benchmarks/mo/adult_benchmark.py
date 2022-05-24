@@ -371,7 +371,8 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         # We deviate here from the original implementation. They have called `budget`-times mlp.partial_fit().
         # We call `.fit()` due to efficiency aspects.
-        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, shuffle=shuffle, random_state=rng, max_iter=budget)
+        mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, shuffle=shuffle,
+                            random_state=rng, max_iter=budget)
         start = time.time()
         mlp.fit(X_train, y_train)
         y_pred_train = mlp.predict(X_train)
