@@ -17,8 +17,8 @@ VERSION v0.0.1
     && cd /home \
     && git clone https://github.com/ayushi-3536/HPOBench.git \
     && cd HPOBench \
-    && git checkout fair_adult \
-    && pip install .[adult] \
+    && git checkout wikitext \
+    && pip install .[lm_benchmark] \
     && cd / \
     && mkdir /var/lib/hpobench/ \
     && chmod -R 777 /var/lib/hpobench/ \
@@ -27,4 +27,4 @@ VERSION v0.0.1
 
 
 %runscript
-    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py mo.adult_benchmark $@
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py mo.lm_benchmark $@

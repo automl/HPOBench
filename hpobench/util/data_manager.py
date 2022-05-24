@@ -974,11 +974,6 @@ class LanguageModelDataManager(HoldoutDataManager):
         self._download()
         self.X_train, self.X_valid, self.X_test = self._load()
         self.logger.info(f'LanguageModelDataManager: Data successfully loaded after {time() - t:.2f}')
-        print(self.X_train.shape)
-
-        print(self.X_valid.shape)
-
-        print(self.X_test.shape)
         return self.X_train, self.X_valid, self.X_test
 
     @lockutils.synchronized('not_thread_process_safe', external=True,
