@@ -30,6 +30,8 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
     def __init__(self,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
         """
+        Multi-objective fairness HPO task. Optimize the HP of a NN on the adult data set.
+
         Parameters
         ----------
         dataset : str
@@ -124,22 +126,22 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         Parameters
         ----------
-        configuration
+        configuration: Dict, CS.Configuration, None
+            Configuration for the MLP model.
+            Use default configuration if None.
         fidelity: Dict, None
             epoch: int - Values: [1, 200]
                 Number of epochs an architecture was trained.
                 Note: the number of epoch is 1 indexed! (Results after the first epoch: epoch = 1)
-
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark.
-
             To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
             If this parameter is not given, the default random state is used.
-
         shuffle: bool, None
-
+            If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
+            Defaults to ``False``.
         kwargs
 
         Returns
@@ -168,6 +170,9 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                  fidelity : int,
         """
         self.rng = rng_helper.get_rng(rng)
+        if shuffle:
+            self._shuffle_data(rng=self.rng, shuffle_valid=False)
+
         ts_start = time.time()
 
         budget = fidelity['budget']
@@ -257,25 +262,30 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                                 shuffle: Union[bool, None] = False,
                                 **kwargs) -> Dict:
         """
+        Objective function for the multi-objective adult benchmark.
+
+        We train a NN and evaluate its performance using fairness metrics.
+        This function returns mainly the performance on the validations set.
+        However, we report also train and test performance.
 
         Parameters
         ----------
-        configuration
-        fidelity: Dict, None
+        configuration: Dict, CS.Configuration, None
+            Configuration for the MLP model.
+            Use default configuration if None.
+        fidelity: Dict, CS.Configuration, None
             epoch: int - Values: [1, 200]
                 Number of epochs an architecture was trained.
                 Note: the number of epoch is 1 indexed! (Results after the first epoch: epoch = 1)
-
             Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
         rng : np.random.RandomState, int, None
             Random seed to use in the benchmark.
-
             To prevent overfitting on a single seed, it is possible to pass a
             parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
             If this parameter is not given, the default random state is used.
-
         shuffle: bool, None
-
+            If ``True``, shuffle the training idx. If no parameter ``rng`` is given, use the class random state.
+            Defaults to ``False``.
         kwargs
 
         Returns
@@ -307,7 +317,11 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         # to test and the corresponding time cost
         assert fidelity['budget'] == 200, 'Only test data for the 200. epoch is available. '
 
-        self.rng = rng_helper.get_rng(rng)
+        self.rng = rng_helper.get_rng(rng, self.rng)
+
+        if shuffle:
+            self._shuffle_data(self.rng, shuffle_valid=True)
+
         ts_start = time.time()
 
         budget = fidelity['budget']
@@ -373,5 +387,29 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                          }
                 }
 
+    def _shuffle_data(self, rng=None, shuffle_valid=False) -> None:
+        """
+        Reshuffle the training data.
 
-__all__ = [AdultBenchmark]
+        Parameters
+        ----------
+        rng
+            If 'rng' is None, the training idx are shuffled according to the class-random-state
+        shuffle_valid: bool, None
+            If true, shuffle the validation data. Defaults to False.
+        """
+        random_state = rng_helper.get_rng(rng, self.rng)
+
+        train_idx = np.arange(len(self.X_train))
+        random_state.shuffle(train_idx)
+        self.X_train = self.X_train[train_idx]
+        self.y_train = self.y_train[train_idx]
+
+        if shuffle_valid:
+            valid_idx = np.arange(len(self.X_valid))
+            random_state.shuffle(valid_idx)
+            self.X_valid = self.X_valid[valid_idx]
+            self.y_valid = self.y_valid[valid_idx]
+
+
+__all__ = ['AdultBenchmark']
