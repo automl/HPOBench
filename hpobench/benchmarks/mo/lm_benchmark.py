@@ -98,6 +98,21 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
 
     @staticmethod
     def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters
+
+        Fidelities:
+         - epoch: int
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
 
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters([
@@ -124,9 +139,6 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
     def init_model(self, config: Union[CS.Configuration, Dict]):
         """ Function that returns the model initialized based on the configuration and fidelity
         """
-
-        if isinstance(config, CS.Configuration):
-            config = config.get_dictionary()
         model = TransformerModel(
             self.variable['ntoken'], config['emsize'], self.variable['nhead'], config['emsize'],
             self.variable['nlayers'], config['dropout'])
@@ -137,7 +149,6 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[Dict, CS.Configuration, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None,
-                           shuffle: bool = False,
                            **kwargs) -> Dict:
         """
 
@@ -179,7 +190,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
                     used fidelities in this evaluation
         """
 
-        self.rng = rng_helper.get_rng(rng)
+        self.rng = rng_helper.get_rng(self.rng, rng)
         self.__seed_everything()
 
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -259,7 +270,6 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
-                                shuffle: bool = False,
                                 **kwargs) -> Dict:
         """
         Get the validated results. Runs a given configuration on the largest budget (here: 50).
@@ -302,7 +312,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
         assert fidelity['epoch'] == 81, 'Only test data for the 81 epoch is available. '
         ts_start = time.time()
 
-        self.rng = rng_helper.get_rng(rng)
+        self.rng = rng_helper.get_rng(self.rng, rng)
         self.__seed_everything()
 
         # batchify data
