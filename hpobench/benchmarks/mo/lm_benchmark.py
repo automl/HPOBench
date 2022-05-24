@@ -27,8 +27,17 @@ logger = logging.getLogger('LM_Bench')
 
 
 class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
-
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        """
+        Tranformer based multi-objective language model benchmark
+
+        Parameters
+        ----------
+        rng : np.random.RandomState, int, None
+            Random seed for the benchmarks
+
+        Transformer Model is based on : "https://arxiv.org/pdf/1706.03762.pdf"
+        """
         super(LanguageModelBenchmark, self).__init__(rng=rng)
 
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -40,16 +49,14 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
                          "nlayers": 2,
                          "bptt": 35,
                          "tied": True,
-                         # number of attention head
+                         # Number of attention head
                          "nhead": 2,
                          "ntoken": self.ntokens
                          }
-        print("len of corpus dict", self.ntokens)
 
     def __seed_everything(self):
         """Helperfunction: Make the benchmark deterministic by setting the correct seeds"""
         seed = self.rng.randint(0, 100000)
-        print("seed obtained", seed)
         random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -86,7 +93,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
         return cs
 
     @staticmethod
-    def get_objective_names(self) -> List[str]:
+    def get_objective_names() -> List[str]:
         return ['log_perplexity', 'accuracy', 'time']
 
     @staticmethod
@@ -205,12 +212,12 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
             start = time.time()
             val_loss, val_acc = model.eval_fun(self.ntokens, criterion, val_data)
             val_loss = np.clip(val_loss, 1e-10, 10)
-            print("val acc for last epoch", val_acc)
             eval_time += start - time.time()
 
             t.set_postfix(val_accuracy=val_acc)
             t.update()
 
+            # Taken from original experimental setup
             if not np.isfinite(val_loss):
                 val_loss = 7
 
@@ -228,7 +235,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
         perplexity = math.exp(best_val_loss)
         log_perplexity = best_val_loss
         neg_log_perplexity = 10 - best_val_loss
-        elapsed_time = float(ts_start - time.time())
+        elapsed_time = ts_start - time.time()
 
         return {'function_value': {'log_perplexity': log_perplexity,
                                    'accuracy': val_acc.item(),
@@ -292,9 +299,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
                     used fidelities in this evaluation
         """
 
-        # The result dict should contain already all necessary information -> Just swap the function value from valid
-        # to test and the corresponding time cost
-        assert fidelity['epoch'] == 81, 'Only test data for the 50. epoch is available. '
+        assert fidelity['epoch'] == 81, 'Only test data for the 81 epoch is available. '
         ts_start = time.time()
 
         self.rng = rng_helper.get_rng(rng)
@@ -347,7 +352,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
         perplexity = math.exp(best_test_loss)
         log_perplexity = best_test_loss
         neg_log_perplexity = 10 - best_test_loss
-        elapsed_time = float(ts_start - time.time())
+        elapsed_time = ts_start - time.time()
 
         return {'function_value': {'log_perplexity': log_perplexity,
                                    'accuracy': test_acc.item(),
