@@ -13,7 +13,7 @@ VERSION v0.0.1
     apt update -y
     apt install -y build-essential git wget
     apt install -y --no-install-recommends r-base r-base-dev
-    apt install -y libatlas3-base libxml2-dev
+    apt install -y libatlas3-base libxml2-dev libcurl4-openssl-dev
 
     # Upgrade pip
     /usr/local/bin/python -m pip install --upgrade pip
@@ -26,8 +26,16 @@ VERSION v0.0.1
 
     # Instal R-Packages
     cd /home \
-    && Rscript -e "install.packages('remotes')" \
-    && Rscript -e 'remotes::install_version("BBmisc", version = "1.11", upgrade = "never")' \
+    && Rscript -e "install.packages('remotes')"
+
+    # Install OpenML dependencies
+    Rscript -e 'install.packages("curl")' \
+    && Rscript -e 'install.packages("httr")' \
+    && Rscript -e "install.packages('farff')" \
+    && Rscript -e "install.packages('OpenML')"
+
+    # Install rbv2 dependencies
+    Rscript -e 'remotes::install_version("BBmisc", version = "1.11", upgrade = "never")' \
     && Rscript -e 'remotes::install_version("glmnet", version = "2.0-16", upgrade = "never")' \
     && Rscript -e 'remotes::install_version("rpart", version = "4.1-13", upgrade = "never")' \
     && Rscript -e 'remotes::install_version("e1071", version = "1.7-0.1", upgrade = "never")' \
@@ -35,6 +43,8 @@ VERSION v0.0.1
     && Rscript -e 'remotes::install_version("ranger", version = "0.11.2", upgrade = "never")' \
     && Rscript -e 'remotes::install_version("RcppHNSW", version = "0.1.0", upgrade = "never")' \
     && Rscript -e 'remotes::install_version("mlr", version = "2.14", upgrade = "never")' \
+    && Rscript -e 'remotes::install_github("ml-org/mlr3misc", upgrade = "never")' \
+    && Rscript -e 'remotes::install_github("mlr-org/mlr3misc", upgrade = "never")'
     && Rscript -e 'remotes::install_version("mlrCPO", version = "0.3.6", upgrade = "never")' \
     && Rscript -e 'remotes::install_github("pfistlf/rbv2", upgrade = "never")'
 
