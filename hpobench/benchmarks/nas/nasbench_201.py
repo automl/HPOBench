@@ -366,6 +366,15 @@ class NasBench201BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
         # to test and the corresponding time cost
         assert fidelity['epoch'] == 200, 'Only test data for the 200. epoch is available. '
 
+        if 'data_seed' in kwargs:
+            all_seeds_available = all([seed in kwargs['data_seed'] for seed in (777, 888, 999)])
+            if not all_seeds_available:
+                logger.warning('You have not specified all available seeds for the '
+                               '`objective_function_test`. However, we are going to ignore them, '
+                               ' because we report test values only as mean across all seeds.'
+                               f' Your given seeds: {kwargs["seed"]}')
+            del kwargs['data_seed']
+
         result = self.objective_function(configuration=configuration, fidelity=fidelity,
                                          data_seed=(777, 888, 999),
                                          rng=rng, **kwargs)
