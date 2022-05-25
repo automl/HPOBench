@@ -111,15 +111,21 @@ class YAHPOGymMORawBenchmark(AbstractBenchmark):
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-        # Establish a connection to the R package
-        rbv2pkg = importr('rbv2')
 
         # Cast python dict to R list:
         parameters = {**configuration, **fidelity}
-        list_str = YAHPOGymMORawBenchmark.__cast_dict_to_rlist(parameters)
+        r_list = YAHPOGymMORawBenchmark.__cast_dict_to_rlist(parameters)
 
         # Call the random bot evaluation method
-        out = rbv2pkg.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=list_str)
+        if self.scenario.startswith('rbv2_'):
+            # Establish a connection to the R package
+            rbv2pkg = importr('rbv2')
+            out = rbv2pkg.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=r_list)
+        else:
+            # TODO: Write the R code for the IAML benchmarks.
+            task_id = configuration.pop('task_id')
+            # out = rbv2pkg.eval_config(learner=f'classif.xgboost', task_id=task_id, configuration=r_list)
+            out = None
 
         # Cast the R list (result) back to a python dictionary
         result = YAHPOGymMORawBenchmark.__cast_to_dict(out)
@@ -171,10 +177,30 @@ class YAHPOGymMORawBenchmark(AbstractBenchmark):
         return result
 
     @staticmethod
-    def __cast_dict_to_rlist(py_dict) -> str:
-        """ Convert a python dictionary to a RPy2 ListVector in str representation. """
+    def __cast_dict_to_rlist(py_dict):
+        """ Convert a python dictionary to a RPy2 ListVector"""
         pairs = [f'{key} = {value}' if not isinstance(value, str) else f'{key} = \"{value}\"'
                  for key, value in py_dict.items()]
         pairs = ",".join(pairs)
-        cmd = f"list({pairs})"
-        return cmd
+        str_list = f"list({pairs})"
+        r_list = robjects.r(str_list)
+        return r_list
+
+    @staticmethod
+    def __map_scenario_to_learner(scenario):
+        # learner = {
+        #     "rpart", "glmnet", "svm", "RcppHNSW", "ranger.pow", "xgboost"
+        # }
+
+        mapping = {
+            'iaml_super': 'super',
+            'iaml_svm': 'svm',
+            'iaml_rpart': 'rpart',
+            'iaml_aknn': None,
+            'iaml_glmnet': 'glmnet',
+            'iaml_ranger': 'ranger.pow',
+            'iaml_xgboost': 'xgboost',
+            'nb301': None,
+            'lcbench': None,
+        }
+        return mapping[scenario]
