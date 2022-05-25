@@ -50,26 +50,24 @@ Changelog:
 * First implementation
 """
 
-import warnings
 import logging
+import os
 from typing import Union, Dict
 
 import ConfigSpace as CS
 import numpy as np
-
-from yahpo_gym.benchmark_set import BenchmarkSet
-import yahpo_gym.benchmarks
-
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
+from yahpo_gym.benchmark_set import BenchmarkSet
 
 from hpobench.abstract_benchmark import AbstractBenchmark
+
 __version__ = '0.0.1'
 
-logger = logging.getLogger('YAHPOGym')
+logger = logging.getLogger('YAHPO-Raw')
 
 
-class rbv2Benchmark(AbstractBenchmark):
+class YAHPOGymMORawBenchmark(AbstractBenchmark):
 
     def __init__(self, scenario: str, instance: str, objective: str = None,
                  rng: Union[np.random.RandomState, int, None] = None):
@@ -86,46 +84,53 @@ class rbv2Benchmark(AbstractBenchmark):
             Initialized to None, picks the first element in y_names.
         rng : np.random.RandomState, int, None
         """
+
+        # When in the containerized version, redirect to the data inside the container.
+        if 'YAHPO_CONTAINER' in os.environ:
+            from yahpo_gym.local_config import LocalConfiguration
+            local_config = LocalConfiguration()
+            local_config.init_config(data_path='/home/data/yahpo_data')
+
         self.scenario = scenario
         self.instance = instance
         self.benchset = BenchmarkSet(scenario, active_session=True)
         self.benchset.set_instance(instance)
         self.objective = objective
         logger.info(f'Start Benchmark for scenario {scenario} and instance {instance}')
+        super(YAHPOGymMORawBenchmark, self).__init__(rng=rng)
 
     # pylint: disable=arguments-differ
     def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         return self.benchset.get_opt_space(drop_fidelity_params=True, seed=seed)
 
-    # @staticmethod
+    # pylint: disable=arguments-differ
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        self.benchset.get_fidelity_space()
+        return self.benchset.get_fidelity_space(seed=seed)
 
     @AbstractBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-
-        pars = {}
-        if isinstance(configuration, CS.Configuration):
-            configuration = configuration.get_dictionary()
-            pars.update(configuration)
-        if isinstance(fidelity, CS.Configuration):
-            fidelity = fidelity.get_dictionary()
-            pars.update(fidelity)
-        print(pars)
+        # Establish a connection to the R package
         rbv2pkg = importr('rbv2')
-        out = rbv2pkg.eval_yahpo(self.scenario, pars)
-        cost = out["timetrain"]
+
+        # Cast python dict to R list:
+        parameters = {**configuration, **fidelity}
+        list_str = YAHPOGymMORawBenchmark.__cast_dict_to_rlist(parameters)
+
+        # Call the random bot evaluation method
+        out = rbv2pkg.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=list_str)
+
+        # Cast the R list (result) back to a python dictionary
+        result = YAHPOGymMORawBenchmark.__cast_to_dict(out)
 
         if self.objective is None:
             self.objective = self.benchset.config.y_names[0]
-        obj_value = out[self.objective]
+        obj_value = result[self.objective]
 
-        cost = 0
         return {'function_value': obj_value,
-                "cost": cost,
-                'info': {'fidelity': fidelity, 'objectives':out}}
+                "cost": result["timetrain"],
+                'info': {'fidelity': fidelity, 'objectives': result}}
 
     @AbstractBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
@@ -133,16 +138,43 @@ class rbv2Benchmark(AbstractBenchmark):
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         return self.objective_function(configuration, fidelity=fidelity, rng=rng)
 
-
     @staticmethod
     def get_meta_information():
         """ Returns the meta information for the benchmark """
         return {'name': 'YAHPO Gym',
                 'references': ['@misc{pfisterer2021yahpo,',
-                               'title={YAHPO Gym -- Design Criteria and a new Multifidelity Benchmark for Hyperparameter Optimization},',
-                               'author    = {Florian Pfisterer and Lennart Schneider and Julia Moosbauer and Martin Binder and Bernd Bischl},',
+                               'title={YAHPO Gym -- Design Criteria and a new Multifidelity Benchmark '
+                               '       for Hyperparameter Optimization},',
+                               'author={Florian Pfisterer and Lennart Schneider and Julia Moosbauer '
+                               '        and Martin Binder and Bernd Bischl},',
                                'eprint={2109.03670},',
                                'archivePrefix={arXiv},',
-                               'year      = {2021}}'],
-                'code': 'https://github.com/pfistfl/yahpo_gym/yahpo_gym'
+                               'year={2021}}'],
+                'code': ['https://github.com/pfistfl/yahpo_gym/yahpo_gym',
+                         'https://github.com/pfistfl/rbv2/']
                 }
+
+    @staticmethod
+    def __cast_to_dict(r_list_object):
+        """
+        Convert an RPy2 ListVector to a Python dict.
+        Source: https://ogeek.cn/qa/?qa=815151/
+        """
+        result = {}
+        for i, name in enumerate(r_list_object.names):
+            if isinstance(r_list_object[i], robjects.ListVector):
+                result[name] = YAHPOGymMORawBenchmark.__cast_to_dict(r_list_object[i])
+            elif len(r_list_object[i]) == 1:
+                result[name] = r_list_object[i][0]
+            else:
+                result[name] = r_list_object[i]
+        return result
+
+    @staticmethod
+    def __cast_dict_to_rlist(py_dict) -> str:
+        """ Convert a python dictionary to a RPy2 ListVector in str representation. """
+        pairs = [f'{key} = {value}' if not isinstance(value, str) else f'{key} = \"{value}\"'
+                 for key, value in py_dict.items()]
+        pairs = ",".join(pairs)
+        cmd = f"list({pairs})"
+        return cmd
