@@ -52,7 +52,7 @@ Changelog:
 
 import logging
 import os
-from typing import Union, Dict
+from typing import Union, Dict, List
 
 import ConfigSpace as CS
 import numpy as np
@@ -60,16 +60,14 @@ import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
 from yahpo_gym.benchmark_set import BenchmarkSet
 
-from hpobench.abstract_benchmark import AbstractBenchmark
+from hpobench.abstract_benchmark import AbstractBenchmark, AbstractMultiObjectiveBenchmark
 
 __version__ = '0.0.1'
 
 logger = logging.getLogger('YAHPO-Raw')
 
-
-class YAHPOGymMORawBenchmark(AbstractBenchmark):
-
-    def __init__(self, scenario: str, instance: str, objective: str = None,
+class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
+    def __init__(self, scenario: str, instance: str,
                  rng: Union[np.random.RandomState, int, None] = None):
         """
         Parameters
@@ -79,9 +77,7 @@ class YAHPOGymMORawBenchmark(AbstractBenchmark):
             "rbv2_ranger", "rbv2_rpart", "rbv2_glmnet", "rbv2_aknn", "rbv2_xgboost", "rbv2_super"]
         instance : str
             A valid instance for the scenario. See `self.benchset.instances`.
-        objective : str
-            Name of the (single-crit) objective. See `self.benchset.config.y_names`.
-            Initialized to None, picks the first element in y_names.
+            https://slds-lmu.github.io/yahpo_gym/scenarios.html#instances
         rng : np.random.RandomState, int, None
         """
 
@@ -95,7 +91,7 @@ class YAHPOGymMORawBenchmark(AbstractBenchmark):
         self.instance = instance
         self.benchset = BenchmarkSet(scenario, active_session=True)
         self.benchset.set_instance(instance)
-        self.objective = objective
+
         logger.info(f'Start Benchmark for scenario {scenario} and instance {instance}')
         super(YAHPOGymMORawBenchmark, self).__init__(rng=rng)
 
@@ -107,7 +103,7 @@ class YAHPOGymMORawBenchmark(AbstractBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         return self.benchset.get_fidelity_space(seed=seed)
 
-    @AbstractBenchmark.check_parameters
+    @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -129,16 +125,14 @@ class YAHPOGymMORawBenchmark(AbstractBenchmark):
 
         # Cast the R list (result) back to a python dictionary
         result = YAHPOGymMORawBenchmark.__cast_to_dict(out)
+        objectives = {target: value for target, value in result.items() if target in self.benchset.config.y_names}
+        additional = {target: value for target, value in result.items() if target not in self.benchset.config.y_names}
 
-        if self.objective is None:
-            self.objective = self.benchset.config.y_names[0]
-        obj_value = result[self.objective]
-
-        return {'function_value': obj_value,
+        return {'function_value': objectives,
                 "cost": result["timetrain"],
-                'info': {'fidelity': fidelity, 'objectives': result}}
+                'info': {'fidelity': fidelity, 'additional_info': additional}}
 
-    @AbstractBenchmark.check_parameters
+    @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
@@ -159,6 +153,10 @@ class YAHPOGymMORawBenchmark(AbstractBenchmark):
                 'code': ['https://github.com/pfistfl/yahpo_gym/yahpo_gym',
                          'https://github.com/pfistfl/rbv2/']
                 }
+
+    # pylint: disable=arguments-differ
+    def get_objective_names(self) -> List[str]:
+        return self.benchset.config.y_names
 
     @staticmethod
     def __cast_to_dict(r_list_object):
@@ -204,3 +202,64 @@ class YAHPOGymMORawBenchmark(AbstractBenchmark):
             'lcbench': None,
         }
         return mapping[scenario]
+
+
+class YAHPOGymRawBenchmark(AbstractBenchmark):
+    def __init__(self, scenario: str, instance: str, objective: str = None,
+                 rng: Union[np.random.RandomState, int, None] = None):
+        """
+        Parameters
+        ----------
+        scenario : str
+            Name for the surrogate data. Must be one of ["lcbench", "fcnet", "nb301", "rbv2_svm",
+            "rbv2_ranger", "rbv2_rpart", "rbv2_glmnet", "rbv2_aknn", "rbv2_xgboost", "rbv2_super"]
+        instance : str
+            A valid instance for the scenario. See `self.benchset.instances`.
+            https://slds-lmu.github.io/yahpo_gym/scenarios.html#instances
+        objective : str
+            Name of the (single-crit) objective. See `self.benchset.config.y_names`.
+            Initialized to None, picks the first element in y_names.
+        rng : np.random.RandomState, int, None
+        """
+        self.backbone = YAHPOGymMORawBenchmark(scenario=scenario, instance=instance, rng=rng)
+        self.objective = objective
+        super(YAHPOGymRawBenchmark, self).__init__(rng=rng)
+
+    @AbstractBenchmark.check_parameters
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[Dict, CS.Configuration, None] = None,
+                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+
+        mo_results = self.backbone.objective_function(configuration=configuration,
+                                                      fidelity=fidelity,
+                                                      **kwargs)
+
+        # If not objective is set, we just grab the first returned entry.
+        if self.objective is None:
+            self.objective = self.backbone.benchset.config.y_names[0]
+
+        obj_value = mo_results['function_value'][self.objective]
+
+        return {'function_value': obj_value,
+                "cost": mo_results['cost'],
+                'info': {'fidelity': fidelity,
+                         'additional_info': mo_results['info']['additional_info'],
+                         'objectives': mo_results['function_value']}}
+
+    @AbstractBenchmark.check_parameters
+    def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[Dict, CS.Configuration, None] = None,
+                                rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
+        return self.objective_function(configuration, fidelity=fidelity, rng=rng)
+
+    # pylint: disable=arguments-differ
+    def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return self.backbone.get_configuration_space(seed=seed)
+
+    # pylint: disable=arguments-differ
+    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return self.backbone.get_fidelity_space(seed=seed)
+
+    @staticmethod
+    def get_meta_information() -> Dict:
+        return YAHPOGymMORawBenchmark.get_meta_information()
