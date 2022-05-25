@@ -4,7 +4,7 @@ logging.basicConfig(level=logging.DEBUG)
 import pytest
 
 from hpobench.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
-    Cifar10ValidNasBench201Benchmark
+    Cifar10ValidNasBench201Benchmark, Cifar10ValidNasBench201MOBenchmark
 
 from hpobench.util.container_utils import disable_container_debug, enable_container_debug
 
@@ -81,7 +81,7 @@ def test_nasbench201_fidelity_space():
 def test_nasbench201_config():
     cs = Cifar10ValidNasBench201Benchmark.get_configuration_space(seed=0)
     c = cs.sample_configuration()
-    func = Cifar10ValidNasBench201Benchmark.config_to_structure_func(4)
+    func = Cifar10ValidNasBench201MOBenchmark.config_to_structure_func(4)
     struct = func(c)
 
     assert struct.__repr__() == '_Structure(4 nodes with |nor_conv_1x1~0|+|nor_conv_3x3~0|nor_conv_3x3~1|+' \
