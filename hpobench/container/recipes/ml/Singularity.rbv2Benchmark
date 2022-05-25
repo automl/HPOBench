@@ -1,0 +1,55 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+
+%labels
+MAINTAINER pfistererf@googlemail.com
+VERSION v0.0.1
+
+%help
+    This is a template for a Singularity recipe
+
+%post
+    apt update -y
+    apt install -y build-essential git wget
+    apt install -y --no-install-recommends r-base r-base-dev
+    apt install -y libatlas3-base libxml2-dev
+
+    # Upgrade pip
+    /usr/local/bin/python -m pip install --upgrade pip
+
+    # Download YAHPO DATA
+    cd /home \
+    && mkdir data && cd data \
+    && echo "data_path: /home/data/yahpo_data" > ~/.config/yahpo_gym \
+    && git clone https://github.com/pfistfl/yahpo_data.git \
+
+    # Instal R-Packages
+    cd /home \
+    && Rscript -e "install.packages('remotes')" \
+    && Rscript -e 'remotes::install_version("BBmisc", version = "1.11", upgrade = "never")' \
+    && Rscript -e 'remotes::install_version("glmnet", version = "2.0-16", upgrade = "never")' \
+    && Rscript -e 'remotes::install_version("rpart", version = "4.1-13", upgrade = "never")' \
+    && Rscript -e 'remotes::install_version("e1071", version = "1.7-0.1", upgrade = "never")' \
+    && Rscript -e 'remotes::install_version("xgboost", version = "0.82.1", upgrade = "never")' \
+    && Rscript -e 'remotes::install_version("ranger", version = "0.11.2", upgrade = "never")' \
+    && Rscript -e 'remotes::install_version("RcppHNSW", version = "0.1.0", upgrade = "never")' \
+    && Rscript -e 'remotes::install_version("mlr", version = "2.14", upgrade = "never")' \
+    && Rscript -e 'remotes::install_version("mlrCPO", version = "0.3.6", upgrade = "never")' \
+    && Rscript -e 'remotes::install_github("pfistlf/rbv2", upgrade = "never")'
+
+    cd /home \
+    && git clone https://github.com/pfistfl/HPOBench.git \
+    && cd HPOBench \
+    && echo "Please never push a recipe that checks out any other branch than development or master" \
+    && git checkout rbv2 \
+    && pip install .[rbv2] \
+    && echo "Please don't touch the following lines" \
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/ \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge \
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py ml.rbv2_benchmark $@
