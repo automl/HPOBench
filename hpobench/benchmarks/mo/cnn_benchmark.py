@@ -452,16 +452,16 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         return {'function_value': {'accuracy': val_accuracy,
                                    'model_size': num_params},
-                'cost': float(elapsed_time),
+                'cost': float(training_runtime),
                 'info': {'train_accuracy': train_accuracy,
                          'training_cost': training_runtime,
                          'valid_accuracy': val_accuracy,
                          'valid_cost': eval_valid_runtime,
                          'test_accuracy': test_accuracy,
                          'test_cost': eval_test_runtime,
+                         'total_time': elapsed_time,
                          'model_size': num_params,
-                         'fidelity': fidelity
-                         }
+                         'fidelity': fidelity}
                 }
 
     @AbstractMultiObjectiveBenchmark.check_parameters
@@ -561,14 +561,14 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         return {'function_value': {'accuracy': test_accuracy,
                                    'model_size': num_params},
-                'cost': float(elapsed_time),
+                'cost': training_runtime,
                 'info': {'train_accuracy': train_accuracy,
                          'training_cost': training_runtime,
                          'test_accuracy': test_accuracy,
                          'test_cost': eval_test_runtime,
+                         'total_time': elapsed_time,
                          'model_size': num_params,
-                         'fidelity': fidelity
-                         }
+                         'fidelity': fidelity}
                 }
 
 
