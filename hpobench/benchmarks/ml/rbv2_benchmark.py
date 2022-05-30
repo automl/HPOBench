@@ -97,6 +97,7 @@ import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
 from yahpo_gym.benchmark_set import BenchmarkSet
 
+import hpobench.config
 from hpobench.abstract_benchmark import AbstractBenchmark, AbstractMultiObjectiveBenchmark
 
 __version__ = '0.0.1'
@@ -156,16 +157,15 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
             rbv2pkg = importr('rbv2')
             out = rbv2pkg.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=r_list)
         elif self.scenario.startswith('iaml_'):
+            # We have to create a cache dir and initialize the cache
+            _cache_dir = hpobench.config.config_file.cache_dir / 'R' / 'mlr3oml'
             oml = importr('mlr3oml')
             oml.get_cache_dir(robjects.BoolVector([True]))
-            oml.initialize_cache(cache=robjects.StrVector(['/home/lmmista-wap072/.cache/R/mlr3oml']))
+            oml.initialize_cache(cache=robjects.StrVector([str(_cache_dir)]))
 
             iaml = importr('iaml')
             out = iaml.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=r_list)
         else:
-            # TODO: Write the R code for the IAML benchmarks.
-            task_id = configuration.pop('task_id')
-            # out = rbv2pkg.eval_config(learner=f'classif.xgboost', task_id=task_id, configuration=r_list)
             out = None
 
         # Cast the R list (result) back to a python dictionary
