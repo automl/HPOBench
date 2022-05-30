@@ -6,20 +6,63 @@ We recommend using the containerized version of this benchmark.
 If you want to use this benchmark locally (without running it via the corresponding container),
 you need to perform the following steps.
 
-Prerequisites:
-==============
+Prerequisites: 1) Install Conda
+===============================
 Conda environment in which the HPOBench is installed (pip install .). Activate your environment.
 ```
 conda activate <Name_of_Conda_HPOBench_environment>
 ```
 
+Prerequisites: 2) Install R
+===========================
+
+Install R (4.0.5 - IMPORTANT!) and the required dependencies:
+
+``` bash
+Rscript -e 'install.packages("remotes", repos = "http://cran.r-project.org")'
+
+# Install OpenML dependencies
+Rscript -e 'install.packages("curl", repos = "http://cran.r-project.org")' \
+&& Rscript -e 'install.packages("httr", repos = "http://cran.r-project.org")' \
+&& Rscript -e 'install.packages("farff", repos = "http://cran.r-project.org")' \
+&& Rscript -e 'install.packages("OpenML", repos = "http://cran.r-project.org")' \
+
+# Install rbv2 dependencies
+Rscript -e 'remotes::install_version("BBmisc", version = "1.11", upgrade = "never", repos = "http://cran.r-project.org")' \
+&& Rscript -e 'remotes::install_version("glmnet", version = "2.0-16", upgrade = "never", repos = "http://cran.r-project.o")' \
+&& Rscript -e 'remotes::install_version("rpart", version = "4.1-13", upgrade = "never", repos = "http://cran.r-project.org")' \
+&& Rscript -e 'remotes::install_version("e1071", version = "1.7-0.1", upgrade = "never", repos = "http://cran.r-project.org")' \
+&& Rscript -e 'remotes::install_version("xgboost", version = "0.82.1", upgrade = "never", repos = "http://cran.r-project.org")' \
+&& Rscript -e 'remotes::install_version("ranger", version = "0.11.2", upgrade = "never", repos = "http://cran.r-project.org")' \
+&& Rscript -e 'remotes::install_version("RcppHNSW", version = "0.1.0", upgrade = "never", repos = "http://cran.r-project.org")' \
+&& Rscript -e 'remotes::install_version("mlr", version = "2.14", upgrade = "never", repos = "http://cran.r-project.org")' \
+&& Rscript -e 'remotes::install_github("mlr-org/mlr3misc", upgrade = "never", repos = "http://cran.r-project.org")' \
+&& Rscript -e 'remotes::install_version("mlrCPO", version = "0.3.6", upgrade = "never", repos = "http://cran.r-projt.org")' \
+&& Rscript -e 'remotes::install_github("pfistfl/rbv2", upgrade = "never")' \
+&& Rscript -e 'remotes::install_github("sumny/iaml", upgrade = "never")'
+```
+Prerequisites: 3) Install rpy2
+==============================
+Installing the connector between R and python might be a little bit tricky.
+Official installation guide: https://rpy2.github.io/doc/latest/html/introduction.html
+
+We received in some cases the error: "/opt/R/4.0.5/lib/R/library/methods/libs/methods.so: undefined symbol".
+To solve this error, we had to execute the following command:
+```
+export LD_LIBRARY_PATH=$(python -m rpy2.situation LD_LIBRARY_PATH):${LD_LIBRARY_PATH}
+```
+
 1. Download data:
 =================
-The data will be downloaded automatically.
+Normally, the data will be downloaded automatically.
 
-If you want to download the data on your own, you can download the data with the following command and then link the
-hpobench-config's data-path to it.
-You can download the requried data [here](https://syncandshare.lrz.de/getlink/fiCMkzqj1bv1LfCUyvZKmLvd/).
+If you want to download the data on your own, you can download the data with the following command:
+
+``` bash
+git clone --depth 1 -b main https://github.com/pfistfl/yahpo_data.git
+```
+
+Later, you have to give yahpo the link to the data.
 
 ```python
 from yahpo_gym import local_config
@@ -30,18 +73,12 @@ local_config.set_data_path("path-to-data")
 The data consist of surrogates for different data sets. Each surrogate is a compressed ONNX neural network.
 
 
-1. Clone from github:
-=====================
-```
-git clone HPOBench
-```
-
-2. Clone and install
+2. Install HPOBench:
 ====================
 ```
+git clone HPOBench
 cd /path/to/HPOBench
-pip install .[yahpo_gym]
-
+pip install .[yahpo_gym_raw]
 ```
 
 Changelog:
@@ -65,6 +102,7 @@ from hpobench.abstract_benchmark import AbstractBenchmark, AbstractMultiObjectiv
 __version__ = '0.0.1'
 
 logger = logging.getLogger('YAHPO-Raw')
+
 
 class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
     def __init__(self, scenario: str, instance: str,
@@ -117,6 +155,13 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
             # Establish a connection to the R package
             rbv2pkg = importr('rbv2')
             out = rbv2pkg.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=r_list)
+        elif self.scenario.startswith('iaml_'):
+            oml = importr('mlr3oml')
+            oml.get_cache_dir(robjects.BoolVector([True]))
+            oml.initialize_cache(cache=robjects.StrVector(['/home/lmmista-wap072/.cache/R/mlr3oml']))
+
+            iaml = importr('iaml')
+            out = iaml.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=r_list)
         else:
             # TODO: Write the R code for the IAML benchmarks.
             task_id = configuration.pop('task_id')
@@ -151,7 +196,8 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
                                'archivePrefix={arXiv},',
                                'year={2021}}'],
                 'code': ['https://github.com/pfistfl/yahpo_gym/yahpo_gym',
-                         'https://github.com/pfistfl/rbv2/']
+                         'https://github.com/pfistfl/rbv2/',
+                         'https://github.com/sumny/iaml']
                 }
 
     # pylint: disable=arguments-differ
