@@ -8,7 +8,7 @@ Changelog:
 import logging
 import random
 import time
-from typing import Union, Dict, List
+from typing import Union, Dict, List, Tuple, Any
 
 import ConfigSpace as CS
 import numpy as np
@@ -38,10 +38,9 @@ class AccuracyTop1:
         self.sum = 0
         self.cnt = 0
 
-    def __call__(self, y_true, y_pred):
+    def __call__(self, y_true: torch.Tensor, y_pred: torch.Tensor) -> float:
         self.sum += y_pred.topk(1)[1].eq(y_true.argmax(-1).reshape(-1, 1).expand(-1, 1)).float().sum().to('cpu').numpy()
         self.cnt += y_pred.size(0)
-
         return self.sum / self.cnt
 
 
@@ -50,7 +49,8 @@ class Net(nn.Module):
     The model to optimize
     """
 
-    def __init__(self, config, input_shape=(3, 28, 28), num_classes=10):
+    def __init__(self, config: Dict, input_shape: Tuple = (3, 28, 28),
+                 num_classes: Union[int, None] = 10):
         super(Net, self).__init__()
         inp_ch = input_shape[0]
         layers = []
@@ -85,7 +85,7 @@ class Net(nn.Module):
         self.fc_layers = nn.Sequential(*layers)
 
     # generate input sample and forward to get shape
-    def _get_conv_output(self, shape):
+    def _get_conv_output(self, shape: Tuple) -> int:
         bs = 1
         input = torch.autograd.Variable(torch.rand(bs, *shape))
         output_feat = self.conv_layers(input)
@@ -93,13 +93,13 @@ class Net(nn.Module):
         n_size = output_feat.data.view(bs, -1).size(1)
         return n_size
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv_layers(x)
         x = self.pooling(x)
         x = self.fc_layers(x)
         return x
 
-    def train_fn(self, optimizer, criterion, loader, device):
+    def train_fn(self, optimizer: torch.optim.Optimizer, criterion: Any, loader: DataLoader, device: torch.device):
         """
         Training method
 
@@ -136,7 +136,7 @@ class Net(nn.Module):
 
         return acc
 
-    def eval_fn(self, loader, device):
+    def eval_fn(self, loader: DataLoader, device: torch.device):
         """
         Evaluation method
 
@@ -304,12 +304,10 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         """Get the names of the objectives reported in the objective function."""
         return ['accuracy', 'model_size']
 
-    def init_model(self, config: Union[CS.Configuration, Dict],
-                   rng: Union[int, np.random.RandomState, None] = None):
+    def init_model(self, config: Union[CS.Configuration, Dict]) -> Net:
         """
         Function that returns the model initialized based on the configuration and fidelity
         """
-        rng = self.rng if rng is None else rng
         if isinstance(config, CS.Configuration):
             config = config.get_dictionary()
         return Net(config, self.input_shape, self.output_classes)
@@ -406,7 +404,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         logger.info(f'We use the device: {device}')
 
         # initializing model
-        model = self.init_model(configuration, rng).to(device)
+        model = self.init_model(configuration).to(device)
         epochs = fidelity['budget']
 
         optimizer = torch.optim.Adam(model.parameters(), lr=configuration['learning_rate_init'])
@@ -447,7 +445,6 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
             train_runtime=training_runtime,
             eval_valid_runtime=eval_valid_runtime,
             eval_test_runtime=eval_test_runtime,
-
         )
         t.close()
 
@@ -523,7 +520,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         # initializing model
-        model = self.init_model(configuration, rng).to(device)
+        model = self.init_model(configuration).to(device)
         epochs = fidelity['budget']
 
         optimizer = torch.optim.Adam(model.parameters(), lr=configuration['learning_rate_init'])
