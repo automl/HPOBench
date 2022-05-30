@@ -1,0 +1,3 @@
+{
+  "yahpo_gym": ["yahpo_gym@git+https://github.com/pfistfl/yahpo_gym#egg=yahpo_gym&subdirectory=yahpo_gym"]
+}
