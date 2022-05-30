@@ -7,7 +7,7 @@ MAINTAINER pfistererf@googlemail.com
 VERSION v0.0.1
 
 %help
-    This is a template for a Singularity recipe
+    This is the recipe for the Raw YAHPO Benchmarks.
 
 %post
     # Install R for Debian Bullseye (11)
@@ -78,4 +78,4 @@ VERSION v0.0.1
     && pip cache purge \
 
 %runscript
-    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py ml.rbv2_benchmark $@
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py ml.yahpo_benchmark $@

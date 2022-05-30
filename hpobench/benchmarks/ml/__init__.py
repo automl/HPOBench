@@ -5,7 +5,7 @@ from hpobench.benchmarks.ml.rf_benchmark import RandomForestBenchmark, RandomFor
     RandomForestBenchmarkMF
 from hpobench.benchmarks.ml.svm_benchmark import SVMBenchmark, SVMBenchmarkBB, SVMBenchmarkMF
 from hpobench.benchmarks.ml.tabular_benchmark import TabularBenchmark
-from hpobench.benchmarks.ml.rbv2_benchmark import YAHPOGymMORawBenchmark
+from hpobench.benchmarks.ml.yahpo_benchmark import YAHPOGymMORawBenchmark, YAHPOGymRawBenchmark
 
 try:
     from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark, XGBoostBenchmarkBB, XGBoostBenchmarkMF
@@ -20,5 +20,5 @@ __all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF',
            'SVMBenchmark', 'SVMBenchmarkBB', 'SVMBenchmarkMF',
            'TabularBenchmark',
            'XGBoostBenchmark', 'XGBoostBenchmarkBB', 'XGBoostBenchmarkMF',
-           'YAHPOGymMORawBenchmark'
+           'YAHPOGymMORawBenchmark', 'YAHPOGymRawBenchmark',
            ]
