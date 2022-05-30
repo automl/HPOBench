@@ -160,7 +160,6 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
             # We have to create a cache dir and initialize the cache
             _cache_dir = hpobench.config.config_file.cache_dir / 'R' / 'mlr3oml'
             oml = importr('mlr3oml')
-            oml.get_cache_dir(robjects.BoolVector([True]))
             oml.initialize_cache(cache=robjects.StrVector([str(_cache_dir)]))
 
             iaml = importr('iaml')
@@ -229,25 +228,6 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
         str_list = f"list({pairs})"
         r_list = robjects.r(str_list)
         return r_list
-
-    @staticmethod
-    def __map_scenario_to_learner(scenario):
-        # learner = {
-        #     "rpart", "glmnet", "svm", "RcppHNSW", "ranger.pow", "xgboost"
-        # }
-
-        mapping = {
-            'iaml_super': 'super',
-            'iaml_svm': 'svm',
-            'iaml_rpart': 'rpart',
-            'iaml_aknn': None,
-            'iaml_glmnet': 'glmnet',
-            'iaml_ranger': 'ranger.pow',
-            'iaml_xgboost': 'xgboost',
-            'nb301': None,
-            'lcbench': None,
-        }
-        return mapping[scenario]
 
 
 class YAHPOGymRawBenchmark(AbstractBenchmark):
