@@ -7,7 +7,7 @@ Changelog:
 """
 import logging
 import time
-from typing import Union, Dict, List
+from typing import Union, Dict, List, Any, Tuple
 
 import ConfigSpace as CS
 import numpy as np
@@ -164,27 +164,31 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         Returns
         -------
         Dict -
-            function_value : Dict
-                validation_accuracy: float
+            function_value : Dict - validation metrics after training on train
+                accuracy: float
                 DSO: float
                 DEO: float
                 DFP: float
             cost : time to train the network
             info : Dict
-                 valid_accuracy : float,
-                 train_accuracy : float,
-                 test_accuracy : float,
-                 valid_cost : float,
-                 test_cost : float,
-                 training_cost : float,
-                 elapsed_time : float,
-                 DSO : float,
-                 DEO : float,
-                 DFP : float,
-                 test_DSO : float,
-                 test_DEO : float,
-                 test_DFP : float,
-                 fidelity : int,
+                 train_accuracy : float
+                 valid_accuracy : float
+                 test_accuracy : float
+                 training_cost : float - time to train the network. see `training_cost`
+                 total_cost : float - elapsed time for the entire obj_func call,
+                 eval_train_cost : float - time to compute metrics on training split
+                 eval_valid_cost : float - time to compute metrics on validation split
+                 eval_test_cost : float - time to compute metrics on test split
+                 train_DSO : float
+                 train_DEO : float
+                 train_DFP : float
+                 valid_DSO : float
+                 valid_DEO : float
+                 valid_DFP : float
+                 test_DSO : float
+                 test_DEO : float
+                 test_DFP : float
+                 fidelity : int
         """
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
         if shuffle:
@@ -222,29 +226,19 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         # We call `.fit()` due to efficiency aspects.
         mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, shuffle=shuffle,
                             random_state=self.rng, max_iter=budget)
-        start = time.time()
+
         mlp.fit(X_train, self.y_train)
-        y_pred_train = mlp.predict(X_train)
-        train_accuracy = accuracy_score(self.y_train, y_pred_train)
-        training_cost = time.time() - start
+        training_cost = time.time() - ts_start
 
-        start = time.time()
-        y_pred_valid = mlp.predict(X_valid)
-        val_accuracy = accuracy_score(self.y_valid, y_pred_valid)
-        eval_valid_runtime = time.time() - start
+        train_accuracy, train_statistical_disparity, train_unequal_opportunity, train_unequalized_odds, \
+            eval_train_runtime = \
+            AdultBenchmark._compute_metrics_on_split(X_train, self.y_train, sensitive_rows_val, mlp)
 
-        start = time.time()
-        y_pred_test = mlp.predict(X_test)
-        test_accuracy = accuracy_score(self.y_test, y_pred_test)
-        eval_test_runtime = time.time() - start
+        val_accuracy, val_statistical_disparity, val_unequal_opportunity, val_unequalized_odds, eval_valid_runtime = \
+            AdultBenchmark._compute_metrics_on_split(X_valid, self.y_valid, sensitive_rows_val, mlp)
 
-        val_statistical_disparity = fairness_risk(X_valid, self.y_valid, sensitive_rows_val, mlp, STATISTICAL_DISPARITY)
-        val_unequal_opportunity = fairness_risk(X_valid, self.y_valid, sensitive_rows_val, mlp, UNEQUAL_OPPORTUNITY)
-        val_unequalized_odds = fairness_risk(X_valid, self.y_valid, sensitive_rows_val, mlp, UNEQUALIZED_ODDS)
-
-        test_statistical_disparity = fairness_risk(X_test, self.y_test, sensitive_rows_test, mlp, STATISTICAL_DISPARITY)
-        test_unequal_opportunity = fairness_risk(X_test, self.y_test, sensitive_rows_test, mlp, UNEQUAL_OPPORTUNITY)
-        test_unequalized_odds = fairness_risk(X_test, self.y_test, sensitive_rows_test, mlp, UNEQUALIZED_ODDS)
+        test_accuracy, test_statistical_disparity, test_unequal_opportunity, test_unequalized_odds, eval_test_runtime =\
+            AdultBenchmark._compute_metrics_on_split(X_test, self.y_test, sensitive_rows_test, mlp)
 
         logger.debug(f"config: {configuration}, val_acc: {val_accuracy}, test_score: {test_accuracy}, "
                      f"train score: {train_accuracy}, dsp: {val_statistical_disparity}, "
@@ -257,17 +251,21 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                                    'DEO': float(val_unequal_opportunity),
                                    'DFP': float(val_unequalized_odds)
                                    },
-                'cost': elapsed_time,
+                'cost': training_cost,
                 'info': {'train_accuracy': float(train_accuracy),
                          'valid_accuracy': float(val_accuracy),
                          'test_accuracy': float(test_accuracy),
                          'training_cost': training_cost,
-                         'valid_cost': eval_valid_runtime,
-                         'test_cost': eval_test_runtime,
-                         'elapsed_time': elapsed_time,
-                         'DSO': float(val_statistical_disparity),
-                         'DEO': float(val_unequal_opportunity),
-                         'DFP': float(val_unequalized_odds),
+                         'total_cost': elapsed_time,
+                         'eval_train_cost': eval_train_runtime,
+                         'eval_valid_cost': eval_valid_runtime,
+                         'eval_test_cost': eval_test_runtime,
+                         'train_DSO': float(train_statistical_disparity),
+                         'train_DEO': float(train_unequal_opportunity),
+                         'train_DFP': float(train_unequalized_odds),
+                         'valid_DSO': float(val_statistical_disparity),
+                         'valid_DEO': float(val_unequal_opportunity),
+                         'valid_DFP': float(val_unequalized_odds),
                          'test_DSO': float(test_statistical_disparity),
                          'test_DEO': float(test_unequal_opportunity),
                          'test_DFP': float(test_unequalized_odds),
@@ -310,27 +308,26 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         Returns
         -------
         Dict -
-            function_value : Dict
-                validation_accuracy: float
+            function_value : Dict - test metrics reported after training on (train+valid)
+                accuracy: float
                 DSO: float
                 DEO: float
                 DFP: float
-            cost : time to train the network
+            cost : float - time to train the network. see `training_cost`
             info : Dict
-                 valid_accuracy : float,
-                 train_accuracy : float,
-                 test_accuracy : float,
-                 valid_cost : float,
-                 test_cost : float,
-                 training_cost : float,
-                 elapsed_time : float,
-                 DSO : float,
-                 DEO : float,
-                 DFP : float,
-                 test_DSO : float,
-                 test_DEO : float,
-                 test_DFP : float,
-                 fidelity : int,
+                 train_accuracy : float
+                 test_accuracy : float
+                 training_cost : float
+                 total_cost : float - elapsed time for the entire obj_func_test call,
+                 eval_train_cost : float - time to compute metrics on training split
+                 eval_test_cost : float - time to compute metrics on test split
+                 train_DSO : float
+                 train_DEO : float
+                 train_DFP : float
+                 test_DSO : float
+                 test_DEO : float
+                 test_DFP : float
+                 fidelity : int
         """
         self.rng = rng_helper.get_rng(rng=rng, self_rng=self.rng)
 
@@ -341,7 +338,8 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         budget = fidelity['budget']
 
-        sensitive_rows = self.X_test[:, self.feature_names.index(self.sensitive_feature)]
+        sensitive_rows_train = self.X_train[:, self.feature_names.index(self.sensitive_feature)]
+        sensitive_rows_test = self.X_test[:, self.feature_names.index(self.sensitive_feature)]
 
         X_train, X_valid, X_test = self.X_train.copy(), self.X_valid.copy(), self.X_test.copy()
         X_train = np.vstack((X_train, X_valid))
@@ -367,20 +365,15 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         # We call `.fit()` due to efficiency aspects.
         mlp = MLPClassifier(**configuration, hidden_layer_sizes=hidden, shuffle=shuffle,
                             random_state=rng, max_iter=budget)
-        start = time.time()
         mlp.fit(X_train, y_train)
-        y_pred_train = mlp.predict(X_train)
-        train_accuracy = accuracy_score(y_train, y_pred_train)
-        training_cost = time.time() - start
+        training_cost = time.time() - ts_start
 
-        start = time.time()
-        y_pred_valid = mlp.predict(X_test)
-        test_accuracy = accuracy_score(self.y_test, y_pred_valid)
-        eval_test_runtime = time.time() - start
+        train_accuracy, train_statistical_disparity, train_unequal_opportunity, train_unequalized_odds, \
+            eval_train_runtime = \
+            AdultBenchmark._compute_metrics_on_split(X_train, y_train, sensitive_rows_train, mlp)
 
-        test_statistical_disparity = fairness_risk(X_test, self.y_test, sensitive_rows, mlp, STATISTICAL_DISPARITY)
-        test_unequal_opportunity = fairness_risk(X_test, self.y_test, sensitive_rows, mlp, UNEQUAL_OPPORTUNITY)
-        test_unequalized_odds = fairness_risk(X_test, self.y_test, sensitive_rows, mlp, UNEQUALIZED_ODDS)
+        test_accuracy, test_statistical_disparity, test_unequal_opportunity, test_unequalized_odds, eval_test_runtime =\
+            AdultBenchmark._compute_metrics_on_split(X_test, self.y_test, sensitive_rows_test, mlp)
 
         elapsed_time = time.time() - ts_start
 
@@ -392,18 +385,36 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
                                    'DEO': float(test_unequal_opportunity),
                                    'DFP': float(test_unequalized_odds)
                                    },
-                'cost': elapsed_time,
-                'info': {'train_score': float(train_accuracy),
-                         'test_score': float(test_accuracy),
+                'cost': training_cost,
+                'info': {'train_accuracy': float(train_accuracy),
+                         'test_accuracy': float(test_accuracy),
                          'training_cost': training_cost,
-                         'test_cost': eval_test_runtime,
-                         'elapsed_time': elapsed_time,
-                         'DSO': float(test_statistical_disparity),
-                         'DEO': float(test_unequal_opportunity),
-                         'DFP': float(test_unequalized_odds),
+                         'total_cost': elapsed_time,
+                         'eval_train_cost': eval_train_runtime,
+                         'eval_test_cost': eval_test_runtime,
+                         'train_DSO': float(train_statistical_disparity),
+                         'train_DEO': float(train_unequal_opportunity),
+                         'train_DFP': float(train_unequalized_odds),
+                         'test_DSO': float(test_statistical_disparity),
+                         'test_DEO': float(test_unequal_opportunity),
+                         'test_DFP': float(test_unequalized_odds),
                          'fidelity': budget
                          }
                 }
+
+    @staticmethod
+    def _compute_metrics_on_split(
+            x_split: np.ndarry, y_split: np.ndarry, sensitive_rows: Any,  mlp: Any
+    ) -> Tuple:
+
+        start = time.time()
+        _y_pred = mlp.predict(x_split)
+        accuracy = accuracy_score(y_split, _y_pred)
+        statistical_disparity = fairness_risk(x_split, y_split, sensitive_rows, mlp, STATISTICAL_DISPARITY)
+        unequal_opportunity = fairness_risk(x_split, y_split, sensitive_rows, mlp, UNEQUAL_OPPORTUNITY)
+        unequalized_odds = fairness_risk(x_split, y_split, sensitive_rows, mlp, UNEQUALIZED_ODDS)
+        runtime = time.time() - start
+        return accuracy, statistical_disparity, unequal_opportunity, unequalized_odds, runtime
 
     def _shuffle_data(self, rng=None, shuffle_valid=False) -> None:
         """
