@@ -404,7 +404,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
     @staticmethod
     def _compute_metrics_on_split(
-            x_split: np.ndarry, y_split: np.ndarry, sensitive_rows: Any,  mlp: Any
+            x_split: np.ndarray, y_split: np.ndarray, sensitive_rows: Any,  mlp: Any
     ) -> Tuple:
 
         start = time.time()
