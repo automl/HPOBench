@@ -39,6 +39,7 @@ Rscript -e 'remotes::install_version("BBmisc", version = "1.11", upgrade = "neve
 && Rscript -e 'remotes::install_github("mlr-org/mlr3misc", upgrade = "never", repos = "http://cran.r-project.org")' \
 && Rscript -e 'remotes::install_version("mlrCPO", version = "0.3.6", upgrade = "never", repos = "http://cran.r-projt.org")' \
 && Rscript -e 'remotes::install_github("pfistfl/rbv2", upgrade = "never")' \
+&& Rscript -e 'remotes::install_version("testthat", version = "3.1.4", upgrade = "never", repos = "http://cran.r-project.org")' \
 && Rscript -e 'remotes::install_github("sumny/iaml", upgrade = "never")'
 ```
 Prerequisites: 3) Install rpy2
@@ -85,7 +86,7 @@ Changelog:
 ==========
 0.0.1:
 * First implementation
-"""
+"""  # noqa: E501
 
 import logging
 from pathlib import Path
