@@ -11,6 +11,7 @@ from typing import Union, Dict, List
 
 import ConfigSpace as CS
 import numpy as np
+from ConfigSpace.conditions import GreaterThanCondition
 from sklearn.metrics import accuracy_score
 from sklearn.neural_network import MLPClassifier
 
@@ -62,36 +63,23 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         cs = CS.ConfigurationSpace(seed=seed)
 
         cs.add_hyperparameters([
-            CS.UniformIntegerHyperparameter(
-                'n_fc_layers', default_value=3, lower=1, upper=4, log=False
-            ),
-            CS.UniformIntegerHyperparameter(
-                'fc_layer_0', default_value=16, lower=2, upper=32, log=True
-            ),
-            CS.UniformIntegerHyperparameter(
-                'fc_layer_1', default_value=16, lower=2, upper=32, log=True
-            ),
-            CS.UniformIntegerHyperparameter(
-                'fc_layer_2', default_value=16, lower=2, upper=32, log=True
-            ),
-            CS.UniformIntegerHyperparameter(
-                'fc_layer_3', default_value=16, lower=2, upper=32, log=True
-            ),
-            CS.UniformFloatHyperparameter(
-                'alpha', lower=10 ** -5, upper=10 ** -1, default_value=10 ** -2, log=True
-            ),
-            CS.UniformFloatHyperparameter(
-                'learning_rate_init', lower=10 ** -5, upper=1, default_value=10 ** -3, log=True
-            ),
-            CS.UniformFloatHyperparameter(
-                'beta_1', lower=10 ** -3, upper=0.99, default_value=10 ** -3, log=True
-            ),
-            CS.UniformFloatHyperparameter(
-                'beta_2', lower=10 ** -3, upper=0.99, default_value=10 ** -3, log=True
-            ),
-            CS.UniformFloatHyperparameter(
-                'tol', lower=10 ** -5, upper=10 ** -2, default_value=10 ** -3, log=True
-            ),
+            CS.UniformIntegerHyperparameter('n_fc_layers', default_value=3, lower=1, upper=4, log=False),
+            CS.UniformIntegerHyperparameter('fc_layer_0', default_value=16, lower=2, upper=32, log=True),
+            CS.UniformIntegerHyperparameter('fc_layer_1', default_value=16, lower=2, upper=32, log=True),
+            CS.UniformIntegerHyperparameter('fc_layer_2', default_value=16, lower=2, upper=32, log=True),
+            CS.UniformIntegerHyperparameter('fc_layer_3', default_value=16, lower=2, upper=32, log=True),
+            CS.UniformFloatHyperparameter('alpha', lower=10**-5, upper=10**-1, default_value=10**-2, log=True),
+            CS.UniformFloatHyperparameter('learning_rate_init', lower=10**-5, upper=1, default_value=10**-3, log=True),
+            CS.UniformFloatHyperparameter('beta_1', lower=10**-3, upper=0.99, default_value=10**-3, log=True),
+            CS.UniformFloatHyperparameter('beta_2', lower=10**-3, upper=0.99, default_value=10**-3, log=True),
+            CS.UniformFloatHyperparameter('tol', lower=10**-5, upper=10**-2, default_value=10**-3, log=True),
+        ])
+
+        cs.add_conditions([
+            # Add the fc_layer_1 (2nd layer) if we allow more than 1 `n_fc_layers`, and so on...
+            GreaterThanCondition(cs.get_hyperparameter('fc_layer_1'), cs.get_hyperparameter('n_fc_layers'), 1),
+            GreaterThanCondition(cs.get_hyperparameter('fc_layer_2'), cs.get_hyperparameter('n_fc_layers'), 2),
+            GreaterThanCondition(cs.get_hyperparameter('fc_layer_3'), cs.get_hyperparameter('n_fc_layers'), 3),
         ])
         return cs
 
@@ -220,12 +208,15 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
             X_valid = scaler(X_valid)
             X_test = scaler(X_test)
 
-        # Create model
-        hidden = [configuration['fc_layer_0'], configuration['fc_layer_1'],
-                  configuration['fc_layer_2'], configuration['fc_layer_3']][:configuration['n_fc_layers']]
+        # Create model. The parameters fc_layer_1-3 might not be included in the search space.
+        hidden = [configuration['fc_layer_0'],
+                  configuration.get('fc_layer_1', None),
+                  configuration.get('fc_layer_2', None),
+                  configuration.get('fc_layer_3', None)][:configuration['n_fc_layers']]
 
         for item in ['fc_layer_0', 'fc_layer_1', 'fc_layer_2', 'fc_layer_3', 'n_fc_layers']:
-            configuration.pop(item)
+            if item in configuration:
+                configuration.pop(item)
 
         # We deviate here from the original implementation. They have called `budget`-times mlp.partial_fit().
         # We call `.fit()` due to efficiency aspects.
@@ -362,12 +353,15 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
             X_train = scaler(X_train)
             X_test = scaler(X_test)
 
-        # Create model
-        hidden = [configuration['fc_layer_0'], configuration['fc_layer_1'],
-                  configuration['fc_layer_2'], configuration['fc_layer_3']][:configuration['n_fc_layers']]
+        # Create model. The parameters fc_layer_1-3 might not be included in the search space.
+        hidden = [configuration['fc_layer_0'],
+                  configuration.get('fc_layer_1', None),
+                  configuration.get('fc_layer_2', None),
+                  configuration.get('fc_layer_3', None)][:configuration['n_fc_layers']]
 
         for item in ['fc_layer_0', 'fc_layer_1', 'fc_layer_2', 'fc_layer_3', 'n_fc_layers']:
-            configuration.pop(item)
+            if item in configuration:
+                configuration.pop(item)
 
         # We deviate here from the original implementation. They have called `budget`-times mlp.partial_fit().
         # We call `.fit()` due to efficiency aspects.
