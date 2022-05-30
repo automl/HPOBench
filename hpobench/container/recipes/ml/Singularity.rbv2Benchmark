@@ -10,10 +10,18 @@ VERSION v0.0.1
     This is a template for a Singularity recipe
 
 %post
+    # Install R for Debian Bullseye (11)
+    # Default installation /usr/local/ here: /opt/
+    # export LD_LIBRARY_PATH=$(python -m rpy2.situation LD_LIBRARY_PATH):${LD_LIBRARY_PATH}
+
     apt update -y
-    apt install -y build-essential git wget
-    apt install -y --no-install-recommends r-base r-base-dev
-    apt install -y libatlas3-base libxml2-dev libcurl4-openssl-dev
+    apt install -y build-essential git wget curl gdebi-core
+    export R_VERSION=4.0.5
+    curl -O https://cdn.rstudio.com/r/debian-11/pkgs/r-${R_VERSION}_1_amd64.deb
+    gdebi r-${R_VERSION}_1_amd64.deb
+
+    ln -s /opt/R/${R_VERSION}/bin/R /usr/local/bin/R
+    ln -s /opt/R/${R_VERSION}/bin/Rscript /usr/local/bin/Rscript
 
     # Upgrade pip
     /usr/local/bin/python -m pip install --upgrade pip
@@ -46,7 +54,8 @@ VERSION v0.0.1
     && Rscript -e 'remotes::install_github("ml-org/mlr3misc", upgrade = "never")' \
     && Rscript -e 'remotes::install_github("mlr-org/mlr3misc", upgrade = "never")'
     && Rscript -e 'remotes::install_version("mlrCPO", version = "0.3.6", upgrade = "never")' \
-    && Rscript -e 'remotes::install_github("pfistlf/rbv2", upgrade = "never")'
+    && Rscript -e 'remotes::install_github("pfistlf/rbv2", upgrade = "never")' \
+    && Rscript -e 'remotes::install_github("sumny/iaml", upgrade = "never")'
 
     cd /home \
     && git clone https://github.com/pfistfl/HPOBench.git \
