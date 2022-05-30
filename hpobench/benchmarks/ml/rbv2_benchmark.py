@@ -88,7 +88,7 @@ Changelog:
 """
 
 import logging
-import os
+from pathlib import Path
 from typing import Union, Dict, List
 
 import ConfigSpace as CS
@@ -107,7 +107,8 @@ logger = logging.getLogger('YAHPO-Raw')
 
 class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
     def __init__(self, scenario: str, instance: str,
-                 rng: Union[np.random.RandomState, int, None] = None):
+                 rng: Union[np.random.RandomState, int, None] = None,
+                 data_dir: Union[Path, str, None] = None):
         """
         Parameters
         ----------
@@ -119,12 +120,9 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
             https://slds-lmu.github.io/yahpo_gym/scenarios.html#instances
         rng : np.random.RandomState, int, None
         """
-
-        # When in the containerized version, redirect to the data inside the container.
-        if 'YAHPO_CONTAINER' in os.environ:
-            from yahpo_gym.local_config import LocalConfiguration
-            local_config = LocalConfiguration()
-            local_config.init_config(data_path='/home/data/yahpo_data')
+        from hpobench.util.data_manager import YAHPODataManager
+        self.data_manager = YAHPODataManager(data_dir=data_dir)
+        self.data_manager.load()
 
         self.scenario = scenario
         self.instance = instance
