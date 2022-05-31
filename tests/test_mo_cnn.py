@@ -5,7 +5,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def test_mo_cnn_benchmark():
-    from hpobench.benchmarks.mo.cnn_benchmark import FlowerCNNBenchmark
+    from hpobench.container.benchmarks.mo.cnn_benchmark import FlowerCNNBenchmark
 
     # Check Seeding
     benchmark = FlowerCNNBenchmark(rng=0)
