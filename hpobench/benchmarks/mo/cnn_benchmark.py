@@ -211,31 +211,35 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         """
         cs = CS.ConfigurationSpace(seed=seed)
 
+        n_conv_layers = CS.UniformIntegerHyperparameter(
+            'n_conv_layers', default_value=3, lower=1, upper=3, log=False
+        )
+
+        n_fc_layers = CS.UniformIntegerHyperparameter(
+            'n_fc_layers', default_value=3, lower=1, upper=3, log=False
+        )
+
+        conv_layer_0 = CS.UniformIntegerHyperparameter(
+            'conv_layer_0', default_value=128, lower=16, upper=1024, log=True
+        )
+        conv_layer_1 = CS.UniformIntegerHyperparameter(
+            'conv_layer_1', default_value=128, lower=16, upper=1024, log=True
+        )
+        conv_layer_2 = CS.UniformIntegerHyperparameter(
+            'conv_layer_2', default_value=128, lower=16, upper=1024, log=True
+        )
+        fc_layer_0 = CS.UniformIntegerHyperparameter(
+            'fc_layer_0', default_value=32, lower=2, upper=512, log=True
+        )
+        fc_layer_1 = CS.UniformIntegerHyperparameter(
+            'fc_layer_1', default_value=32, lower=2, upper=512, log=True
+        )
+        fc_layer_2 = CS.UniformIntegerHyperparameter(
+            'fc_layer_2', default_value=32, lower=2, upper=512, log=True
+        )
+
         cs.add_hyperparameters([
-            CS.UniformIntegerHyperparameter(
-                'n_conv_layers', default_value=3, lower=1, upper=3, log=False
-            ),
-            CS.UniformIntegerHyperparameter(
-                'conv_layer_0', default_value=128, lower=16, upper=1024, log=True
-            ),
-            CS.UniformIntegerHyperparameter(
-                'conv_layer_1', default_value=128, lower=16, upper=1024, log=True
-            ),
-            CS.UniformIntegerHyperparameter(
-                'conv_layer_2', default_value=128, lower=16, upper=1024, log=True
-            ),
-            CS.UniformIntegerHyperparameter(
-                'n_fc_layers', default_value=3, lower=1, upper=3, log=False
-            ),
-            CS.UniformIntegerHyperparameter(
-                'fc_layer_0', default_value=32, lower=2, upper=512, log=True
-            ),
-            CS.UniformIntegerHyperparameter(
-                'fc_layer_1', default_value=32, lower=2, upper=512, log=True
-            ),
-            CS.UniformIntegerHyperparameter(
-                'fc_layer_2', default_value=32, lower=2, upper=512, log=True
-            ),
+
             CS.UniformIntegerHyperparameter(
                 'batch_size', lower=1, upper=512, default_value=128, log=True
             ),
@@ -253,6 +257,19 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
             )
 
         ])
+
+        cond_conv_layer2 = CS.conditions.InCondition(conv_layer_2, n_conv_layers, [3])
+        cond_conv_layer1 = CS.conditions.InCondition(conv_layer_1, n_conv_layers, [2, 3])
+        cond_conv_layer0 = CS.conditions.InCondition(conv_layer_0, n_conv_layers, [1, 2, 3])
+        cond_fc_layer2 = CS.conditions.InCondition(fc_layer_2, n_fc_layers, [3])
+        cond_fc_layer1 = CS.conditions.InCondition(fc_layer_1, n_fc_layers, [2, 3])
+        cond_fc_layer0 = CS.conditions.InCondition(fc_layer_0, n_fc_layers, [1, 2, 3])
+
+        cs.add_hyperparameters([n_conv_layers, conv_layer_0, conv_layer_1, conv_layer_2])
+        cs.add_hyperparameters([n_fc_layers, fc_layer_0, fc_layer_1, fc_layer_2])
+        cs.add_conditions([cond_conv_layer2, cond_conv_layer1, cond_conv_layer0])
+        cs.add_conditions([cond_fc_layer1, cond_fc_layer2, cond_fc_layer0])
+
         return cs
 
     @staticmethod
