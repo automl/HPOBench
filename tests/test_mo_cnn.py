@@ -5,7 +5,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def test_mo_cnn_benchmark():
-    from hpobench.container.benchmarks.mo.cnn_benchmark import FlowerCNNBenchmark
+    from hpobench.benchmarks.mo.cnn_benchmark import FlowerCNNBenchmark
 
     # Check Seeding
     benchmark = FlowerCNNBenchmark(rng=0)
@@ -29,5 +29,5 @@ def test_mo_cnn_benchmark():
 
     assert result_1['info']['valid_accuracy'] == pytest.approx(0.1029, rel=0.001)
     assert result_1['info']['valid_accuracy'] == result_1['function_value']['accuracy']
-    assert result_1['info']['train_accuracy'] == pytest.approx(0.1044, rel=0.001)
+    assert result_1['info']['train_accuracy'] == pytest.approx(0.0882, rel=0.001)
     assert result_1['info']['train_accuracy'] == result_2['info']['train_accuracy']

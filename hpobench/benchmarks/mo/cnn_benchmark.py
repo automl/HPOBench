@@ -15,6 +15,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import tqdm
+from ConfigSpace.conditions import GreaterThanCondition
 from torch.utils.data import TensorDataset, DataLoader
 
 import hpobench.util.rng_helper as rng_helper
@@ -210,65 +211,30 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         ConfigSpace.ConfigurationSpace
         """
         cs = CS.ConfigurationSpace(seed=seed)
-
-        n_conv_layers = CS.UniformIntegerHyperparameter(
-            'n_conv_layers', default_value=3, lower=1, upper=3, log=False
-        )
-
-        n_fc_layers = CS.UniformIntegerHyperparameter(
-            'n_fc_layers', default_value=3, lower=1, upper=3, log=False
-        )
-
-        conv_layer_0 = CS.UniformIntegerHyperparameter(
-            'conv_layer_0', default_value=128, lower=16, upper=1024, log=True
-        )
-        conv_layer_1 = CS.UniformIntegerHyperparameter(
-            'conv_layer_1', default_value=128, lower=16, upper=1024, log=True
-        )
-        conv_layer_2 = CS.UniformIntegerHyperparameter(
-            'conv_layer_2', default_value=128, lower=16, upper=1024, log=True
-        )
-        fc_layer_0 = CS.UniformIntegerHyperparameter(
-            'fc_layer_0', default_value=32, lower=2, upper=512, log=True
-        )
-        fc_layer_1 = CS.UniformIntegerHyperparameter(
-            'fc_layer_1', default_value=32, lower=2, upper=512, log=True
-        )
-        fc_layer_2 = CS.UniformIntegerHyperparameter(
-            'fc_layer_2', default_value=32, lower=2, upper=512, log=True
-        )
-
         cs.add_hyperparameters([
+            CS.UniformIntegerHyperparameter('n_conv_layers', default_value=3, lower=1, upper=3, log=False),
+            CS.UniformIntegerHyperparameter('n_fc_layers', default_value=3, lower=1, upper=3, log=False),
+            CS.UniformIntegerHyperparameter('conv_layer_0', default_value=128, lower=16, upper=1024, log=True),
+            CS.UniformIntegerHyperparameter('conv_layer_1', default_value=128, lower=16, upper=1024, log=True),
+            CS.UniformIntegerHyperparameter('conv_layer_2', default_value=128, lower=16, upper=1024, log=True),
+            CS.UniformIntegerHyperparameter('fc_layer_0', default_value=32, lower=2, upper=512, log=True),
+            CS.UniformIntegerHyperparameter('fc_layer_1', default_value=32, lower=2, upper=512, log=True),
+            CS.UniformIntegerHyperparameter('fc_layer_2', default_value=32, lower=2, upper=512, log=True),
 
-            CS.UniformIntegerHyperparameter(
-                'batch_size', lower=1, upper=512, default_value=128, log=True
-            ),
-            CS.UniformFloatHyperparameter(
-                'learning_rate_init', lower=10 ** -5, upper=1, default_value=10 ** -3, log=True
-            ),
-            CS.CategoricalHyperparameter(
-                'batch_norm', default_value=False, choices=[False, True]
-            ),
-            CS.CategoricalHyperparameter(
-                'global_avg_pooling', default_value=True, choices=[False, True]
-            ),
-            CS.CategoricalHyperparameter(
-                'kernel_size', default_value=5, choices=[7, 5, 3]
-            )
-
+            CS.UniformIntegerHyperparameter('batch_size', lower=1, upper=512, default_value=128, log=True),
+            CS.UniformFloatHyperparameter('learning_rate_init', lower=10**-5, upper=1, default_value=10**-3, log=True),
+            CS.CategoricalHyperparameter('batch_norm', default_value=False, choices=[False, True]),
+            CS.CategoricalHyperparameter('global_avg_pooling', default_value=True, choices=[False, True]),
+            CS.CategoricalHyperparameter('kernel_size', default_value=5, choices=[7, 5, 3])
         ])
 
-        cond_conv_layer2 = CS.conditions.InCondition(conv_layer_2, n_conv_layers, [3])
-        cond_conv_layer1 = CS.conditions.InCondition(conv_layer_1, n_conv_layers, [2, 3])
-        cond_conv_layer0 = CS.conditions.InCondition(conv_layer_0, n_conv_layers, [1, 2, 3])
-        cond_fc_layer2 = CS.conditions.InCondition(fc_layer_2, n_fc_layers, [3])
-        cond_fc_layer1 = CS.conditions.InCondition(fc_layer_1, n_fc_layers, [2, 3])
-        cond_fc_layer0 = CS.conditions.InCondition(fc_layer_0, n_fc_layers, [1, 2, 3])
-
-        cs.add_hyperparameters([n_conv_layers, conv_layer_0, conv_layer_1, conv_layer_2])
-        cs.add_hyperparameters([n_fc_layers, fc_layer_0, fc_layer_1, fc_layer_2])
-        cs.add_conditions([cond_conv_layer2, cond_conv_layer1, cond_conv_layer0])
-        cs.add_conditions([cond_fc_layer1, cond_fc_layer2, cond_fc_layer0])
+        cs.add_conditions([
+            # Add the conv_layer_1 (2nd layer) if we allow more than 1 (>1) `n_conv_layers`, and so on...
+            GreaterThanCondition(cs.get_hyperparameter('conv_layer_1'), cs.get_hyperparameter('n_conv_layers'), 1),
+            GreaterThanCondition(cs.get_hyperparameter('conv_layer_2'), cs.get_hyperparameter('n_conv_layers'), 2),
+            GreaterThanCondition(cs.get_hyperparameter('fc_layer_1'), cs.get_hyperparameter('n_fc_layers'), 1),
+            GreaterThanCondition(cs.get_hyperparameter('fc_layer_2'), cs.get_hyperparameter('n_fc_layers'), 2),
+        ])
 
         return cs
 
