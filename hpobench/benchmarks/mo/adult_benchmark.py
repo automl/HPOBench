@@ -200,6 +200,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         logger.debug(f"budget for evaluation of config:{budget}")
         logger.debug(f"config for evaluation:{configuration}")
 
+        sensitive_rows_train = self.X_train[:, self.feature_names.index(self.sensitive_feature)]
         sensitive_rows_val = self.X_valid[:, self.feature_names.index(self.sensitive_feature)]
         sensitive_rows_test = self.X_test[:, self.feature_names.index(self.sensitive_feature)]
 
@@ -232,7 +233,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         train_accuracy, train_statistical_disparity, train_unequal_opportunity, train_unequalized_odds, \
             eval_train_runtime = \
-            AdultBenchmark._compute_metrics_on_split(X_train, self.y_train, sensitive_rows_val, mlp)
+            AdultBenchmark._compute_metrics_on_split(X_train, self.y_train, sensitive_rows_train, mlp)
 
         val_accuracy, val_statistical_disparity, val_unequal_opportunity, val_unequalized_odds, eval_valid_runtime = \
             AdultBenchmark._compute_metrics_on_split(X_valid, self.y_valid, sensitive_rows_val, mlp)
@@ -338,12 +339,12 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         budget = fidelity['budget']
 
-        sensitive_rows_train = self.X_train[:, self.feature_names.index(self.sensitive_feature)]
-        sensitive_rows_test = self.X_test[:, self.feature_names.index(self.sensitive_feature)]
-
         X_train, X_valid, X_test = self.X_train.copy(), self.X_valid.copy(), self.X_test.copy()
         X_train = np.vstack((X_train, X_valid))
         y_train = np.vstack((self.y_train[:, np.newaxis], self.y_valid[:, np.newaxis])).ravel()
+
+        sensitive_rows_train = X_train[:, self.feature_names.index(self.sensitive_feature)]
+        sensitive_rows_test = X_test[:, self.feature_names.index(self.sensitive_feature)]
 
         # Normalize data
         scaler = get_fitted_scaler(X_train, "Standard")
