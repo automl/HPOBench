@@ -114,13 +114,20 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
         Parameters
         ----------
         scenario : str
-            Name for the surrogate data. Must be one of ["lcbench", "fcnet", "nb301", "rbv2_svm",
-            "rbv2_ranger", "rbv2_rpart", "rbv2_glmnet", "rbv2_aknn", "rbv2_xgboost", "rbv2_super"]
+            Name for the learner. Must be one of [
+            "rbv2_ranger", "rbv2_rpart", "rbv2_glmnet", "rbv2_xgboost", "rbv2_svm", "rbv2_aknn", "rbv2_super",
+            "iaml_ranger", "iaml_rpart", "iaml_glmnet", "iaml_xgboost"
+            ]
         instance : str
             A valid instance for the scenario. See `self.benchset.instances`.
             https://slds-lmu.github.io/yahpo_gym/scenarios.html#instances
         rng : np.random.RandomState, int, None
         """
+
+        assert scenario.startswith('rbv2_') or scenario.startswith('iaml_'), \
+            'Currently, we only support the experiments with rbv2_ and iaml from yahpo. ' \
+            f'The scenario has to start with either rbv2_ or iaml_, but was {scenario}'
+
         from hpobench.util.data_manager import YAHPODataManager
         self.data_manager = YAHPODataManager(data_dir=data_dir)
         self.data_manager.load()
