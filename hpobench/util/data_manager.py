@@ -987,7 +987,7 @@ class YAHPODataManager(DataManager):
     def __init__(self, data_dir: Union[Path, str, None]):
         if data_dir is None:
             data_dir = hpobench.config_file.data_dir / "yahpo_data"
-        self.data_dir = data_dir
+        self.data_dir = Path(data_dir)
 
         super(YAHPODataManager, self).__init__()
 
