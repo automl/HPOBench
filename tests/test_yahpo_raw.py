@@ -3,7 +3,7 @@ import os
 os.environ['LD_LIBRARY_PATH'] = \
     '/opt/R/4.0.5/lib/R/lib:/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/java-11-openjdk-amd64/lib/server'
 
-from hpobench.benchmarks.ml.rbv2_benchmark import YAHPOGymRawBenchmark, YAHPOGymMORawBenchmark
+from hpobench.benchmarks.ml.yahpo_benchmark import YAHPOGymRawBenchmark, YAHPOGymMORawBenchmark
 
 
 def test_mo_benchmark():
