@@ -27,5 +27,7 @@ def test_mo_cnn_benchmark():
     result_1 = benchmark.objective_function(test_config, rng=1, fidelity={'budget': 3})
     result_2 = benchmark.objective_function(test_config, rng=1, fidelity={'budget': 3})
 
-    assert result_1['info']['train_accuracy'] == pytest.approx(0.1029, rel=0.001)
+    assert result_1['info']['valid_accuracy'] == pytest.approx(0.1029, rel=0.001)
+    assert result_1['info']['valid_accuracy'] == result_1['function_value']['accuracy']
+    assert result_1['info']['train_accuracy'] == pytest.approx(0.1044, rel=0.001)
     assert result_1['info']['train_accuracy'] == result_2['info']['train_accuracy']
