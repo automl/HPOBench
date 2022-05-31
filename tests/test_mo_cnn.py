@@ -21,7 +21,7 @@ def test_mo_cnn_benchmark():
         'batch_norm': True, 'batch_size': 71, 'conv_layer_0': 194,  'conv_layer_1': 152,
         'conv_layer_2': 92, 'fc_layer_0': 65, 'fc_layer_1': 19, 'fc_layer_2': 273,
         'global_avg_pooling': True, 'kernel_size': 5, 'learning_rate_init': 0.09091283280651452,
-        'n_conv_layers': 2, 'n_fc_layers': 2
+        'n_conv_layers': 3, 'n_fc_layers': 3
     }
 
     result_1 = benchmark.objective_function(test_config, rng=1, fidelity={'budget': 3})
