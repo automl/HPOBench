@@ -5,7 +5,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def test_adult_benchmark():
-    from hpobench.benchmarks.mo.adult_benchmark import AdultBenchmark
+    from hpobench.container.benchmarks.mo.adult_benchmark import AdultBenchmark
 
     # Check Seeding
     benchmark = AdultBenchmark(rng=0)
