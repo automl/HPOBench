@@ -1,10 +1,10 @@
 """ Benchmark for the Multi-Objective CNN Benchmark from hpobench/benchmarks/mo/cnn_benchmark.py
 """
 
-from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
+from hpobench.container.client_abstract_benchmark import AbstractMOBenchmarkClient
 
 
-class FlowerCNNBenchmark(AbstractBenchmarkClient):
+class FlowerCNNBenchmark(AbstractMOBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'FlowerCNNBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'mo_cnn')
@@ -13,7 +13,7 @@ class FlowerCNNBenchmark(AbstractBenchmarkClient):
         super(FlowerCNNBenchmark, self).__init__(**kwargs)
 
 
-class FashionCNNBenchmark(AbstractBenchmarkClient):
+class FashionCNNBenchmark(AbstractMOBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'FashionCNNBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'mo_cnn')
