@@ -38,7 +38,6 @@ try:
 except ImportError:
     print("pandas is not installed, can't download datasets for the ml.tabular_benchmarks (not needed for containers)")
 
-
 import hpobench
 
 
@@ -846,6 +845,93 @@ class ProteinStructureData(HoldoutDataManager):
         X_train, y_train = data[:n_train, 1:], data[:n_train, 0]
         X_val, y_val = data[n_train:n_train + n_val, 1:], data[n_train:n_train + n_val, 0]
         X_test, y_test = data[n_train + n_val:, 1:], data[n_train + n_val:, 0]
+        return X_train, y_train, X_val, y_val, X_test, y_test
+
+
+class CNNDataManager(HoldoutDataManager):
+
+    def __init__(self, dataset: str):
+
+        super(CNNDataManager, self).__init__()
+        self.logger.debug('CNNDataManager: Starting to load data')
+
+        allowed_datasets = ["fashion", "flower"]
+        assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
+                                            f'{", ".join(allowed_datasets)}, but was {dataset}'
+
+        self.url_source = f'https://github.com/ayushi-3536/DatasetHost/blob/main/{dataset}.tar.gz?raw=true'
+        self.dataset = dataset
+        self.save_dir = hpobench.config_file.data_dir / "CNN" / f'{dataset}'
+        self.compressed_data = self.save_dir / f'{dataset}.tar.gz'
+        self.create_save_directory(self.save_dir)
+
+    def load(self):
+        """
+        Loads CNN Benchmark from data directory as defined in hpobenchrc.data_directory.
+        Downloads data if necessary.
+
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+
+        t = time()
+        self._download()
+        X_trn, y_trn, X_val, y_val, X_tst, y_tst = self._load()
+        self.logger.info(f'CNNDataManager: Data successfully loaded after {time() - t:.2f}')
+
+        return X_trn, y_trn, X_val, y_val, X_tst, y_tst
+
+    def _download(self):
+
+        # Check if data is already downloaded.
+        # Use a file lock to ensure that no two processes try to download the same files at the same time.
+        if self.compressed_data.exists():
+            self.logger.debug('CNNDataManager: Data already downloaded')
+        else:
+
+            self.logger.info(f'CNNDataManager: Start downloading data from {self.url_source} '
+                             f'to {self.save_dir}')
+            self._download_file_with_progressbar(data_url=self.url_source, data_file=self.compressed_data)
+            self._untar_data(compressed_file=self.compressed_data, save_dir=self.save_dir)
+
+    def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Load the data from file and split it into train, test and validation split.
+
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+
+        data_extract_path = self.save_dir / "data"
+        X_train = np.load(data_extract_path / 'x_train.npy')
+        y_train = np.load(data_extract_path / 'y_train.npy')
+
+        X_val = np.load(data_extract_path / 'x_val.npy')
+        y_val = np.load(data_extract_path / 'y_val.npy')
+
+        # Read Test datasets
+        X_test = np.load(data_extract_path / 'x_test.npy')
+        y_test = np.load(data_extract_path / 'y_test.npy')
+
+        def __cast_x_y(x, y) -> Tuple:
+            import torch
+            return torch.tensor(x).float().permute(0, 3, 1, 2), torch.tensor(y).long()
+
+        X_train, y_train = __cast_x_y(X_train, y_train)
+        X_val, y_val = __cast_x_y(X_val, y_val)
+        X_test, y_test = __cast_x_y(X_test, y_test)
 
         return X_train, y_train, X_val, y_val, X_test, y_test
 
