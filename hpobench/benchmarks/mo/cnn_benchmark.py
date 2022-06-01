@@ -258,9 +258,8 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         ConfigSpace.ConfigurationSpace
         """
         fidelity_space = CS.ConfigurationSpace(seed=seed)
-        fidelity_space.add_hyperparameters([CS.UniformIntegerHyperparameter(
-            'budget', lower=1, upper=25, default_value=25, log=False
-        )
+        fidelity_space.add_hyperparameters([
+            CS.UniformIntegerHyperparameter('budget', lower=1, upper=25, default_value=25, log=False)
         ])
         return fidelity_space
 
@@ -298,6 +297,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
     def __seed_everything(self):
         """Helperfunction: Make the benchmark deterministic by setting the correct seeds"""
         seed = self.rng.randint(0, 100000)
+        logger.debug(f'Generate seed: {seed}')
         random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -361,8 +361,10 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         -------
         Dict -
             function_value : Dict
-                validation_accuracy: float
-                model_size: float
+                negative_accuracy: float
+                    -100 * validation accuracy
+                log_model_size: float
+                    log10 of the number of parameters
             cost : time to train the network
             info : Dict
                 train_accuracy : float,
@@ -433,8 +435,8 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         elapsed_time = time.time() - time_in
 
-        return {'function_value': {'accuracy': val_accuracy,
-                                   'model_size': num_params},
+        return {'function_value': {'negative_accuracy': -100 * val_accuracy,
+                                   'log_model_size': float(np.log10(num_params))},
                 'cost': float(training_runtime),
                 'info': {'train_accuracy': train_accuracy,
                          'training_cost': training_runtime,
@@ -477,8 +479,10 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         -------
         Dict -
             function_value : Dict
-                validation_accuracy: float
-                model_size: float
+                negative_accuracy: float
+                    -100 * test accuracy
+                log_model_size: float
+                    log10 of the number of parameters
             cost : time to train the network
             info : Dict
                 train_accuracy : float,
@@ -542,8 +546,8 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         elapsed_time = time.time() - time_in
 
-        return {'function_value': {'accuracy': test_accuracy,
-                                   'model_size': num_params},
+        return {'function_value': {'negative_accuracy': -100 * test_accuracy,
+                                   'log_model_size': float(np.log10(num_params))},
                 'cost': training_runtime,
                 'info': {'train_accuracy': train_accuracy,
                          'training_cost': training_runtime,
