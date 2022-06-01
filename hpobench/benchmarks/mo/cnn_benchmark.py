@@ -362,7 +362,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         Dict -
             function_value : Dict
                 negative_accuracy: float
-                    -100 * validation accuracy
+                    1 - validation accuracy
                 log_model_size: float
                     log10 of the number of parameters
             cost : time to train the network
@@ -435,7 +435,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         elapsed_time = time.time() - time_in
 
-        return {'function_value': {'negative_accuracy': -100 * val_accuracy,
+        return {'function_value': {'negative_accuracy': 1 - val_accuracy,
                                    'log_model_size': float(np.log10(num_params))},
                 'cost': float(training_runtime),
                 'info': {'train_accuracy': train_accuracy,
@@ -480,7 +480,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         Dict -
             function_value : Dict
                 negative_accuracy: float
-                    -100 * test accuracy
+                    1 - test accuracy
                 log_model_size: float
                     log10 of the number of parameters
             cost : time to train the network
@@ -546,7 +546,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         elapsed_time = time.time() - time_in
 
-        return {'function_value': {'negative_accuracy': -100 * test_accuracy,
+        return {'function_value': {'negative_accuracy': 1 - test_accuracy,
                                    'log_model_size': float(np.log10(num_params))},
                 'cost': training_runtime,
                 'info': {'train_accuracy': train_accuracy,
