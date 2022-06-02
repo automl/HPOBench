@@ -46,6 +46,9 @@ export PATH=/Path/to/nasbench-1shot1:$PATH
 
 Changelog:
 ==========
+0.0.5
+* Add MO Version
+
 0.0.4
 * New container release due to a general change in the communication between container and HPOBench.
   Works with HPOBench >= v0.0.8
@@ -72,7 +75,7 @@ import numpy as np
 from nasbench import api
 from nasbench.api import OutOfDomainError
 
-from hpobench.abstract_benchmark import AbstractBenchmark
+from hpobench.abstract_benchmark import AbstractBenchmark, AbstractMultiObjectiveBenchmark
 from hpobench.util.data_manager import NASBench_101DataManager
 from hpobench.util import rng_helper
 
@@ -85,11 +88,12 @@ __version__ = '0.0.4'
 logger = logging.getLogger('NasBench1shot1')
 
 
-class NASBench1shot1BaseBenchmark(AbstractBenchmark):
+class NASBench1shot1BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
+
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         """
-        Baseclass for the nasbench 1shot1 benchmarks.
+        Baseclass for the Multi Objective nasbench 1shot1 benchmarks.
         Please install the benchmark first. Place the data under ``data_path``.
 
         Parameters
@@ -99,13 +103,13 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
         rng : np.random.RandomState, int, None
             Random seed for the benchmarks
         """
-        super(NASBench1shot1BaseBenchmark, self).__init__(rng=rng)
+        super(NASBench1shot1BaseMOBenchmark, self).__init__(rng=rng)
         data_manager = NASBench_101DataManager(data_path)
         self.api = data_manager.load()
         self.search_space = None
 
     # pylint: disable=arguments-differ
-    @AbstractBenchmark.check_parameters
+    @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
                            fidelity: Union[CS.Configuration, Dict, None] = None,
                            run_index: Union[int, Tuple, List, None] = (0, 1, 2),
@@ -171,7 +175,8 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
                           'module_operations': data['module_operations']}
             failure = failure or ('info' in data and data['info'] == 'failure')
 
-        return {'function_value': float(1 - np.mean(valid_accuracies)),
+        return {'function_value': {'valid_accuracy': float(1 - np.mean(valid_accuracies)),
+                                   'trainable_parameters': additional['trainable_parameters']},
                 'cost': float(np.sum(training_times)),
                 'info': {'fidelity': fidelity,
                          'train_accuracies': train_accuracies,
@@ -183,7 +188,7 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
                          }
                 }
 
-    @AbstractBenchmark.check_parameters
+    @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None,
@@ -426,15 +431,176 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
         return cs
 
 
+class NASBench1shot1BaseBenchmark(AbstractBenchmark):
+    def __init__(self, data_path: Union[Path, str, None] = None,
+                 rng: Union[np.random.RandomState, int, None] = None):
+        """
+        Baseclass for the nasbench 1shot1 benchmarks.
+        Please install the benchmark first. Place the data under ``data_path``.
+
+        Parameters
+        ----------
+        data_path : str, Path, None
+            Path to the nasbench record. It is recommend to use the full record!
+        rng : np.random.RandomState, int, None
+            Random seed for the benchmarks
+        """
+        self.mo_benchmark = NASBench1shot1BaseMOBenchmark(data_path=data_path, rng=rng)
+        super(NASBench1shot1BaseBenchmark, self).__init__(rng=rng)
+
+    # pylint: disable=arguments-differ
+    @AbstractBenchmark.check_parameters
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
+                           run_index: Union[int, Tuple, List, None] = (0, 1, 2),
+                           rng: Union[np.random.RandomState, int, None] = None,
+                           **kwargs) -> Dict:
+        """
+        Query the NAS1shot1-benchmark using a given configuration and an epoch (=budget).
+        Only data for the budgets 4, 12, 36, 108 are available.
+
+        Parameters
+        ----------
+        configuration : Dict, CS.Configuration
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        run_index : int, Tuple, None
+            The nas benchmark has for each configuration-budget-pair results from 3 different runs.
+            - If multiple `run_id`s are given as Tuple/List, the benchmark returns the mean over the given runs.
+            - By default (no parameter is specified) all runs are used. A specific run can be chosen by setting the
+              `run_id` to a value from [0, 3]. While the performance is averaged across the `run_index`, the costs are
+              the sum of the runtime per `run_index`.
+            - When this value is explicitly set to `None`, the function will use a random seed.
+        rng : np.random.RandomState, int, None
+            Random seed to use in the benchmark.
+
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value : validation error
+            cost : runtime
+            info : Dict
+                train_accuracies
+                test_accuracies
+                valid_accuracies
+                training_times
+                fidelity : used fidelities in this evaluation
+                data : additional data such as trainable parameters and used operations
+        """
+        result = self.mo_benchmark.objective_function(configuration, fidelity, rng, **kwargs)
+        result['info'].update(result['function_value'])
+        result['function_value'] = result['function_value']['valid_accuracy']
+        return result
+
+    @AbstractBenchmark.check_parameters
+    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
+                                rng: Union[np.random.RandomState, int, None] = None,
+                                **kwargs) -> Dict:
+        """
+        Validate a configuration on the maximum available budget (108) and on all three seeds.
+
+        Parameters
+        ----------
+        configuration : Dict, CS.Configuration
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        rng : np.random.RandomState, int, None
+            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is
+            possible to pass a parameter ``rng`` as 'int' or 'np.random.RandomState' to this
+            function. If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value : test error on largest fidelity.
+            cost : runtime
+            info : Dict
+                train_accuracies
+                test_accuracies
+                valid_accuracies
+                training_times
+                fidelity : used fidelities in this evaluation
+                data : additional data such as trainable parameters and used operations
+        """
+        return self.mo_benchmark.objective_function_test(configuration, fidelity, rng, **kwargs)
+
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        raise NotImplementedError
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        the NASBench1shot1.
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        return NASBench1shot1BaseMOBenchmark.get_fidelity_space(seed=seed)
+
+    @staticmethod
+    def get_meta_information() -> Dict:
+        """ Returns the meta information for the benchmark """
+        return NASBench1shot1BaseMOBenchmark.get_meta_information()
+
+
+class NASBench1shot1SearchSpace1MOBenchmark(NASBench1shot1BaseMOBenchmark):
+    def __init__(self, data_path: Union[Path, str, None] = None,
+                 rng: Union[np.random.RandomState, int, None] = None):
+        super(NASBench1shot1SearchSpace1MOBenchmark, self).__init__(data_path=data_path, rng=rng)
+        self.search_space = SearchSpace1()
+
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return NASBench1shot1BaseMOBenchmark._get_configuration_space(SearchSpace1(), seed)
+
+
+class NASBench1shot1SearchSpace2MOBenchmark(NASBench1shot1BaseMOBenchmark):
+    def __init__(self, data_path: Union[Path, str, None] = None,
+                 rng: Union[np.random.RandomState, int, None] = None):
+        super(NASBench1shot1SearchSpace2MOBenchmark, self).__init__(data_path=data_path, rng=rng)
+        self.search_space = SearchSpace2()
+
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return NASBench1shot1BaseMOBenchmark._get_configuration_space(SearchSpace2(), seed)
+
+
+class NASBench1shot1SearchSpace3MOBenchmark(NASBench1shot1BaseMOBenchmark):
+    def __init__(self, data_path: Union[Path, str, None] = None,
+                 rng: Union[np.random.RandomState, int, None] = None):
+        super(NASBench1shot1SearchSpace3MOBenchmark, self).__init__(data_path=data_path, rng=rng)
+        self.search_space = SearchSpace3()
+
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        return NASBench1shot1BaseMOBenchmark._get_configuration_space(SearchSpace3(), seed)
+
+
 class NASBench1shot1SearchSpace1Benchmark(NASBench1shot1BaseBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         super(NASBench1shot1SearchSpace1Benchmark, self).__init__(data_path=data_path, rng=rng)
         self.search_space = SearchSpace1()
+        # TODO: THINK ABOUT THIS ONE.
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        return NASBench1shot1BaseBenchmark._get_configuration_space(SearchSpace1(), seed)
+        return NASBench1shot1BaseMOBenchmark._get_configuration_space(SearchSpace1(), seed)
 
 
 class NASBench1shot1SearchSpace2Benchmark(NASBench1shot1BaseBenchmark):
@@ -445,7 +611,7 @@ class NASBench1shot1SearchSpace2Benchmark(NASBench1shot1BaseBenchmark):
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        return NASBench1shot1BaseBenchmark._get_configuration_space(SearchSpace2(), seed)
+        return NASBench1shot1BaseMOBenchmark._get_configuration_space(SearchSpace2(), seed)
 
 
 class NASBench1shot1SearchSpace3Benchmark(NASBench1shot1BaseBenchmark):
@@ -456,4 +622,4 @@ class NASBench1shot1SearchSpace3Benchmark(NASBench1shot1BaseBenchmark):
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
-        return NASBench1shot1BaseBenchmark._get_configuration_space(SearchSpace3(), seed)
+        return NASBench1shot1BaseMOBenchmark._get_configuration_space(SearchSpace3(), seed)
