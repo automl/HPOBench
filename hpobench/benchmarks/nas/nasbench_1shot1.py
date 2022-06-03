@@ -598,7 +598,7 @@ class NASBench1shot1SearchSpace1Benchmark(NASBench1shot1BaseBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         super(NASBench1shot1SearchSpace1Benchmark, self).__init__(data_path=data_path, rng=rng)
-        self.mo_benchmark = NASBench1shot1SearchSpace1Benchmark(data_path=data_path, rng=rng)
+        self.mo_benchmark = NASBench1shot1SearchSpace1MOBenchmark(data_path=data_path, rng=rng)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -609,7 +609,7 @@ class NASBench1shot1SearchSpace2Benchmark(NASBench1shot1BaseBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         super(NASBench1shot1SearchSpace2Benchmark, self).__init__(data_path=data_path, rng=rng)
-        self.mo_benchmark = NASBench1shot1SearchSpace2Benchmark(data_path=data_path, rng=rng)
+        self.mo_benchmark = NASBench1shot1SearchSpace2MOBenchmark(data_path=data_path, rng=rng)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -620,7 +620,7 @@ class NASBench1shot1SearchSpace3Benchmark(NASBench1shot1BaseBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         super(NASBench1shot1SearchSpace3Benchmark, self).__init__(data_path=data_path, rng=rng)
-        self.mo_benchmark = NASBench1shot1SearchSpace3Benchmark(data_path=data_path, rng=rng)
+        self.mo_benchmark = NASBench1shot1SearchSpace3MOBenchmark(data_path=data_path, rng=rng)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
