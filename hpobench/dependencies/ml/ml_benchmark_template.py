@@ -464,18 +464,3 @@ class MLBenchmark(AbstractBenchmark):
             'cost': float(model_fit_time + info['test_costs']['acc']),
             'info': info
         }
-
-
-if __name__ == "__main__":
-    from hpobench.benchmarks.ml import RandomForestBenchmarkMF
-    benchmark = RandomForestBenchmarkMF(task_id=10101)
-    config = benchmark.configuration_space.sample_configuration()
-    print(config)
-    fidelity = benchmark.fidelity_space.sample_configuration()
-    print(fidelity)
-    start = time.time()
-    res = benchmark.objective_function(
-        config, fidelity, record_train=True, rng=123, get_learning_curve=True
-    )
-    print(res)
-    print(time.time() - start)

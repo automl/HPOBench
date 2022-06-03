@@ -110,7 +110,8 @@ class SVMBenchmark(MLBenchmark):
 class SVMBenchmarkBB(SVMBenchmark):
     """ Black-box version of the SVMBenchmark
     """
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameter(
             # uses the entire data (subsample=1), reflecting the black-box setup

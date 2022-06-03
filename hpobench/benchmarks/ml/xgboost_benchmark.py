@@ -144,7 +144,8 @@ class XGBoostBenchmark(MLBenchmark):
 class XGBoostBenchmarkBB(XGBoostBenchmark):
     """ Black-box version of the XGBoostBenchmark
     """
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # black-box setting (full fidelity)
@@ -158,7 +159,8 @@ class XGBoostBenchmarkBB(XGBoostBenchmark):
 class XGBoostBenchmarkMF(XGBoostBenchmark):
     """ Multi-fidelity version of the XGBoostBenchmark
     """
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-fidelity) - ntrees

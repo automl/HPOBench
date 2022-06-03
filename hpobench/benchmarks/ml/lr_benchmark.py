@@ -53,7 +53,7 @@ class LRBenchmark(MLBenchmark):
         return cs
 
     @staticmethod
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-multi-fidelity) - iterations + data subsample
@@ -285,7 +285,8 @@ class LRBenchmark(MLBenchmark):
 class LRBenchmarkBB(LRBenchmark):
     """ Black-box version of the LRBenchmark
     """
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # black-box setting (full fidelity)
@@ -297,7 +298,8 @@ class LRBenchmarkBB(LRBenchmark):
 class LRBenchmarkMF(LRBenchmark):
     """ Multi-fidelity version of the LRBenchmark
     """
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-fidelity) - iterations

@@ -284,7 +284,8 @@ class RandomForestBenchmark(MLBenchmark):
 class RandomForestBenchmarkBB(RandomForestBenchmark):
     """ Black-box version of the RandomForestBenchmark
     """
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # black-box setting (full fidelity)
@@ -298,7 +299,8 @@ class RandomForestBenchmarkBB(RandomForestBenchmark):
 class RandomForestBenchmarkMF(RandomForestBenchmark):
     """ Multi-fidelity version of the RandomForestBenchmark
     """
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-fidelity) - ntrees
