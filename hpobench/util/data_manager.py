@@ -40,6 +40,15 @@ except ImportError:
 import hpobench
 
 
+
+tabular_multi_fidelity_urls = dict(
+    xgb="https://figshare.com/ndownloader/files/35414756",
+    svm="https://figshare.com/ndownloader/files/35414447",
+    lr="https://figshare.com/ndownloader/files/35412425",
+    rf="https://figshare.com/ndownloader/files/35414801",
+    nn="https://figshare.com/ndownloader/files/35414996"
+)
+
 class DataManager(abc.ABC, metaclass=abc.ABCMeta):
     """ Base Class for loading and managing the data.
 
@@ -1174,20 +1183,13 @@ class AdultDataManager(HoldoutDataManager):
 class TabularDataManager(DataManager):
     def __init__(self, model: str, task_id: [int, str], data_dir: [str, Path, None] = None):
         super(TabularDataManager, self).__init__()
-
-        url_dict = dict(
-            xgb="https://ndownloader.figshare.com/files/30469920",
-            svm="https://ndownloader.figshare.com/files/30379359",
-            lr="https://ndownloader.figshare.com/files/30379038",
-            rf="https://ndownloader.figshare.com/files/30469089",
-            nn="https://ndownloader.figshare.com/files/30379005"
-        )
-
-        assert model in url_dict.keys(), \
-            f'Model has to be one of {list(url_dict.keys())} but was {model}'
-
+        
         self.model = model
         self.task_id = str(task_id)
+
+        url_dict = tabular_multi_fidelity_urls
+        assert model in url_dict.keys(), \
+            f'Model has to be one of {list(url_dict.keys())} but was {model}'
 
         self.url_to_use = url_dict.get(model)
 

@@ -4,7 +4,12 @@ Changelog:
 
 0.0.1:
 * First implementation of the new XGB Benchmarks.
+0.0.2:
+* Restructuring for consistency and to match ML Benchmark Template updates.
+0.0.3:
+* Adding Learning Curve support.
 """
+
 from typing import Union, Tuple, Dict
 
 import ConfigSpace as CS
@@ -12,18 +17,23 @@ import numpy as np
 import xgboost as xgb
 from ConfigSpace.hyperparameters import Hyperparameter
 
+from hpobench.util.rng_helper import get_rng
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.1'
+__version__ = '0.0.3'
 
 
 class XGBoostBenchmark(MLBenchmark):
-    def __init__(self,
-                 task_id: int,
-                 rng: Union[np.random.RandomState, int, None] = None,
-                 valid_size: float = 0.33,
-                 data_path: Union[str, None] = None):
-        super(XGBoostBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+    """ Multi-multi-fidelity XGBoost Benchmark
+    """
+    def __init__(
+            self,
+            task_id: int,
+            valid_size: float = 0.33,
+            rng: Union[np.random.RandomState, int, None] = None,
+            data_path: Union[str, None] = None
+    ):
+        super(XGBoostBenchmark, self).__init__(task_id, valid_size, rng, data_path)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -52,12 +62,16 @@ class XGBoostBenchmark(MLBenchmark):
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-multi-fidelity) - ntrees + data subsample
-            XGBoostBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='variable')
+            XGBoostBenchmark._get_fidelity_choices(
+                n_estimators_choice='variable', subsample_choice='variable'
+            )
         )
         return fidelity_space
 
     @staticmethod
-    def _get_fidelity_choices(n_estimators_choice: str, subsample_choice: str) -> Tuple[Hyperparameter, Hyperparameter]:
+    def _get_fidelity_choices(
+            n_estimators_choice: str, subsample_choice: str
+    ) -> Tuple[Hyperparameter, Hyperparameter]:
 
         assert n_estimators_choice in ['fixed', 'variable']
         assert subsample_choice in ['fixed', 'variable']
@@ -74,28 +88,31 @@ class XGBoostBenchmark(MLBenchmark):
                 'subsample', lower=0.1, upper=1, default_value=1, log=False
             )
         )
-
         n_estimators = fidelity1[n_estimators_choice]
         subsample = fidelity2[subsample_choice]
         return n_estimators, subsample
 
-    def init_model(self,
-                   config: Union[CS.Configuration, Dict],
-                   fidelity: Union[CS.Configuration, Dict, None] = None,
-                   rng: Union[int, np.random.RandomState, None] = None):
-        """ Function that returns the model initialized based on the configuration and fidelity
-        """
+    def init_model(
+            self,
+            config: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            rng: Union[int, np.random.RandomState, None] = None
+    ):
+        # initializing model
+        rng = self.rng if rng is None else get_rng(rng)
+        # xgb.XGBClassifier when trainied using the scikit-learn API of `fit`, requires
+        # random_state to be an integer and doesn't accept a RandomState
+        seed = rng.randint(1, 10**6)
+
         if isinstance(config, CS.Configuration):
             config = config.get_dictionary()
         if isinstance(fidelity, CS.Configuration):
             fidelity = fidelity.get_dictionary()
-
-        rng = rng if (rng is None or isinstance(rng, int)) else self.seed
         extra_args = dict(
             booster="gbtree",
             n_estimators=fidelity['n_estimators'],
             objective="binary:logistic",
-            random_state=rng,
+            random_state=seed,
             subsample=1
         )
         if self.n_classes > 2:
@@ -108,23 +125,48 @@ class XGBoostBenchmark(MLBenchmark):
         )
         return model
 
+    def get_model_size(self, model: xgb.XGBClassifier) -> float:
+        """ Returns the total number of decision nodes in the sequence of Gradient Boosted trees
+
+        Parameters
+        ----------
+        model : xgb.XGBClassifier
+            Trained XGB model.
+
+        Returns
+        -------
+        float
+        """
+        nodes = model.get_booster().trees_to_dataframe().shape[0]
+        return nodes
+
 
 class XGBoostBenchmarkBB(XGBoostBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    """ Black-box version of the XGBoostBenchmark
+    """
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # black-box setting (full fidelity)
-            XGBoostBenchmark._get_fidelity_choices(n_estimators_choice='fixed', subsample_choice='fixed')
+            XGBoostBenchmark._get_fidelity_choices(
+                n_estimators_choice='fixed', subsample_choice='fixed'
+            )
         )
         return fidelity_space
 
 
 class XGBoostBenchmarkMF(XGBoostBenchmark):
-    def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+    """ Multi-fidelity version of the XGBoostBenchmark
+    """
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         fidelity_space = CS.ConfigurationSpace(seed=seed)
         fidelity_space.add_hyperparameters(
             # gray-box setting (multi-fidelity) - ntrees
-            XGBoostBenchmark._get_fidelity_choices(n_estimators_choice='variable', subsample_choice='fixed')
+            XGBoostBenchmark._get_fidelity_choices(
+                n_estimators_choice='variable', subsample_choice='fixed'
+            )
         )
         return fidelity_space
 

@@ -4,6 +4,10 @@ Changelog:
 
 0.0.1:
 * First implementation of the Tabular Benchmark.
+0.0.2:
+* Restructuring for consistency and to match ML Benchmark Template updates.
+0.0.3:
+* Adding Learning Curve support.
 """
 
 from pathlib import Path
@@ -17,7 +21,7 @@ from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.dependencies.ml.ml_benchmark_template import metrics
 from hpobench.util.data_manager import TabularDataManager
 
-__version__ = '0.0.1'
+__version__ = '0.0.3'
 
 
 class TabularBenchmark(AbstractBenchmark):
@@ -145,8 +149,8 @@ class TabularBenchmark(AbstractBenchmark):
         for i, param in enumerate(df.drop("result", axis=1).columns):
             mask *= df[param].values == row_dict[param]
         idx = np.where(mask)
-        assert len(idx) == 1, 'The query has resulted into mulitple matches. This should not happen. ' \
-                              f'The Query was {row_dict}'
+        assert len(idx) == 1, 'The query has resulted into mulitple matches. ' \
+                              'This should not happen. The Query was {row_dict}'
         idx = idx[0][0]
         result = df.iloc[idx]["result"]
         return result
@@ -163,7 +167,7 @@ class TabularBenchmark(AbstractBenchmark):
         metric_str = ', '.join(list(metrics.keys()))
         assert metric in list(metrics.keys()), f"metric not found among: {metric_str}"
         score_key = f"{evaluation}_scores"
-        cost_key = f"{evaluation}_scores"
+        cost_key = f"{evaluation}_costs"
 
         key_path = dict()
         for name in self.configuration_space.get_hyperparameter_names():
