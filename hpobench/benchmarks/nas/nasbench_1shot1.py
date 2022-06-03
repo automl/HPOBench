@@ -175,7 +175,7 @@ class NASBench1shot1BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
                           'module_operations': data['module_operations']}
             failure = failure or ('info' in data and data['info'] == 'failure')
 
-        return {'function_value': {'valid_accuracy': float(1 - np.mean(valid_accuracies)),
+        return {'function_value': {'accuracy': float(1 - np.mean(valid_accuracies)),
                                    'trainable_parameters': additional['trainable_parameters']},
                 'cost': float(np.sum(training_times)),
                 'info': {'fidelity': fidelity,
@@ -222,7 +222,7 @@ class NASBench1shot1BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
         """
         assert fidelity['budget'] == 108, 'Only test data for the 108th epoch is available.'
         result = self.objective_function(configuration=configuration, fidelity=fidelity, run_index=(0, 1, 2), rng=rng)
-        result['function_value'] = float(1 - np.mean(result['info']['test_accuracies']))
+        result['function_value']['accuracy'] = float(1 - np.mean(result['info']['test_accuracies']))
         return result
 
     @staticmethod
@@ -268,8 +268,11 @@ class NASBench1shot1BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
                 'code': 'https://github.com/automl/nasbench-1shot1',
                 }
 
-    def _check_run_index(self, run_index):
+    @staticmethod
+    def get_objective_names() -> List[str]:
+        return ['accuracy', 'trainable_parameters']
 
+    def _check_run_index(self, run_index):
         if isinstance(run_index, int):
             assert 0 <= run_index <= 2, f'run_index must be in [0, 2], not {run_index}'
             run_index = (run_index, )
@@ -596,7 +599,6 @@ class NASBench1shot1SearchSpace1Benchmark(NASBench1shot1BaseBenchmark):
                  rng: Union[np.random.RandomState, int, None] = None):
         super(NASBench1shot1SearchSpace1Benchmark, self).__init__(data_path=data_path, rng=rng)
         self.search_space = SearchSpace1()
-        # TODO: THINK ABOUT THIS ONE.
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -623,3 +625,13 @@ class NASBench1shot1SearchSpace3Benchmark(NASBench1shot1BaseBenchmark):
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
         return NASBench1shot1BaseMOBenchmark._get_configuration_space(SearchSpace3(), seed)
+
+
+__all__ = [
+    "NASBench1shot1SearchSpace1Benchmark",
+    "NASBench1shot1SearchSpace2Benchmark",
+    "NASBench1shot1SearchSpace3Benchmark",
+    "NASBench1shot1SearchSpace1MOBenchmark",
+    "NASBench1shot1SearchSpace3MOBenchmark",
+    "NASBench1shot1SearchSpace3MOBenchmark",
+]
