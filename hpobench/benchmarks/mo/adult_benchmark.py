@@ -1,6 +1,8 @@
 """
 Changelog:
 ==========
+0.0.2:
+* Change the objective value from accuracy to misclassification rate. (1 - accuracy)
 
 0.0.1:
 * First implementation of the Multi-Objective Fair Adult Benchmark.
@@ -127,7 +129,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
     @staticmethod
     def get_objective_names() -> List[str]:
         """Get a list of objectives evaluated in the objective_function. """
-        return ['accuracy', 'DSP', 'DEO', 'DFP']
+        return ['misclassification_rate', 'DSP', 'DEO', 'DFP']
 
     @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function(self, configuration: Union[CS.Configuration, Dict],
@@ -165,7 +167,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         -------
         Dict -
             function_value : Dict - validation metrics after training on train
-                accuracy: float
+                misclassification_rate: float: 1 - validation accuracy
                 DSO: float
                 DEO: float
                 DFP: float
@@ -247,7 +249,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
 
         elapsed_time = time.time() - ts_start
 
-        return {'function_value': {'accuracy': float(val_accuracy),
+        return {'function_value': {'misclassification_rate': 1 - float(val_accuracy),
                                    'DSO': float(val_statistical_disparity),
                                    'DEO': float(val_unequal_opportunity),
                                    'DFP': float(val_unequalized_odds)
@@ -310,7 +312,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         -------
         Dict -
             function_value : Dict - test metrics reported after training on (train+valid)
-                accuracy: float
+                misclassification_rate: float: 1 - test accuracy
                 DSO: float
                 DEO: float
                 DFP: float
@@ -381,7 +383,7 @@ class AdultBenchmark(AbstractMultiObjectiveBenchmark):
         logger.debug(f"config:{configuration}, test_score: {test_accuracy}, train score:{train_accuracy},"
                      f"dsp:{test_statistical_disparity}, deo :{test_unequal_opportunity}, dfp :{test_unequalized_odds}")
 
-        return {'function_value': {'accuracy': float(test_accuracy),
+        return {'function_value': {'misclassification_rate': 1 - float(test_accuracy),
                                    'DSO': float(test_statistical_disparity),
                                    'DEO': float(test_unequal_opportunity),
                                    'DFP': float(test_unequalized_odds)
