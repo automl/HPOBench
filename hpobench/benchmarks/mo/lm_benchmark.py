@@ -249,7 +249,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
         elapsed_time = ts_start - time.time()
 
         return {'function_value': {'log_perplexity': log_perplexity,
-                                   'accuracy': val_acc.item(),
+                                   'accuracy': 1 - val_acc.item(),
                                    'time': train_time + eval_time
                                    },
                 'cost': elapsed_time,
@@ -365,7 +365,7 @@ class LanguageModelBenchmark(AbstractMultiObjectiveBenchmark):
         elapsed_time = ts_start - time.time()
 
         return {'function_value': {'log_perplexity': log_perplexity,
-                                   'accuracy': test_acc.item(),
+                                   'accuracy': 1 - test_acc.item(),
                                    'time': train_time + eval_time
                                    },
                 'cost': elapsed_time,
