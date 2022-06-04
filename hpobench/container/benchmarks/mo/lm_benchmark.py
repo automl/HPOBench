@@ -9,4 +9,5 @@ class LanguageModelBenchmark(AbstractBenchmarkClient):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LanguageModelBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'lm_benchmark')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        kwargs['gpu'] = kwargs.get('gpu', True)
         super(LanguageModelBenchmark, self).__init__(**kwargs)
