@@ -1,10 +1,10 @@
 """ Benchmark for the Multi-Objective Language Model Benchmark from hpobench/benchmarks/mo/lm_benchmark.py
 """
 
-from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
+from hpobench.container.client_abstract_benchmark import AbstractMOBenchmarkClient
 
 
-class LanguageModelBenchmark(AbstractBenchmarkClient):
+class LanguageModelBenchmark(AbstractMOBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LanguageModelBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'lm_benchmark')
