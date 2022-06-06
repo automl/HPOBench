@@ -19,7 +19,7 @@ import ConfigSpace as CS
 import numpy as np
 from ConfigSpace.read_and_write import json as json_cs
 
-from hpobench.abstract_benchmark import AbstractBenchmark
+from hpobench.abstract_benchmark import AbstractBenchmark, AbstractMultiObjectiveBenchmark
 from hpobench.dependencies.ml.ml_benchmark_template import metrics
 from hpobench.util.data_manager import TabularDataManager
 
@@ -248,6 +248,34 @@ class TabularMOBenchmark(TabularBenchmark):
             model=model, task_id=task_id, data_dir=data_dir, rng=rng, **kwargs
         )
         self.is_multiobjective = True
+
+    # pylint: disable=arguments-differ
+    @AbstractMultiObjectiveBenchmark.check_parameters
+    def objective_function(self,
+                           configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[Dict, CS.Configuration, None] = None,
+                           rng: Union[np.random.RandomState, int, None] = None,
+                           seed: Union[int, None] = None,
+                           metric: Union[str, None] = 'acc',
+                           **kwargs) -> Dict:
+
+        result = self._objective(configuration, fidelity, seed, metric, evaluation="val")
+        result = self._get_multiple_objectives(result, metric)
+        return result
+
+    # pylint: disable=arguments-differ
+    @AbstractMultiObjectiveBenchmark.check_parameters
+    def objective_function_test(self,
+                                configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[Dict, CS.Configuration, None] = None,
+                                rng: Union[np.random.RandomState, int, None] = None,
+                                seed: Union[int, None] = None,
+                                metric: Union[str, None] = 'acc',
+                                **kwargs) -> Dict:
+
+        result = self._objective(configuration, fidelity, seed, metric, evaluation="test")
+        result = self._get_multiple_objectives(result, metric)
+        return result
 
 
 __all__ = ['TabularBenchmark', 'TabularMOBenchmark']
