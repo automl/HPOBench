@@ -7,7 +7,7 @@ from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
 
 
 container_name = "ml_tabular_benchmarks"
-container_version = "0.0.3"
+container_version = "0.0.4"
 
 
 class TabularBenchmark(AbstractBenchmarkClient):

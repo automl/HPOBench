@@ -8,6 +8,8 @@ Changelog:
 * Restructuring for consistency and to match ML Benchmark Template updates.
 0.0.3:
 * Adding Learning Curve support.
+0.0.4:
+* Extending to multi-objective query.
 """
 
 from typing import Union, Tuple, Dict
@@ -20,7 +22,7 @@ from ConfigSpace.hyperparameters import Hyperparameter
 from hpobench.util.rng_helper import get_rng
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 
 class XGBoostBenchmark(MLBenchmark):

@@ -8,6 +8,8 @@ Changelog:
 * Restructuring for consistency and to match ML Benchmark Template updates.
 0.0.3:
 * Adding Learning Curve support.
+0.0.4:
+* Extending to multi-objective query.
 """
 
 from typing import Union, Dict
@@ -19,7 +21,7 @@ from sklearn.svm import SVC
 
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 
 class SVMBenchmark(MLBenchmark):

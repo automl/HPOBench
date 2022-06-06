@@ -8,6 +8,8 @@ Changelog:
 * Restructuring for consistency and to match ML Benchmark Template updates.
 0.0.3:
 * Adding Learning Curve support.
+0.0.4:
+* Extending to multi-objective query.
 """
 
 from pathlib import Path
@@ -23,6 +25,19 @@ from hpobench.util.data_manager import TabularDataManager
 
 __version__ = '0.0.3'
 
+_IDS = [
+    10101, 53, 146818, 146821, 9952, 146822, 31, 3917, 168912, 3, 167119, 12, 146212, 168911,
+    9981, 167120, 14965, 146606, 7592, 9977
+]
+_IDS_NN = [10101, 53, 146818, 146821, 9952, 146822, 31, 3917, 168912, 3]
+TASK_IDS = dict(
+    lr=_IDS,
+    rf=_IDS,
+    xgb=_IDS,
+    svm=_IDS,
+    nn=_IDS_NN
+)
+
 
 class TabularBenchmark(AbstractBenchmark):
     def __init__(
@@ -35,6 +50,7 @@ class TabularBenchmark(AbstractBenchmark):
     ):
         models = ['lr', 'svm', 'xgb', 'rf', 'nn']
         assert model in models, f'Parameter `model` has to be one of {models} but was {model}'
+        assert task_id in TASK_IDS[model]
 
         self.task_id = task_id
         self.model = model
