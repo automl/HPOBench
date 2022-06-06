@@ -276,7 +276,6 @@ class XGBoostMOBenchmarkMF(XGBoostMOBenchmark):
         return fidelity_space
 
 
-
 __all__ = [
     'XGBoostBenchmarkBB', 'XGBoostBenchmarkMF', 'XGBoostBenchmark',
     'XGBoostMOBenchmarkBB', 'XGBoostMOBenchmarkMF', 'XGBoostMOBenchmark',

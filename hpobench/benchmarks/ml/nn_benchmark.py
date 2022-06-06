@@ -24,6 +24,8 @@ from sklearn.neural_network import MLPClassifier
 
 from hpobench.util.rng_helper import get_rng
 from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark
+
 
 __version__ = '0.0.4'
 
@@ -342,6 +344,8 @@ class NNMOBenchmark(NNBenchmark):
         )
         return result
 
+
+    @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function(
             self,
             configuration: Union[CS.Configuration, Dict],
@@ -366,6 +370,7 @@ class NNMOBenchmark(NNBenchmark):
         result = self._get_multiple_objectives(result)
         return result
 
+    @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function_test(
             self,
             configuration: Union[CS.Configuration, Dict],
