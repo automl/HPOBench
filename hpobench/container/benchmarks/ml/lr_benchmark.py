@@ -34,4 +34,31 @@ class LRBenchmarkMF(AbstractBenchmarkClient):
         super(LRBenchmarkMF, self).__init__(**kwargs)
 
 
-__all__ = ['LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF']
+class LRMOBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LRMOBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(LRMOBenchmark, self).__init__(**kwargs)
+
+
+class LRMOBenchmarkBB(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LRMOBenchmarkBB')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(LRMOBenchmarkBB, self).__init__(**kwargs)
+
+
+class LRMOBenchmarkMF(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LRMOBenchmarkMF')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(LRMOBenchmarkMF, self).__init__(**kwargs)
+
+
+__all__ = [
+    'LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF',
+    'LRMOBenchmark', 'LRMOBenchmarkBB', 'LRMOBenchmarkMF'
+]

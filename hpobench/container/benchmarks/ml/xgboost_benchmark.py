@@ -34,6 +34,30 @@ class XGBoostBenchmarkMF(AbstractBenchmarkClient):
         super(XGBoostBenchmarkMF, self).__init__(**kwargs)
 
 
+class XGBoostMOBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostMOBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(XGBoostMOBenchmark, self).__init__(**kwargs)
+
+
+class XGBoostMOBenchmarkBB(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostMOBenchmarkBB')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(XGBoostMOBenchmarkBB, self).__init__(**kwargs)
+
+
+class XGBoostMOBenchmarkMF(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostMOBenchmarkMF')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(XGBoostMOBenchmarkMF, self).__init__(**kwargs)
+
+
 class XGBoostSearchSpace3Benchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'XGBoostSearchSpace3Benchmark')
@@ -43,5 +67,6 @@ class XGBoostSearchSpace3Benchmark(AbstractBenchmarkClient):
 
 
 __all__ = [
-    'XGBoostBenchmark', 'XGBoostBenchmarkBB', 'XGBoostBenchmarkMF', 'XGBoostSearchSpace3Benchmark'
+    'XGBoostBenchmark', 'XGBoostBenchmarkBB', 'XGBoostBenchmarkMF', 'XGBoostSearchSpace3Benchmark',
+    'XGBoostMOBenchmark', 'XGBoostMOBenchmarkBB', 'XGBoostMOBenchmarkMF'
 ]

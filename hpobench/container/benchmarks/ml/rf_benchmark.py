@@ -34,4 +34,31 @@ class RandomForestBenchmarkMF(AbstractBenchmarkClient):
         super(RandomForestBenchmarkMF, self).__init__(**kwargs)
 
 
-__all__ = ['RandomForestBenchmark', 'RandomForestBenchmarkBB', 'RandomForestBenchmarkMF']
+class RandomForestMOBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'RandomForestMOBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(RandomForestMOBenchmark, self).__init__(**kwargs)
+
+
+class RandomForestMOBenchmarkBB(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'RandomForestMOBenchmarkBB')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(RandomForestMOBenchmarkBB, self).__init__(**kwargs)
+
+
+class RandomForestMOBenchmarkMF(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'RandomForestMOBenchmarkMF')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(RandomForestMOBenchmarkMF, self).__init__(**kwargs)
+
+
+__all__ = [
+    'RandomForestBenchmark', 'RandomForestBenchmarkBB', 'RandomForestBenchmarkMF',
+    'RandomForestMOBenchmark', 'RandomForestMOBenchmarkBB', 'RandomForestMOBenchmarkMF'
+]

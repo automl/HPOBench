@@ -18,4 +18,12 @@ class TabularBenchmark(AbstractBenchmarkClient):
         super(TabularBenchmark, self).__init__(**kwargs)
 
 
-__all__ = ['TabularBenchmark']
+class TabularMOBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'TabularMOBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(TabularMOBenchmark, self).__init__(**kwargs)
+
+
+__all__ = ['TabularBenchmark', 'TabularMOBenchmark']

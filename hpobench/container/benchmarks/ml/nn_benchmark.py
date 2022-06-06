@@ -34,4 +34,31 @@ class NNBenchmarkMF(AbstractBenchmarkClient):
         super(NNBenchmarkMF, self).__init__(**kwargs)
 
 
-__all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF']
+class NNMOBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NNMOBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(NNMOBenchmark, self).__init__(**kwargs)
+
+
+class NNMOBenchmarkBB(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NNMOBenchmarkBB')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(NNMOBenchmarkBB, self).__init__(**kwargs)
+
+
+class NNMOBenchmarkMF(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NNMOBenchmarkMF')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
+        super(NNMOBenchmarkMF, self).__init__(**kwargs)
+
+
+__all__ = [
+    'NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF',
+    'NNMOBenchmark', 'NNMOBenchmarkBB', 'NNMOBenchmarkMF'
+]
