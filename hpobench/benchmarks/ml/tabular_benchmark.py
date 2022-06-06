@@ -25,11 +25,14 @@ __version__ = '0.0.3'
 
 
 class TabularBenchmark(AbstractBenchmark):
-
-    def __init__(self,
-                 model: str, task_id: int,
-                 data_dir: Union[Path, str, None] = None,
-                 rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+    def __init__(
+            self,
+            model: str,
+            task_id: int,
+            data_dir: Union[Path, str, None] = None,
+            rng: Union[int, np.random.RandomState, None] = None,
+            **kwargs
+    ):
         models = ['lr', 'svm', 'xgb', 'rf', 'nn']
         assert model in models, f'Parameter `model` has to be one of {models} but was {model}'
 
@@ -46,7 +49,23 @@ class TabularBenchmark(AbstractBenchmark):
         self.original_cs = json_cs.read(self.config_spaces['x'])
         self.original_fs = json_cs.read(self.config_spaces['z'])
 
+        self.is_multiobjective = False
+
         super(TabularBenchmark, self).__init__(rng=rng, **kwargs)
+
+    def get_objective_names(self):
+        return ["loss", "inference_time"]
+
+    def _get_multiple_objectives(self, result, metric):
+        single_obj = result['function_value']
+        seeds = result['info'].keys()
+        total_inference_time = sum([result['info'][seed]['val_costs'][metric] for seed in seeds])
+        avg_inference_time = total_inference_time / len(seeds)
+        result['function_value'] = dict(
+            loss=single_obj,
+            inference_time=avg_inference_time
+        )
+        return result
 
     # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
@@ -59,6 +78,8 @@ class TabularBenchmark(AbstractBenchmark):
                            **kwargs) -> Dict:
 
         result = self._objective(configuration, fidelity, seed, metric, evaluation="val")
+        if self.is_multiobjective:
+            result = self._get_multiple_objectives(result, metric)
         return result
 
     # pylint: disable=arguments-differ
@@ -72,6 +93,8 @@ class TabularBenchmark(AbstractBenchmark):
                                 **kwargs) -> Dict:
 
         result = self._objective(configuration, fidelity, seed, metric, evaluation="test")
+        if self.is_multiobjective:
+            result = self._get_multiple_objectives(result, metric)
         return result
 
     # pylint: disable=arguments-differ
@@ -196,4 +219,19 @@ class TabularBenchmark(AbstractBenchmark):
         return result
 
 
-__all__ = ['TabularBenchmark']
+class TabularMOBenchmark(TabularBenchmark):
+    def __init__(
+            self,
+            model: str,
+            task_id: int,
+            data_dir: Union[Path, str, None] = None,
+            rng: Union[int, np.random.RandomState, None] = None,
+            **kwargs
+    ):
+        super(TabularMOBenchmark, self).__init__(
+            model=model, task_id=task_id, data_dir=data_dir, rng=rng, **kwargs
+        )
+        self.is_multiobjective = True
+
+
+__all__ = ['TabularBenchmark', 'TabularMOBenchmark']

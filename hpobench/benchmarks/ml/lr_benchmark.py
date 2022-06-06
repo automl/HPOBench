@@ -11,7 +11,7 @@ Changelog:
 """
 
 import time
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, List
 
 import ConfigSpace as CS
 import numpy as np
@@ -308,4 +308,106 @@ class LRBenchmarkMF(LRBenchmark):
         return fidelity_space
 
 
-__all__ = ['LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF']
+class LRMOBenchmark(LRBenchmark):
+    def __init__(
+            self,
+            task_id: int,
+            valid_size: float = 0.33,
+            rng: Union[np.random.RandomState, int, None] = None,
+            data_path: Union[str, None] = None
+    ):
+        super(LRMOBenchmark, self).__init__(task_id, valid_size, rng, data_path)
+
+    def get_objective_names(self):
+        return ["loss", "inference_time"]
+
+    def _get_multiple_objectives(self, result):
+        single_obj = result['function_value']
+        seeds = result['info'].keys()
+        total_inference_time = sum([result['info']['val_costs']['acc']])
+        avg_inference_time = total_inference_time / len(seeds)
+        result['function_value'] = dict(
+            loss=single_obj,
+            inference_time=avg_inference_time
+        )
+        return result
+
+    def objective_function(
+            self,
+            configuration: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            shuffle: bool = False,
+            rng: Union[np.random.RandomState, int, None] = None,
+            record_train: bool = False,
+            get_learning_curve: bool = False,
+            lc_every_k: int = 1,
+            **kwargs
+    ):
+        result = super(LRMOBenchmark, self).objective_function(
+            configuration=configuration,
+            fidelity=fidelity,
+            shuffle=shuffle,
+            rng=rng,
+            record_train=record_train,
+            get_learning_curve=get_learning_curve,
+            lc_every_k=lc_every_k,
+            **kwargs
+        )
+        result = self._get_multiple_objectives(result)
+        return result
+
+    def objective_function_test(
+            self,
+            configuration: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            shuffle: bool = False,
+            rng: Union[np.random.RandomState, int, None] = None,
+            record_train: bool = False,
+            get_learning_curve: bool = False,
+            lc_every_k: int = 1,
+            **kwargs
+    ):
+        result = super(LRMOBenchmark, self).objective_function_test(
+            configuration=configuration,
+            fidelity=fidelity,
+            shuffle=shuffle,
+            rng=rng,
+            record_train=record_train,
+            get_learning_curve=get_learning_curve,
+            lc_every_k=lc_every_k,
+            **kwargs
+        )
+        result = self._get_multiple_objectives(result)
+        return result
+
+
+class LRMOBenchmarkBB(LRMOBenchmark):
+    """ Multi-fidelity version of the LRMOBenchmark
+    """
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        fidelity_space = CS.ConfigurationSpace(seed=seed)
+        fidelity_space.add_hyperparameters(
+            # gray-box setting (multi-fidelity) - iterations
+            LRBenchmark._get_fidelity_choices(iter_choice='fixed', subsample_choice='fixed')
+        )
+        return fidelity_space
+
+
+class LRMOBenchmarkMF(LRMOBenchmark):
+    """ Multi-fidelity version of the LRBenchmark
+    """
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        fidelity_space = CS.ConfigurationSpace(seed=seed)
+        fidelity_space.add_hyperparameters(
+            # gray-box setting (multi-fidelity) - iterations
+            LRBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='fixed')
+        )
+        return fidelity_space
+
+
+__all__ = [
+    'LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF',
+    'LRMOBenchmark', 'LRMOBenchmarkBB', 'LRMOBenchmarkMF'
+]

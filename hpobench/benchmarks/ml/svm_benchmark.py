@@ -120,7 +120,97 @@ class SVMBenchmarkBB(SVMBenchmark):
         return fidelity_space
 
 
+class SVMMOBenchmark(SVMBenchmark):
+    def __init__(
+            self,
+            task_id: int,
+            valid_size: float = 0.33,
+            rng: Union[np.random.RandomState, int, None] = None,
+            data_path: Union[str, None] = None
+    ):
+        super(SVMMOBenchmark, self).__init__(task_id, valid_size, rng, data_path)
+
+    def get_objective_names(self):
+        return ["loss", "inference_time"]
+
+    def _get_multiple_objectives(self, result):
+        single_obj = result['function_value']
+        seeds = result['info'].keys()
+        total_inference_time = sum([result['info']['val_costs']['acc']])
+        avg_inference_time = total_inference_time / len(seeds)
+        result['function_value'] = dict(
+            loss=single_obj,
+            inference_time=avg_inference_time
+        )
+        return result
+
+    def objective_function(
+            self,
+            configuration: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            shuffle: bool = False,
+            rng: Union[np.random.RandomState, int, None] = None,
+            record_train: bool = False,
+            get_learning_curve: bool = False,
+            lc_every_k: int = 1,
+            **kwargs
+    ):
+        result = super(SVMMOBenchmark, self).objective_function(
+            configuration=configuration,
+            fidelity=fidelity,
+            shuffle=shuffle,
+            rng=rng,
+            record_train=record_train,
+            get_learning_curve=get_learning_curve,
+            lc_every_k=lc_every_k,
+            **kwargs
+        )
+        result = self._get_multiple_objectives(result)
+        return result
+
+    def objective_function_test(
+            self,
+            configuration: Union[CS.Configuration, Dict],
+            fidelity: Union[CS.Configuration, Dict, None] = None,
+            shuffle: bool = False,
+            rng: Union[np.random.RandomState, int, None] = None,
+            record_train: bool = False,
+            get_learning_curve: bool = False,
+            lc_every_k: int = 1,
+            **kwargs
+    ):
+        result = super(SVMMOBenchmark, self).objective_function_test(
+            configuration=configuration,
+            fidelity=fidelity,
+            shuffle=shuffle,
+            rng=rng,
+            record_train=record_train,
+            get_learning_curve=get_learning_curve,
+            lc_every_k=lc_every_k,
+            **kwargs
+        )
+        result = self._get_multiple_objectives(result)
+        return result
+
+
+class SVMMOBenchmarkBB(SVMBenchmark):
+    """ Black-box version of the SVMBenchmark
+    """
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        fidelity_space = CS.ConfigurationSpace(seed=seed)
+        fidelity_space.add_hyperparameter(
+            # uses the entire data (subsample=1), reflecting the black-box setup
+            SVMBenchmark._get_fidelity_choices(subsample_choice='fixed')
+        )
+        return fidelity_space
+
+
 # To keep the parity of the the overall design
 SVMBenchmarkMF = SVMBenchmark
+SVMMOBenchmarkMF = SVMMOBenchmark
 
-__all__ = ['SVMBenchmark', 'SVMBenchmarkMF', 'SVMBenchmarkBB']
+__all__ = [
+    'SVMBenchmark', 'SVMBenchmarkMF', 'SVMBenchmarkBB',
+    'SVMMOBenchmark', 'SVMMOBenchmarkMF', 'SVMMOBenchmarkBB',
+]
