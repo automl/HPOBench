@@ -11,8 +11,8 @@ from hpobench.container.benchmarks.ml.tabular_benchmark import TabularBenchmark,
 from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark, \
     XGBoostBenchmarkBB, XGBoostBenchmarkMF, XGBoostMOBenchmark, XGBoostMOBenchmarkBB, \
     XGBoostMOBenchmarkMF
-from hpobench.container.benchmarks.ml.yahpo_benchmark import YAHPOGymRawBenchmark, \
-    YAHPOGymMORawBenchmark
+# from hpobench.container.benchmarks.ml.yahpo_benchmark import YAHPOGymRawBenchmark, \
+#     YAHPOGymMORawBenchmark
 
 
 __all__ = [
@@ -27,5 +27,5 @@ __all__ = [
     'TabularBenchmark', 'TabularMOBenchmark',
     'XGBoostBenchmark', 'XGBoostBenchmarkBB', 'XGBoostBenchmarkMF',
     'XGBoostMOBenchmark', 'XGBoostMOBenchmarkBB', 'XGBoostMOBenchmarkMF',
-    'YAHPOGymRawBenchmark', 'YAHPOGymMORawBenchmark'
+    # 'YAHPOGymRawBenchmark', 'YAHPOGymMORawBenchmark'
 ]

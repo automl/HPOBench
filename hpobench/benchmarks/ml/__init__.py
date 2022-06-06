@@ -8,7 +8,7 @@ from hpobench.benchmarks.ml.rf_benchmark import RandomForestBenchmark, RandomFor
 from hpobench.benchmarks.ml.svm_benchmark import SVMBenchmark, SVMBenchmarkBB, SVMBenchmarkMF, \
     SVMMOBenchmark, SVMMOBenchmarkBB, SVMMOBenchmarkMF
 from hpobench.benchmarks.ml.tabular_benchmark import TabularBenchmark, TabularMOBenchmark
-from hpobench.benchmarks.ml.yahpo_benchmark import YAHPOGymMORawBenchmark, YAHPOGymRawBenchmark
+# from hpobench.benchmarks.ml.yahpo_benchmark import YAHPOGymMORawBenchmark, YAHPOGymRawBenchmark
 
 try:
     # `xgboost` is from https://xgboost.readthedocs.io/en/latest/install.html#conda
@@ -28,7 +28,7 @@ try:
         'XGBoostBenchmarkBB', 'XGBoostBenchmarkMF', 'XGBoostBenchmark',
         'XGBoostMOBenchmarkBB', 'XGBoostMOBenchmarkMF', 'XGBoostMOBenchmark',
         'TabularBenchmark', 'TabularMOBenchmark',
-        'YAHPOGymMORawBenchmark', 'YAHPOGymRawBenchmark',
+        # 'YAHPOGymMORawBenchmark', 'YAHPOGymRawBenchmark',
     ]
 except (ImportError, AttributeError) as e:
     __all__ = [
@@ -41,6 +41,5 @@ except (ImportError, AttributeError) as e:
         'SVMBenchmark', 'SVMBenchmarkMF', 'SVMBenchmarkBB',
         'SVMMOBenchmark', 'SVMMOBenchmarkMF', 'SVMMOBenchmarkBB',
         'TabularBenchmark', 'TabularMOBenchmark',
-        'YAHPOGymMORawBenchmark', 'YAHPOGymRawBenchmark',
-
+        # 'YAHPOGymMORawBenchmark', 'YAHPOGymRawBenchmark',
     ]
