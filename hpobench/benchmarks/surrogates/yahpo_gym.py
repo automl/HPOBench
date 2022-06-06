@@ -29,20 +29,64 @@ pip install .[yahpo_gym]
 
 Changelog:
 ==========
+0.0.2:
+* Add support for fairness benchmarks and interpretability benchmarks.
+For these new benchmarks (fairness and interpretability), we recommend the following benchmarks and objectives:
+
+Benchmark Name      |   Scenario    |   Objectives
+--------------------|---------------|--------------
+fair_fgrrm          | 7592          | mmce, feo
+                    | 14965         | mmce, feo
+--------------------|---------------|--------------
+fair_rpart          | 317599        | mmce, ffomr
+                    | 7592          | mmce, feo
+--------------------|---------------|--------------
+fair_ranger         | 317599        | mmce, fpredp
+                    | 14965         | mmce, fpredp
+--------------------|---------------|--------------
+fair_xgboost        | 317599        | mmce, ffomr
+                    | 7592          | mmce, ffnr
+--------------------|---------------|--------------
+fair_super          | 14965         | mmce, feo
+                    | 317599        | mmce, ffnr
+--------------------|---------------|--------------
+
+
+Benchmark Name      |   Scenario    |   Objectives
+--------------------|---------------|--------------
+iaml_glmnet          | 1489         | mmce, nf
+                    | 40981         | mmce, nf
+--------------------|---------------|--------------
+iaml_rpart          | 1489          | mmce, nf
+                    | 41146         | mmce, nf
+--------------------|---------------|--------------
+iaml_ranger         | 40981         | mmce, nf
+                    | 41146         | mmce, nf
+--------------------|---------------|--------------
+iaml_xgboost        | 40981         | mmce, nf
+                    | 41146         | mmce, nf
+--------------------|---------------|--------------
+iaml_super          | 40981         | mmce, nf
+                    | 41146         | mmce, nf
+--------------------|---------------|--------------
+
 0.0.1:
 * First implementation
 """
 import os
 import logging
 from typing import Union, Dict, List
+from pathlib import Path
 
 import ConfigSpace as CS
 import numpy as np
 
 from yahpo_gym.benchmark_set import BenchmarkSet
 from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark, AbstractBenchmark
+from hpobench.util.data_manager import YAHPODataManager
 
-__version__ = '0.0.1'
+
+__version__ = '0.0.2'
 
 logger = logging.getLogger('YAHPOGym')
 
@@ -50,25 +94,28 @@ logger = logging.getLogger('YAHPOGym')
 class YAHPOGymMOBenchmark(AbstractMultiObjectiveBenchmark):
 
     def __init__(self, scenario: str, instance: str,
-                 rng: Union[np.random.RandomState, int, None] = None):
+                 rng: Union[np.random.RandomState, int, None] = None,
+                 data_dir: Union[Path, str, None] = None):
         """
         For a list of available scenarios and instances see
         'https://slds-lmu.github.io/yahpo_gym/scenarios.html'
         Parameters
         ----------
         scenario : str
-            Name for the surrogate data. Must be one of ["lcbench", "fcnet", "nb301", "rbv2_svm",
-            "rbv2_ranger", "rbv2_rpart", "rbv2_glmnet", "rbv2_aknn", "rbv2_xgboost", "rbv2_super"]
+            Name for the surrogate data. Must be one of
+            ["lcbench", "fcnet", "nb301", "rbv2_svm",
+            "rbv2_ranger", "rbv2_rpart", "rbv2_glmnet", "rbv2_aknn", "rbv2_xgboost", "rbv2_super",
+            "fair_ranger", "fair_rpart", "fair_fgrrm",               "fair_xgboost", "fair_super",
+            "iaml_ranger", "iaml_rpart", "iaml_glmnet",              "iaml_xgboost", "iaml_super"]
         instance : str
             A valid instance for the scenario. See `self.benchset.instances`.
+        data_dir: Optional, str, Path
+            Directory, where the yahpo data is stored.
+            Download automatically from https://github.com/slds-lmu/yahpo_data/tree/fair
         rng : np.random.RandomState, int, None
         """
-
-        # When in the containerized version, redirect to the data inside the container.
-        if 'YAHPO_CONTAINER' in os.environ:
-            from yahpo_gym.local_config import LocalConfiguration
-            local_config = LocalConfiguration()
-            local_config.init_config(data_path='/home/data/yahpo_data')
+        self.data_manager = YAHPODataManager(data_dir=data_dir)
+        self.data_manager.load()
 
         self.scenario = scenario
         self.instance = instance
@@ -133,6 +180,7 @@ class YAHPOGymMOBenchmark(AbstractMultiObjectiveBenchmark):
 class YAHPOGymBenchmark(AbstractBenchmark):
 
     def __init__(self, scenario: str, instance: str, objective: str = None,
+                 data_dir: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None):
         """
         For a list of available scenarios and instances see
@@ -140,17 +188,23 @@ class YAHPOGymBenchmark(AbstractBenchmark):
         Parameters
         ----------
         scenario : str
-            Name for the surrogate data. Must be one of ["lcbench", "fcnet", "nb301", "rbv2_svm",
-            "rbv2_ranger", "rbv2_rpart", "rbv2_glmnet", "rbv2_aknn", "rbv2_xgboost", "rbv2_super"]
+            Name for the surrogate data. Must be one of
+            ["lcbench", "fcnet", "nb301", "rbv2_svm",
+            "rbv2_ranger", "rbv2_rpart", "rbv2_glmnet", "rbv2_aknn", "rbv2_xgboost", "rbv2_super",
+            "fair_ranger", "fair_rpart", "fair_fgrrm",               "fair_xgboost", "fair_super",
+            "iaml_ranger", "iaml_rpart", "iaml_glmnet",              "iaml_xgboost", "iaml_super"]
         instance : str
             A valid instance for the scenario. See `self.benchset.instances`.
         objective : str
             Name of the (single-crit) objective. See `self.benchset.config.y_names`.
             Initialized to None, picks the first element in y_names.
+        data_dir: Optional, str, Path
+            Directory, where the yahpo data is stored.
+            Download automatically from https://github.com/slds-lmu/yahpo_data/tree/fair
         rng : np.random.RandomState, int, None
         """
 
-        self.backbone = YAHPOGymMOBenchmark(scenario=scenario, instance=instance, rng=rng)
+        self.backbone = YAHPOGymMOBenchmark(scenario=scenario, instance=instance, rng=rng, data_dir=data_dir)
         self.objective = objective
 
         super(YAHPOGymBenchmark, self).__init__(rng=rng)
