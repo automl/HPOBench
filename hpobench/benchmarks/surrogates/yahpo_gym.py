@@ -73,7 +73,6 @@ iaml_super          | 40981         | mmce, nf
 0.0.1:
 * First implementation
 """
-import os
 import logging
 from typing import Union, Dict, List
 from pathlib import Path
@@ -94,8 +93,9 @@ logger = logging.getLogger('YAHPOGym')
 class YAHPOGymMOBenchmark(AbstractMultiObjectiveBenchmark):
 
     def __init__(self, scenario: str, instance: str,
-                 rng: Union[np.random.RandomState, int, None] = None,
-                 data_dir: Union[Path, str, None] = None):
+                 data_dir: Union[Path, str, None] = None,
+                 multi_thread: bool = True,
+                 rng: Union[np.random.RandomState, int, None] = None):
         """
         For a list of available scenarios and instances see
         'https://slds-lmu.github.io/yahpo_gym/scenarios.html'
@@ -112,6 +112,9 @@ class YAHPOGymMOBenchmark(AbstractMultiObjectiveBenchmark):
         data_dir: Optional, str, Path
             Directory, where the yahpo data is stored.
             Download automatically from https://github.com/slds-lmu/yahpo_data/tree/fair
+        multi_thread: bool
+            Flag to run ONNX runtime with a single thread. Might be important on compute clusters.
+            Defaults to True
         rng : np.random.RandomState, int, None
         """
         self.data_manager = YAHPODataManager(data_dir=data_dir)
@@ -119,7 +122,7 @@ class YAHPOGymMOBenchmark(AbstractMultiObjectiveBenchmark):
 
         self.scenario = scenario
         self.instance = instance
-        self.benchset = BenchmarkSet(scenario, active_session=True)
+        self.benchset = BenchmarkSet(scenario, active_session=True, multithread=multi_thread)
         self.benchset.set_instance(instance)
 
         logger.info(f'Start Benchmark for scenario {scenario} and instance {instance}')
@@ -181,6 +184,7 @@ class YAHPOGymBenchmark(AbstractBenchmark):
 
     def __init__(self, scenario: str, instance: str, objective: str = None,
                  data_dir: Union[Path, str, None] = None,
+                 multi_thread: bool = True,
                  rng: Union[np.random.RandomState, int, None] = None):
         """
         For a list of available scenarios and instances see
@@ -201,10 +205,15 @@ class YAHPOGymBenchmark(AbstractBenchmark):
         data_dir: Optional, str, Path
             Directory, where the yahpo data is stored.
             Download automatically from https://github.com/slds-lmu/yahpo_data/tree/fair
+        multi_thread: bool
+            Flag to run ONNX runtime with a single thread. Might be important on compute clusters.
+            Defaults to True
         rng : np.random.RandomState, int, None
         """
 
-        self.backbone = YAHPOGymMOBenchmark(scenario=scenario, instance=instance, rng=rng, data_dir=data_dir)
+        self.backbone = YAHPOGymMOBenchmark(
+            scenario=scenario, instance=instance, rng=rng, data_dir=data_dir, multi_thread=multi_thread
+        )
         self.objective = objective
 
         super(YAHPOGymBenchmark, self).__init__(rng=rng)
