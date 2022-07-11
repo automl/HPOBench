@@ -42,6 +42,11 @@ Querying another epoch, e.g. 5, raises an assertion.
 
 Changelog:
 ==========
+0.0.5
+* ADD Multi Objective version. Introduce objectives:
+  - misclassification_rate (0, 1)     - lower is better
+  - trainable_parameters   (0, 10**8) - lower is better
+
 0.0.4
 * New container release due to a general change in the communication between container and HPOBench.
   Works with HPOBench >= v0.0.8
@@ -74,7 +79,7 @@ from nasbench.lib import graph_util
 
 from hpobench import config_file
 import hpobench.util.rng_helper as rng_helper
-from hpobench.abstract_benchmark import AbstractBenchmark
+from hpobench.abstract_benchmark import AbstractBenchmark, AbstractMultiObjectiveBenchmark
 from hpobench.util.data_manager import NASBench_101DataManager
 
 __version__ = '0.0.4'
@@ -85,7 +90,7 @@ VERTICES = 7
 DEFAULT_API_FILE = config_file.data_dir / "nasbench_101"
 
 
-class NASCifar10BaseBenchmark(AbstractBenchmark):
+class NASCifar10BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
     def __init__(self, benchmark: NASCifar10,
                  data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
@@ -103,7 +108,7 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
             Random seed for the benchmarks
         """
 
-        super(NASCifar10BaseBenchmark, self).__init__(rng=rng)
+        super(NASCifar10BaseMOBenchmark, self).__init__(rng=rng)
 
         self.benchmark = benchmark
         self.data_path = data_path
@@ -144,7 +149,12 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         Returns
         -------
         Dict -
-            function_value : validation error
+            function_value :
+                misclassification_rate: float [0,1] (lower is better)
+                    1-accuracy on validation set
+                trainable_parameters: int [0, 10**8] (lower is better)
+                    Number of trainable parameters in the network
+
             cost : runtime
             info : Dict
                 fidelity : used fidelities in this evaluation
@@ -189,7 +199,8 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
             additional = {'trainable_parameters': data['trainable_parameters'],
                           'module_operations': data['module_operations']}
 
-        return {'function_value': float(1 - np.mean(valid_accuracies)),
+        return {'function_value': {'misclassification_rate': float(1 - np.mean(valid_accuracies)),
+                                   'trainable_parameters': additional['trainable_parameters']},
                 'cost': float(np.sum(training_times)),
                 'info': {'fidelity': fidelity,
                          'train_accuracies': train_accuracies,
@@ -222,14 +233,19 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         Returns
         -------
         Dict -
-            function_value : test error
+            function_value :
+                misclassification_rate: float [0,1] (lower is better)
+                    1-accuracy on test set
+                trainable_parameters: int [0, 10**8] (lower is better)
+                    Number of trainable parameters in the network
+
             cost : runtime
             info : Dict
                 fidelity : used fidelities in this evaluation
         """
 
         result = self.objective_function(configuration=configuration, fidelity=fidelity, run_index=(0, 1, 2), rng=rng)
-        result['function_value'] = float(1 - np.mean(result['info']['test_accuracies']))
+        result['function_value']['misclassification_rate'] = float(1 - np.mean(result['info']['test_accuracies']))
 
         return result
 
@@ -290,7 +306,132 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         return data_manager.save_dir
 
 
-class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
+class NASCifar10BaseBenchmark(AbstractBenchmark):
+    def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        """
+        Baseclass for the tabular benchmarks https://github.com/automl/nas_benchmarks/tree/master/tabular_benchmarks.
+        Please install the benchmark first. Place the data under ``data_path``.
+
+        Parameters
+        ----------
+        rng : np.random.RandomState, int, None
+            Random seed for the benchmarks
+        """
+        self.mo_benchmark: Union[NASCifar10BaseMOBenchmark, None] = None
+        super(NASCifar10BaseBenchmark, self).__init__(rng=rng)
+
+    # pylint: disable=arguments-differ
+    @AbstractBenchmark.check_parameters
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[CS.Configuration, Dict, None] = None,
+                           run_index: Union[int, Tuple, None] = (0, 1, 2),
+                           rng: Union[np.random.RandomState, int, None] = None,
+                           **kwargs) -> Dict:
+        """
+        Query the NAS-benchmark using a given configuration and a epoch (=budget).
+
+        Parameters
+        ----------
+        configuration : Dict, CS.Configuration
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        run_index : int, Tuple, None
+            The nas benchmark has for each configuration-budget-pair results from 3 different runs.
+            - If multiple `run_id`s are given as Tuple, the benchmark returns the mean over the given runs.
+            - By default (no parameter is specified) all runs are used. A specific run can be chosen by setting the
+              `run_id` to a value from [0, 3]. While the performance is averaged across the `run_index`, the costs are
+              the sum of the runtime per `run_index`.
+            - When this value is explicitly set to `None`, the function will use a random seed.
+        rng : np.random.RandomState, int, None
+            Random seed to use in the benchmark.
+
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value :
+                1-accuracy on validation set
+            cost : runtime
+            info : Dict
+                fidelity : used fidelities in this evaluation
+        """
+        result_dict = self.mo_benchmark.objective_function(
+            configuration=configuration, fidelity=fidelity, run_index=run_index, rng=rng, **kwargs
+        )
+
+        # swap function_value dict to value
+        result_dict['function_value'] = result_dict['function_value']['misclassification_rate']
+        return result_dict
+
+    @AbstractBenchmark.check_parameters
+    def objective_function_test(self, configuration: Union[Dict, CS.Configuration],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
+                                rng: Union[np.random.RandomState, int, None] = None,
+                                **kwargs) -> Dict:
+        """
+        Validate a configuration on the maximum available budget.
+
+        Parameters
+        ----------
+        configuration : Dict, CS.Configuration
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        rng : np.random.RandomState, int, None
+            Random seed to use in the benchmark. To prevent overfitting on a single seed, it is
+            possible to pass a parameter ``rng`` as 'int' or 'np.random.RandomState' to this
+            function. If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value :
+                equals misclassification_rate: float [0,1] (lower is better)
+                    1-accuracy on test set
+            cost : runtime
+            info : Dict
+                fidelity : used fidelities in this evaluation
+        """
+        result_dict = self.mo_benchmark.objective_function_test(
+            configuration=configuration, fidelity=fidelity, rng=rng, **kwargs
+        )
+
+        # swap function_value dict to value
+        result_dict['function_value'] = result_dict['function_value']['misclassification_rate']
+        return result_dict
+
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        raise NotImplementedError
+
+    @staticmethod
+    def get_meta_information() -> Dict:
+        """ Returns the meta information for the benchmark """
+        return NASCifar10BaseMOBenchmark.get_meta_information()
+
+    @staticmethod
+    def get_fidelity_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Creates a ConfigSpace.ConfigurationSpace containing all fidelity parameters for
+        the NAS Benchmark 101.
+
+        Parameters
+        ----------
+        seed : int, None
+            Fixing the seed for the ConfigSpace.ConfigurationSpace
+
+        Returns
+        -------
+        ConfigSpace.ConfigurationSpace
+        """
+        return NASCifar10BaseMOBenchmark.get_fidelity_space()
+
+
+class NASCifar10AMOBenchmark(NASCifar10BaseMOBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
 
@@ -298,7 +439,7 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
 
         from tabular_benchmarks.nas_cifar10 import NASCifar10A
         benchmark = NASCifar10A(data_dir=str(data_path), multi_fidelity=True)
-        super(NASCifar10ABenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
+        super(NASCifar10AMOBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -315,7 +456,7 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
         """
 
         from tabular_benchmarks.nas_cifar10 import NASCifar10A
-        return NASCifar10BBenchmark._get_configuration_space(NASCifar10A, seed)
+        return NASCifar10AMOBenchmark._get_configuration_space(NASCifar10A, seed)
 
     def _query_benchmark(self, config: Dict, run_index: int, budget: int = 108) -> Dict:
         """
@@ -372,7 +513,30 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
         return data
 
 
-class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
+class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
+    def __init__(self, data_path: Union[Path, str, None] = None,
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+
+        self.backbone = NASCifar10ABenchmark(data_path=data_path, rng=rng, **kwargs)
+        super(NASCifar10ABenchmark, self).__init__(rng=rng)
+
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Return the configuration space for the NASCifar10A benchmark.
+        Parameters
+        ----------
+        seed : int, None
+            Random seed for the configuration space.
+
+        Returns
+        -------
+            CS.ConfigurationSpace - Containing the benchmark's hyperparameter
+        """
+        return NASCifar10AMOBenchmark.get_configuration_space(seed=seed)
+
+
+class NASCifar10BMOBenchmark(NASCifar10BaseMOBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
 
@@ -380,7 +544,7 @@ class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
 
         from tabular_benchmarks.nas_cifar10 import NASCifar10B
         benchmark = NASCifar10B(data_dir=str(data_path), multi_fidelity=True)
-        super(NASCifar10BBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
+        super(NASCifar10BMOBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -397,7 +561,7 @@ class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
         """
 
         from tabular_benchmarks.nas_cifar10 import NASCifar10B
-        return NASCifar10BBenchmark._get_configuration_space(NASCifar10B, seed)
+        return NASCifar10BMOBenchmark._get_configuration_space(NASCifar10B, seed)
 
     def _query_benchmark(self, config: Dict, run_index: int, budget: int = 108) -> Dict:
         """
@@ -453,7 +617,29 @@ class NASCifar10BBenchmark(NASCifar10BaseBenchmark):
         return data
 
 
-class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
+class NASCifar10BBenchmark(AbstractBenchmark):
+    def __init__(self, data_path: Union[Path, str, None] = None,
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        self.backbone = NASCifar10BMOBenchmark(data_path=data_path, rng=rng, **kwargs)
+        super(NASCifar10BBenchmark, self).__init__(rng=rng)
+
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Return the configuration space for the NASCifar10B benchmark.
+        Parameters
+        ----------
+        seed : int, None
+            Random seed for the configuration space.
+
+        Returns
+        -------
+            CS.ConfigurationSpace - Containing the benchmark's hyperparameter
+        """
+        return NASCifar10BMOBenchmark.get_configuration_space(seed=seed)
+
+
+class NASCifar10CMOBenchmark(NASCifar10BaseMOBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
 
@@ -461,7 +647,7 @@ class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
 
         from tabular_benchmarks.nas_cifar10 import NASCifar10C
         benchmark = NASCifar10C(data_dir=str(data_path), multi_fidelity=True)
-        super(NASCifar10CBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
+        super(NASCifar10CMOBenchmark, self).__init__(benchmark=benchmark, data_path=data_path, rng=rng, **kwargs)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -478,7 +664,7 @@ class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
         """
 
         from tabular_benchmarks.nas_cifar10 import NASCifar10C
-        return NASCifar10BBenchmark._get_configuration_space(NASCifar10C, seed)
+        return NASCifar10CMOBenchmark._get_configuration_space(NASCifar10C, seed)
 
     def _query_benchmark(self, config: Dict, run_index: int, budget: int = 108) -> Dict:
         """
@@ -536,6 +722,28 @@ class NASCifar10CBenchmark(NASCifar10BaseBenchmark):
         data.pop('module_adjacency')
 
         return data
+
+
+class NASCifar10CBenchmark(AbstractBenchmark):
+    def __init__(self, data_path: Union[Path, str, None] = None,
+                 rng: Union[np.random.RandomState, int, None] = None, **kwargs):
+        self.backbone = NASCifar10CMOBenchmark(data_path=data_path, rng=rng, **kwargs)
+        super(NASCifar10CBenchmark, self).__init__(rng=rng)
+
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
+        """
+        Return the configuration space for the NASCifar10C benchmark.
+        Parameters
+        ----------
+        seed : int, None
+            Random seed for the configuration space.
+
+        Returns
+        -------
+            CS.ConfigurationSpace - Containing the benchmark's hyperparameter
+        """
+        return NASCifar10CMOBenchmark.get_configuration_space(seed=seed)
 
 
 def modified_query(benchmark, model_spec, run_index: int, epochs=108, stop_halfway=False):
