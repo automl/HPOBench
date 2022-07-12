@@ -305,6 +305,10 @@ class NASCifar10BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
         data_manager.download()
         return data_manager.save_dir
 
+    @staticmethod
+    def get_objective_names() -> List[str]:
+        return ['misclassification_rate', 'trainable_parameters']
+
 
 class NASCifar10BaseBenchmark(AbstractBenchmark):
     def __init__(self, rng: Union[np.random.RandomState, int, None] = None, **kwargs):
@@ -317,8 +321,8 @@ class NASCifar10BaseBenchmark(AbstractBenchmark):
         rng : np.random.RandomState, int, None
             Random seed for the benchmarks
         """
-        self.mo_benchmark: Union[NASCifar10BaseMOBenchmark, None] = None
         super(NASCifar10BaseBenchmark, self).__init__(rng=rng)
+        self.mo_benchmark: Union[NASCifar10BaseMOBenchmark, None] = None
 
     # pylint: disable=arguments-differ
     @AbstractBenchmark.check_parameters
@@ -517,8 +521,8 @@ class NASCifar10ABenchmark(NASCifar10BaseBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
 
-        self.backbone = NASCifar10ABenchmark(data_path=data_path, rng=rng, **kwargs)
         super(NASCifar10ABenchmark, self).__init__(rng=rng)
+        self.mo_benchmark = NASCifar10AMOBenchmark(data_path=data_path, rng=rng, **kwargs)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -620,8 +624,9 @@ class NASCifar10BMOBenchmark(NASCifar10BaseMOBenchmark):
 class NASCifar10BBenchmark(AbstractBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        self.backbone = NASCifar10BMOBenchmark(data_path=data_path, rng=rng, **kwargs)
+
         super(NASCifar10BBenchmark, self).__init__(rng=rng)
+        self.mo_benchmark = NASCifar10BMOBenchmark(data_path=data_path, rng=rng, **kwargs)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -727,8 +732,9 @@ class NASCifar10CMOBenchmark(NASCifar10BaseMOBenchmark):
 class NASCifar10CBenchmark(AbstractBenchmark):
     def __init__(self, data_path: Union[Path, str, None] = None,
                  rng: Union[np.random.RandomState, int, None] = None, **kwargs):
-        self.backbone = NASCifar10CMOBenchmark(data_path=data_path, rng=rng, **kwargs)
+
         super(NASCifar10CBenchmark, self).__init__(rng=rng)
+        self.mo_benchmark = NASCifar10CMOBenchmark(data_path=data_path, rng=rng, **kwargs)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:

@@ -495,9 +495,11 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
                 fidelity : used fidelities in this evaluation
                 data : additional data such as trainable parameters and used operations
         """
-        result = self.mo_benchmark.objective_function(configuration, fidelity, rng, **kwargs)
+        result = self.mo_benchmark.objective_function(
+            configuration=configuration, fidelity=fidelity, rng=rng, run_index=run_index, **kwargs
+        )
         result['info'].update(result['function_value'])
-        result['function_value'] = result['function_value']['valid_accuracy']
+        result['function_value'] = result['function_value']['accuracy']
         return result
 
     @AbstractBenchmark.check_parameters
@@ -532,7 +534,9 @@ class NASBench1shot1BaseBenchmark(AbstractBenchmark):
                 fidelity : used fidelities in this evaluation
                 data : additional data such as trainable parameters and used operations
         """
-        return self.mo_benchmark.objective_function_test(configuration, fidelity, rng, **kwargs)
+        return self.mo_benchmark.objective_function_test(
+            configuration=configuration, fidelity=fidelity, rng=rng, **kwargs
+        )
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
