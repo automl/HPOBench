@@ -196,7 +196,11 @@ class NASCifar10BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
             training_times.append(data['training_time'])
 
             # Since those information are the same for all run ids, just store one of them.
-            additional = {'trainable_parameters': data['trainable_parameters'],
+            # Also, if the configuration is invalid, set the number of parameters to its upper limit.
+            trainable_parameters = data['trainable_parameters']
+            trainable_parameters = 10**8 if trainable_parameters == 0 else trainable_parameters
+
+            additional = {'trainable_parameters': trainable_parameters,
                           'module_operations': data['module_operations']}
 
         return {'function_value': {'misclassification_rate': float(1 - np.mean(valid_accuracies)),
