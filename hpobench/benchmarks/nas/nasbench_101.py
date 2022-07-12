@@ -186,6 +186,7 @@ class NASCifar10BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
         test_accuracies = []
         training_times = []
         additional = {}
+        failure = False
 
         for run_id in run_index:
             data = self._query_benchmark(config=configuration, budget=fidelity['budget'], run_index=run_id)
@@ -198,6 +199,7 @@ class NASCifar10BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
             # Since those information are the same for all run ids, just store one of them.
             # Also, if the configuration is invalid, set the number of parameters to its upper limit.
             trainable_parameters = data['trainable_parameters']
+            failure = trainable_parameters == 0
             trainable_parameters = 10**8 if trainable_parameters == 0 else trainable_parameters
 
             additional = {'trainable_parameters': trainable_parameters,
@@ -211,6 +213,7 @@ class NASCifar10BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
                          'valid_accuracies': valid_accuracies,
                          'test_accuracies': test_accuracies,
                          'training_times': training_times,
+                         'failure': 1 if failure else 0,
                          'data': additional
                          }
                 }

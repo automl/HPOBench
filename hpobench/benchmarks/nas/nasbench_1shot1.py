@@ -184,7 +184,7 @@ class NASBench1shot1BaseMOBenchmark(AbstractMultiObjectiveBenchmark):
                          'test_accuracies': test_accuracies,
                          'training_times': training_times,
                          'data': additional,
-                         'failure': 'False' if not failure else 'True'
+                         'failure': 0 if not failure else 1
                          }
                 }
 
