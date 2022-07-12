@@ -82,7 +82,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractBenchmark, AbstractMultiObjectiveBenchmark
 from hpobench.util.data_manager import NASBench_101DataManager
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 logger = logging.getLogger('NasBench101')
 
 MAX_EDGES = 9

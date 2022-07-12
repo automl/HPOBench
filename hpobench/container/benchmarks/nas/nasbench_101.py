@@ -10,7 +10,7 @@ class NASCifar10ABenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NASCifar10ABenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'nasbench_101')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.5')
         super(NASCifar10ABenchmark, self).__init__(**kwargs)
 
 
@@ -18,7 +18,7 @@ class NASCifar10BBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NASCifar10BBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'nasbench_101')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.5')
         super(NASCifar10BBenchmark, self).__init__(**kwargs)
 
 
@@ -26,5 +26,30 @@ class NASCifar10CBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NASCifar10CBenchmark')
         kwargs['container_name'] = kwargs.get('container_name', 'nasbench_101')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.4')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.5')
         super(NASCifar10CBenchmark, self).__init__(**kwargs)
+
+
+class NASCifar10AMOBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NASCifar10AMOBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'nasbench_101')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.5')
+        super(NASCifar10AMOBenchmark, self).__init__(**kwargs)
+
+
+class NASCifar10BMOBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NASCifar10BMOBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'nasbench_101')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.5')
+        super(NASCifar10BMOBenchmark, self).__init__(**kwargs)
+
+
+class NASCifar10CMOBenchmark(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NASCifar10CMOBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'nasbench_101')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.5')
+        super(NASCifar10CMOBenchmark, self).__init__(**kwargs)
+

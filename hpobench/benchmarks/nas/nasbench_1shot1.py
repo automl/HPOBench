@@ -84,7 +84,7 @@ from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2  # noqa
 from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3  # noqa
 from nasbench_analysis.utils import INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3  # noqa
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 logger = logging.getLogger('NasBench1shot1')
 
 
