@@ -104,6 +104,14 @@ class BenchmarkServer:
         logger.debug('Server: get_meta_info called')
         return json.dumps(self.benchmark.get_meta_information(), indent=None, cls=BenchmarkEncoder)
 
+    def get_objective_names(self):
+        logger.debug('Server: get_objective_names called')
+        if hasattr(self.benchmark, 'get_objective_names'):
+            return json.dumps(self.benchmark.get_objective_names(), indent=None, cls=BenchmarkEncoder)
+        else:
+            logger.warning('Server: This is not a MO Benchmark. The `get_objective_names` function is not implemented.')
+            return ''
+
     @Pyro4.oneway   # in case call returns much later than daemon.shutdown
     def shutdown(self):
         logger.debug('Server: Shutting down...')

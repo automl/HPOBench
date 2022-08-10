@@ -1,0 +1,39 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+%labels
+MAINTAINER pfistererf@googlemail.com
+VERSION v0.0.1
+
+%help
+    This is a template for a Singularity recipe
+
+%environment
+    YAHPO_CONTAINER=1
+    export YAHPO_CONTAINER
+
+%post
+    apt update -y
+    apt install build-essential git wget -y
+
+    /usr/local/bin/python -m pip install --upgrade pip
+
+    cd /home \
+    && mkdir data && cd data \
+    && git clone --depth 1 -b main https://github.com/pfistfl/yahpo_data.git\
+
+    cd /home \
+    && git clone https://github.com/pfistfl/HPOBench.git \
+    && cd HPOBench \
+    && echo "Please never push a recipe that checks out any other branch than development or master" \
+    && git checkout master \
+    && pip install .[yahpo_gym] \
+    && echo "Please don't touch the following lines" \
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/ \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge \
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py surrogates.yahpo_gym $@
