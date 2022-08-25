@@ -26,6 +26,8 @@ class BaseFedHPOB(AbstractBenchmark):
                  data_path: Union[str, Path],
                  url: str,
                  triplets: Tuple,
+                 client_num: int,
+                 num_param: int,
                  rng: Union[np.random.RandomState, int, None] = None):
         """
         This is a base FL HPO benchmark from paper:
@@ -40,6 +42,8 @@ class BaseFedHPOB(AbstractBenchmark):
             Path to Tabular data
         url : download url
         triplets: Tuple, (model, dataset_name, algo)
+        client_num: total client_num joining the FL
+        num_param: number of model param
         rng : np.random.RandomState, int, None
             Random seed for the benchmarks
         """
@@ -47,7 +51,16 @@ class BaseFedHPOB(AbstractBenchmark):
         self.data_path = data_path
         self.url = url
         self.triplets = triplets
+        self.client_num = client_num
+        self.num_param = num_param
         self.table, self.info = self._setup()
+        self.bandwidth = {
+            'client_up': 0.25 * 1024 * 1024 * 8 / 32,
+            'client_down': 0.75 * 1024 * 1024 * 8 / 32,
+            'server_up': 0.25 * 1024 * 1024 * 8 / 32,
+            'server_down': 0.75 * 1024 * 1024 * 8 / 32
+        }
+        self.server_cmp_cost = 1.0
         super(BaseFedHPOB, self).__init__(rng=rng)
 
     def _setup(self):
@@ -56,7 +69,8 @@ class BaseFedHPOB(AbstractBenchmark):
         file = file if file[0] == '?' else file.split('?')[0]
         path = os.path.join(self.data_path, file)
 
-        root_path = os.path.join(self.data_path, self.triplets[0], self.triplets[1], self.triplets[2])
+        root_path = os.path.join(self.data_path, self.triplets[0],
+                                 self.triplets[1], self.triplets[2])
         datafile = os.path.join(root_path, 'tabular.csv.gz')
         infofile = os.path.join(root_path, 'info.pkl')
 
@@ -81,6 +95,34 @@ class BaseFedHPOB(AbstractBenchmark):
             info = pickle.loads(f.read())
 
         return df, info
+
+    def _get_lambda_from_df(self, configuration, fidelity):
+        lambdas = []
+        for seed in [0, 1, 2]:
+            result = self._search({'seed': seed, **configuration}, fidelity)
+            index = list(result.keys())
+            filterd_result = eval(result[index[0]])
+            c = np.mean(filterd_result['train_time']) + np.mean(
+                filterd_result['eval_time'])
+            lambdas.append(c.total_seconds())
+        return np.mean(lambdas) / float(self.client_num)
+
+    def _cost(self, configuration, fidelity):
+        try:
+            const = self._get_lambda_from_df(configuration, fidelity)
+        except:
+            const = 1.0
+
+        cmp_cost = sum([
+            1.0 / i for i in range(
+                1,
+                int(self.client_num * fidelity['sample_client']) + 1)
+        ]) * const + self.server_cmp_cost
+        cmm_cost = self.num_param / self.bandwidth['client_up'] + max(
+            self.client_num * fidelity['sample_client'] * self.num_param /
+            self.bandwidth['server_up'],
+            self.num_param / self.bandwidth['client_down'])
+        return cmp_cost + cmm_cost
 
     def _search(self, configuration, fidelity):
         # For configuration
@@ -136,30 +178,33 @@ class BaseFedHPOB(AbstractBenchmark):
             cost : time to train and evaluate the model
         """
         if fidelity is None:
-            fidelity = self.get_fidelity_space().get_default_configuration().get_dictionary()
+            fidelity = self.get_fidelity_space().get_default_configuration(
+            ).get_dictionary()
         if isinstance(seed_index, int):
             assert 1 <= seed_index <= 3, f'run_index must be in [1, 3], not {seed_index}'
-            seed_index = (seed_index,)
+            seed_index = (seed_index, )
         elif isinstance(seed_index, (Tuple, List)):
             assert len(seed_index) != 0, 'run_index must not be empty'
             if len(set(seed_index)) != len(seed_index):
-                logger.debug('There are some values more than once in the run_index. We remove the redundant entries.')
+                logger.debug(
+                    'There are some values more than once in the run_index. We remove the redundant entries.'
+                )
             run_index = tuple(set(seed_index))
             assert min(run_index) >= 1 and max(run_index) <= 3, \
                 f'all run_index values must be in [0, 3], but were {run_index}'
         elif seed_index is None:
-            logger.debug('The seed index is explicitly set to None! A random seed will be selected.')
+            logger.debug(
+                'The seed index is explicitly set to None! A random seed will be selected.'
+            )
             seed_index = tuple(self.rng.choice((1, 2, 3), size=1))
         else:
-            raise ValueError(f'run index must be one of Tuple or Int, but was {type(seed_index)}')
+            raise ValueError(
+                f'run index must be one of Tuple or Int, but was {type(seed_index)}'
+            )
 
         function_values, costs = [], []
         for seed_id in seed_index:
-            result = self._search(
-                {
-                    'seed': seed_id,
-                    **configuration
-                }, fidelity)
+            result = self._search({'seed': seed_id, **configuration}, fidelity)
             index = list(result.keys())
             assert len(index) == 1, 'Multiple results.'
             filterd_result = eval(result[index[0]])
@@ -172,14 +217,17 @@ class BaseFedHPOB(AbstractBenchmark):
             function_value = filterd_result[key][best_round]
 
             function_values.append(function_value)
-            costs.append(1)
+            costs.append(self._cost(configuration, fidelity))
 
-        return {'function_value': float(np.mean(function_values)),
-                'cost': float(sum(costs)),
-                'info': {f'{key}_per_run': function_values,
-                         'runtime_per_run': costs,
-                         'fidelity': fidelity},
-                }
+        return {
+            'function_value': float(np.mean(function_values)),
+            'cost': float(sum(costs)),
+            'info': {
+                f'{key}_per_run': function_values,
+                'runtime_per_run': costs,
+                'fidelity': fidelity
+            },
+        }
 
     @AbstractBenchmark.check_parameters
     def objective_function_test(self,

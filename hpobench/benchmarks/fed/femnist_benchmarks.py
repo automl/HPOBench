@@ -34,7 +34,14 @@ class FEMNISTFedHPOB(BaseFedHPOB):
 
         url = "https://federatedscope.oss-cn-beijing.aliyuncs.com/fedhpob_cnn_tabular.zip"
         triplets = ('cnn', 'femnist', 'avg')
-        super(FEMNISTFedHPOB, self).__init__(data_path, url, triplets, rng=rng)
+        client_num = 200
+        num_param = 871294
+        super(FEMNISTFedHPOB, self).__init__(data_path,
+                                             url,
+                                             triplets,
+                                             client_num,
+                                             num_param,
+                                             rng=rng)
 
     @staticmethod
     def get_configuration_space(
