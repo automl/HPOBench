@@ -1,6 +1,13 @@
 import pytest
+import sys
 
 
+MSG = 'Skip this test for new (>3.9) python versions. ' \
+      'The paramnet benchmarks require an specific old scikit learn version. This version however does not work under ' \
+      'python 3.10. Therefore we skip this test. The containerized version does still work under 3.10.'
+
+
+@pytest.mark.skipif(sys.version_info > (3, 9), reason=MSG)
 def test_load_data():
     from hpobench.util.data_manager import ParamNetDataManager
 

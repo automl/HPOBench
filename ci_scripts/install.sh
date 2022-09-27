@@ -4,8 +4,20 @@ install_packages=""
 
 if [[ "$RUN_TESTS" == "true" ]]; then
     echo "Install tools for testing"
-    install_packages="${install_packages}xgboost,pytest,test_paramnet,test_tabular_datamanager,"
+    install_packages="${install_packages}xgboost,pytest,test_tabular_datamanager,"
     pip install codecov
+
+    if [[ "${{ matrix.python-version }}" != "3.10" ]]; then
+      # The param net benchmark does not work with a scikit-learn version != 0.23.2. (See notes in the benchmark)
+      # To make sure that no newer version is installed, we install it before the other requirements.
+      # Since we are not using a "--upgrade" option later on, pip skips to install another scikit-learn version.
+      echo "Install the right scikit-learn function for the param net tests."
+      pip install --upgrade scikit-learn==0.23.2
+      install_packages="${install_packages}test_paramnet,"
+    else
+      echo "Skip installing the extra paramnet tests."
+    fi
+
 else
     echo "Skip installing tools for testing"
 fi
