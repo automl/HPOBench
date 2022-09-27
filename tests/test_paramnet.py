@@ -1,10 +1,5 @@
 import pytest
 
-# import logging
-# logging.basicConfig(level=logging.DEBUG)
-# from hpobench.util.container_utils import enable_container_debug
-# enable_container_debug()
-
 
 def test_load_data():
     from hpobench.util.data_manager import ParamNetDataManager
