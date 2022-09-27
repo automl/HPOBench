@@ -7,7 +7,8 @@ if [[ "$RUN_TESTS" == "true" ]]; then
     install_packages="${install_packages}xgboost,pytest,test_tabular_datamanager,"
     pip install codecov
 
-    if [[ "${{ matrix.python-version }}" != "3.10" ]]; then
+    PYVERSION=$(python -V 2>&1 | sed 's/.* \([0-9]\).\([0-9]*\).*/\1\2/')
+    if [[ "${PYVERSION}" != "310" ]]; then
       # The param net benchmark does not work with a scikit-learn version != 0.23.2. (See notes in the benchmark)
       # To make sure that no newer version is installed, we install it before the other requirements.
       # Since we are not using a "--upgrade" option later on, pip skips to install another scikit-learn version.
