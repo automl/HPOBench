@@ -1,6 +1,8 @@
 import pytest
+from hpobench.util.test_utils import DEFAULT_SKIP_MSG, check_run_all_tests
 
 
+@pytest.mark.skipif(check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_mo_cnn_seeding():
     from hpobench.container.benchmarks.mo.cnn_benchmark import FlowerCNNBenchmark
     b1 = FlowerCNNBenchmark(rng=0)
