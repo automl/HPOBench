@@ -63,6 +63,7 @@ def test_whitebox_with_container():
     assert np.isclose(test_loss, 0.43636, atol=0.001)
 
 
+@pytest.mark.skipif(skip_container_test, reason="Requires singularity and flask")
 def test_cartpole():
     from hpobench.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
     b = Benchmark(container_name='cartpole',
