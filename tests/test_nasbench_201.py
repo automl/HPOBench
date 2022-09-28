@@ -15,7 +15,7 @@ def enable_debug():
     disable_container_debug()
 
 
-@pytest.mark.skipif(check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_nasbench201_cifar10valid(enable_debug):
 
     b = Cifar10ValidNasBench201Benchmark(rng=0)
@@ -50,7 +50,7 @@ def test_nasbench201_cifar10valid(enable_debug):
         result = b.objective_function_test(configuration=config, fidelity={'epoch': 10})
 
 
-@pytest.mark.skipif(check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_nasbench201_cifar100(enable_debug):
     b = Cifar100NasBench201Benchmark(rng=0)
 
@@ -70,7 +70,7 @@ def test_nasbench201_cifar100(enable_debug):
     assert result['info']['valid_cost'] == result['cost']
 
 
-@pytest.mark.skipif(check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_nasbench201_Image(enable_debug):
     b = ImageNetNasBench201Benchmark(rng=0)
     config = {'1<-0': 'nor_conv_1x1',

@@ -63,7 +63,7 @@ def test_bnn_boston_housing():
     assert test_result['info']['fidelity']['budget'] == 1000
 
 
-@pytest.mark.skipif(check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_bnn_protein():
     benchmark = BNNOnProteinStructure(rng=1)
     test_result = simple_call(benchmark)
@@ -72,7 +72,7 @@ def test_bnn_protein():
     assert test_result['info']['fidelity']['budget'] == 1000
 
 
-@pytest.mark.skipif(check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_year_pred():
     benchmark = BNNOnYearPrediction(rng=1)
     test_result = simple_call(benchmark)
