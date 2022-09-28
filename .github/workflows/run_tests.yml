@@ -11,36 +11,42 @@ jobs:
     strategy:
       matrix:
         include:
-          - python-version: 3.7
+          - python-version: "3.7"
             DISPLAY_NAME: "Singularity Tests + CODECOV"
             RUN_TESTS: true
             USE_SINGULARITY: true
             SINGULARITY_VERSION: "3.8"
             RUN_CODECOV: true
 
-          - python-version: 3.7
+          - python-version: "3.7"
             DISPLAY_NAME: "Codestyle"
             RUN_CODESTYLE: true
             USE_SINGULARITY: false
 
-          - python-version: 3.7
+          - python-version: "3.7"
             DISPLAY_NAME: "Singularity Container Examples"
             RUN_CONTAINER_EXAMPLES: true
             USE_SINGULARITY: true
             SINGULARITY_VERSION: "3.8"
 
-          - python-version: 3.7
+          - python-version: "3.7"
             DISPLAY_NAME: "Local Examples"
             RUN_LOCAL_EXAMPLES: true
             USE_SINGULARITY: false
 
-          - python-version: 3.8
+          - python-version: "3.8"
             DISPLAY_NAME: "Singularity Tests"
             RUN_TESTS: true
             USE_SINGULARITY: true
             SINGULARITY_VERSION: "3.8"
 
-          - python-version: 3.9
+          - python-version: "3.9"
+            DISPLAY_NAME: "Singularity Tests"
+            RUN_TESTS: true
+            USE_SINGULARITY: true
+            SINGULARITY_VERSION: "3.8"
+            
+          - python-version: "3.10"
             DISPLAY_NAME: "Singularity Tests"
             RUN_TESTS: true
             USE_SINGULARITY: true
@@ -63,7 +69,7 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "${{ matrix.python-version }}"
     - name: Set up Go for Singularity
       if: matrix.USE_SINGULARITY == true
       uses: actions/setup-go@v2
