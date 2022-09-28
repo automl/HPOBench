@@ -1,5 +1,3 @@
-import logging
-logging.basicConfig(level=logging.DEBUG)
 import pytest
 
 from hpobench.container.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
@@ -7,8 +5,7 @@ from hpobench.container.benchmarks.nas.nasbench_201 import ImageNetNasBench201Be
 from hpobench.benchmarks.nas.nasbench_201 import \
     Cifar10ValidNasBench201MOBenchmark as LocalCifar10ValidNasBench201MOBenchmark
 from hpobench.util.container_utils import disable_container_debug, enable_container_debug
-
-skip_message = 'We currently skip this test because it takes too much time.'
+from hpobench.util.test_utils import DEFAULT_SKIP_MSG, check_run_all_tests
 
 
 @pytest.fixture(scope='module')
@@ -18,7 +15,7 @@ def enable_debug():
     disable_container_debug()
 
 
-@pytest.mark.skip(reason=skip_message)
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_nasbench201_cifar10valid(enable_debug):
 
     b = Cifar10ValidNasBench201Benchmark(rng=0)
@@ -53,7 +50,7 @@ def test_nasbench201_cifar10valid(enable_debug):
         result = b.objective_function_test(configuration=config, fidelity={'epoch': 10})
 
 
-@pytest.mark.skip(reason=skip_message)
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_nasbench201_cifar100(enable_debug):
     b = Cifar100NasBench201Benchmark(rng=0)
 
@@ -73,7 +70,7 @@ def test_nasbench201_cifar100(enable_debug):
     assert result['info']['valid_cost'] == result['cost']
 
 
-@pytest.mark.skip(reason=skip_message)
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_nasbench201_Image(enable_debug):
     b = ImageNetNasBench201Benchmark(rng=0)
     config = {'1<-0': 'nor_conv_1x1',
