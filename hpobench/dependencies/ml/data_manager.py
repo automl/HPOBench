@@ -1,20 +1,20 @@
-import openml
-import numpy as np
-import pandas as pd
-from typing import Union
 from pathlib import Path
+from typing import Union
 
-from sklearn.impute import SimpleImputer
-from sklearn.pipeline import make_pipeline
-from sklearn.utils import check_random_state
+import numpy as np
+import openml
+import pandas as pd
+from oslo_concurrency import lockutils
 from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from oslo_concurrency import lockutils
+from sklearn.utils import check_random_state
 
-from hpobench.util.data_manager import DataManager
 from hpobench import config_file
+from hpobench.util.data_manager import DataManager
 
 
 class OpenMLDataManager(DataManager):

@@ -1,20 +1,20 @@
 """ Base-class of all benchmarks """
 
 import abc
-from typing import Union, Dict, List, Tuple
 import functools
-
 import logging
+from typing import Union, Dict, List, Tuple
+
 import ConfigSpace
 import numpy as np
-
 from ConfigSpace.util import deactivate_inactive_hyperparameters
+
 from hpobench.util import rng_helper
 
 logger = logging.getLogger('AbstractBenchmark')
 
 
-class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
+class _BaseAbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
 
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
         """
@@ -34,7 +34,7 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
             np.random.RandomState with seed `rng` is created. If type is None,
             create a new random state.
         """
-
+        super(_BaseAbstractBenchmark, self).__init__(**kwargs)
         self.rng = rng_helper.get_rng(rng=rng)
         self.configuration_space = self.get_configuration_space(self.rng.randint(0, 10000))
         self.fidelity_space = self.get_fidelity_space(self.rng.randint(0, 10000))
@@ -210,19 +210,13 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
         fidelity_space.check_configuration(fidelity)
         return fidelity
 
-    @staticmethod
-    def _check_return_values(return_values: Dict) -> Dict:
-        """
-        The return values should contain the fields `function_value` and `cost`.
-        """
-        assert 'function_value' in return_values.keys()
-        assert 'cost' in return_values.keys()
-
-        return return_values
-
     def __call__(self, configuration: Dict, **kwargs) -> float:
         """ Provides interface to use, e.g., SciPy optimizers """
         return self.objective_function(configuration, **kwargs)['function_value']
+
+    @staticmethod
+    def _check_return_values(return_values: Dict) -> Dict:
+        raise NotImplementedError()
 
     @staticmethod
     @abc.abstractmethod
@@ -269,7 +263,32 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
 
-class AbstractMultiObjectiveBenchmark(AbstractBenchmark):
+class AbstractSingleObjectiveBenchmark(_BaseAbstractBenchmark):
+    """
+    Abstract Benchmark class for single-objective benchmarks.
+    This corresponds to the old AbstractBenchmark class.
+
+    The only purpose of this class is to point out to users that this benchmark returns only a single
+    objective function value.
+
+    When writing a benchmark, please make sure to inherit from the correct abstract class.
+    """
+
+    @staticmethod
+    def _check_return_values(return_values: Dict) -> Dict:
+        """
+        The return values should contain the fields `function_value` and `cost`.
+        """
+        assert 'function_value' in return_values.keys()
+        assert 'cost' in return_values.keys()
+        return return_values
+
+
+# Ensure compatibility with older versions of the HPOBench
+AbstractBenchmark = AbstractSingleObjectiveBenchmark
+
+
+class AbstractMultiObjectiveBenchmark(_BaseAbstractBenchmark):
     """
     Abstract Benchmark class for multi-objective benchmarks.
     The only purpose of this class is to point out to users that this benchmark returns multiple
@@ -277,66 +296,6 @@ class AbstractMultiObjectiveBenchmark(AbstractBenchmark):
 
     When writing a benchmark, please make sure to inherit from the correct abstract class.
     """
-    @abc.abstractmethod
-    def objective_function(self, configuration: Union[ConfigSpace.Configuration, Dict],
-                           fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
-                           rng: Union[np.random.RandomState, int, None] = None,
-                           **kwargs) -> Dict:
-        """
-        Objective function.
-
-        Override this function to provide your multi-objective benchmark function. This
-        function will be called by one of the evaluate functions. For
-        flexibility, you have to return a dictionary with the only mandatory
-        key being `function_values`, the objective function values for the
-        `configuration` which was passed. By convention, all benchmarks are
-        minimization problems.
-
-        `function_value` is a dictionary that contains all available criteria.
-
-        Parameters
-        ----------
-        configuration : Dict
-        fidelity: Dict, None
-            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
-        rng : np.random.RandomState, int, None
-            It might be useful to pass a `rng` argument to the function call to
-            bypass the default "seed" generator. Only using the default random
-            state (`self.rng`) could lead to an overfitting towards the
-            `self.rng`'s seed.
-
-        Returns
-        -------
-        Dict
-            Must contain at least the key `function_value` and `cost`.
-            Note that `function_value` should be a Dict here.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def objective_function_test(self, configuration: Union[ConfigSpace.Configuration, Dict],
-                                fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
-                                rng: Union[np.random.RandomState, int, None] = None,
-                                **kwargs) -> Dict:
-        """
-        If there is a different objective function for offline testing, e.g
-        testing a machine learning on a hold extra test set instead
-        on a validation set override this function here.
-
-        Parameters
-        ----------
-        configuration : Dict
-        fidelity: Dict, None
-            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
-        rng : np.random.RandomState, int, None
-            see :py:func:`~HPOBench.abstract_benchmark.objective_function`
-
-        Returns
-        -------
-        Dict
-            Must contain at least the key `function_value` and `cost`.
-        """
-        raise NotImplementedError()
 
     @staticmethod
     def _check_return_values(return_values: Dict) -> Dict:
