@@ -42,7 +42,15 @@ if [[ "$RUN_LOCAL_EXAMPLES" == "true" ]]; then
     echo "Install packages for local examples"
     echo "Install swig"
     sudo apt-get update && sudo apt-get install -y build-essential swig
-    install_packages="${install_packages}xgboost,"
+
+    PYVERSION=$(python -V 2>&1 | sed 's/.* \([0-9]\).\([0-9]*\).*/\1\2/')
+    if [[ "${PYVERSION}" != "310" ]]; then
+      # building pandas<=1.5.0 does not work with 3.10 anymore. -> install a different version.
+      install_packages="${install_packages}xgboost,"
+    else
+      install_packages="${install_packages}xgboost_310,"
+    fi
+
 else
     echo "Skip installing packages for local examples"
 fi
