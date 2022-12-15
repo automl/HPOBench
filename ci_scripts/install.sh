@@ -4,7 +4,7 @@ install_packages=""
 
 if [[ "$RUN_TESTS" == "true" ]]; then
     echo "Install tools for testing"
-    install_packages="${install_packages}xgboost,pytest,test_tabular_datamanager,"
+    install_packages="${install_packages}pytest,test_tabular_datamanager,"
     pip install codecov
 
     PYVERSION=$(python -V 2>&1 | sed 's/.* \([0-9]\).\([0-9]*\).*/\1\2/')
