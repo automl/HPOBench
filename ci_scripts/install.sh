@@ -4,7 +4,7 @@ install_packages=""
 
 if [[ "$RUN_TESTS" == "true" ]]; then
     echo "Install tools for testing"
-    install_packages="${install_packages}xgboost,pytest,test_tabular_datamanager,"
+    install_packages="${install_packages}pytest,test_tabular_datamanager,"
     pip install codecov
 
     PYVERSION=$(python -V 2>&1 | sed 's/.* \([0-9]\).\([0-9]*\).*/\1\2/')
@@ -14,9 +14,12 @@ if [[ "$RUN_TESTS" == "true" ]]; then
       # Since we are not using a "--upgrade" option later on, pip skips to install another scikit-learn version.
       echo "Install the right scikit-learn function for the param net tests."
       pip install --upgrade scikit-learn==0.23.2
-      install_packages="${install_packages}test_paramnet,"
+      install_packages="${install_packages}xgboost,test_paramnet,"
     else
       echo "Skip installing the extra paramnet tests."
+      # For 3.10, we need a different pandas version - this comes as a requirement for the old xgboost benchmark.
+      # building pandas<=1.5.0 does not work with 3.10 anymore. -> install a different version.
+      install_packages="${install_packages}xgboost_310,"
     fi
 
 else
@@ -42,7 +45,16 @@ if [[ "$RUN_LOCAL_EXAMPLES" == "true" ]]; then
     echo "Install packages for local examples"
     echo "Install swig"
     sudo apt-get update && sudo apt-get install -y build-essential swig
-    install_packages="${install_packages}xgboost,"
+
+    PYVERSION=$(python -V 2>&1 | sed 's/.* \([0-9]\).\([0-9]*\).*/\1\2/')
+    if [[ "${PYVERSION}" != "310" ]]; then
+      # For 3.10, we need a different pandas version - this comes as a requirement for the old xgboost benchmark.
+      # building pandas<=1.5.0 does not work with 3.10 anymore. -> install a different version.
+      install_packages="${install_packages}xgboost,"
+    else
+      install_packages="${install_packages}xgboost_310,"
+    fi
+
 else
     echo "Skip installing packages for local examples"
 fi
