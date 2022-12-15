@@ -14,12 +14,12 @@ are defined in the ~/.hpobenchrc - file.
 The name of the container (``container_name``) is defined either in its belonging
 container-benchmark definition. (hpobench/container/<type>/<name> or via ``container_name``.
 """
-import os
 import abc
-import sys
 import json
 import logging
+import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Optional, Union, Dict, List, Tuple
@@ -27,8 +27,8 @@ from uuid import uuid1
 
 import ConfigSpace as CS
 import Pyro4
-import Pyro4.util
 import Pyro4.errors
+import Pyro4.util
 import numpy as np
 from ConfigSpace.read_and_write import json as csjson
 from oslo_concurrency import lockutils

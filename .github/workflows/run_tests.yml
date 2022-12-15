@@ -45,7 +45,7 @@ jobs:
             RUN_TESTS: true
             USE_SINGULARITY: true
             SINGULARITY_VERSION: "3.8"
-            
+
           - python-version: "3.10"
             DISPLAY_NAME: "Singularity Tests"
             RUN_TESTS: true
