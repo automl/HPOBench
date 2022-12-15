@@ -1,0 +1,81 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+
+%labels
+MAINTAINER pfistererf@googlemail.com
+VERSION v0.0.1
+
+%help
+    This is the recipe for the Raw YAHPO Benchmarks.
+
+%post
+    # Install R for Debian Bullseye (11)
+    # Default installation /usr/local/ here: /opt/
+    apt update -y
+    apt install -y build-essential git wget curl gdebi-core
+    apt install -y bzip2-doc fontconfig gfortran gfortran-10 icu-devtools libbz2-dev libcairo2 \
+        libcurl4-openssl-dev libdatrie1 libfribidi0 libgfortran-10-dev libgfortran5 libglib2.0-0 \
+        libglib2.0-data libgraphite2-3 libharfbuzz0b libice6 libicu-dev libicu67 liblzma-dev \
+        libopenblas-dev libopenblas-pthread-dev libopenblas0 libopenblas0-pthread libpango-1.0-0 \
+        libpangocairo-1.0-0 libpangoft2-1.0-0 libpaper-utils libpaper1 libpcre2-16-0 \
+        libpcre2-32-0 libpcre2-dev libpcre2-posix2 libpixman-1-0 libsm6 libtcl8.6 libthai-data \
+        libthai0 libtk8.6 libxcb-render0 libxcb-shm0 libxft2 libxml2 libxrender1 libxss1 libxt6 \
+        shared-mime-info unzip x11-common xdg-user-dirs zip zlib1g-dev
+
+    export R_VERSION=4.0.5
+    curl -O https://cdn.rstudio.com/r/debian-11/pkgs/r-${R_VERSION}_1_amd64.deb
+    gdebi -n r-${R_VERSION}_1_amd64.deb
+
+    ln -s /opt/R/${R_VERSION}/bin/R /usr/local/bin/R
+    ln -s /opt/R/${R_VERSION}/bin/Rscript /usr/local/bin/Rscript
+
+    # Instal R-Packages
+    cd /home \
+    && Rscript -e 'install.packages("remotes", repos = "http://cran.r-project.org")'
+
+    # Install OpenML dependencies
+    Rscript -e 'install.packages("curl", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'install.packages("httr", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'install.packages("farff", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'install.packages("OpenML", repos = "http://cran.r-project.org")' \
+
+    # Install rbv2 dependencies
+    Rscript -e 'remotes::install_version("BBmisc", version = "1.11", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("glmnet", version = "2.0-16", upgrade = "never", repos = "http://cran.r-project.o")' \
+    && Rscript -e 'remotes::install_version("rpart", version = "4.1-13", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("e1071", version = "1.7-0.1", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("xgboost", version = "0.82.1", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("ranger", version = "0.11.2", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("RcppHNSW", version = "0.1.0", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("mlr", version = "2.14", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_github("mlr-org/mlr3misc", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("mlrCPO", version = "0.3.6", upgrade = "never", repos = "http://cran.r-projt.org")' \
+    && Rscript -e 'remotes::install_github("pfistfl/rbv2", upgrade = "never")' \
+    && Rscript -e 'remotes::install_version("testthat", version = "3.1.4", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_github("sumny/iaml", upgrade = "never")'
+
+    cd /home \
+    && mkdir data && cd data \
+    && git clone --depth 1 -b main https://github.com/pfistfl/yahpo_data.git \
+
+    # Upgrade pip
+    /usr/local/bin/python -m pip install --upgrade pip
+
+    # Install HPOBench
+    cd /home \
+    && git clone https://github.com/automl/HPOBench.git \
+    && cd HPOBench \
+    && echo "Please never push a recipe that checks out any other branch than development or master" \
+    && git checkout development \
+    && pip install .[yahpo_gym_raw] \
+
+    # Clean Up.
+    echo "Please don't touch the following lines" \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/ \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge \
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py ml.yahpo_benchmark $@
