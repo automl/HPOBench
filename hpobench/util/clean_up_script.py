@@ -1,7 +1,8 @@
+import logging
+import shutil
+
 from hpobench import config_file
 
-import shutil
-import logging
 logger = logging.getLogger('Clean-up')
 logger.setLevel(logging.INFO)
 

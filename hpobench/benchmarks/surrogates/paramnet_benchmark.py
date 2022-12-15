@@ -61,8 +61,8 @@ Changelog:
 0.0.1:
 * First implementation
 """
-import warnings
 import logging
+import warnings
 from typing import Union, Dict
 
 import ConfigSpace as CS

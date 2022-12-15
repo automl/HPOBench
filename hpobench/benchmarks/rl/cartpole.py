@@ -20,12 +20,13 @@ Changelog:
 """
 
 import logging
+import os
 import time
 from typing import Union, Dict
 
 import ConfigSpace as CS
 import numpy as np
-import os
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 import tensorflow as tf  # noqa: E402
