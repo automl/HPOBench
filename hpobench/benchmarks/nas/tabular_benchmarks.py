@@ -50,7 +50,6 @@ Changelog:
 * First implementation
 """
 import logging
-
 from pathlib import Path
 from typing import Union, Dict, Tuple, List
 
