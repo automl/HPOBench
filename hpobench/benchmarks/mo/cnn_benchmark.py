@@ -1,6 +1,9 @@
 """
 Changelog:
 ==========
+0.0.2:
+* Rename the returned function value
+  'negative_accuracy' -> 'misclassification_rate'
 
 0.0.1:
 * First implementation of the Multi-Objective CNN Benchmark.
@@ -22,7 +25,7 @@ import hpobench.util.rng_helper as rng_helper
 from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark
 from hpobench.util.data_manager import CNNDataManager
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 logger = logging.getLogger('MO_CNN')
 
@@ -284,7 +287,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
     @staticmethod
     def get_objective_names() -> List[str]:
         """Get the names of the objectives reported in the objective function."""
-        return ['accuracy', 'model_size']
+        return ['misclassification_rate', 'model_size']
 
     def init_model(self, config: Union[CS.Configuration, Dict]) -> Net:
         """
@@ -361,7 +364,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         -------
         Dict -
             function_value : Dict
-                negative_accuracy: float
+                misclassification_rate: float
                     1 - validation accuracy
                 log_model_size: float
                     log10 of the number of parameters
@@ -435,7 +438,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         elapsed_time = time.time() - time_in
 
-        return {'function_value': {'negative_accuracy': 1 - val_accuracy,
+        return {'function_value': {'misclassification_rate': 1 - val_accuracy,
                                    'log_model_size': float(np.log10(num_params))},
                 'cost': float(training_runtime),
                 'info': {'train_accuracy': train_accuracy,
@@ -479,7 +482,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
         -------
         Dict -
             function_value : Dict
-                negative_accuracy: float
+                misclassification_rate: float
                     1 - test accuracy
                 log_model_size: float
                     log10 of the number of parameters
@@ -546,7 +549,7 @@ class CNNBenchmark(AbstractMultiObjectiveBenchmark):
 
         elapsed_time = time.time() - time_in
 
-        return {'function_value': {'negative_accuracy': 1 - test_accuracy,
+        return {'function_value': {'misclassification_rate': 1 - test_accuracy,
                                    'log_model_size': float(np.log10(num_params))},
                 'cost': training_runtime,
                 'info': {'train_accuracy': train_accuracy,

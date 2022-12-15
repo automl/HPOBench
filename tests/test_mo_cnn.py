@@ -20,6 +20,7 @@ def test_mo_cnn_seeding():
         assert result_1['function_value'][metric] == pytest.approx(result_2['function_value'][metric], abs=0.001)
 
 
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_mo_cnn_benchmark():
     from hpobench.container.benchmarks.mo.cnn_benchmark import FlowerCNNBenchmark
 
