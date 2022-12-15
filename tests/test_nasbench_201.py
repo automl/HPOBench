@@ -35,15 +35,15 @@ def test_nasbench201_cifar10valid(enable_debug):
         '3<-2': 'nor_conv_3x3'
     }
     result = b.objective_function(configuration=config, fidelity={'epoch': 199}, data_seed=(777, 888, 999))
-    assert result['function_value'] == pytest.approx(9.78, abs=0.1)
+    assert result['function_value'] == pytest.approx(0.978, abs=0.1)
     assert result['cost'] == pytest.approx(11973.20, abs=0.1)
-    assert result['info']['valid_precision'] == result['function_value']
+    assert result['info']['valid_misclassification_rate'] == result['function_value']
     assert result['info']['valid_cost'] == result['cost']
 
     result = b.objective_function_test(configuration=config, fidelity={'epoch': 200})
-    assert result['function_value'] == pytest.approx(9.70, abs=0.1)
+    assert result['function_value'] == pytest.approx(0.970, abs=0.1)
     assert result['cost'] == pytest.approx(10426.33, abs=0.2)
-    assert result['info']['test_precision'] == result['function_value']
+    assert result['info']['test_misclassification_rate'] == result['function_value']
     assert result['info']['test_cost'] == result['cost']
 
     with pytest.raises(ValueError):
@@ -64,9 +64,9 @@ def test_nasbench201_cifar100(enable_debug):
 
     result = b.objective_function(configuration=config, fidelity=fidelity, data_seed=(777, 888, 999))
     assert result is not None
-    assert result['function_value'] == pytest.approx(29.5233, abs=0.1)
+    assert result['function_value'] == pytest.approx(0.295233, abs=0.1)
     assert result['cost'] == pytest.approx(19681.70, abs=0.1)
-    assert result['info']['valid_precision'] == result['function_value']
+    assert result['info']['valid_misclassification_rate'] == result['function_value']
     assert result['info']['valid_cost'] == result['cost']
 
 
@@ -83,9 +83,9 @@ def test_nasbench201_Image(enable_debug):
 
     result = b.objective_function(configuration=config, fidelity=fidelity, data_seed=(777, 888, 999))
     assert result is not None
-    assert result['function_value'] == pytest.approx(55.2167, abs=0.1)
+    assert result['function_value'] == pytest.approx(0.552167, abs=0.1)
     assert result['cost'] == pytest.approx(57119.22, abs=0.1)
-    assert result['info']['valid_precision'] == result['function_value']
+    assert result['info']['valid_misclassification_rate'] == result['function_value']
     assert result['info']['valid_cost'] == result['cost']
 
 
