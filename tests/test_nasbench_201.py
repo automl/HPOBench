@@ -35,18 +35,18 @@ def test_nasbench201_cifar10valid(enable_debug):
         '3<-2': 'nor_conv_3x3'
     }
     result = b.objective_function(configuration=config, fidelity={'epoch': 199}, data_seed=(777, 888, 999))
-    assert result['function_value'] == pytest.approx(0.978, abs=0.1)
+    assert result['function_value'] == pytest.approx(0.0978, abs=0.1)
     assert result['cost'] == pytest.approx(11973.20, abs=0.1)
     assert result['info']['valid_misclassification_rate'] == result['function_value']
     assert result['info']['valid_cost'] == result['cost']
 
     result = b.objective_function_test(configuration=config, fidelity={'epoch': 200})
-    assert result['function_value'] == pytest.approx(0.970, abs=0.1)
+    assert result['function_value'] == pytest.approx(0.0970, abs=0.1)
     assert result['cost'] == pytest.approx(10426.33, abs=0.2)
     assert result['info']['test_misclassification_rate'] == result['function_value']
     assert result['info']['test_cost'] == result['cost']
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         result = b.objective_function_test(configuration=config, fidelity={'epoch': 10})
 
 
