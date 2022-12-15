@@ -52,4 +52,3 @@ class NASCifar10CMOBenchmark(AbstractMOBenchmarkClient):
         kwargs['container_name'] = kwargs.get('container_name', 'nasbench_101')
         kwargs['latest'] = kwargs.get('container_tag', '0.0.5')
         super(NASCifar10CMOBenchmark, self).__init__(**kwargs)
-

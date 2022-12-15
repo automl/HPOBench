@@ -175,10 +175,10 @@ class _NAS101BaseBenchmark:
         return data_manager.save_dir
 
     def _mo_objective_function(self, configuration: Union[CS.Configuration, Dict],
-                              fidelity: Union[CS.Configuration, Dict, None] = None,
-                              run_index: Union[int, Tuple, None] = (0, 1, 2),
-                              rng: Union[np.random.RandomState, int, None] = None,
-                              **kwargs) -> Dict:
+                               fidelity: Union[CS.Configuration, Dict, None] = None,
+                               run_index: Union[int, Tuple, None] = (0, 1, 2),
+                               rng: Union[np.random.RandomState, int, None] = None,
+                               **kwargs) -> Dict:
         """
         Query the NAS-benchmark using a given configuration and a epoch (=budget).
 
@@ -306,7 +306,9 @@ class _NAS101BaseBenchmark:
                 fidelity : used fidelities in this evaluation
         """
 
-        result = self._mo_objective_function(configuration=configuration, fidelity=fidelity, run_index=(0, 1, 2), rng=rng)
+        result = self._mo_objective_function(
+            configuration=configuration, fidelity=fidelity, run_index=(0, 1, 2), rng=rng
+        )
         result['function_value']['misclassification_rate'] = float(1 - np.mean(result['info']['test_accuracies']))
 
         return result
