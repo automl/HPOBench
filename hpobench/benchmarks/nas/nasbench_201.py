@@ -369,8 +369,8 @@ class _NasBench201BaseBenchmark:
             del kwargs['data_seed']
 
         result = self._mo_objective_function(configuration=configuration, fidelity=fidelity,
-                                            data_seed=(777, 888, 999),
-                                            rng=rng, **kwargs)
+                                             data_seed=(777, 888, 999),
+                                             rng=rng, **kwargs)
         result['function_value']['misclassification_rate'] = result['info']['test_misclassification_rate']
         result['cost'] = result['info']['test_cost']
         return result
