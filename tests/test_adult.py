@@ -28,10 +28,10 @@ def test_adult_benchmark():
     result_2 = benchmark.objective_function(test_config, rng=1, fidelity={'budget': 3})
 
     assert result_1['info']['valid_accuracy'] == pytest.approx(0.7539, rel=0.001)
-    assert result_1['info']['valid_accuracy'] == result_1['function_value']['accuracy']
+    assert 1 - result_1['info']['valid_accuracy'] == result_1['function_value']['misclassification_rate']
     assert result_1['info']['train_accuracy'] == pytest.approx(0.76145, rel=0.001)
     assert result_1['info']['train_accuracy'] == result_2['info']['train_accuracy']
 
     result_1 = benchmark.objective_function_test(test_config, rng=1, fidelity={'budget': 3})
-    assert result_1['function_value']['accuracy'] == pytest.approx(0.76377, rel=0.001)
-    assert result_1['function_value']['accuracy'] == result_1['info']['test_accuracy']
+    assert 1 - result_1['function_value']['misclassification_rate'] == pytest.approx(0.76377, rel=0.001)
+    assert 1 - result_1['function_value']['misclassification_rate'] == result_1['info']['test_accuracy']
