@@ -1225,3 +1225,42 @@ class TabularDataManager(DataManager):
         with open(path, "r") as f:
             data = json.load(f)
         return data
+
+
+class YAHPODataManager(DataManager):
+    def __init__(self, data_dir: Union[Path, str, None]):
+        super(YAHPODataManager, self).__init__()
+
+        if data_dir is None:
+            data_dir = hpobench.config_file.data_dir / "yahpo_data"
+        self.data_dir = Path(data_dir)
+        self.logger.info(f'Read data from data directory: {data_dir}')
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_yahpo_raw', delay=0.5)
+    def _try_download(self):
+        """Clone the data repository."""
+        if not self.data_dir.exists():
+            self.logger.info(
+                'Try to download data from https://github.com/slds-lmu/yahpo_data/tree/fair'
+            )
+            # Create the data directory if not existing
+            self.create_save_directory(self.data_dir.parent)
+
+            import git
+            git.Repo.clone_from(url='https://github.com/slds-lmu/yahpo_data.git',
+                                to_path=str(self.data_dir),
+                                branch='fair',
+                                multi_options=['--depth 1'])
+            self.logger.info(f'Successfully cloned data from repo to {self.data_dir}')
+
+    def load(self):
+        from yahpo_gym.local_config import LocalConfiguration
+        local_config = LocalConfiguration()
+
+        # When in the containerized version, redirect to the data inside the container.
+        if 'YAHPO_CONTAINER' in os.environ:
+            local_config.init_config(data_path='/home/data/yahpo_data')
+        else:
+            self._try_download()
+            local_config.init_config(data_path=str(self.data_dir))

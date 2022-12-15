@@ -1,3 +1,4 @@
 {
-  "yahpo_gym": ["yahpo_gym@git+https://github.com/pfistfl/yahpo_gym#egg=yahpo_gym&subdirectory=yahpo_gym"]
+  "yahpo_gym": ["yahpo_gym@git+https://github.com/slds-lmu/yahpo_gym@9ec63dddcdfc4ba9d6084a9fd17dcd63a1386233#egg=yahpo_gym&subdirectory=yahpo_gym"],
+  "yahpo_gym_raw": ["yahpo_gym@git+https://github.com/slds-lmu/yahpo_gym#egg=yahpo_gym&subdirectory=yahpo_gym", "rpy2>=3.5.0", "openml==0.10.2", "gitpython>=3.1"]
 }
