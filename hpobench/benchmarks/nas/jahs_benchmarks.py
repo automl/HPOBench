@@ -308,7 +308,9 @@ class JAHSMOCifar10SurrogateBenchmark(_JAHSMOSurrogateBenchmark):
 
 class JAHSMOColorectalHistologySurrogateBenchmark(_JAHSMOSurrogateBenchmark):
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
-        super(JAHSMOColorectalHistologySurrogateBenchmark, self).__init__(task='colorectal_histology', rng=rng, **kwargs)
+        super(JAHSMOColorectalHistologySurrogateBenchmark, self).__init__(
+            task='colorectal_histology', rng=rng, **kwargs
+        )
 
 
 class JAHSMOFashionMNISTSurrogateBenchmark(_JAHSMOSurrogateBenchmark):

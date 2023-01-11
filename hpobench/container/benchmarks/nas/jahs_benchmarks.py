@@ -30,8 +30,35 @@ class JAHSMOFashionMNISTSurrogateBenchmark(AbstractMOBenchmarkClient):
         super(JAHSMOFashionMNISTSurrogateBenchmark, self).__init__(**kwargs)
 
 
+class JAHSMOCifar10TabularBenchmark(AbstractMOBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'JAHSMOCifar10TabularBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'jahs_benchmark')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        super(JAHSMOCifar10TabularBenchmark, self).__init__(**kwargs)
+
+
+class JAHSMOColorectalHistologyTabularBenchmark(AbstractMOBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'JAHSMOColorectalHistologyTabularBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'jahs_benchmark')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        super(JAHSMOColorectalHistologyTabularBenchmark, self).__init__(**kwargs)
+
+
+class JAHSMOFashionMNISTTabularBenchmark(AbstractMOBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'JAHSMOFashionMNISTTabularBenchmark')
+        kwargs['container_name'] = kwargs.get('container_name', 'jahs_benchmark')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        super(JAHSMOFashionMNISTTabularBenchmark, self).__init__(**kwargs)
+
+
 __all__ = [
     "JAHSMOCifar10SurrogateBenchmark",
     "JAHSMOColorectalHistologySurrogateBenchmark",
     "JAHSMOFashionMNISTSurrogateBenchmark",
+    "JAHSMOCifar10TabularBenchmark",
+    "JAHSMOColorectalHistologyTabularBenchmark",
+    "JAHSMOFashionMNISTTabularBenchmark",
 ]
