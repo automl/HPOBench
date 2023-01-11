@@ -9,9 +9,24 @@ or along with hpobench by calling
 Version:
 ========
 0.0.1:
-    Initial commit using JAHS-Bench-201 version 1.0.2
+    Initial commit using JAHS-Bench-201 version 1.0.2.
+    It supports the surrogate and the tabular benchmark as MO as well as SO version.
 
+    The MO version of this benchmark contains the following objectives:
+        - 'valid-misclassification_rate'
+        - 'latency'
+    However there are more, which are included in the info field:
+        - 'valid-acc'
+        - 'valid-misclassification_rate'
+        - 'latency'
+        - 'FLOPS'
+        - 'size_MB'
+        - 'test-acc'
+        - 'test-misclassification_rate'
+        - 'train-acc'
+        - 'train-misclassification_rate'
 """
+
 import copy
 import logging
 import tarfile
@@ -70,9 +85,12 @@ class JAHSDataManager:
         finish_flag = save_dir / f'{filename}_done.FLAG'
 
         logger.info(f"Starting download of {url}, this might take a while.")
-        with requests.get(url, stream=True) as response:
-            with open(save_tar_file, 'wb') as f:
-                f.write(response.raw.read())
+        if not save_tar_file.exists():
+            with requests.get(url, stream=True) as response:
+                with open(save_tar_file, 'wb') as f:
+                    f.write(response.raw.read())
+        else:
+            logger.info(f'File: {save_tar_file} does already exist. Skip downloading!')
 
         logger.info("Download finished, extracting now")
         with tarfile.open(save_tar_file, 'r') as f:
@@ -127,6 +145,8 @@ class _JAHSBenchmark:
             "valid-misclassification_rate": [0, 100],
         }
 
+        self.subset_metrics = ['valid-misclassification_rate', 'latency']
+
     def normalize_metric(self, data, dataset, key="latency"):
         if isinstance(self.METRIC_BOUNDS[key], dict):
             _min = min(self.METRIC_BOUNDS[key][dataset])
@@ -165,7 +185,11 @@ class _JAHSBenchmark:
         result = self.jahs_benchmark(configuration, nepochs=fidelity['nepochs'], full_trajectory=False)
 
         # The last epoch contains the interesting results for us
-        result_last_epoch = result[fidelity['nepochs']]
+        if self.kind == 'table':
+            _id = list(result.keys())
+            result_last_epoch = result[_id[0]]
+        else:
+            result_last_epoch = result[fidelity['nepochs']]
         _result_last_epoch = {}
 
         # Replace all accuracys with the misclassification rate (100 - acc)
@@ -186,9 +210,18 @@ class _JAHSMOBenchmark(_JAHSBenchmark, AbstractMultiObjectiveBenchmark):
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
 
         result_last_epoch, cost = self._query_benchmark(configuration, fidelity, rng, **kwargs)
+        function_value = {
+            key: value
+            for key, value in result_last_epoch.items()
+            if key in self.subset_metrics
+        }
+        function_value = {
+            key: self.normalize_metric(data=value, dataset=self.task, key=key)
+            for key, value in function_value.items()
+        }
 
         result_dict = {
-            'function_value': result_last_epoch,
+            'function_value': function_value,
             'cost': cost,
             'info': copy.deepcopy(result_last_epoch)
         }
@@ -210,23 +243,33 @@ class _JAHSSOBenchmark(_JAHSBenchmark, AbstractSingleObjectiveBenchmark):
                            rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
 
         result_last_epoch, cost = self._query_benchmark(configuration, fidelity, rng, **kwargs)
+        function_value = {
+            key: value
+            for key, value in result_last_epoch.items()
+            if key in self.subset_metrics
+        }
+        function_value = {
+            key: self.normalize_metric(data=value, dataset=self.task, key=key)
+            for key, value in function_value.items()
+        }
 
+        # Select only the validation misclassification rate!
         result_dict = {
-            'function_value': result_last_epoch['valid-misclassification_rate'],
+            'function_value': function_value['valid-misclassification_rate'],
             'cost': cost,
-            'info': {result_last_epoch}
+            'info': copy.deepcopy(result_last_epoch)
         }
 
         return result_dict
 
-    @AbstractMultiObjectiveBenchmark.check_parameters
+    @AbstractSingleObjectiveBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[ConfigSpace.Configuration, Dict],
                                 fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
                                 rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
         return self.objective_function(configuration, fidelity, rng, **kwargs)
 
 
-class _CompleteSearchSpace:
+class _SurrogateSearchSpace:
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
         from jahs_bench.lib.core.configspace import joint_config_space
@@ -234,47 +277,65 @@ class _CompleteSearchSpace:
         return joint_config_space
 
 
-class _JAHSMOSurrogateBenchmark(_CompleteSearchSpace, _JAHSMOBenchmark):
-    def __init__(self, task: str, **kwargs):
+class _TabularSearchSpace:
+    @staticmethod
+    def get_configuration_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
+        # from jahs_bench.tabular.search_space.configspace import joint_config_space
+        from jahs_bench.lib.core.configspace import joint_config_space
+
+        joint_config_space.seed(seed)
+        return joint_config_space
+
+
+class _JAHSMOSurrogateBenchmark(_SurrogateSearchSpace, _JAHSMOBenchmark):
+    def __init__(self, **kwargs):
         super(_JAHSMOSurrogateBenchmark, self).__init__(
-            task=task, kind='surrogate', metrics=['valid-acc', 'runtime', 'latency']
+            kind='surrogate', metrics=['valid-acc', 'runtime', 'latency'], **kwargs,
         )
-        self.subset_metrics = ['valid-misclassification_rate', 'latency']
 
-    def objective_function(self, configuration: Union[ConfigSpace.Configuration, Dict],
-                           fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
-                           rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Dict:
-        result_dict = super(_JAHSMOSurrogateBenchmark, self).objective_function(
-            configuration=configuration, fidelity=fidelity, rng=rng, **kwargs
+
+class _JAHSMOTabularBenchmark(_TabularSearchSpace, _JAHSMOBenchmark):
+    def __init__(self, **kwargs):
+        super(_JAHSMOTabularBenchmark, self).__init__(
+            kind='table', metrics=['valid-acc', 'runtime', 'latency'], **kwargs,
         )
-        result_dict['function_value'] = {
-            key: value for key, value in result_dict['function_value'].items() if key in self.subset_metrics
-        }
-        result_dict['function_value'] = {
-            key: self.normalize_metric(data=value, dataset=self.task, key=key)
-            for key, value in result_dict['function_value'].items()
-        }
-
-        return result_dict
 
 
 class JAHSMOCifar10SurrogateBenchmark(_JAHSMOSurrogateBenchmark):
-    def __init__(self):
-        super(JAHSMOCifar10SurrogateBenchmark, self).__init__(task='cifar10')
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSMOCifar10SurrogateBenchmark, self).__init__(task='cifar10', rng=rng, **kwargs)
 
 
 class JAHSMOColorectalHistologySurrogateBenchmark(_JAHSMOSurrogateBenchmark):
-    def __init__(self):
-        super(JAHSMOColorectalHistologySurrogateBenchmark, self).__init__(task='colorectal_histology')
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSMOColorectalHistologySurrogateBenchmark, self).__init__(task='colorectal_histology', rng=rng, **kwargs)
 
 
 class JAHSMOFashionMNISTSurrogateBenchmark(_JAHSMOSurrogateBenchmark):
-    def __init__(self):
-        super(JAHSMOFashionMNISTSurrogateBenchmark, self).__init__(task='fashion_mnist')
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSMOFashionMNISTSurrogateBenchmark, self).__init__(task='fashion_mnist', rng=rng, **kwargs)
+
+
+class JAHSMOCifar10TabularBenchmark(_JAHSMOTabularBenchmark):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSMOCifar10TabularBenchmark, self).__init__(task='cifar10', rng=rng, **kwargs)
+
+
+class JAHSMOColorectalHistologyTabularBenchmark(_JAHSMOTabularBenchmark):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSMOColorectalHistologyTabularBenchmark, self).__init__(task='colorectal_histology', rng=rng, **kwargs)
+
+
+class JAHSMOFashionMNISTTabularBenchmark(_JAHSMOTabularBenchmark):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSMOFashionMNISTTabularBenchmark, self).__init__(task='fashion_mnist', rng=rng, **kwargs)
 
 
 __all__ = [
     "JAHSMOCifar10SurrogateBenchmark",
     "JAHSMOColorectalHistologySurrogateBenchmark",
     "JAHSMOFashionMNISTSurrogateBenchmark",
+    "JAHSMOCifar10TabularBenchmark",
+    "JAHSMOColorectalHistologyTabularBenchmark",
+    "JAHSMOFashionMNISTTabularBenchmark",
 ]
