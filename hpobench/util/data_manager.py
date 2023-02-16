@@ -29,7 +29,6 @@ import numpy as np
 import requests
 
 from hpobench import config_file
-from hpobench.benchmarks.nas.jahs_benchmarks import logger
 
 try:
     from oslo_concurrency import lockutils
@@ -1234,6 +1233,8 @@ class TabularDataManager(DataManager):
 class JAHSDataManager:
 
     def __init__(self):
+
+        self.logger = logging.getLogger('JAHSDataManager')
         self.data_dir = config_file.data_dir / 'jahs_data'
 
         self.surrogate_url = \
@@ -1272,7 +1273,7 @@ class JAHSDataManager:
         are_all_available = len(not_available_files) == 0
 
         if not are_all_available:
-            logger.info(f'Not all files are available. Missing files: {not_available_files}')
+            self.logger.info(f'Not all files are available. Missing files: {not_available_files}')
 
         return are_all_available
 
@@ -1293,18 +1294,18 @@ class JAHSDataManager:
 
         all_gz_avaiable = self.are_all_gz_available(file_name=filename)
         if all_gz_avaiable:
-            logger.info(f"All files are already available. Skip downloading + extracting")
+            self.logger.info(f"All files are already available. Skip downloading + extracting")
             return
 
-        logger.info(f"Starting download of {url}, this might take a while.")
+        self.logger.info(f"Starting download of {url}, this might take a while.")
         if not save_tar_file.exists():
             with requests.get(url, stream=True) as response:
                 with open(save_tar_file, 'wb') as f:
                     f.write(response.raw.read())
         else:
-            logger.info(f'File: {save_tar_file} does already exist. Skip downloading!')
+            self.logger.info(f'File: {save_tar_file} does already exist. Skip downloading!')
 
-        logger.info("Download finished, extracting now")
+        self.logger.info("Download finished, extracting now")
 
         if not all_gz_avaiable:
             with tarfile.open(save_tar_file, 'r') as f:
@@ -1319,6 +1320,6 @@ class JAHSDataManager:
                     _new_dir = _dir / dir_name
                     move(_old_dir, _new_dir)
 
-            logger.info("Done extracting")
+            self.logger.info("Done extracting")
         else:
-            logger.info(f'All files already extracted. Skip extracting!')
+            self.logger.info(f'All files already extracted. Skip extracting!')

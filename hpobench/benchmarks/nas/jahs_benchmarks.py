@@ -244,10 +244,10 @@ class _JAHSMOBenchmark(_JAHSBenchmark, AbstractMultiObjectiveBenchmark):
             for key, value in result_last_epoch.items()
             if key in self.subset_metrics
         }
-        function_value = {
-            key: self.normalize_metric(data=value, dataset=self.task, key=key)
-            for key, value in function_value.items()
-        }
+        # function_value = {
+        #     key: self.normalize_metric(data=value, dataset=self.task, key=key)
+        #     for key, value in function_value.items()
+        # }
 
         result_dict = {
             'function_value': function_value,
@@ -277,10 +277,10 @@ class _JAHSSOBenchmark(_JAHSBenchmark, AbstractSingleObjectiveBenchmark):
             for key, value in result_last_epoch.items()
             if key in self.subset_metrics
         }
-        function_value = {
-            key: self.normalize_metric(data=value, dataset=self.task, key=key)
-            for key, value in function_value.items()
-        }
+        # function_value = {
+        #     key: self.normalize_metric(data=value, dataset=self.task, key=key)
+        #     for key, value in function_value.items()
+        # }
 
         # Select only the validation misclassification rate!
         result_dict = {
