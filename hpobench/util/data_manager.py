@@ -18,6 +18,7 @@ import logging
 import pickle
 import tarfile
 from io import BytesIO
+from itertools import product
 from pathlib import Path
 from time import time
 from typing import Tuple, Dict, Any, Union
@@ -26,6 +27,9 @@ from zipfile import ZipFile
 
 import numpy as np
 import requests
+
+from hpobench import config_file
+from hpobench.benchmarks.nas.jahs_benchmarks import logger
 
 try:
     from oslo_concurrency import lockutils
@@ -1225,3 +1229,96 @@ class TabularDataManager(DataManager):
         with open(path, "r") as f:
             data = json.load(f)
         return data
+
+
+class JAHSDataManager:
+
+    def __init__(self):
+        self.data_dir = config_file.data_dir / 'jahs_data'
+
+        self.surrogate_url = \
+            "https://ml.informatik.uni-freiburg.de/research-artifacts/jahs_bench_201/v1.1.0/assembled_surrogates.tar"
+        self.metric_url = \
+            "https://ml.informatik.uni-freiburg.de/research-artifacts/jahs_bench_201/v1.1.0/metric_data.tar"
+
+        self.surrogate_file = 'assembled_surrogates.tar'
+        self.metric_file = 'metric_data.tar'
+
+        self.data_sets = ['fashion_mnist', 'colorectal_histology', 'cifar10']
+        self.metric_data_pkl_gz = ['raw.pkl.gz', 'train_set.pkl.gz', 'valid_set.pkl.gz', 'test_set.pkl.gz']
+        self.surrogate_metrics = ['valid-acc', 'size_MB', 'latency', 'train-acc', 'runtime', 'test-acc', 'FLOPS']
+        self.surrogate_metrics_pkl_gz = ['params.pkl.gz', 'pipeline_config.pkl.gz', 'label_headers.pkl.gz', 'model.pkl.gz']
+
+    def are_all_gz_available(self, file_name):
+
+        if file_name == self.surrogate_file:
+            combinations = list(product(self.data_sets, self.surrogate_metrics, self.surrogate_metrics_pkl_gz))
+            files_to_check = [
+                Path(f'{self.data_dir}/{self.surrogate_file.replace(".tar", "")}/{data_set_name}/{metric_name}/{metric_file}')
+                for data_set_name, metric_name, metric_file in combinations
+            ]
+
+        elif file_name == self.metric_file:
+            combinations = list(product(self.data_sets, self.metric_data_pkl_gz))
+            files_to_check = [
+                Path(f'{self.data_dir}/{self.metric_file.replace(".tar", "")}/{data_set_name}/{metric_split_name}')
+                for data_set_name, metric_split_name in combinations
+            ]
+
+        else:
+            raise ValueError(f'Unknown filename {file_name}. Allowed: [{self.surrogate_file}, {self.metric_file}]')
+
+        not_available_files = [f for f in files_to_check if not f.exists()]
+        are_all_available = len(not_available_files) == 0
+
+        if not are_all_available:
+            logger.info(f'Not all files are available. Missing files: {not_available_files}')
+
+        return are_all_available
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{config_file.cache_dir}/lock_download_file_jahs', delay=0.05)
+    def _load_file(self, file_name: str, data_dir: Path):
+        data_dir = Path(data_dir)
+        self.download_and_extract_url(self.surrogate_url, data_dir, filename=file_name)
+
+    def load(self):
+        self._load_file(file_name=self.surrogate_file, data_dir=self.data_dir)
+        self._load_file(file_name=self.metric_file, data_dir=self.data_dir)
+
+    def download_and_extract_url(self, url, save_dir, filename):
+        save_dir = Path(save_dir)
+        save_dir.mkdir(parents=True, exist_ok=True)
+        save_tar_file = save_dir / filename
+
+        all_gz_avaiable = self.are_all_gz_available(file_name=filename)
+        if all_gz_avaiable:
+            logger.info(f"All files are already available. Skip downloading + extracting")
+            return
+
+        logger.info(f"Starting download of {url}, this might take a while.")
+        if not save_tar_file.exists():
+            with requests.get(url, stream=True) as response:
+                with open(save_tar_file, 'wb') as f:
+                    f.write(response.raw.read())
+        else:
+            logger.info(f'File: {save_tar_file} does already exist. Skip downloading!')
+
+        logger.info("Download finished, extracting now")
+
+        if not all_gz_avaiable:
+            with tarfile.open(save_tar_file, 'r') as f:
+                f.extractall(path=save_dir)
+
+            if save_tar_file.name == 'assembled_surrogates.tar':
+                from shutil import move
+                _dir = save_dir / 'assembled_surrogates'
+                _dir.mkdir(exist_ok=True, parents=True)
+                for dir_name in ['cifar10', 'colorectal_histology', 'fashion_mnist']:
+                    _old_dir = save_dir / dir_name
+                    _new_dir = _dir / dir_name
+                    move(_old_dir, _new_dir)
+
+            logger.info("Done extracting")
+        else:
+            logger.info(f'All files already extracted. Skip extracting!')

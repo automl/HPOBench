@@ -25,89 +25,29 @@ Version:
         - 'test-misclassification_rate'
         - 'train-acc'
         - 'train-misclassification_rate'
+
+    The SO version returns only the valid-misclassification_rate.
+
+    Note: Due to floating point errors, the tabular-based benchmarks might not find the correct configuration.
+    We added a small fix to select (if possible) the nearest configuration with a threshold of 1e-6.
+    If the configuration is not present in the tabular benchmark, it returns the empirical worst results.
+    See FAILURE_VALUES
 """
 
 import copy
 import logging
-import tarfile
 import typing
-from pathlib import Path
 from typing import Dict, Union, Tuple
 
 import ConfigSpace
 import jahs_bench as jahs_bench_code
 import numpy as np
-import requests
-from oslo_concurrency import lockutils
 
-from hpobench import config_file
 from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark, AbstractSingleObjectiveBenchmark
+from hpobench.util.data_manager import JAHSDataManager
 
 __version__ = '0.0.1'
 logger = logging.getLogger('JAHSBenchmark')
-
-
-class JAHSDataManager:
-
-    def __init__(self):
-        self.data_dir = config_file.data_dir / 'jahs_data'
-        self.surrogate_url = "https://ml.informatik.uni-freiburg.de/research-artifacts/jahs_bench_201/" \
-                             "v1.1.0/assembled_surrogates.tar"
-        self.metric_url = "https://ml.informatik.uni-freiburg.de/research-artifacts/jahs_bench_201/" \
-                          "v1.1.0/metric_data.tar"
-
-    @lockutils.synchronized('not_thread_process_safe', external=True,
-                            lock_path=f'{config_file.cache_dir}/lock_download_file_jahs', delay=0.05)
-    def _load_file(self, data_dir):
-        data_dir = Path(data_dir)
-        surrogate_file = 'assembled_surrogates.tar'
-        metric_file = 'metric_data.tar'
-        if not (data_dir / f'{surrogate_file}_done.FLAG').exists():
-            logger.info(f'File {surrogate_file} does not exist in {data_dir}. Start downloading.')
-            self.download_and_extract_url(self.surrogate_url, data_dir, filename=surrogate_file)
-        else:
-            logger.info(f'File {surrogate_file} already exists. Skip downloading.')
-
-        if not (data_dir / f'{metric_file}_done.FLAG').exists():
-            logger.info(f'File {metric_file} does not exist in {data_dir}. Start downloading.')
-            self.download_and_extract_url(self.metric_url, data_dir, filename=metric_file)
-        else:
-            logger.info(f'File {metric_file} already exists. Skip downloading.')
-
-    def load(self):
-        self._load_file(self.data_dir)
-
-    @staticmethod
-    def download_and_extract_url(url, save_dir, filename):
-        save_dir = Path(save_dir)
-        save_dir.mkdir(parents=True, exist_ok=True)
-        save_tar_file = save_dir / filename
-        finish_flag = save_dir / f'{filename}_done.FLAG'
-
-        logger.info(f"Starting download of {url}, this might take a while.")
-        if not save_tar_file.exists():
-            with requests.get(url, stream=True) as response:
-                with open(save_tar_file, 'wb') as f:
-                    f.write(response.raw.read())
-        else:
-            logger.info(f'File: {save_tar_file} does already exist. Skip downloading!')
-
-        logger.info("Download finished, extracting now")
-        with tarfile.open(save_tar_file, 'r') as f:
-            f.extractall(path=save_dir)
-
-        if save_tar_file.name == 'assembled_surrogates.tar':
-            from shutil import move
-            _dir = save_dir / 'assembled_surrogates'
-            _dir.mkdir(exist_ok=True, parents=True)
-            for dir_name in ['cifar10', 'colorectal_histology', 'fashion_mnist']:
-                _old_dir = save_dir / dir_name
-                _new_dir = _dir / dir_name
-                move(_old_dir, _new_dir)
-
-        logger.info("Done extracting")
-
-        finish_flag.touch()
 
 
 class _JAHSBenchmark:
@@ -133,27 +73,91 @@ class _JAHSBenchmark:
             save_dir=self.data_manager.data_dir,
             metrics=[m for m in self.metrics if 'misclassification_rate' not in m],  # we compute these on the fly
         )
-        super(_JAHSBenchmark, self).__init__(**kwargs)
 
-        self.METRIC_BOUNDS = {
-            "latency": {
-                "cifar10": [0.00635562329065232, 114.1251799692699],
-                "colorectal_histology": [0.0063284998354704485, 798.9547640807386],
-                "fashion_mnist": [0.007562867628561484, 9.461364439356307],
+        self.TABULAR_METRIC_BOUNDS = {
+            'cifar10': {
+                'FLOPS': [0.035754, 220.11969],
+                'latency': [0.00635562329065232, 119.7417876488277],
+                'runtime': [20.007991552352905, 702458.5486302376],
+                'size_MB': [0.004894, 1.531546],
+                'train-acc': [7.26799999786377, 100.0],
+                'valid-acc': [1.707999999885559, 92.92399997314453],
+                'test-acc': [1.62, 92.73],
+                'train-misclassification_rate': [0.0, 92.73200000213623],
+                'valid-misclassification_rate': [7.076000026855468, 98.29200000011444],
+                'test-misclassification_rate': [7.269999999999996, 98.38],
             },
-            "valid-acc": [0, 100],
-            "valid-misclassification_rate": [0, 100],
+            'colorectal_histology': {
+                'FLOPS': [0.03572, 2515.2722],
+                'latency': [0.006143425535297438, 798.9547640807386],
+                'runtime': [1.4989218711853027, 252615.9303767681],
+                'size_MB': [0.00486, 1.531416],
+                'train-acc': [0.34810126582278483, 100.0],
+                'valid-acc': [0.0, 97.39583333333333],
+                'test-acc': [0.0, 97.1774193548387],
+                'train-misclassification_rate': [0.0, 99.65189873417721],
+                'valid-misclassification_rate': [2.6041666666666714, 100.0],
+                'test-misclassification_rate': [2.8225806451612954, 100.0],
+            },
+            'fashion_mnist': {
+                'FLOPS': [0.031146, 152.978058],
+                'latency': [0.007562867628561484, 34.07263234384824],
+                'runtime': [19.689435482025146, 638326.5186192989],
+                'size_MB': [0.004822, 1.073178],
+                'train-acc': [6.603174602958351, 100.0],
+                'valid-acc': [0.0, 95.56613753545852],
+                'test-acc': [0.0, 95.60000002615793],
+                'train-misclassification_rate': [0.0, 93.39682539704165],
+                'valid-misclassification_rate': [4.433862464541477, 100.0],
+                'test-misclassification_rate': [4.399999973842071, 100.0],
+            }}
+
+        self.FAILURE_VALUES = {
+            'cifar10': {
+                'FLOPS': 0.035754,
+                'latency': 119.7417876488277,
+                'runtime': 702458.5486302376,
+                'size_MB': 1.531546,
+                'train-acc': 7.26799999786377,
+                'valid-acc': 1.707999999885559,
+                'test-acc': 1.62,
+                'train-misclassification_rate': 100 - 7.26799999786377,
+                'valid-misclassification_rate': 100 - 1.707999999885559,
+                'test-misclassification_rate': 100 - 1.62,
+            },
+            'colorectal_histology': {
+                'FLOPS': 0.03572,
+                'latency': 798.9547640807386,
+                'runtime': 252615.9303767681,
+                'size_MB': 1.531416,
+                'train-acc': 0.34810126582278483,
+                'valid-acc': 0.0,
+                'test-acc': 0.0,
+                'train-misclassification_rate': 100 - 0.34810126582278483,
+                'valid-misclassification_rate': 100 - 0.0,
+                'test-misclassification_rate': 100 - 0.0,
+            },
+            'fashion_mnist': {
+                'FLOPS': 0.031146,
+                'latency': 34.07263234384824,
+                'runtime': 638326.5186192989,
+                'size_MB': 1.073178,
+                'train-acc': 6.603174602958351,
+                'valid-acc': 0.0,
+                'test-acc': 0.0,
+                'train-misclassification_rate': 100 - 6.603174602958351,
+                'valid-misclassification_rate': 100 - 0.0,
+                'test-misclassification_rate': 100 - 0.0,
+            }
         }
 
         self.subset_metrics = ['valid-misclassification_rate', 'latency']
 
+        super(_JAHSBenchmark, self).__init__(**kwargs)
+
     def normalize_metric(self, data, dataset, key="latency"):
-        if isinstance(self.METRIC_BOUNDS[key], dict):
-            _min = min(self.METRIC_BOUNDS[key][dataset])
-            _max = max(self.METRIC_BOUNDS[key][dataset])
-        else:
-            _min = min(self.METRIC_BOUNDS[key])
-            _max = max(self.METRIC_BOUNDS[key])
+        _min = min(self.TABULAR_METRIC_BOUNDS[dataset][key])
+        _max = max(self.TABULAR_METRIC_BOUNDS[dataset][key])
         return (data - _min) / (_max - _min)
 
     @staticmethod
@@ -175,24 +179,49 @@ class _JAHSBenchmark:
 
     @staticmethod
     def get_meta_information() -> Dict:
+        # TODO
         return {}
 
     def _query_benchmark(self, configuration: Union[ConfigSpace.Configuration, Dict],
                          fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
                          rng: Union[np.random.RandomState, int, None] = None, **kwargs) -> Tuple[Dict, float]:
-
-        # Query the benchmark
-        result = self.jahs_benchmark(configuration, nepochs=fidelity['nepochs'], full_trajectory=False)
-
-        # The last epoch contains the interesting results for us
         if self.kind == 'table':
-            _id = list(result.keys())
-            result_last_epoch = result[_id[0]]
-        else:
-            result_last_epoch = result[fidelity['nepochs']]
-        _result_last_epoch = {}
+            # Some parameters cant be directly queried due to rounding issues.
+            # Map these parameters (learning_rate, WeightDecay) to their closest value in the table.
+            # If the difference is too large, the configuration might be not in the search space.
+            # JAHSbench throws a KeyError in this case.
+            subsets = self.jahs_benchmark._table_features.loc[:, ['WeightDecay', 'LearningRate']]
+            subset_config = [configuration['WeightDecay'], configuration['LearningRate']]
+            max_diffs = (subsets - subset_config).abs().sum(axis=1)
+            index_min = max_diffs.idxmin()
+            nearest_points = subsets.iloc[index_min].to_dict()
 
-        # Replace all accuracys with the misclassification rate (100 - acc)
+            if max_diffs.iloc[index_min] <= 1e-6:
+                # We can assume that this is a floating point error.
+                configuration.update(nearest_points)
+
+            # print(subset_config)
+            # print([
+            #     subsets.iloc[index_min].loc['WeightDecay'],
+            #     subsets.iloc[index_min].loc['LearningRate']
+            # ])
+
+        try:
+            # Query the benchmark
+            result = self.jahs_benchmark(configuration, nepochs=fidelity['nepochs'], full_trajectory=False)
+
+            # The last epoch contains the interesting results for us
+            if self.kind == 'table':
+                _id = list(result.keys())
+                result_last_epoch = result[_id[0]]
+            else:
+                result_last_epoch = result[fidelity['nepochs']]
+
+        except KeyError:
+            result_last_epoch = self.FAILURE_VALUES[self.task]
+
+        _result_last_epoch = {}
+        # Replace all accuracies with the misclassification rate (100 - acc)
         for k, v in result_last_epoch.items():
             _result_last_epoch[k] = v
             if 'acc' in k:
@@ -282,61 +311,115 @@ class _TabularSearchSpace:
     def get_configuration_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
         # from jahs_bench.tabular.search_space.configspace import joint_config_space
         from jahs_bench.lib.core.configspace import joint_config_space
-
         joint_config_space.seed(seed)
         return joint_config_space
 
 
-class _JAHSMOSurrogateBenchmark(_SurrogateSearchSpace, _JAHSMOBenchmark):
-    def __init__(self, **kwargs):
-        super(_JAHSMOSurrogateBenchmark, self).__init__(
-            kind='surrogate', metrics=['valid-acc', 'runtime', 'latency'], **kwargs,
-        )
-
-
-class _JAHSMOTabularBenchmark(_TabularSearchSpace, _JAHSMOBenchmark):
-    def __init__(self, **kwargs):
-        super(_JAHSMOTabularBenchmark, self).__init__(
-            kind='table', metrics=['valid-acc', 'runtime', 'latency'], **kwargs,
-        )
-
-
-class JAHSMOCifar10SurrogateBenchmark(_JAHSMOSurrogateBenchmark):
+# ######################### Single Objective - Surrogate ###############################################################
+class JAHSSOCifar10SurrogateBenchmark(_SurrogateSearchSpace, _JAHSSOBenchmark):
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
-        super(JAHSMOCifar10SurrogateBenchmark, self).__init__(task='cifar10', rng=rng, **kwargs)
+        super(JAHSSOCifar10SurrogateBenchmark, self).__init__(
+            task='cifar10', rng=rng, kind='surrogate', metrics=['valid-acc', 'runtime', 'latency'], **kwargs
+        )
 
 
-class JAHSMOColorectalHistologySurrogateBenchmark(_JAHSMOSurrogateBenchmark):
+class JAHSSOColorectalHistologySurrogateBenchmark(_SurrogateSearchSpace, _JAHSSOBenchmark):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSSOColorectalHistologySurrogateBenchmark, self).__init__(
+            task='colorectal_histology', rng=rng, metrics=['valid-acc', 'runtime', 'latency'], **kwargs
+        )
+
+
+class JAHSSOFashionMNISTSurrogateBenchmark(_SurrogateSearchSpace, _JAHSSOBenchmark):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSSOFashionMNISTSurrogateBenchmark, self).__init__(
+            task='fashion_mnist', rng=rng, metrics=['valid-acc', 'runtime', 'latency'], **kwargs
+        )
+# ######################### Single Objective - Surrogate ###############################################################
+
+
+# ######################### Single Objective - Tabular ###############################################################
+class JAHSSOCifar10TabularBenchmark(_TabularSearchSpace, _JAHSSOBenchmark):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSSOCifar10TabularBenchmark, self).__init__(
+            task='cifar10', rng=rng, kind='table', metrics=['valid-acc', 'runtime', 'latency'], **kwargs
+        )
+
+
+class JAHSSOColorectalHistologyTabularBenchmark(_TabularSearchSpace, _JAHSSOBenchmark):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSSOColorectalHistologyTabularBenchmark, self).__init__(
+            task='colorectal_histology', rng=rng, kind='table', metrics=['valid-acc', 'runtime', 'latency'], **kwargs
+        )
+
+
+class JAHSSOFashionMNISTTabularBenchmark(_TabularSearchSpace, _JAHSSOBenchmark):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSSOFashionMNISTTabularBenchmark, self).__init__(
+            task='fashion_mnist', rng=rng, kind='table', metrics=['valid-acc', 'runtime', 'latency'], **kwargs
+        )
+# ######################### Single Objective - Tabular ###############################################################
+
+
+# ######################### Multi Objective - Surrogate ###############################################################
+class JAHSMOCifar10SurrogateBenchmark(_SurrogateSearchSpace, _JAHSMOBenchmark):
+    def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
+        super(JAHSMOCifar10SurrogateBenchmark, self).__init__(
+            task='cifar10', rng=rng, kind='surrogate', metrics=['valid-acc', 'runtime', 'latency'], **kwargs
+        )
+
+
+class JAHSMOColorectalHistologySurrogateBenchmark(_SurrogateSearchSpace, _JAHSMOBenchmark):
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
         super(JAHSMOColorectalHistologySurrogateBenchmark, self).__init__(
-            task='colorectal_histology', rng=rng, **kwargs
+            task='colorectal_histology', rng=rng, metrics=['valid-acc', 'runtime', 'latency'], **kwargs
         )
 
 
-class JAHSMOFashionMNISTSurrogateBenchmark(_JAHSMOSurrogateBenchmark):
+class JAHSMOFashionMNISTSurrogateBenchmark(_SurrogateSearchSpace, _JAHSMOBenchmark):
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
-        super(JAHSMOFashionMNISTSurrogateBenchmark, self).__init__(task='fashion_mnist', rng=rng, **kwargs)
+        super(JAHSMOFashionMNISTSurrogateBenchmark, self).__init__(
+            task='fashion_mnist', rng=rng, metrics=['valid-acc', 'runtime', 'latency'], **kwargs
+        )
+# ######################### Multi Objective - Surrogate ###############################################################
 
 
-class JAHSMOCifar10TabularBenchmark(_JAHSMOTabularBenchmark):
+# ######################### Multi Objective - Tabular ###############################################################
+class JAHSMOCifar10TabularBenchmark(_TabularSearchSpace, _JAHSMOBenchmark):
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
-        super(JAHSMOCifar10TabularBenchmark, self).__init__(task='cifar10', rng=rng, **kwargs)
+        super(JAHSMOCifar10TabularBenchmark, self).__init__(
+            task='cifar10', rng=rng, kind='table', metrics=['valid-acc', 'runtime', 'latency'], **kwargs
+        )
 
 
-class JAHSMOColorectalHistologyTabularBenchmark(_JAHSMOTabularBenchmark):
+class JAHSMOColorectalHistologyTabularBenchmark(_TabularSearchSpace, _JAHSMOBenchmark):
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
-        super(JAHSMOColorectalHistologyTabularBenchmark, self).__init__(task='colorectal_histology', rng=rng, **kwargs)
+        super(JAHSMOColorectalHistologyTabularBenchmark, self).__init__(
+            task='colorectal_histology', rng=rng, kind='table', metrics=['valid-acc', 'runtime', 'latency'], **kwargs
+        )
 
 
-class JAHSMOFashionMNISTTabularBenchmark(_JAHSMOTabularBenchmark):
+class JAHSMOFashionMNISTTabularBenchmark(_TabularSearchSpace, _JAHSMOBenchmark):
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
-        super(JAHSMOFashionMNISTTabularBenchmark, self).__init__(task='fashion_mnist', rng=rng, **kwargs)
+        super(JAHSMOFashionMNISTTabularBenchmark, self).__init__(
+            task='fashion_mnist', rng=rng, kind='table', metrics=['valid-acc', 'runtime', 'latency'], **kwargs
+        )
+# ######################### Multi Objective - Tabular ###############################################################
 
 
 __all__ = [
+    "JAHSSOCifar10SurrogateBenchmark",
+    "JAHSSOColorectalHistologySurrogateBenchmark",
+    "JAHSSOFashionMNISTSurrogateBenchmark",
+
+    "JAHSSOCifar10TabularBenchmark",
+    "JAHSSOColorectalHistologyTabularBenchmark",
+    "JAHSSOFashionMNISTTabularBenchmark",
+
     "JAHSMOCifar10SurrogateBenchmark",
     "JAHSMOColorectalHistologySurrogateBenchmark",
     "JAHSMOFashionMNISTSurrogateBenchmark",
+
     "JAHSMOCifar10TabularBenchmark",
     "JAHSMOColorectalHistologyTabularBenchmark",
     "JAHSMOFashionMNISTTabularBenchmark",
