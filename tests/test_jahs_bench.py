@@ -3,7 +3,6 @@ import pytest
 from hpobench.util.container_utils import disable_container_debug, enable_container_debug
 from hpobench.util.test_utils import DEFAULT_SKIP_MSG, check_run_all_tests
 from hpobench.container.benchmarks.nas.jahs_benchmarks import (
-# from hpobench.benchmarks.nas.jahs_benchmarks import (
     JAHSMOCifar10SurrogateBenchmark, JAHSMOCifar10TabularBenchmark,
 )
 
@@ -14,11 +13,10 @@ def enable_debug():
     disable_container_debug()
 
 
-# @pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
-# def test_jahs_mo_surrogate_benchmark(enable_debug):
-def test_jahs_mo_surrogate_benchmark():
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
+def test_jahs_mo_surrogate_benchmark(enable_debug):
 
-    b = JAHSMOCifar10SurrogateBenchmark(rng=0)
+    b = JAHSMOCifar10SurrogateBenchmark(rng=0,container_source='/home/pm/Dokumente/Code/Data_HPOBench/Container/jahs_benchmark_0.0.1')
 
     cs_1 = b.get_configuration_space(seed=0)
     config_1 = cs_1.sample_configuration()
@@ -45,7 +43,7 @@ def test_jahs_mo_surrogate_benchmark():
     result = b.objective_function(configuration=config)
     assert result['function_value']['valid-misclassification_rate'] == pytest.approx(40.82594680786133, abs=0.1)
     assert result['cost'] == pytest.approx(6812.357421875, abs=0.1)
-    assert result['info']['valid_misclassification_rate'] == result['function_value']['valid-misclassification_rate']
+    assert result['info']['valid-misclassification_rate'] == result['function_value']['valid-misclassification_rate']
 
     result_2 = b.objective_function(configuration=config, fidelity={'nepochs': 200})
     assert result['function_value']['valid-misclassification_rate'] \

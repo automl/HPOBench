@@ -1248,14 +1248,17 @@ class JAHSDataManager:
         self.data_sets = ['fashion_mnist', 'colorectal_histology', 'cifar10']
         self.metric_data_pkl_gz = ['raw.pkl.gz', 'train_set.pkl.gz', 'valid_set.pkl.gz', 'test_set.pkl.gz']
         self.surrogate_metrics = ['valid-acc', 'size_MB', 'latency', 'train-acc', 'runtime', 'test-acc', 'FLOPS']
-        self.surrogate_metrics_pkl_gz = ['params.pkl.gz', 'pipeline_config.pkl.gz', 'label_headers.pkl.gz', 'model.pkl.gz']
+        self.surrogate_metrics_pkl_gz = [
+            'params.pkl.gz', 'pipeline_config.pkl.gz', 'label_headers.pkl.gz', 'model.pkl.gz'
+        ]
 
     def are_all_gz_available(self, file_name):
 
         if file_name == self.surrogate_file:
             combinations = list(product(self.data_sets, self.surrogate_metrics, self.surrogate_metrics_pkl_gz))
             files_to_check = [
-                Path(f'{self.data_dir}/{self.surrogate_file.replace(".tar", "")}/{data_set_name}/{metric_name}/{metric_file}')
+                Path(f'{self.data_dir}/{self.surrogate_file.replace(".tar", "")}/'
+                     f'{data_set_name}/{metric_name}/{metric_file}')
                 for data_set_name, metric_name, metric_file in combinations
             ]
 
@@ -1294,7 +1297,7 @@ class JAHSDataManager:
 
         all_gz_avaiable = self.are_all_gz_available(file_name=filename)
         if all_gz_avaiable:
-            self.logger.info(f"All files are already available. Skip downloading + extracting")
+            self.logger.info("All files are already available. Skip downloading + extracting")
             return
 
         self.logger.info(f"Starting download of {url}, this might take a while.")
@@ -1322,4 +1325,4 @@ class JAHSDataManager:
 
             self.logger.info("Done extracting")
         else:
-            self.logger.info(f'All files already extracted. Skip extracting!')
+            self.logger.info('All files already extracted. Skip extracting!')
