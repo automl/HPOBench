@@ -179,8 +179,20 @@ class _JAHSBenchmark:
 
     @staticmethod
     def get_meta_information() -> Dict:
-        # TODO
-        return {}
+        """ Returns the meta information for the benchmark """
+        return {'name': 'JAHS-Bench-201: A Foundation For Research On Joint Architecture And Hyperparameter Search',
+                'references': ['@inproceedings{bansal2022jahsbench,'
+                               'title     = {{JAHS}-Bench-201: A Foundation For Research On Joint Architecture And '
+                               '             Hyperparameter Search},'
+                               'author    = {Archit Bansal and Danny Stoll and Maciej Janowski and '
+                               '             Arber Zela and Frank Hutter},'
+                               'booktitle = {Thirty-sixth Conference on Neural Information Processing Systems '
+                               '             Datasets and Benchmarks Track},'
+                               'year      = {2022},'
+                               'url       = {http s://openreview.net/forum?id=_HLcjaVlqJ}'
+                               '}'],
+                'code': 'https://github.com/automl/nasbench-1shot1',
+                }
 
     def _query_benchmark(self, configuration: Union[ConfigSpace.Configuration, Dict],
                          fidelity: Union[Dict, ConfigSpace.Configuration, None] = None,
