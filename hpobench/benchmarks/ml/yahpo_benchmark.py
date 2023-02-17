@@ -215,14 +215,16 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
 
         elif self.scenario.startswith('iaml_'):
 
-            # We have to create a cache dir and initialize the cache
-            # _cache_dir = hpobench.config.config_file.cache_dir / 'R' / 'mlr3oml'
-            # oml = importr('mlr3oml')
-            # oml.initialize_cache(cache=robjects.StrVector([str(_cache_dir)]))
             iaml = importr('iaml')
             out = iaml.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=r_list)
-            # Cast the R list (result) back to a python dictionary
             result = YAHPOGymMORawBenchmark._cast_to_dict(out)
+
+        elif self.scenario.startswith('fair_'):
+
+            fair_pkg = importr('fair')
+            out = fair_pkg.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=r_list)
+            result = YAHPOGymMORawBenchmark._cast_to_dict(out)
+
         else:
             result = {}
 
