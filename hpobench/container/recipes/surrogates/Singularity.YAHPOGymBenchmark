@@ -3,7 +3,7 @@ From: python:3.7-slim
 
 %labels
 MAINTAINER pfistererf@googlemail.com
-VERSION v0.0.1
+VERSION v0.0.2
 
 %help
     This is a template for a Singularity recipe
@@ -20,10 +20,10 @@ VERSION v0.0.1
 
     cd /home \
     && mkdir data && cd data \
-    && git clone --depth 1 -b main https://github.com/pfistfl/yahpo_data.git\
+    && git clone --depth 1 -b fair https://github.com/slds-lmu/yahpo_data.git
 
     cd /home \
-    && git clone https://github.com/pfistfl/HPOBench.git \
+    && git clone https://github.com/automl/HPOBench.git \
     && cd HPOBench \
     && echo "Please never push a recipe that checks out any other branch than development or master" \
     && git checkout master \
