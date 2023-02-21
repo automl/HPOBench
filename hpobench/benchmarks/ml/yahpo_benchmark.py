@@ -197,11 +197,13 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
 
         # Call the random bot evaluation method
         if self.scenario.startswith('rbv2_'):
+
             # Establish a connection to the R package
             rbv2pkg = importr('rbv2')
-            # out = rbv2pkg.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=r_list)
+
+            learner = self.scenario.replace('rbv2_', 'classif.')
             r_out = rbv2pkg.eval_config(
-                learner=self.scenario.replace('rbv2_', 'classif.'), task_id=int(configuration['task_id']), configuration=r_list
+                learner=learner, task_id=int(configuration['task_id']), configuration=r_list
             )
             # Extract the run data frame via replications and cast the R list (result) back to a python dictionary
             result_r_df = r_out[0][0][0][4]
@@ -231,9 +233,11 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
         objectives = {target: value for target, value in result.items() if target in self.benchset.config.y_names}
         additional = {target: value for target, value in result.items() if target not in self.benchset.config.y_names}
 
-        return {'function_value': objectives,
-                "cost": result["timetrain"],
-                'info': {'fidelity': fidelity, 'additional_info': additional}}
+        return {
+            'function_value': objectives,
+            'cost': result['timetrain'],
+            'info': {'fidelity': fidelity, 'additional_info': additional}
+        }
 
     @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
@@ -255,7 +259,8 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
                                'year={2021}}'],
                 'code': ['https://github.com/pfistfl/yahpo_gym/yahpo_gym',
                          'https://github.com/pfistfl/rbv2/',
-                         'https://github.com/sumny/iaml']
+                         'https://github.com/sumny/iaml',
+                         'https://github.com/sumny/fair']
                 }
 
     # pylint: disable=arguments-differ
