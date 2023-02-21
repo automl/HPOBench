@@ -16,7 +16,7 @@ conda activate <Name_of_Conda_HPOBench_environment>
 Prerequisites: 2) Install R
 ===========================
 
-Install R (4.0.5 - IMPORTANT!) and the required dependencies:
+Install R (4.0.5 - IMPORTANT!) and the required dependencies:  # works also with higher R versions(?)
 
 ``` bash
 Rscript -e 'install.packages("remotes", repos = "http://cran.r-project.org")'
@@ -92,13 +92,13 @@ import logging
 from pathlib import Path
 from typing import Union, Dict, List
 
+import pandas as pd
 import ConfigSpace as CS
 import numpy as np
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
 from yahpo_gym.benchmark_set import BenchmarkSet
 
-import hpobench.config
 from hpobench.abstract_benchmark import AbstractBenchmark, AbstractMultiObjectiveBenchmark
 
 __version__ = '0.0.1'
@@ -155,32 +155,51 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
 
         # Cast python dict to R list:
         parameters = {**configuration, **fidelity}
-        r_list = YAHPOGymMORawBenchmark.__cast_dict_to_rlist(parameters)
+        r_list = YAHPOGymMORawBenchmark._cast_dict_to_rlist(parameters)
 
         # Call the random bot evaluation method
         if self.scenario.startswith('rbv2_'):
+
             # Establish a connection to the R package
             rbv2pkg = importr('rbv2')
-            out = rbv2pkg.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=r_list)
+
+            learner = self.scenario.replace('rbv2_', 'classif.')
+            r_out = rbv2pkg.eval_config(
+                learner=learner, task_id=int(configuration['task_id']), configuration=r_list
+            )
+            # Extract the run data frame via replications and cast the R list (result) back to a python dictionary
+            result_r_df = r_out[0][0][0][4]
+            result_dict = YAHPOGymMORawBenchmark._cast_to_dict(result_r_df)
+            result_df = pd.DataFrame(result_dict)
+            result = result_df.mean(axis=0)
+            result = result.to_dict()
+            time_cols = [col for col in result_df.columns if 'time' in col]
+            times = {col: result_df.loc[:, col].sum() for col in time_cols}
+            result.update(times)
+
         elif self.scenario.startswith('iaml_'):
-            # We have to create a cache dir and initialize the cache
-            _cache_dir = hpobench.config.config_file.cache_dir / 'R' / 'mlr3oml'
-            oml = importr('mlr3oml')
-            oml.initialize_cache(cache=robjects.StrVector([str(_cache_dir)]))
 
             iaml = importr('iaml')
             out = iaml.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=r_list)
-        else:
-            out = None
+            result = YAHPOGymMORawBenchmark._cast_to_dict(out)
 
-        # Cast the R list (result) back to a python dictionary
-        result = YAHPOGymMORawBenchmark.__cast_to_dict(out)
+        elif self.scenario.startswith('fair_'):
+
+            fair_pkg = importr('fair')
+            out = fair_pkg.eval_yahpo(scenario=robjects.StrVector([self.scenario]), configuration=r_list)
+            result = YAHPOGymMORawBenchmark._cast_to_dict(out)
+
+        else:
+            raise NotImplementedError()
+
         objectives = {target: value for target, value in result.items() if target in self.benchset.config.y_names}
         additional = {target: value for target, value in result.items() if target not in self.benchset.config.y_names}
 
-        return {'function_value': objectives,
-                "cost": result["timetrain"],
-                'info': {'fidelity': fidelity, 'additional_info': additional}}
+        return {
+            'function_value': objectives,
+            'cost': result['timetrain'],
+            'info': {'fidelity': fidelity, 'additional_info': additional}
+        }
 
     @AbstractMultiObjectiveBenchmark.check_parameters
     def objective_function_test(self, configuration: Union[CS.Configuration, Dict],
@@ -202,7 +221,8 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
                                'year={2021}}'],
                 'code': ['https://github.com/pfistfl/yahpo_gym/yahpo_gym',
                          'https://github.com/pfistfl/rbv2/',
-                         'https://github.com/sumny/iaml']
+                         'https://github.com/sumny/iaml',
+                         'https://github.com/sumny/fair']
                 }
 
     # pylint: disable=arguments-differ
@@ -210,23 +230,7 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
         return self.benchset.config.y_names
 
     @staticmethod
-    def __cast_to_dict(r_list_object):
-        """
-        Convert an RPy2 ListVector to a Python dict.
-        Source: https://ogeek.cn/qa/?qa=815151/
-        """
-        result = {}
-        for i, name in enumerate(r_list_object.names):
-            if isinstance(r_list_object[i], robjects.ListVector):
-                result[name] = YAHPOGymMORawBenchmark.__cast_to_dict(r_list_object[i])
-            elif len(r_list_object[i]) == 1:
-                result[name] = r_list_object[i][0]
-            else:
-                result[name] = r_list_object[i]
-        return result
-
-    @staticmethod
-    def __cast_dict_to_rlist(py_dict):
+    def _cast_dict_to_rlist(py_dict):
         """ Convert a python dictionary to a RPy2 ListVector"""
         pairs = [f'{key} = {value}' if not isinstance(value, str) else f'{key} = \"{value}\"'
                  for key, value in py_dict.items()]
@@ -234,6 +238,22 @@ class YAHPOGymMORawBenchmark(AbstractMultiObjectiveBenchmark):
         str_list = f"list({pairs})"
         r_list = robjects.r(str_list)
         return r_list
+
+    @staticmethod
+    def _cast_to_dict(r_list_object) -> Dict:
+        """
+        Convert an RPy2 ListVector to a Python dict.
+        Source: https://ogeek.cn/qa/?qa=815151/
+        """
+        result = {}
+        for i, name in enumerate(r_list_object.names):
+            if isinstance(r_list_object[i], robjects.ListVector):
+                result[name] = YAHPOGymMORawBenchmark._cast_to_dict(r_list_object[i])
+            elif len(r_list_object[i]) == 1:
+                result[name] = r_list_object[i][0]
+            else:
+                result[name] = r_list_object[i]
+        return result
 
 
 class YAHPOGymRawBenchmark(AbstractBenchmark):
