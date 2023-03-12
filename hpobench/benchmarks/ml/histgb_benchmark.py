@@ -15,18 +15,18 @@ from ConfigSpace.hyperparameters import Hyperparameter
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark, MO_MLBenchmark
 
 __version__ = '0.0.1'
 
 
-class HistGBBenchmark(MLBenchmark):
+class _HistGBBenchmarkBase:
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
-        super(HistGBBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        super(_HistGBBenchmarkBase, self).__init__(task_id, rng, valid_size, data_path)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -101,6 +101,13 @@ class HistGBBenchmark(MLBenchmark):
         )
         return model
 
+class HistGBBenchmark(_HistGBBenchmarkBase, MLBenchmark):
+    def __init__(self,
+                 task_id: int,
+                 rng: Union[np.random.RandomState, int, None] = None,
+                 valid_size: float = 0.33,
+                 data_path: Union[str, None] = None):
+        super(HistGBBenchmark, self).__init__(task_id, rng, valid_size, data_path)
 
 class HistGBBenchmarkBB(HistGBBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -120,6 +127,14 @@ class HistGBBenchmarkMF(HistGBBenchmark):
             HistGBBenchmark._get_fidelity_choices(ntrees_choice='variable', subsample_choice='fixed')
         )
         return fidelity_space
+    
+class HistGBBenchmarkMO(_HistGBBenchmarkBase, MO_MLBenchmark):
+    def __init__(self,
+                 task_id: int,
+                 rng: Union[np.random.RandomState, int, None] = None,
+                 valid_size: float = 0.33,
+                 data_path: Union[str, None] = None):
+        super(HistGBBenchmarkMO, self).__init__(task_id, rng, valid_size, data_path)
 
 
-__all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF']
+__all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF', 'HistGBBenchmarkMO']

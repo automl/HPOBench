@@ -13,6 +13,12 @@ class NNBenchmark(AbstractBenchmarkClient):
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
         super(NNBenchmark, self).__init__(**kwargs)
 
+class NNBenchmarkMO(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NNBenchmarkMO')
+        kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.2')
+        super(NNBenchmarkMO, self).__init__(**kwargs)
 
 class NNBenchmarkBB(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
@@ -30,4 +36,4 @@ class NNBenchmarkMF(AbstractBenchmarkClient):
         super(NNBenchmarkMF, self).__init__(**kwargs)
 
 
-__all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF']
+__all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF', 'NNBenchmarkMO']

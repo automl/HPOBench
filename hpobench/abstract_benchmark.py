@@ -35,6 +35,7 @@ class _BaseAbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
             create a new random state.
         """
         super(_BaseAbstractBenchmark, self).__init__(**kwargs)
+        print("base abstract benchamrk")
         self.rng = rng_helper.get_rng(rng=rng)
         self.configuration_space = self.get_configuration_space(self.rng.randint(0, 10000))
         self.fidelity_space = self.get_fidelity_space(self.rng.randint(0, 10000))

@@ -14,19 +14,28 @@ import numpy as np
 from ConfigSpace.hyperparameters import Hyperparameter
 from sklearn.linear_model import SGDClassifier
 
-from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark, MO_MLBenchmark
+'''
+Changelog:
+==========
+0.0.2:
+* Add the multiobjective version of this benchmark by returning val loss, precision, f1 and balanced accuracy
 
-__version__ = '0.0.1'
+0.0.1:
+* First implementation
+'''
+
+__version__ = '0.0.2'
 
 
-class LRBenchmark(MLBenchmark):
+class _LRBenchmarkBase:
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
 
-        super(LRBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        super(_LRBenchmarkBase, self).__init__(task_id, rng, valid_size, data_path)
         self.cache_size = 500
 
     @staticmethod
@@ -107,6 +116,17 @@ class LRBenchmark(MLBenchmark):
         )
         return model
 
+class LRBenchmark(_LRBenchmarkBase, MLBenchmark):
+    def __init__(self,
+                 task_id: int,
+                 rng: Union[np.random.RandomState, int, None] = None,
+                 valid_size: float = 0.33,
+                 data_path: Union[str, None] = None):
+
+        super(LRBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        self.cache_size = 500
+
+  
 
 class LRBenchmarkBB(LRBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -126,6 +146,16 @@ class LRBenchmarkMF(LRBenchmark):
             LRBenchmark._get_fidelity_choices(iter_choice='variable', subsample_choice='fixed')
         )
         return fidelity_space
+    
+class LRBenchmarkMO(_LRBenchmarkBase, MO_MLBenchmark):
+    def __init__(self,
+                 task_id: int,
+                 rng: Union[np.random.RandomState, int, None] = None,
+                 valid_size: float = 0.33,
+                 data_path: Union[str, None] = None):
+
+        super(LRBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        self.cache_size = 500
 
 
-__all__ = ['LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF']
+__all__ = ['LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF', 'LRBenchmarkMO']
