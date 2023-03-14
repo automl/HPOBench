@@ -225,7 +225,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                     # Currently, we can't see the available container tags on gitlab. Therefore, we create for each
                     # "tag" a new entry in the registry. This might change in the future. But as long as we don't have
                     # a fix for this, we need to map the container tag differently.
-                    if container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry'):
+                    if (container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry')) or \
+                    (container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/sharmaa/hpobench-registry')):
                         cmd += f'{container_source}/{container_name.lower()}/{container_tag}:latest'
                     else:
                         cmd += f'{container_source}/{container_name.lower()}:{container_tag}'
