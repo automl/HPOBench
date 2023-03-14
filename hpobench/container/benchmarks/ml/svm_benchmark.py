@@ -13,6 +13,13 @@ class SVMBenchmark(AbstractBenchmarkClient):
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
         super(SVMBenchmark, self).__init__(**kwargs)
 
+class SVMBenchmarkMO(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'SVMBenchmarkMO')
+        kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.2')
+        super(SVMBenchmarkMO, self).__init__(**kwargs)
+
 
 class SVMBenchmarkMF(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
@@ -30,4 +37,4 @@ class SVMBenchmarkBB(AbstractBenchmarkClient):
         super(SVMBenchmarkBB, self).__init__(**kwargs)
 
 
-__all__ = ['SVMBenchmark', 'SVMBenchmarkMF', 'SVMBenchmarkBB']
+__all__ = ['SVMBenchmark', 'SVMBenchmarkMF', 'SVMBenchmarkBB', 'SVMBenchmarkMO']

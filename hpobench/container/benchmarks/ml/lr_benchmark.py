@@ -13,6 +13,13 @@ class LRBenchmark(AbstractBenchmarkClient):
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
         super(LRBenchmark, self).__init__(**kwargs)
 
+class LRBenchmarkMO(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'LRBenchmarkMO')
+        kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
+        kwargs['latest'] = kwargs.get('container_tag', '0.0.2')
+        super(LRBenchmarkMO, self).__init__(**kwargs)
+
 
 class LRBenchmarkBB(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
@@ -30,4 +37,4 @@ class LRBenchmarkMF(AbstractBenchmarkClient):
         super(LRBenchmarkMF, self).__init__(**kwargs)
 
 
-__all__ = ['LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF']
+__all__ = ['LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF', 'LRBenchmarkMO']

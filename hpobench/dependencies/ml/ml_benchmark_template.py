@@ -11,6 +11,8 @@ from sklearn.metrics import make_scorer, accuracy_score, balanced_accuracy_score
 from hpobench.abstract_benchmark import AbstractBenchmark
 from hpobench.dependencies.ml.data_manager import OpenMLDataManager
 from hpobench.util.rng_helper import get_rng
+from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark, AbstractSingleObjectiveBenchmark
+from typing import Union, Dict, List, Text, Tuple
 
 metrics = dict(
     acc=accuracy_score,
@@ -27,7 +29,7 @@ metrics_kwargs = dict(
 )
 
 
-class MLBenchmark(AbstractBenchmark):
+class _MLBenchmarkBase():
     _issue_tasks = [3917, 3945]
 
     def __init__(
@@ -38,7 +40,7 @@ class MLBenchmark(AbstractBenchmark):
             data_path: Union[str, Path, None] = None,
             global_seed: int = 1
     ):
-        super(MLBenchmark, self).__init__(rng=rng)
+        super(_MLBenchmarkBase, self).__init__(rng=rng)
 
         if isinstance(rng, int):
             self.seed = rng
@@ -197,16 +199,38 @@ class MLBenchmark(AbstractBenchmark):
                 score_cost[k] = time.time() - _start
         train_loss = 1 - scores["acc"]
         return model, model_fit_time, train_loss, scores, score_cost
-
-    # pylint: disable=arguments-differ
-    @AbstractBenchmark.check_parameters
-    def objective_function(self,
-                           configuration: Union[CS.Configuration, Dict],
-                           fidelity: Union[CS.Configuration, Dict, None] = None,
-                           shuffle: bool = False,
-                           rng: Union[np.random.RandomState, int, None] = None,
-                           **kwargs) -> Dict:
+    
+    @AbstractMultiObjectiveBenchmark.check_parameters
+    def _mo_objective_function(self,
+                            configuration: Union[CS.Configuration, Dict],
+                            fidelity: Union[CS.Configuration, Dict, None] = None,
+                            shuffle: bool = False,
+                            rng: Union[np.random.RandomState, int, None] = None,
+                            **kwargs) -> Dict:
         """Function that evaluates a 'config' on a 'fidelity' on the validation set
+
+        Parameters
+        ----------
+        configuration : Dict, CS.Configuration
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        rng : np.random.RandomState, int, None
+            Random seed to use in the benchmark.
+
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value :
+                ToDo: add return values 
+            cost : runtime
+            info : Dict
+                fidelity : used fidelities in this evaluation
+        
         """
         model, model_fit_time, train_loss, train_scores, train_score_cost = self._train_objective(
             configuration, fidelity, shuffle, rng, evaluation="val"
@@ -218,6 +242,8 @@ class MLBenchmark(AbstractBenchmark):
             val_scores[k] = v(model, self.valid_X, self.valid_y)
             val_score_cost[k] = time.time() - _start
         val_loss = 1 - val_scores["acc"]
+        val_sensitivity = (val_scores['f1'] * val_scores['precision']) /  (2 * val_scores['precision'] - val_scores['f1'] )
+        val_scores['fnr'] = 1 - val_sensitivity
 
         test_scores = dict()
         test_score_cost = dict()
@@ -226,6 +252,9 @@ class MLBenchmark(AbstractBenchmark):
             test_scores[k] = v(model, self.test_X, self.test_y)
             test_score_cost[k] = time.time() - _start
         test_loss = 1 - test_scores["acc"]
+
+        test_sensitivity = (test_scores['f1'] * test_scores['precision']) /  (2 * test_scores['precision'] - test_scores['f1'] )
+        test_scores['fnr'] = 1 - test_sensitivity
 
         info = {
             'train_loss': train_loss,
@@ -243,15 +272,22 @@ class MLBenchmark(AbstractBenchmark):
             'config': configuration,
         }
 
-        return {
-            'function_value': info['val_loss'],
+        result_dict = {
+            'function_value':  {
+                # The original benchmark returned the accuracy with range [0, 100].
+                # We cast it to a minimization problem with range [0-1] to have a more standardized return value.
+                'val_loss':  val_loss,
+                'fnr': val_scores['fnr'],
+
+            },
             'cost': model_fit_time + info['val_costs']['acc'],
             'info': info
         }
 
-    # pylint: disable=arguments-differ
-    @AbstractBenchmark.check_parameters
-    def objective_function_test(self,
+        return result_dict
+
+    @AbstractMultiObjectiveBenchmark.check_parameters
+    def _mo_objective_function_test(self,
                                 configuration: Union[CS.Configuration, Dict],
                                 fidelity: Union[CS.Configuration, Dict, None] = None,
                                 shuffle: bool = False,
@@ -270,6 +306,9 @@ class MLBenchmark(AbstractBenchmark):
             test_score_cost[k] = time.time() - _start
         test_loss = 1 - test_scores["acc"]
 
+        test_sensitivity = (test_scores['f1'] * test_scores['precision']) /  (2 * test_scores['precision'] - test_scores['f1'] )
+        test_scores['fnr'] = 1 - test_sensitivity
+
         info = {
             'train_loss': train_loss,
             'val_loss': None,
@@ -287,7 +326,99 @@ class MLBenchmark(AbstractBenchmark):
         }
 
         return {
-            'function_value': float(info['test_loss']),
+            'function_value':  {
+                # The original benchmark returned the accuracy with range [0, 100].
+                # We cast it to a minimization problem with range [0-1] to have a more standardized return value.
+                'test_loss':  float(info['test_loss']),
+                # 'f1': test_scores['f1'],
+                # 'precision': test_scores['precision'],
+                # 'balanced_accuracy': test_scores['bal_acc'],
+                'fnr': test_scores['fnr'],
+            },
             'cost': float(model_fit_time + info['test_costs']['acc']),
             'info': info
         }
+
+    
+class MLBenchmark(_MLBenchmarkBase, AbstractSingleObjectiveBenchmark):
+    
+
+    @AbstractSingleObjectiveBenchmark.check_parameters
+    def objective_function(self,
+                            configuration: Union[CS.Configuration, Dict],
+                            fidelity: Union[CS.Configuration, Dict, None] = None,
+                            shuffle: bool = False,
+                            rng: Union[np.random.RandomState, int, None] = None,
+                            **kwargs) -> Dict:
+        """Function that evaluates a 'config' on a 'fidelity' on the validation set
+
+        Parameters
+        ----------
+        configuration : Dict, CS.Configuration
+        fidelity: Dict, None
+            Fidelity parameters, check get_fidelity_space(). Uses default (max) value if None.
+        rng : np.random.RandomState, int, None
+            Random seed to use in the benchmark.
+
+            To prevent overfitting on a single seed, it is possible to pass a
+            parameter ``rng`` as 'int' or 'np.random.RandomState' to this function.
+            If this parameter is not given, the default random state is used.
+        kwargs
+
+        Returns
+        -------
+        Dict -
+            function_value :
+                ToDo: add return values 
+            cost : runtime
+            info : Dict
+                fidelity : used fidelities in this evaluation
+        
+        """
+        results = self._mo_objective_function(
+            configuration=configuration, fidelity=fidelity, rng=rng,  **kwargs
+        )
+        results['function_value'] = results['function_value']['val_loss']
+        return results
+
+    @AbstractSingleObjectiveBenchmark.check_parameters
+    def objective_function_test(self,
+                                configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
+                                shuffle: bool = False,
+                                rng: Union[np.random.RandomState, int, None] = None,
+                                **kwargs) -> Dict:
+        """Function that evaluates a 'config' on a 'fidelity' on the test set
+        """
+
+        results = self._mo_objective_function_test(
+            configuration=configuration, fidelity=fidelity, rng=rng,  **kwargs
+        )
+        results['function_value'] = results['function_value']['test_loss']
+        return results
+
+class MO_MLBenchmark(_MLBenchmarkBase, AbstractMultiObjectiveBenchmark):
+    
+    @AbstractMultiObjectiveBenchmark.check_parameters
+    def objective_function(self,
+                            configuration: Union[CS.Configuration, Dict],
+                            fidelity: Union[CS.Configuration, Dict, None] = None,
+                            shuffle: bool = False,
+                            rng: Union[np.random.RandomState, int, None] = None,
+                            **kwargs) -> Dict:
+        return self._mo_objective_function(configuration=configuration, fidelity=fidelity,shuffle=shuffle, rng=rng,
+                                           **kwargs)
+
+    @AbstractMultiObjectiveBenchmark.check_parameters
+    def objective_function_test(self,
+                                configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[CS.Configuration, Dict, None] = None,
+                                shuffle: bool = False,
+                                rng: Union[np.random.RandomState, int, None] = None,
+                                **kwargs) -> Dict:
+        return self._mo_objective_function_test(configuration=configuration, fidelity=fidelity, shuffle=shuffle, rng=rng,
+                                           **kwargs)
+    @staticmethod
+    def get_objective_names() -> List[str]:
+        return ['val_loss', 'fnr', bal_acc', 'f1', 'precision']
+
