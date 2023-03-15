@@ -1,0 +1,30 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+%labels
+MAINTAINER sharmaa@informatik.uni-freiburg.de
+VERSION v0.0.1
+
+%post
+    apt update -y
+    apt install build-essential git wget -y
+
+    cd /home \
+    && mkdir data && cd data \
+    && wget https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/train.txt \
+    && wget https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/valid.txt \
+    && wget https://raw.githubusercontent.com/pytorch/examples/master/word_language_model/data/wikitext-2/test.txt \
+    && cd /home \
+    && git clone https://github.com/ayushi-3536/HPOBench.git \
+    && cd HPOBench \
+    && git checkout wikitext \
+    && pip install .[lm_benchmark] \
+    && cd / \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/ \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge
+
+
+%runscript
+    python -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py mo.lm_benchmark $@
