@@ -98,6 +98,7 @@ class MLBenchmark(AbstractBenchmark):
         """
         raise NotImplementedError()
 
+    # pylint: disable=arguments-differ
     def get_meta_information(self):
         """ Returns the meta information for the benchmark
         """

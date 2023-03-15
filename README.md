@@ -2,9 +2,7 @@
 
 HPOBench is a library for providing benchmarks for (multi-fidelity) hyperparameter optimization and with a focus on reproducibility.
 
-Further info:
-  * list of [benchmarks](https://github.com/automl/HPOBench/wiki/Available-Containerized-Benchmarks)
-  * [howto](https://github.com/automl/HPOBench/wiki/How-to-add-a-new-benchmark-step-by-step) contribute benchmarks
+For further info on [existing benchmarks](https://github.com/automl/HPOBench/wiki/Available-Containerized-Benchmarks) and [howto](https://github.com/automl/HPOBench/wiki/How-to-add-a-new-benchmark-step-by-step) contribute new benchmarks, see the [wiki](https://github.com/automl/HPOBench/wiki).
 
 ## Status
 
@@ -56,14 +54,14 @@ cd HPOBench
 pip install .
 ```
 
-**Note:** This does not install *singularity (version 3.6)*. Please follow the steps described here: [user-guide](https://sylabs.io/guides/3.6/user-guide/quick_start.html#quick-installation-steps).   
+**Note:** This does not install *singularity (version 3.8)*. Please follow the steps described here: [user-guide](https://sylabs.io/guides/3.8/user-guide/quick_start.html#quick-installation-steps).   
 If you run into problems, using the most recent singularity version might help: [here](https://singularity.hpcng.org/admin-docs/master/installation.html)
 
 ## Containerized Benchmarks
 
-We provide all benchmarks as containerized versions to (i) isolate their dependencies and (ii) keep them reproducible. Our containerized benchmarks do not rely on external dependencies and thus do not change over time. For this, we rely on [Singularity (version 3.6)](https://sylabs.io/guides/3.6/user-guide/) and for now upload all containers to a [gitlab registry](https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry)
+We provide all benchmarks as containerized versions to (i) isolate their dependencies and (ii) keep them reproducible. Our containerized benchmarks do not rely on external dependencies and thus do not change over time. For this, we rely on [Singularity (version 3.8)](https://sylabs.io/guides/3.8/user-guide/) and for now upload all containers to a [gitlab registry](https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry)
 
-The only other requirements are: [ConfigSpace](https://github.com/automl/ConfigSpace), *scipy* and *numpy* 
+The only other requirements are: [ConfigSpace](https://github.com/automl/ConfigSpace), *numpy*, *oslo* and *Pyro4* 
 
 ### Run a Benchmark Locally
 
@@ -141,10 +139,9 @@ If you use a benchmark in your experiments, please specify the version number of
 the used container to ensure reproducibility. When starting an experiment, HPOBench writes automatically these two version numbers to the log. 
 
 ### Troubleshooting and Further Notes
-
   - **Singularity throws an 'Invalid Image format' exception**
-  Use a singularity version > 3. For users of the Meta-Cluster in Freiburg, you have to set the following path:
-  ```export PATH=/usr/local/kislurm/singularity-3.5/bin/:$PATH```
+  Use a singularity version >= 3.8. If you have multiple singularity installations, you have to add the correct singularity version to your $PATH, e.g.
+  ```export PATH=/usr/local/kislurm/singularity-3.8/bin/:$PATH```
 
   - **A Benchmark fails with `SystemError: Could not start an instance of the benchmark. Retried 5 times` but the container 
 can be started locally with `singularity instance start <pathtocontainer> test`**
@@ -152,3 +149,19 @@ See whether in `~/.singularity/instances/sing/$HOSTNAME/*/` there is a file that
 
 **Note:** If you are looking for a different or older version of our benchmarking library, you might be looking for
  [HPOlib1.5](https://github.com/automl/HPOlib1.5) 
+ 
+## Reference
+
+If you use HPOBench, please cite the following paper:
+
+```bibtex
+@inproceedings{
+  eggensperger2021hpobench,
+  title={{HPOB}ench: A Collection of Reproducible Multi-Fidelity Benchmark Problems for {HPO}},
+  author={Katharina Eggensperger and Philipp M{\"u}ller and Neeratyoy Mallik and Matthias Feurer and Rene Sass and Aaron Klein and Noor Awad and Marius Lindauer and Frank Hutter},
+  booktitle={Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2)},
+  year={2021},
+  url={https://openreview.net/forum?id=1k4rJYEwda-}
+}
+```
+

@@ -36,7 +36,7 @@ setuptools.setup(
     version=read_file('hpobench/__version__.py').split()[-1].strip('\''),
     packages=setuptools.find_packages(exclude=['*.tests', '*.tests.*',
                                                'tests.*', 'tests'],),
-    python_requires='>=3.6, <=3.10',
+    python_requires='>=3.6',
     install_requires=read_file('./requirements.txt').split('\n'),
     extras_require=get_extra_requirements(),
     test_suite='pytest',

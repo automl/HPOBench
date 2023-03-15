@@ -15,6 +15,7 @@ import abc
 import gzip
 import json
 import logging
+import os
 import pickle
 import tarfile
 from io import BytesIO
@@ -36,7 +37,6 @@ try:
     import pandas as pd
 except ImportError:
     print("pandas is not installed, can't download datasets for the ml.tabular_benchmarks (not needed for containers)")
-
 
 import hpobench
 
@@ -854,6 +854,93 @@ class ProteinStructureData(HoldoutDataManager):
         X_train, y_train = data[:n_train, 1:], data[:n_train, 0]
         X_val, y_val = data[n_train:n_train + n_val, 1:], data[n_train:n_train + n_val, 0]
         X_test, y_test = data[n_train + n_val:, 1:], data[n_train + n_val:, 0]
+        return X_train, y_train, X_val, y_val, X_test, y_test
+
+
+class CNNDataManager(HoldoutDataManager):
+
+    def __init__(self, dataset: str):
+
+        super(CNNDataManager, self).__init__()
+        self.logger.debug('CNNDataManager: Starting to load data')
+
+        allowed_datasets = ["fashion", "flower"]
+        assert dataset in allowed_datasets, f'Requested data set is not supported. Must be one of ' \
+                                            f'{", ".join(allowed_datasets)}, but was {dataset}'
+
+        self.url_source = f'https://github.com/ayushi-3536/DatasetHost/blob/main/{dataset}.tar.gz?raw=true'
+        self.dataset = dataset
+        self.save_dir = hpobench.config_file.data_dir / "CNN" / f'{dataset}'
+        self.compressed_data = self.save_dir / f'{dataset}.tar.gz'
+        self.create_save_directory(self.save_dir)
+
+    def load(self):
+        """
+        Loads CNN Benchmark from data directory as defined in hpobenchrc.data_directory.
+        Downloads data if necessary.
+
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+
+        t = time()
+        self._download()
+        X_trn, y_trn, X_val, y_val, X_tst, y_tst = self._load()
+        self.logger.info(f'CNNDataManager: Data successfully loaded after {time() - t:.2f}')
+
+        return X_trn, y_trn, X_val, y_val, X_tst, y_tst
+
+    def _download(self):
+
+        # Check if data is already downloaded.
+        # Use a file lock to ensure that no two processes try to download the same files at the same time.
+        if self.compressed_data.exists():
+            self.logger.debug('CNNDataManager: Data already downloaded')
+        else:
+
+            self.logger.info(f'CNNDataManager: Start downloading data from {self.url_source} '
+                             f'to {self.save_dir}')
+            self._download_file_with_progressbar(data_url=self.url_source, data_file=self.compressed_data)
+            self._untar_data(compressed_file=self.compressed_data, save_dir=self.save_dir)
+
+    def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Load the data from file and split it into train, test and validation split.
+
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+
+        data_extract_path = self.save_dir / "data"
+        X_train = np.load(data_extract_path / 'x_train.npy')
+        y_train = np.load(data_extract_path / 'y_train.npy')
+
+        X_val = np.load(data_extract_path / 'x_val.npy')
+        y_val = np.load(data_extract_path / 'y_val.npy')
+
+        # Read Test datasets
+        X_test = np.load(data_extract_path / 'x_test.npy')
+        y_test = np.load(data_extract_path / 'y_test.npy')
+
+        def __cast_x_y(x, y) -> Tuple:
+            import torch
+            return torch.tensor(x).float().permute(0, 3, 1, 2), torch.tensor(y).long()
+
+        X_train, y_train = __cast_x_y(X_train, y_train)
+        X_val, y_val = __cast_x_y(X_val, y_val)
+        X_test, y_test = __cast_x_y(X_test, y_test)
 
         return X_train, y_train, X_val, y_val, X_test, y_test
 
@@ -935,6 +1022,165 @@ class YearPredictionMSDData(HoldoutDataManager):
         return X_trn, y_trn, X_val, y_val, X_tst, y_tst
 
 
+class AdultDataManager(HoldoutDataManager):
+
+    def __init__(self):
+        super(AdultDataManager, self).__init__()
+        self.logger.debug('AdultDataManager: Starting to load data')
+        self.urls = {"data": "http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data",
+                     "test_data": "https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test"}
+
+        self.feature_names = ['age', 'fnlwgt', 'education-num', 'marital-status', 'relationship', 'race',
+                              'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'country',
+                              'employment_type']
+        self.sensitive_names = 'sex'
+
+        self._save_dir = hpobench.config_file.data_dir / "adult"
+
+        self._data_extract_path = self._save_dir / "processed_data"
+
+        self.create_save_directory(self._data_extract_path)
+
+    def load(self):
+        """
+        Loads Adult Fair Datasets from data directory as defined in hpobenchrc.data_directory.
+        Downloads data if necessary.
+
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+
+        t = time()
+        self._download()
+        X_trn, y_trn, X_val, y_val, X_tst, y_tst = self._load()
+        self.logger.info(f'AdultDataManager: Data successfully loaded after {time() - t:.2f}')
+
+        return X_trn, y_trn, X_val, y_val, X_tst, y_tst
+
+    def _download(self):
+
+        if not (self._save_dir / "adult.data").exists():
+            self._download_file_with_progressbar(self.urls["data"], self._save_dir / "adult.data")
+
+        if not (self._save_dir / "adult.test").exists():
+            self._download_file_with_progressbar(self.urls["test_data"], self._save_dir / "adult.test")
+
+    def _load(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Load the data from file and split it into train, test and validation split.
+
+        Returns
+        -------
+        X_train: np.ndarray
+        y_train: np.ndarray
+        X_val: np.ndarray
+        y_val: np.ndarray
+        X_test: np.ndarray
+        y_test: np.ndarray
+        """
+        processed_files = ['x_train', 'x_valid', 'x_test', 'y_train', 'y_valid', 'y_test']
+        file_is_missing = not all([(self._data_extract_path / f'{file}.npy').exists() for file in processed_files])
+
+        if file_is_missing:
+            columns = ["age", "workclass", "fnlwgt", "education", "education-num", "marital-status",
+                       "occupation", "relationship", "race", "sex", "capital-gain", "capital-loss",
+                       "hours-per-week", "country", "salary"]
+            train_data = pd.read_csv(self._save_dir / 'adult.data', names=columns, sep=',', na_values='?')
+            test_data = pd.read_csv(self._save_dir / 'adult.test', names=columns, sep=',', skiprows=1, na_values='?')
+
+            X, y = self._process_adult_data(train_data)
+            X_test, y_test = self._process_adult_data(test_data)
+
+            n_trn = int(X.shape[0] * 0.7)
+            # Creation of Train and Test dataset
+            X_train, y_train = X[:n_trn], y[:n_trn]
+            X_valid, y_valid = X[n_trn:], y[n_trn:]
+
+            np.save(self._data_extract_path / 'x_train.npy', X_train)
+            np.save(self._data_extract_path / 'x_valid.npy', X_valid)
+            np.save(self._data_extract_path / 'x_test.npy', X_test)
+
+            np.save(self._data_extract_path / 'y_train.npy', y_train)
+            np.save(self._data_extract_path / 'y_valid.npy', y_valid)
+            np.save(self._data_extract_path / 'y_test.npy', y_test)
+
+        else:
+            X_train = np.load(self._data_extract_path / 'x_train.npy')
+            X_valid = np.load(self._data_extract_path / 'x_valid.npy')
+            X_test = np.load(self._data_extract_path / 'x_test.npy')
+
+            y_train = np.load(self._data_extract_path / 'y_train.npy')
+            y_valid = np.load(self._data_extract_path / 'y_valid.npy')
+            y_test = np.load(self._data_extract_path / 'y_test.npy')
+
+        return X_train, y_train, X_valid, y_valid, X_test, y_test
+
+    def _process_adult_data(self, df) -> Tuple[np.ndarray, np.ndarray]:
+        # mapping all categories of marital status to Single(1) or Couple(0)
+        df['marital-status'] = df['marital-status'].replace(
+            [' Divorced', ' Married-spouse-absent', ' Never-married', ' Separated', ' Widowed'], 'Single')
+        df['marital-status'] = df['marital-status'].replace([' Married-AF-spouse', ' Married-civ-spouse'], 'Couple')
+        df['marital-status'] = df['marital-status'].map({'Couple': 0, 'Single': 1})
+
+        # mapping race
+        race_map = {' White': 0, ' Amer-Indian-Eskimo': 1, ' Asian-Pac-Islander': 2, ' Black': 3, ' Other': 4}
+        df['race'] = df['race'].map(race_map)
+
+        # categorizing all work classes into 4 major categories
+        def get_workclass(x):
+            if x['workclass'] == ' Federal-gov' or x['workclass'] == ' Local-gov' or x['workclass'] == ' State-gov':
+                return 'govt'
+            elif x['workclass'] == ' Private':
+                return 'private'
+            elif x['workclass'] == ' Self-emp-inc' or x['workclass'] == ' Self-emp-not-inc':
+                return 'self_employed'
+            else:
+                return 'without_pay'
+
+        df['employment_type'] = df.apply(get_workclass, axis=1)
+        employment_map = {'govt': 0, 'private': 1, 'self_employed': 2, 'without_pay': 3}
+        df['employment_type'] = df['employment_type'].map(employment_map)
+
+        # mapping relationship map
+        rel_map = {' Unmarried': 0, ' Wife': 1, ' Husband': 2, ' Not-in-family': 3, ' Own-child': 4,
+                   ' Other-relative': 5}
+        df['relationship'] = df['relationship'].map(rel_map)
+
+        # maping capital gain/loss to binary values
+        df.loc[(df['capital-gain'] > 0), 'capital-gain'] = 1
+        df.loc[(df['capital-gain'] == 0, 'capital-gain')] = 0
+        df.loc[(df['capital-loss'] > 0), 'capital-loss'] = 1
+        df.loc[(df['capital-loss'] == 0, 'capital-loss')] = 0
+
+        # defining salary map
+        salary_map = {' <=50K': 1, ' >50K': 0, ' <=50K.': 1, ' >50K.': 0, }
+        df['salary'] = df['salary'].map(salary_map).astype(int)
+
+        df['sex'] = df['sex'].map({' Male': 1, ' Female': 0}).astype(int)
+
+        # replacing all missing values with np.nan
+        df['country'] = df['country'].replace(' ?', np.nan)
+        df['workclass'] = df['workclass'].replace(' ?', np.nan)
+        df['occupation'] = df['occupation'].replace(' ?', np.nan)
+
+        # categorizing countries into "Non-US" and "US"
+        df.loc[df['country'] != ' United-States', 'country'] = 'Non-US'
+        df.loc[df['country'] == ' United-States', 'country'] = 'US'
+        df['country'] = df['country'].map({'US': 1, 'Non-US': 0}).astype(int)
+
+        df.drop(labels=['workclass', 'education', 'occupation'], axis=1, inplace=True)
+        X = df.drop(['salary'], axis=1)
+        y = df['salary']
+
+        return X.to_numpy(), y.to_numpy()
+
+
 class TabularDataManager(DataManager):
     def __init__(self, model: str, task_id: [int, str], data_dir: [str, Path, None] = None):
         super(TabularDataManager, self).__init__()
@@ -982,3 +1228,42 @@ class TabularDataManager(DataManager):
         with open(path, "r") as f:
             data = json.load(f)
         return data
+
+
+class YAHPODataManager(DataManager):
+    def __init__(self, data_dir: Union[Path, str, None]):
+        super(YAHPODataManager, self).__init__()
+
+        if data_dir is None:
+            data_dir = hpobench.config_file.data_dir / "yahpo_data"
+        self.data_dir = Path(data_dir)
+        self.logger.info(f'Read data from data directory: {data_dir}')
+
+    @lockutils.synchronized('not_thread_process_safe', external=True,
+                            lock_path=f'{hpobench.config_file.cache_dir}/lock_yahpo_raw', delay=0.5)
+    def _try_download(self):
+        """Clone the data repository."""
+        if not self.data_dir.exists():
+            self.logger.info(
+                'Try to download data from https://github.com/slds-lmu/yahpo_data/tree/fair'
+            )
+            # Create the data directory if not existing
+            self.create_save_directory(self.data_dir.parent)
+
+            import git
+            git.Repo.clone_from(url='https://github.com/slds-lmu/yahpo_data.git',
+                                to_path=str(self.data_dir),
+                                branch='fair',
+                                multi_options=['--depth 1'])
+            self.logger.info(f'Successfully cloned data from repo to {self.data_dir}')
+
+    def load(self):
+        from yahpo_gym.local_config import LocalConfiguration
+        local_config = LocalConfiguration()
+
+        # When in the containerized version, redirect to the data inside the container.
+        if 'YAHPO_CONTAINER' in os.environ:
+            local_config.init_config(data_path='/home/data/yahpo_data')
+        else:
+            self._try_download()
+            local_config.init_config(data_path=str(self.data_dir))
