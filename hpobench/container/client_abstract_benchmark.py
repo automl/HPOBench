@@ -42,7 +42,7 @@ from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 log_level_str = os.environ.get('HPOBENCH_DEBUG', 'false')
 LOG_LEVEL = logging.DEBUG if log_level_str == 'true' else logging.INFO
 
-root = logging.getLogger()
+root = logging.getLogger("hpobench")
 root.setLevel(level=LOG_LEVEL)
 
 logger = logging.getLogger("BenchmarkClient")
