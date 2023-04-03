@@ -7,7 +7,7 @@ from yaml.parser import ParserError
 
 from hpobench import __version__
 
-root_logger = logging.getLogger()
+root_logger = logging.getLogger("hpobench")
 
 
 class HPOBenchConfig:
