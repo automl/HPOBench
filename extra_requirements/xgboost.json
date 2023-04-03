@@ -1,3 +1,4 @@
 {
-  "xgboost": ["xgboost==0.90","pandas>=1.0.0,<1.1.5","openml==0.10.2","scikit-learn>=0.18.1"]
+  "xgboost": ["xgboost==0.90","pandas>=1.0.0,<1.1.5","openml==0.10.2","scikit-learn>=0.18.1"],
+  "xgboost_310": ["xgboost","pandas","openml==0.10.2","scikit-learn>=0.18.1"]
 }

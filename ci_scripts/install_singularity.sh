@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-echo "Install Singularity"
+echo "Inside Singularity Installation Script"
 
 sudo apt-get update && sudo apt-get install -y \
   build-essential \
@@ -14,21 +14,33 @@ sudo apt-get update && sudo apt-get install -y \
   git \
   cryptsetup
 
-if [[ "$SINGULARITY_VERSION" == "3.5" ]]; then
-    export VERSION=3.5.3
-elif [[ "$SINGULARITY_VERSION" == "3.6" ]]; then
-    export VERSION=3.6.4
-elif [[ "$SINGULARITY_VERSION" == "3.7" ]]; then
+if [[ "$SINGULARITY_VERSION" == "3.7" ]]; then
     export VERSION=3.7.3
+    export FILENAME=singularity-"${VERSION}"
+    export EXTRACTED_FILENAME=singularity
+
 elif [[ "$SINGULARITY_VERSION" == "3.8" ]]; then
-    export VERSION=3.8.0
+    export VERSION=3.8.4
+    export FILENAME=singularity-ce-"${VERSION}"
+    export EXTRACTED_FILENAME=singularity-ce-"${VERSION}"
+
+elif [[ "$SINGULARITY_VERSION" == "3.9" ]]; then
+    export VERSION=3.9.3
+    export FILENAME=singularity-ce-"${VERSION}"
+    export EXTRACTED_FILENAME=singularity-ce-"${VERSION}"
+
+elif [[ "$SINGULARITY_VERSION" == "3.10" ]]; then
+    export VERSION=3.10.0
+    export FILENAME=singularity-ce-"${VERSION}"
+    export EXTRACTED_FILENAME=singularity-ce-"${VERSION}"
+
 else
     echo "Skip installing Singularity"
 fi
 
-wget https://github.com/sylabs/singularity/archive/refs/tags/v${VERSION}.tar.gz && \
-tar -xzf v${VERSION}.tar.gz && \
-cd singularity-${VERSION} && \
+wget https://github.com/sylabs/singularity/releases/download/v"${VERSION}"/"${FILENAME}".tar.gz && \
+tar -xzf "${FILENAME}".tar.gz && \
+cd "${EXTRACTED_FILENAME}" && \
 ./mconfig && \
 make -C builddir && \
 sudo make -C builddir install

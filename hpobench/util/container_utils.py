@@ -1,10 +1,10 @@
-import os
+import enum
 import importlib
 import json
-import numpy as np
-import enum
-
+import os
 from typing import Any, Union
+
+import numpy as np
 
 from hpobench.util.rng_helper import serialize_random_state, deserialize_random_state
 

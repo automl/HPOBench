@@ -32,20 +32,23 @@ class TestCheckUnittest(unittest.TestCase):
 
             _check_and_cast_configuration = AbstractBenchmark._check_and_cast_configuration
             _check_and_cast_fidelity = AbstractBenchmark._check_and_cast_fidelity
+            _check_return_values = AbstractBenchmark._check_return_values
 
         self.foo = Dummy()
 
     def test_config_decorator(self):
         @AbstractBenchmark.check_parameters
         def tmp(_, configuration: Dict, fidelity: Dict, **kwargs):
-            return configuration
+            return {'function_value': 0, 'cost': 0, 'info': {'config': configuration}}
 
         ret = tmp(self=self.foo, configuration=self.foo.configuration_space.sample_configuration())
         self.assertIsInstance(ret, Dict)
+        self.assertIsInstance(ret['info'], Dict)
+        self.assertIsInstance(ret['info']['config'], Dict)
 
         @AbstractBenchmark.check_parameters
         def tmp(_, configuration: Dict, fidelity: Dict, **kwargs):
-            return configuration
+            return {'function_value': 0, 'cost': 0, 'info': {'config': configuration}}
 
         tmp(self=self.foo, configuration={"flt": 0.2, "cat": 1, "itg": 1})
         tmp(self=self.foo, configuration=self.foo.configuration_space.sample_configuration())
@@ -57,23 +60,27 @@ class TestCheckUnittest(unittest.TestCase):
     def test_fidel_decorator(self):
         @AbstractBenchmark.check_parameters
         def tmp(_, configuration: Dict, fidelity: Dict, **kwargs):
-            return configuration, fidelity, kwargs
+            return {'function_value': 0, 'cost': 0, 'info': {'config': configuration, 'fidel': fidelity, 'kwargs': kwargs}}
+            # return configuration, fidelity, kwargs
 
         sample_fidel = dict(self.foo.get_fidelity_space().get_default_configuration())
 
-        _, ret, _ = tmp(self=self.foo,
-                        configuration=self.foo.configuration_space.sample_configuration(),
-                        fidelity=sample_fidel)
+        result_dict = tmp(self=self.foo,
+                          configuration=self.foo.configuration_space.sample_configuration(),
+                          fidelity=sample_fidel)
+        ret = result_dict['info']['fidel']
         self.assertEqual(ret, sample_fidel)
 
         less_fidel = {"f_cat": 1}
-        _, ret, _ = tmp(self=self.foo,
-                        configuration=self.foo.configuration_space.sample_configuration(),
-                        fidelity=less_fidel)
+        result_dict = tmp(self=self.foo,
+                          configuration=self.foo.configuration_space.sample_configuration(),
+                          fidelity=less_fidel)
+        ret = result_dict['info']['fidel']
         self.assertEqual(ret, sample_fidel)
 
-        _, ret, _ = tmp(self=self.foo,
-                        configuration=self.foo.configuration_space.sample_configuration())
+        result_dict = tmp(self=self.foo,
+                          configuration=self.foo.configuration_space.sample_configuration())
+        ret = result_dict['info']['fidel']
         self.assertEqual(ret, sample_fidel)
 
         with pytest.raises(ValueError):
@@ -86,6 +93,7 @@ class TestCheckUnittest(unittest.TestCase):
         self.assertRaises(TypeError, tmp, {"self": self.foo,
                                            "configuration": self.foo.configuration_space.sample_configuration(),
                                            "fidelity": [0.1]})
+
 
 class TestCheckUnittest2(unittest.TestCase):
 
@@ -100,6 +108,7 @@ class TestCheckUnittest2(unittest.TestCase):
 
             _check_and_cast_configuration = AbstractBenchmark._check_and_cast_configuration
             _check_and_cast_fidelity = AbstractBenchmark._check_and_cast_fidelity
+            _check_return_values = AbstractBenchmark._check_return_values
 
             fidelity_space = ConfigurationSpace(seed=1)
             fidelity_space.add_hyperparameter(UniformFloatHyperparameter('fidelity1', lower=0., upper=1., default_value=1.))
@@ -108,11 +117,14 @@ class TestCheckUnittest2(unittest.TestCase):
     def test_config_decorator(self):
         @AbstractBenchmark.check_parameters
         def tmp(_, configuration: Union[Dict, np.ndarray], fidelity: Dict, **kwargs):
-            return configuration, fidelity
+            return {'function_value': 0, 'cost': 0,
+                    'info': {'config': configuration, 'fidel': fidelity, 'kwargs': kwargs}}
 
         hps = dict(hp1=0.25, hp2=1.25, hp3=2.25)
         configuration = Configuration(self.foo.configuration_space, hps)
-        config, fidel = tmp(self=self.foo, configuration=configuration, fidelity=None)
+
+        return_dict = tmp(self=self.foo, configuration=configuration, fidelity=None)
+        config, fidel = return_dict['info']['config'], return_dict['info']['fidel']
 
         assert isinstance(config, Dict)
         assert isinstance(fidel, Dict)
@@ -153,3 +165,20 @@ def test_remove_inactive_parameter():
     # Remove inactive: - case: config is dict
     transformed = AbstractBenchmark._check_and_cast_configuration(not_allowed, configuration_space)
     assert transformed.get_dictionary() == {'hp1': 0, 'hp3': 5}
+
+
+def test_check_return_values():
+    return_values = {'function_value': 0, 'cost': 0}
+    AbstractBenchmark._check_return_values(return_values)
+
+    with pytest.raises(AssertionError):
+        AbstractBenchmark._check_return_values({'function_value': 0})
+
+    with pytest.raises(AssertionError):
+        AbstractBenchmark._check_return_values({'cost': 0})
+
+
+def test_check_return_values_mo():
+    return_values = {'function_value': {'obj1': 0, 'obj2': 0}, 'cost': 0}
+    from hpobench.abstract_benchmark import AbstractMultiObjectiveBenchmark
+    AbstractMultiObjectiveBenchmark._check_return_values(return_values)

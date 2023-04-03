@@ -1,5 +1,8 @@
-scipy>=1.4.1
 numpy>=1.18.1
 ConfigSpace>=0.4.12
 Pyro4==4.80
 oslo.concurrency>=4.2.0
+pandas>=1.2.4
+scikit-learn>=0.24.1
+openml>=0.12.2
+tqdm>=4.64.0

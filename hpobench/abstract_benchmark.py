@@ -1,20 +1,20 @@
 """ Base-class of all benchmarks """
 
 import abc
-from typing import Union, Dict
 import functools
-
 import logging
+from typing import Union, Dict, List, Tuple
+
 import ConfigSpace
 import numpy as np
-
 from ConfigSpace.util import deactivate_inactive_hyperparameters
+
 from hpobench.util import rng_helper
 
 logger = logging.getLogger('AbstractBenchmark')
 
 
-class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
+class _BaseAbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
 
     def __init__(self, rng: Union[int, np.random.RandomState, None] = None, **kwargs):
         """
@@ -34,7 +34,7 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
             np.random.RandomState with seed `rng` is created. If type is None,
             create a new random state.
         """
-
+        super(_BaseAbstractBenchmark, self).__init__(**kwargs)
         self.rng = rng_helper.get_rng(rng=rng)
         self.configuration_space = self.get_configuration_space(self.rng.randint(0, 10000))
         self.fidelity_space = self.get_fidelity_space(self.rng.randint(0, 10000))
@@ -124,7 +124,13 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
             fidelity = AbstractBenchmark._check_and_cast_fidelity(fidelity, self.fidelity_space, **kwargs)
 
             # All benchmarks should work on dictionaries. Cast the both objects to dictionaries.
-            return wrapped_function(self, configuration.get_dictionary(), fidelity.get_dictionary(), **kwargs)
+            return_values = wrapped_function(self, configuration.get_dictionary(), fidelity.get_dictionary(), **kwargs)
+
+            # Make sure that every benchmark returns a well-shaped return object.
+            # Every benchmark have to have the fields 'function_value' and 'cost'.
+            # Multi-Objective benchmarks have to return collections of values for the 'function_value' field.
+            return_values = type(self)._check_return_values(return_values)
+            return return_values
         return wrapper
 
     @staticmethod
@@ -209,6 +215,10 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
         return self.objective_function(configuration, **kwargs)['function_value']
 
     @staticmethod
+    def _check_return_values(return_values: Dict) -> Dict:
+        raise NotImplementedError()
+
+    @staticmethod
     @abc.abstractmethod
     def get_configuration_space(seed: Union[int, None] = None) -> ConfigSpace.ConfigurationSpace:
         """ Defines the configuration space for each benchmark.
@@ -249,5 +259,59 @@ class AbstractBenchmark(abc.ABC, metaclass=abc.ABCMeta):
         Dict
             some human-readable information
 
+        """
+        raise NotImplementedError()
+
+
+class AbstractSingleObjectiveBenchmark(_BaseAbstractBenchmark):
+    """
+    Abstract Benchmark class for single-objective benchmarks.
+    This corresponds to the old AbstractBenchmark class.
+
+    The only purpose of this class is to point out to users that this benchmark returns only a single
+    objective function value.
+
+    When writing a benchmark, please make sure to inherit from the correct abstract class.
+    """
+
+    @staticmethod
+    def _check_return_values(return_values: Dict) -> Dict:
+        """
+        The return values should contain the fields `function_value` and `cost`.
+        """
+        assert 'function_value' in return_values.keys()
+        assert 'cost' in return_values.keys()
+        return return_values
+
+
+# Ensure compatibility with older versions of the HPOBench
+AbstractBenchmark = AbstractSingleObjectiveBenchmark
+
+
+class AbstractMultiObjectiveBenchmark(_BaseAbstractBenchmark):
+    """
+    Abstract Benchmark class for multi-objective benchmarks.
+    The only purpose of this class is to point out to users that this benchmark returns multiple
+    objective function values.
+
+    When writing a benchmark, please make sure to inherit from the correct abstract class.
+    """
+
+    @staticmethod
+    def _check_return_values(return_values: Dict) -> Dict:
+        """
+        The return values should contain the fields `function_value` and `cost`.
+        The field `function_value` has to be a collection of multiple objective targets.
+        """
+        return_values = AbstractBenchmark._check_return_values(return_values)
+        assert isinstance(return_values['function_value'], (List, Dict, Tuple)), \
+            'Every MO benchmark has to return multiple objectives.'
+        return return_values
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_objective_names():
+        """
+        Return the names of supported targets
         """
         raise NotImplementedError()

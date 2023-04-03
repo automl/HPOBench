@@ -1,0 +1,82 @@
+Bootstrap: docker
+From: rpy2/rpy2:latest
+
+
+%labels
+MAINTAINER pfistererf@googlemail.com
+VERSION v0.0.1
+
+%help
+    This is the recipe for the Raw YAHPO Benchmarks.
+
+
+%post
+    cd /home
+
+    ####################### INSTALL THE R + BASE DEPENDENCIES #################
+    FILE="libssl1.1_1.1.1f-1ubuntu2_amd64.deb"
+    wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/${FILE}
+    sudo dpkg -i ${FILE}
+
+    FILE="libssl-dev_1.1.1f-1ubuntu2_amd64.deb"
+    wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/${FILE}
+    sudo dpkg -i ${FILE}
+
+    sudo apt-get install openssl
+    sudo apt-get install libcurl4-openssl-dev git
+
+    # Instal R-Packages
+    cd /home \
+    && Rscript -e 'install.packages("remotes", repos = "http://cran.r-project.org")'
+
+    # Install OpenML dependencies
+    Rscript -e 'install.packages("curl", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'install.packages("openssl", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'install.packages("httr", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'install.packages("farff", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'install.packages("OpenML", repos = "http://cran.r-project.org")'
+
+    # Install rbv2 dependencies
+    Rscript -e 'remotes::install_version("BBmisc", version = "1.11", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("rpart", version = "4.1-13", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("e1071", version = "1.7-0.1", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("xgboost", version = "0.82.1", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("ranger", version = "0.11.2", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("RcppHNSW", version = "0.1.0", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("mlr", version = "2.14", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_github("mlr-org/mlr3misc", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("mlrCPO", version = "0.3.6", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("testthat", version = "3.1.4", upgrade = "never", repos = "http://cran.r-project.org")' \
+    && Rscript -e 'remotes::install_version("glmnet", version = "4.1-3", upgrade = "never", repos = "http://cran.r-project.org")'
+    # ################################ BASE DEPENDENCIES ################################
+
+    Rscript -e 'remotes::install_github("pfistfl/rbv2", upgrade = "never", dependencies = True)' \
+    && Rscript -e 'remotes::install_github("sumny/iaml", upgrade = "never", dependencies = True)' \
+    && Rscript -e 'remotes::install_github("sumny/fair", upgrade = "never", dependencies = True)'
+
+    cd /home \
+    && mkdir data && cd data \
+    && git clone --depth 1 -b main https://github.com/pfistfl/yahpo_data.git \
+
+    # Upgrade pip
+    python3 -m pip install --upgrade pip
+
+    # Install HPOBench
+    cd /home \
+    && git clone https://github.com/automl/HPOBench.git \
+    && cd HPOBench \
+    && git checkout development \
+    && echo "Please never push a recipe that checks out any other branch than development or master" \
+    && pip uninstall -y rpy2 \
+    && pip install .[yahpo_gym_raw]
+    # && git checkout development \
+
+    # Clean Up.
+    echo "Please don't touch the following lines" \
+    && mkdir /var/lib/hpobench/ \
+    && chmod -R 777 /var/lib/hpobench/ \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge \
+
+%runscript
+    python3 -s /home/HPOBench/hpobench/container/server_abstract_benchmark.py ml.yahpo_benchmark $@

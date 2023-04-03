@@ -407,6 +407,7 @@ class ODAutoencoder(AbstractBenchmark):
 
         return fidel_space
 
+    # pylint: disable=arguments-differ
     def get_meta_information(self):
         """ Returns the meta information for the benchmark """
         X_train, _ = self.datamanager.dataset.get_train_data()
