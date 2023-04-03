@@ -163,7 +163,7 @@ class TabularBenchmark(AbstractBenchmark):
         metric_str = ', '.join(list(metrics.keys()))
         assert metric in list(metrics.keys()), f"metric not found among: {metric_str}"
         score_key = f"{evaluation}_scores"
-        cost_key = f"{evaluation}_scores"
+        cost_key = f"{evaluation}_costs"
 
         key_path = dict()
         for name in self.configuration_space.get_hyperparameter_names():
