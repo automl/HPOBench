@@ -34,7 +34,7 @@ def run_experiment(on_travis: bool = False):
             print(configuration)
             for n_estimator in [8, 64]:
                 for subsample in [0.4, 1]:
-                    fidelity = {'n_estimators': n_estimator, 'dataset_fraction': subsample}
+                    fidelity = {'n_estimators': n_estimator, 'subsample': subsample}
                     result_dict = b.objective_function(configuration.get_dictionary(),
                                                        fidelity=fidelity)
                     valid_loss = result_dict['function_value']

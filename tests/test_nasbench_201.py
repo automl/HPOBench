@@ -2,8 +2,6 @@ import pytest
 
 from hpobench.container.benchmarks.nas.nasbench_201 import ImageNetNasBench201Benchmark, Cifar100NasBench201Benchmark, \
     Cifar10ValidNasBench201Benchmark
-from hpobench.benchmarks.nas.nasbench_201 import \
-    Cifar10ValidNasBench201MOBenchmark as LocalCifar10ValidNasBench201MOBenchmark
 from hpobench.util.container_utils import disable_container_debug, enable_container_debug
 from hpobench.util.test_utils import DEFAULT_SKIP_MSG, check_run_all_tests
 
