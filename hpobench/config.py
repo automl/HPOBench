@@ -64,6 +64,16 @@ class HPOBenchConfig:
 
         # Options for the singularity container
         self.socket_dir = Path(self.socket_dir).expanduser().absolute()
+
+        # os.getuid is only for posix os. Make it compatible with windows
+        # https://stackoverflow.com/questions/842059/is-there-a-portable-way-to-get-the-current-username-in-python
+        if os.name == 'nt':
+            import getpass
+            user_name = getpass.getuser()
+        else:
+            user_name = os.getuid()
+
+        self.container_dir = self.cache_dir / f'hpobench-{user_name}'
         self.container_dir = self.cache_dir / f'hpobench-{os.getuid()}'
         self.container_source = 'oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry'
         self.pyro_connect_max_wait = 400

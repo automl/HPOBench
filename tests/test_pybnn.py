@@ -1,14 +1,19 @@
+import sys
 import pytest
 
 from hpobench.container.benchmarks.ml.pybnn import BNNOnToyFunction, BNNOnBostonHousing, BNNOnProteinStructure, \
     BNNOnYearPrediction
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
 from hpobench.util.container_utils import enable_container_debug
+from hpobench.util.test_utils import check_run_all_tests, DEFAULT_SKIP_MSG
+
 enable_container_debug()
+MSG = 'Skip this test for new (>3.9) python versions. ' \
+      'The paramnet benchmarks require an specific old scikit learn version. This version however does not work under ' \
+      'python 3.10. Therefore we skip this test. The containerized version does still work under 3.10.'
 
 
+@pytest.mark.skipif(sys.version_info > (3, 9), reason=MSG)
 def test_bnn_init():
     benchmark = BNNOnToyFunction(rng=1)
 

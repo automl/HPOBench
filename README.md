@@ -56,7 +56,7 @@ cd HPOBench
 pip install .
 ```
 
-**Note:** This does not install *singularity (version 3.6)*. Please follow the steps described here: [user-guide](https://sylabs.io/guides/3.6/user-guide/quick_start.html#quick-installation-steps).   
+**Note:** This does not install *singularity (version 3.8)*. Please follow the steps described here: [user-guide](https://sylabs.io/guides/3.8/user-guide/quick_start.html#quick-installation-steps).   
 If you run into problems, using the most recent singularity version might help: [here](https://singularity.hpcng.org/admin-docs/master/installation.html)
 
 ## Containerized Benchmarks
