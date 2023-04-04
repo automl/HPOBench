@@ -90,16 +90,16 @@ def test_nasbench201_Image(enable_debug):
 
 
 def test_nasbench201_fidelity_space():
-    fs = LocalCifar10ValidNasBench201MOBenchmark.get_fidelity_space()
+    fs = Cifar10ValidNasBench201Benchmark.get_fidelity_space()
     assert len(fs.get_hyperparameters()) == 1
 
 
 def test_nasbench201_config():
 
-    cs = LocalCifar10ValidNasBench201MOBenchmark.get_configuration_space(seed=0)
+    cs = Cifar10ValidNasBench201Benchmark.get_configuration_space(seed=0)
     c = cs.sample_configuration()
 
-    func = LocalCifar10ValidNasBench201MOBenchmark.config_to_structure_func(4)
+    func = Cifar10ValidNasBench201Benchmark.config_to_structure_func(4)
     struct = func(c)
     assert struct.__repr__() == '_Structure(4 nodes with |nor_conv_1x1~0|+|nor_conv_3x3~0|nor_conv_3x3~1|+' \
                                 '|nor_conv_1x1~0|nor_conv_1x1~1|nor_conv_3x3~2|)'

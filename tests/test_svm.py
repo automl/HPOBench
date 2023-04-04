@@ -1,6 +1,6 @@
 import pytest
 
-from hpobench.container.benchmarks.ml.svm_benchmark_old import SupportVectorMachine
+from hpobench.container.benchmarks.ml.svm_benchmark import SVMBenchmark
 from hpobench.util.openml_data_manager import get_openmlcc18_taskids
 
 task_ids = get_openmlcc18_taskids()
@@ -10,11 +10,11 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def test_svm_init():
-    benchmark = SupportVectorMachine(task_id=task_ids[0])
+    benchmark = SVMBenchmark(task_id=task_ids[0])
 
     fs = benchmark.get_fidelity_space(seed=0)
     fidelity = fs.sample_configuration().get_dictionary()
-    assert fidelity['dataset_fraction'] == pytest.approx(0.54881, abs=0.001)
+    assert fidelity['subsample'] == pytest.approx(0.54881, abs=0.001)
 
     meta = benchmark.get_meta_information()
     assert meta is not None
