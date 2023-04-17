@@ -243,7 +243,7 @@ class _MLBenchmarkBase():
             val_score_cost[k] = time.time() - _start
         val_loss = 1 - val_scores["acc"]
         val_sensitivity = (val_scores['f1'] * val_scores['precision']) /  (2 * val_scores['precision'] - val_scores['f1'] )
-        val_scores['false_negative_rate'] = 1 - val_sensitivity
+        val_scores['fnr'] = 1 - val_sensitivity
 
         test_scores = dict()
         test_score_cost = dict()
@@ -254,7 +254,7 @@ class _MLBenchmarkBase():
         test_loss = 1 - test_scores["acc"]
 
         test_sensitivity = (test_scores['f1'] * test_scores['precision']) /  (2 * test_scores['precision'] - test_scores['f1'] )
-        test_scores['false_negative_rate'] = 1 - test_sensitivity
+        test_scores['fnr'] = 1 - test_sensitivity
 
         info = {
             'train_loss': train_loss,
@@ -277,7 +277,7 @@ class _MLBenchmarkBase():
                 # The original benchmark returned the accuracy with range [0, 100].
                 # We cast it to a minimization problem with range [0-1] to have a more standardized return value.
                 'val_loss':  val_loss,
-                'sensitivity': val_scores['false_negative_rate'],
+                'fnr': val_scores['fnr'],
 
             },
             'cost': model_fit_time + info['val_costs']['acc'],
@@ -307,7 +307,7 @@ class _MLBenchmarkBase():
         test_loss = 1 - test_scores["acc"]
 
         test_sensitivity = (test_scores['f1'] * test_scores['precision']) /  (2 * test_scores['precision'] - test_scores['f1'] )
-        test_scores['false_negative_rate'] = 1 - test_sensitivity
+        test_scores['fnr'] = 1 - test_sensitivity
 
         info = {
             'train_loss': train_loss,
@@ -333,7 +333,7 @@ class _MLBenchmarkBase():
                 # 'f1': test_scores['f1'],
                 # 'precision': test_scores['precision'],
                 # 'balanced_accuracy': test_scores['bal_acc'],
-                'sensitivity': test_scores['false_negative_rate'],
+                'fnr': test_scores['fnr'],
             },
             'cost': float(model_fit_time + info['test_costs']['acc']),
             'info': info
@@ -420,6 +420,5 @@ class MO_MLBenchmark(_MLBenchmarkBase, AbstractMultiObjectiveBenchmark):
                                            **kwargs)
     @staticmethod
     def get_objective_names() -> List[str]:
-        return ['val_loss', 'bal_acc', 'f1', 'precision', 'sensitivity']
-
+        return ['val_loss', 'fnr']
 

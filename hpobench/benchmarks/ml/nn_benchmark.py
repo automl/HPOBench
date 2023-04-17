@@ -146,7 +146,7 @@ class NNBenchmarkMF(NNBenchmark):
         )
         return fidelity_space
 
-class NNBenchmarkMO(_NNBenchmarkBase, MO_MLBenchmark):
+class NNBenchmarkMO(NNBenchmark, MO_MLBenchmark):
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,

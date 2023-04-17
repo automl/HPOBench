@@ -147,7 +147,7 @@ class LRBenchmarkMF(LRBenchmark):
         )
         return fidelity_space
     
-class LRBenchmarkMO(_LRBenchmarkBase, MO_MLBenchmark):
+class LRBenchmarkMO(LRBenchmark, MO_MLBenchmark):
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
