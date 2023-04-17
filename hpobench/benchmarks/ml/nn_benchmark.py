@@ -146,12 +146,12 @@ class NNBenchmarkMF(NNBenchmark):
         )
         return fidelity_space
 
-class NNBenchmarkMO(NNBenchmark, MO_MLBenchmark):
+class NNBenchmarkMO(_NNBenchmarkBase, MO_MLBenchmark):
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
-        super(NNBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        super(NNBenchmarkMO, self).__init__(task_id, rng, valid_size, data_path)
 
 __all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF', 'NNBenchmarkMO']

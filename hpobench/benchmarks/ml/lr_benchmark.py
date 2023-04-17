@@ -147,14 +147,14 @@ class LRBenchmarkMF(LRBenchmark):
         )
         return fidelity_space
     
-class LRBenchmarkMO(LRBenchmark, MO_MLBenchmark):
+class LRBenchmarkMO(_LRBenchmarkBase, MO_MLBenchmark):
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
 
-        super(LRBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        super(LRBenchmarkMO, self).__init__(task_id, rng, valid_size, data_path)
         self.cache_size = 500
 
 
