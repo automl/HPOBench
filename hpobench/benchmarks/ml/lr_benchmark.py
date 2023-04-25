@@ -153,7 +153,6 @@ class LRBenchmarkMO(_LRBenchmarkBase, MO_MLBenchmark):
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
-
         super(LRBenchmarkMO, self).__init__(task_id, rng, valid_size, data_path)
         self.cache_size = 500
 
