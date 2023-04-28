@@ -1,11 +1,11 @@
 import subprocess
 import logging
-# from hpobench import config_file
+from hpobench import config_file
 
 # Currently, the gitlab registry does not easily support the search functionality.
 # The container are still available on sylabs (old registry), in case the gitlab registry is somehow not reachable.
 # TODO: Write a search functionality for the gitlab registry.
-library = 'library://phmueller/automl'  # config_file.container_source
+library = config_file.container_source
 
 
 def search_container(container_name):

@@ -17,13 +17,14 @@ https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-step
 
 import argparse
 
+from hpobench import config_file
 from hpobench.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark as TabBenchmarkContainer
 
 
 def run_experiment(on_travis=False):
 
     benchmark = TabBenchmarkContainer(container_name='tabular_benchmarks',
-                                      container_source='library://phmueller/automl',
+                                      container_source=config_file.container_source,
                                       rng=1)
 
     cs = benchmark.get_configuration_space(seed=1)

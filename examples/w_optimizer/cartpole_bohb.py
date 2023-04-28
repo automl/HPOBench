@@ -20,6 +20,7 @@ import hpbandster.core.result as hpres
 from hpbandster.core.worker import Worker
 from hpbandster.optimizers import BOHB
 
+from hpobench import config_file
 from hpobench.container.benchmarks.rl.cartpole import CartpoleReduced as Benchmark
 from hpobench.util.example_utils import get_travis_settings, set_env_variables_to_use_only_one_core
 from hpobench.util.rng_helper import get_rng
@@ -105,7 +106,7 @@ def run_experiment(out_path, on_travis):
                 f'with Performance: {inc_value:.2f}')
 
     if not on_travis:
-        benchmark = Benchmark(container_source='library://phmueller/automl')
+        benchmark = Benchmark(container_source=config_file.container_source)
         incumbent_result = benchmark.objective_function_test(configuration=inc_cfg,
                                                              fidelity={"budget": settings['max_budget']})
         print(incumbent_result)
