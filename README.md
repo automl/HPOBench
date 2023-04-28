@@ -72,7 +72,7 @@ Each benchmark can also be run locally, but the dependencies must be installed m
 A simple example is the XGBoost benchmark which can be installed with `pip install .[xgboost]`
 
 ```python
-from hpobench.benchmarks.ml.xgboost_benchmark_old import XGBoostBenchmark
+from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 
 b = XGBoostBenchmark(task_id=167149)
 config = b.get_configuration_space(seed=1).sample_configuration()
@@ -83,7 +83,7 @@ result_dict = b.objective_function(configuration=config,
 
 ### How to Build a Container Locally
 
-With singularity installed run the following to built the, e.g. xgboost container
+With singularity installed run the following to build (for example,) the xgboost container
 
 ```bash
 cd hpobench/container/recipes/ml
@@ -97,7 +97,7 @@ from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_name="xgboost_benchmark", 
                      container_source='./') # path to hpobench/container/recipes/ml
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5})
+result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "subsample": 0.5})
 ```
 
 ## Configure HPOBench

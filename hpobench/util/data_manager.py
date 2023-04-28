@@ -41,7 +41,6 @@ except ImportError:
 import hpobench
 
 
-
 tabular_multi_fidelity_urls = dict(
     xgb="https://figshare.com/ndownloader/files/35414756",
     svm="https://figshare.com/ndownloader/files/35414447",
@@ -49,6 +48,7 @@ tabular_multi_fidelity_urls = dict(
     rf="https://figshare.com/ndownloader/files/35414801",
     nn="https://figshare.com/ndownloader/files/35414996"
 )
+
 
 class DataManager(abc.ABC, metaclass=abc.ABCMeta):
     """ Base Class for loading and managing the data.
@@ -938,7 +938,6 @@ class YearPredictionMSDData(HoldoutDataManager):
 class TabularDataManager(DataManager):
     def __init__(self, model: str, task_id: [int, str], data_dir: [str, Path, None] = None):
         super(TabularDataManager, self).__init__()
-        
         self.model = model
         self.task_id = str(task_id)
 

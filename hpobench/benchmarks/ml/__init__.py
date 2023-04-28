@@ -19,7 +19,7 @@ try:
         'XGBoostBenchmark', 'XGBoostBenchmarkBB', 'XGBoostBenchmarkMF',
         'TabularBenchmark',
     ]
-except (ImportError, AttributeError) as e:
+except (ImportError, AttributeError):
     __all__ = [
         'LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF',
         'NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF',
