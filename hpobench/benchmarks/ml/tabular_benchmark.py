@@ -13,14 +13,21 @@ import ConfigSpace as CS
 import numpy as np
 from ConfigSpace.read_and_write import json as json_cs
 
-from hpobench.abstract_benchmark import AbstractBenchmark
+from hpobench.abstract_benchmark import AbstractSingleObjectiveBenchmark, AbstractMultiObjectiveBenchmark, AbstractBenchmark
 from hpobench.dependencies.ml.ml_benchmark_template import metrics
 from hpobench.util.data_manager import TabularDataManager
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
+"""
+Changelog:
+==========
+0.0.2: Added MO Tabular Benchmark
 
-class TabularBenchmark(AbstractBenchmark):
+0.0.1: First implementation of the Tabular Benchmark.
+"""
+
+class _TabularBenchmarkBase:
 
     def __init__(self,
                  model: str, task_id: int,
@@ -42,33 +49,8 @@ class TabularBenchmark(AbstractBenchmark):
         self.original_cs = json_cs.read(self.config_spaces['x'])
         self.original_fs = json_cs.read(self.config_spaces['z'])
 
-        super(TabularBenchmark, self).__init__(rng=rng, **kwargs)
+        super(_TabularBenchmarkBase, self).__init__(rng=rng)
 
-    # pylint: disable=arguments-differ
-    @AbstractBenchmark.check_parameters
-    def objective_function(self,
-                           configuration: Union[CS.Configuration, Dict],
-                           fidelity: Union[Dict, CS.Configuration, None] = None,
-                           rng: Union[np.random.RandomState, int, None] = None,
-                           seed: Union[int, None] = None,
-                           metric: Union[str, None] = 'acc',
-                           **kwargs) -> Dict:
-
-        result = self._objective(configuration, fidelity, seed, metric, evaluation="val")
-        return result
-
-    # pylint: disable=arguments-differ
-    @AbstractBenchmark.check_parameters
-    def objective_function_test(self,
-                                configuration: Union[CS.Configuration, Dict],
-                                fidelity: Union[Dict, CS.Configuration, None] = None,
-                                rng: Union[np.random.RandomState, int, None] = None,
-                                seed: Union[int, None] = None,
-                                metric: Union[str, None] = 'acc',
-                                **kwargs) -> Dict:
-
-        result = self._objective(configuration, fidelity, seed, metric, evaluation="test")
-        return result
 
     # pylint: disable=arguments-differ
     def get_configuration_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -142,26 +124,36 @@ class TabularBenchmark(AbstractBenchmark):
     def _search_dataframe(self, row_dict, df):
         # https://stackoverflow.com/a/46165056/8363967
         mask = np.array([True] * df.shape[0])
-        for i, param in enumerate(df.drop("result", axis=1).columns):
+        for i, param in enumerate(df.drop(df.filter(regex='result.').columns, axis=1)):
             mask *= df[param].values == row_dict[param]
         idx = np.where(mask)
         assert len(idx) == 1, 'The query has resulted into mulitple matches. This should not happen. ' \
                               f'The Query was {row_dict}'
         idx = idx[0][0]
-        result = df.iloc[idx]["result"]
-        return result
+        result = df.iloc[idx]
+        result = result.filter(regex='result.')
+        #convert the result to dict
+        resultdict = result.to_dict()
+        result={}
+        for key, value in resultdict.items():
+            keys = key.split('.')
+            d = result
+            for k in keys[:-1]:
+                if k not in d:
+                    d[k] = {}
+                d = d[k]
+            d[keys[-1]] = value
+        
+        return result['result']
 
-    def _objective(
+    def _moobjective(
             self,
             config: Dict,
             fidelity: Dict,
             seed: Union[int, None] = None,
-            metric: Union[str, None] = "acc",
             evaluation: Union[str, None] = ""
     ) -> Dict:
 
-        metric_str = ', '.join(list(metrics.keys()))
-        assert metric in list(metrics.keys()), f"metric not found among: {metric_str}"
         score_key = f"{evaluation}_scores"
         cost_key = f"{evaluation}_scores"
 
@@ -169,7 +161,7 @@ class TabularBenchmark(AbstractBenchmark):
         for name in self.configuration_space.get_hyperparameter_names():
             key_path[str(name)] = config[str(name)]
         for name in self.fidelity_space.get_hyperparameter_names():
-            key_path[str(name)] = fidelity[str(name)]
+            key_path[str(name)] = float(fidelity[str(name)])
 
         if seed is not None:
             assert seed in self._seeds_used()
@@ -177,19 +169,134 @@ class TabularBenchmark(AbstractBenchmark):
         else:
             seeds = self._seeds_used()
 
-        loss = []
-        costs = 0.0
+        
+        costs = dict(acc=0.0, f1=0.0, precision=0.0, bal_acc=0.0, model_cost=0.0)
         info = dict()
-        for seed in seeds:
-            key_path["seed"] = seed
-            res = self._search_dataframe(key_path, self.table)
-            loss.append(1 - res["info"][score_key][metric])
-            costs += res["info"]["model_cost"] + res["info"][cost_key][metric]
-            info[seed] = res["info"]
-            key_path.pop("seed")
-        loss = np.mean(loss)
-        result = dict(function_value=float(loss), cost=costs, info=info)
+        dict_metrics = dict(acc=[], f1=[], precision=[], bal_acc=[])
+        
+        
+
+        for metric_key, metric_value in metrics.items():
+            for seed in seeds:
+                key_path["seed"] = seed
+                res = self._search_dataframe(key_path, self.table)
+                dict_metrics[metric_key].append(res["info"][score_key][metric_key])
+                costs["model_cost"] = costs["model_cost"] + res["info"]["model_cost"]
+                costs[metric_key] = costs[metric_key] + res["info"][cost_key][metric_key]
+                info[seed] = res["info"]
+                key_path.pop("seed")
+        
+
+        result_dict = {
+            'function_value':  {
+                # The original benchmark returned the accuracy with range [0, 100].
+                # We cast it to a minimization problem with range [0-1] to have a more standardized return value.
+                'acc':  float(np.mean(dict_metrics['acc'])),
+                'precision': float(np.mean(dict_metrics['precision'])),
+                'f1': float(np.mean(dict_metrics['f1'])),
+                'bal_acc': float(np.mean(dict_metrics['bal_acc'])),
+            },
+            'cost': {
+                 'acc':  float(costs['acc'] / len(seeds)),
+                'precision': float(costs['precision'] / len(seeds)),
+                'f1': float(costs['f1'] / len(seeds)),
+                'bal_acc': float(costs['bal_acc'] / len(seeds)),
+                'model_cost': float(costs['model_cost'] / len(seeds)),
+            },
+            'info': info
+        }
+        return result_dict
+
+
+class TabularBenchmarkMO(_TabularBenchmarkBase, AbstractMultiObjectiveBenchmark):
+    
+    @AbstractMultiObjectiveBenchmark.check_parameters
+    def objective_function(self, configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[Dict, CS.Configuration, None] = None,
+                           rng: Union[np.random.RandomState, int, None] = None,
+                           seed: Union[int, None] = None,
+                           **kwargs) -> Dict:
+        result_dict = self._moobjective(config=configuration, fidelity=fidelity, seed=seed, evaluation="val")
+        sensitivity = (result_dict['function_value']['f1'] * result_dict['function_value']['precision']) /  (2 * result_dict['function_value']['precision'] - result_dict['function_value']['f1'] )
+        false_negative_rate = 1 - sensitivity
+        false_positive_rate = 1 - result_dict['function_value']['precision']
+        #not considering cost for loss as it is not one of the objectives
+        cost = result_dict['cost']['model_cost'] + result_dict['cost']['precision'] + result_dict['cost']['f1'] 
+
+        result = {
+            'function_value':  {
+                'fnr': float(false_negative_rate),
+                'fpr': float(false_positive_rate),
+
+            },
+            'cost': cost,
+            'info': result_dict['info']
+        }
+        
         return result
 
+    @AbstractMultiObjectiveBenchmark.check_parameters
+    def objective_function_test(self,
+                                configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[Dict, CS.Configuration, None] = None,
+                                rng: Union[np.random.RandomState, int, None] = None,
+                                seed: Union[int, None] = None,
+                                **kwargs) -> Dict:
+        result_dict = self._moobjective(config=configuration, fidelity=fidelity, seed=seed, evaluation="test")
+        sensitivity = (result_dict['function_value']['f1'] * result_dict['function_value']['precision']) /  (2 * result_dict['function_value']['precision'] - result_dict['function_value']['f1'] )
+        false_negative_rate = 1 - sensitivity
+        false_positive_rate = 1 - result_dict['function_value']['precision']
+        #not considering cost for loss as it is not one of the objectives
+        cost = result_dict['cost']['model_cost'] + result_dict['cost']['precision'] + result_dict['cost']['f1'] 
 
-__all__ = ['TabularBenchmark']
+        result = {
+            'function_value':  {
+                'fnr': float(false_negative_rate),
+                'fpr': float(false_positive_rate),
+
+            },
+            'cost': cost,
+            'info': result_dict['info']
+        }
+        
+        return result
+    
+    @staticmethod
+    def get_objective_names() -> List[str]:
+        return ['fnr', 'fpr']
+
+        
+class TabularBenchmark(_TabularBenchmarkBase, AbstractSingleObjectiveBenchmark):
+        # pylint: disable=arguments-differ
+    @AbstractSingleObjectiveBenchmark.check_parameters
+    def objective_function(self,
+                           configuration: Union[CS.Configuration, Dict],
+                           fidelity: Union[Dict, CS.Configuration, None] = None,
+                           rng: Union[np.random.RandomState, int, None] = None,
+                           seed: Union[int, None] = None,
+                           metric: Union[str, None] = 'acc',
+                           **kwargs) -> Dict:
+
+        metric_str = ', '.join(list(metrics.keys()))
+        assert metric in list(metrics.keys()), f"metric not found among: {metric_str}"
+        result_dict = self._moobjective(configuration, fidelity, seed, evaluation="val")
+        result = dict(function_value=float(1-result_dict['function_value'][metric]), cost=result_dict['cost'][metric], info=result_dict['info'])
+        return result
+
+    # pylint: disable=arguments-differ
+    @AbstractSingleObjectiveBenchmark.check_parameters
+    def objective_function_test(self,
+                                configuration: Union[CS.Configuration, Dict],
+                                fidelity: Union[Dict, CS.Configuration, None] = None,
+                                rng: Union[np.random.RandomState, int, None] = None,
+                                seed: Union[int, None] = None,
+                                metric: Union[str, None] = 'acc',
+                                **kwargs) -> Dict:
+
+        metric_str = ', '.join(list(metrics.keys()))
+        assert metric in list(metrics.keys()), f"metric not found among: {metric_str}"
+        result_dict = self._moobjective(configuration, fidelity, seed, evaluation="test")
+        result = dict(function_value=float(1-result_dict['function_value'][metric]), cost=result_dict['cost'][metric], info=result_dict['info'])
+        return result
+  
+__all__ = ['TabularBenchmark', 'TabularBenchmarkMO']
