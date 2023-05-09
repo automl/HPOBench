@@ -134,6 +134,7 @@ class _TabularBenchmarkBase:
         result = result.filter(regex='result.')
         #convert the result to dict
         resultdict = result.to_dict()
+        print(f'resultdict: {resultdict}')
         result={}
         for key, value in resultdict.items():
             keys = key.split('.')
@@ -143,6 +144,7 @@ class _TabularBenchmarkBase:
                     d[k] = {}
                 d = d[k]
             d[keys[-1]] = value
+        print(f'result: {result}')
         
         return result['result']
 
