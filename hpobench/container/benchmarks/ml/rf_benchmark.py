@@ -39,4 +39,8 @@ class RandomForestBenchmarkMF(AbstractBenchmarkClient):
         super(RandomForestBenchmarkMF, self).__init__(**kwargs)
 
 
+<<<<<<< HEAD
 __all__ = ['RandomForestBenchmark', 'RandomForestBenchmarkBB', 'RandomForestBenchmarkMF', 'RandomForestBenchmarkMO']
+=======
+__all__ = ['RandomForestBenchmark', 'RandomForestBenchmarkBB', 'RandomForestBenchmarkMF', 'RandomForestBenchmarkMO']
+>>>>>>> mo_tabular

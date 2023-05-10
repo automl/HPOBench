@@ -69,6 +69,7 @@ def get_openmlcc18_taskids():
 
 def _load_data(task_id: int):
     """ Helper-function to load the data from the OpenML website. """
+    print("openml task id", task_id)
     task = openml.tasks.get_task(task_id)
 
     try:

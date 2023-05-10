@@ -37,4 +37,8 @@ class SVMBenchmarkBB(AbstractBenchmarkClient):
         super(SVMBenchmarkBB, self).__init__(**kwargs)
 
 
+<<<<<<< HEAD
 __all__ = ['SVMBenchmark', 'SVMBenchmarkMF', 'SVMBenchmarkBB', 'SVMBenchmarkMO']
+=======
+__all__ = ['SVMBenchmark', 'SVMBenchmarkMF', 'SVMBenchmarkBB', 'SVMBenchmarkMO']
+>>>>>>> mo_tabular

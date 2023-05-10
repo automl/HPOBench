@@ -165,7 +165,10 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             fidelity = fidelity
         else:
             raise ValueError(f'Type of fidelity not understood: {type(fidelity)}')
+        print("fidelity",type(fidelity))
+        #print("fidelity type", type(fidelity['nepochs']))
         f_str = json.dumps(fidelity, indent=None, cls=BenchmarkEncoder)
+        print("fstr",f_str)
         return f_str
 
     def load_benchmark(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
@@ -390,9 +393,16 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         -------
         Dict
         """
+        logger.info(f"fidelity:{fidelity}")
+        
+        #logger.info(f"type fidelity:{type(fidelity['nepochs'])}")
+        logger.info(f"config:{configuration}")
+        #fidelity = fidelity['nepochs']
         c_str = self._parse_configuration(configuration)
         f_str = self._parse_fidelities(fidelity)
         kwargs_str = self._parse_kwargs(rng, **kwargs)
+        print("c_str",c_str)
+        print("fidelity f_str",f_str)
 
         json_str = self.benchmark.objective_function(c_str, f_str, kwargs_str)
         return json.loads(json_str, cls=BenchmarkDecoder)

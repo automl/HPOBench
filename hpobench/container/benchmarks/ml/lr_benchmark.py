@@ -37,4 +37,8 @@ class LRBenchmarkMF(AbstractBenchmarkClient):
         super(LRBenchmarkMF, self).__init__(**kwargs)
 
 
+<<<<<<< HEAD
 __all__ = ['LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF', 'LRBenchmarkMO']
+=======
+__all__ = ['LRBenchmark', 'LRBenchmarkBB', 'LRBenchmarkMF', 'LRBenchmarkMO']
+>>>>>>> mo_tabular

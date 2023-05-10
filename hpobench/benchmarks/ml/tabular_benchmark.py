@@ -128,12 +128,16 @@ class _TabularBenchmarkBase:
         #for some the dictionary is flattened and column name is set by joining keys using delimiter '.'
         
         if 'result' in df.columns:
+            print("result found")
             for i, param in enumerate(df.drop("result", axis=1).columns):
                 mask *= df[param].values == row_dict[param]
                 idx = np.where(mask)
+
                 assert len(idx) == 1, 'The query has resulted into mulitple matches. This should not happen. ' \
                                     f'The Query was {row_dict}'
                 idx = idx[0][0]
+                print("idx",idx)
+                print("matched config",df.iloc[idx])
                 result = df.iloc[idx]["result"]
                 return result
 
