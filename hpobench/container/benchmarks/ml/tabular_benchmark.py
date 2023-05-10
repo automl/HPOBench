@@ -13,5 +13,13 @@ class TabularBenchmark(AbstractBenchmarkClient):
         kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
         super(TabularBenchmark, self).__init__(**kwargs)
 
+class TabularBenchmarkMO(AbstractBenchmarkClient):
+    def __init__(self, **kwargs):
+        kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'TabularBenchmarkMO')
+        kwargs['container_name'] = kwargs.get('container_name', 'mo_ml_mmfb')
+        kwargs['container_source'] = 'oras://gitlab.tf.uni-freiburg.de:5050/sharmaa/hpobench-registry'
+        kwargs['container_tag'] = '0.0.8'
+        kwargs['latest'] = '0.0.8'
+        super(TabularBenchmarkMO, self).__init__(**kwargs)
 
-__all__ = ['TabularBenchmark']
+__all__ = ['TabularBenchmark', 'TabularBenchmarkMO']

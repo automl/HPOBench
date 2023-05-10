@@ -126,7 +126,7 @@ class _TabularBenchmarkBase:
         mask = np.array([True] * df.shape[0])
         #for some benchmarks result is comprehensive in the form of a dict
         #for some the dictionary is flattened and column name is set by joining keys using delimiter '.'
-        print("df", df)
+        
         if 'result' in df.columns:
             for i, param in enumerate(df.drop("result", axis=1).columns):
                 mask *= df[param].values == row_dict[param]
@@ -210,7 +210,7 @@ class _TabularBenchmarkBase:
                 'bal_acc': float(np.mean(dict_metrics['bal_acc'])),
             },
             'cost': {
-                 'acc':  float(costs['acc'] / len(seeds)),
+                'acc':  float(costs['acc'] / len(seeds)),
                 'precision': float(costs['precision'] / len(seeds)),
                 'f1': float(costs['f1'] / len(seeds)),
                 'bal_acc': float(costs['bal_acc'] / len(seeds)),
