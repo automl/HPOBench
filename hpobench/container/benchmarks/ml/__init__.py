@@ -13,5 +13,5 @@ __all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF',
            'NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF',
            'RandomForestBenchmark', 'RandomForestBenchmarkBB', 'RandomForestBenchmarkMF',
            'SVMBenchmark', 'SVMBenchmarkBB', 'SVMBenchmarkMF',
-           'TabularBenchmark', 'TabularBenchmarkMO'
+           'TabularBenchmark', 'TabularBenchmarkMO',
            'XGBoostBenchmark', 'XGBoostBenchmarkBB', 'XGBoostBenchmarkMF']

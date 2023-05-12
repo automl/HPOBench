@@ -36,4 +36,8 @@ class HistGBBenchmarkMF(AbstractBenchmarkClient):
         super(HistGBBenchmarkMF, self).__init__(**kwargs)
 
 
+<<<<<<< HEAD
 __all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF', 'HistGBBenchmarkMO']
+=======
+__all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF', 'HistGBBenchmarkMO']
+>>>>>>> mo_tabular

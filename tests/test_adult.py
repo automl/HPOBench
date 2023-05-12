@@ -6,9 +6,17 @@ logging.basicConfig(level=logging.DEBUG)
 
 def test_adult_benchmark():
     from hpobench.container.benchmarks.mo.adult_benchmark import AdultBenchmark
+    from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
+    from hpobench.benchmarks.mo.adult_benchmark import AdultBenchmark
 
     # Check Seeding
     benchmark = AdultBenchmark(rng=0)
+    print("got adult bench")
+    print("getting ml bench")
+    b = XGBoostBenchmark(task_id=167149)
+    print("b:",b)
+    
+    print("got ml bench")
     cs = benchmark.get_configuration_space(seed=0)
     cfg_1 = cs.sample_configuration()
 
@@ -35,3 +43,4 @@ def test_adult_benchmark():
     result_1 = benchmark.objective_function_test(test_config, rng=1, fidelity={'budget': 3})
     assert 1 - result_1['function_value']['misclassification_rate'] == pytest.approx(0.76377, rel=0.001)
     assert 1 - result_1['function_value']['misclassification_rate'] == result_1['info']['test_accuracy']
+test_adult_benchmark()

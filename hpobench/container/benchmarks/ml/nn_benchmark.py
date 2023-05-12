@@ -42,4 +42,8 @@ class NNBenchmarkMF(AbstractBenchmarkClient):
         super(NNBenchmarkMF, self).__init__(**kwargs)
 
 
+<<<<<<< HEAD
 __all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF', 'NNBenchmarkMO']
+=======
+__all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF', 'NNBenchmarkMO']
+>>>>>>> mo_tabular

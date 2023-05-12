@@ -125,15 +125,24 @@ class _TabularBenchmarkBase:
     def _search_dataframe(self, row_dict, df):
         # https://stackoverflow.com/a/46165056/8363967
         mask = np.array([True] * df.shape[0])
-        if "result" in df.columns:
+        #for some benchmarks result is comprehensive in the form of a dict
+        #for some the dictionary is flattened and column name is set by joining keys using delimiter '.'
+        
+        if 'result' in df.columns:
+            print("result found")
             for i, param in enumerate(df.drop("result", axis=1).columns):
                 mask *= df[param].values == row_dict[param]
                 idx = np.where(mask)
+
                 assert len(idx) == 1, 'The query has resulted into mulitple matches. This should not happen. ' \
                                     f'The Query was {row_dict}'
                 idx = idx[0][0]
+                print("idx",idx)
+                print("matched config",df.iloc[idx])
                 result = df.iloc[idx]["result"]
                 return result
+
+        
         for i, param in enumerate(df.drop(df.filter(regex='result.').columns, axis=1)):
             mask *= df[param].values == row_dict[param]
         idx = np.where(mask)
@@ -186,16 +195,16 @@ class _TabularBenchmarkBase:
         
         
 
-        for metric_key, metric_value in metrics.items():
-            for seed in seeds:
-                key_path["seed"] = seed
-                res = self._search_dataframe(key_path, self.table)
+        for seed in seeds:
+            key_path["seed"] = seed
+            res = self._search_dataframe(key_path, self.table)
+            costs["model_cost"] = costs["model_cost"] + res["info"]["model_cost"]
+            for metric_key, metric_value in metrics.items():
                 dict_metrics[metric_key].append(res["info"][score_key][metric_key])
-                costs["model_cost"] = costs["model_cost"] + res["info"]["model_cost"]
                 costs[metric_key] = costs[metric_key] + res["info"][cost_key][metric_key]
-                info[seed] = res["info"]
-                key_path.pop("seed")
-
+            info[seed] = res["info"]
+            key_path.pop("seed")
+        
         result_dict = {
             'function_value':  {
                 # The original benchmark returned the accuracy with range [0, 100].
@@ -206,7 +215,7 @@ class _TabularBenchmarkBase:
                 'bal_acc': float(np.mean(dict_metrics['bal_acc'])),
             },
             'cost': {
-                 'acc':  float(costs['acc'] / len(seeds)),
+                'acc':  float(costs['acc'] / len(seeds)),
                 'precision': float(costs['precision'] / len(seeds)),
                 'f1': float(costs['f1'] / len(seeds)),
                 'bal_acc': float(costs['bal_acc'] / len(seeds)),
@@ -226,7 +235,10 @@ class TabularBenchmarkMO(_TabularBenchmarkBase, AbstractMultiObjectiveBenchmark)
                            seed: Union[int, None] = None,
                            **kwargs) -> Dict:
         result_dict = self._moobjective(config=configuration, fidelity=fidelity, seed=seed, evaluation="val")
+
+        
         sensitivity = (result_dict['function_value']['f1'] * result_dict['function_value']['precision']) /  (2 * result_dict['function_value']['precision'] - result_dict['function_value']['f1'] )
+        
         false_negative_rate = 1 - sensitivity
         false_positive_rate = 1 - result_dict['function_value']['precision']
         #not considering cost for loss as it is not one of the objectives
