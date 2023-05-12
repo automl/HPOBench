@@ -4,7 +4,7 @@ from hpobench.container.benchmarks.ml.nn_benchmark import NNBenchmark, NNBenchma
 from hpobench.container.benchmarks.ml.rf_benchmark import RandomForestBenchmark, RandomForestBenchmarkBB, \
     RandomForestBenchmarkMF
 from hpobench.container.benchmarks.ml.svm_benchmark import SVMBenchmark, SVMBenchmarkBB, SVMBenchmarkMF
-from hpobench.container.benchmarks.ml.tabular_benchmark import TabularBenchmark
+from hpobench.container.benchmarks.ml.tabular_benchmark import TabularBenchmark, TabularBenchmarkMO
 from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark, XGBoostBenchmarkBB, XGBoostBenchmarkMF
 
 
@@ -13,5 +13,5 @@ __all__ = ['HistGBBenchmark', 'HistGBBenchmarkBB', 'HistGBBenchmarkMF',
            'NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF',
            'RandomForestBenchmark', 'RandomForestBenchmarkBB', 'RandomForestBenchmarkMF',
            'SVMBenchmark', 'SVMBenchmarkBB', 'SVMBenchmarkMF',
-           'TabularBenchmark',
+           'TabularBenchmark', 'TabularBenchmarkMO'
            'XGBoostBenchmark', 'XGBoostBenchmarkBB', 'XGBoostBenchmarkMF']

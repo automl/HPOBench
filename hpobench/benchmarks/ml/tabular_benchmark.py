@@ -42,6 +42,7 @@ class _TabularBenchmarkBase:
         self.dm = TabularDataManager(model, task_id, data_dir)
         self.table, self.metadata = self.dm.load()
 
+
         self.exp_args = self.metadata["exp_args"]
         self.config_spaces = self.metadata["config_spaces"]
         self.global_minimums = self.metadata["global_min"]
@@ -124,6 +125,15 @@ class _TabularBenchmarkBase:
     def _search_dataframe(self, row_dict, df):
         # https://stackoverflow.com/a/46165056/8363967
         mask = np.array([True] * df.shape[0])
+        if "result" in df.columns:
+            for i, param in enumerate(df.drop("result", axis=1).columns):
+                mask *= df[param].values == row_dict[param]
+                idx = np.where(mask)
+                assert len(idx) == 1, 'The query has resulted into mulitple matches. This should not happen. ' \
+                                    f'The Query was {row_dict}'
+                idx = idx[0][0]
+                result = df.iloc[idx]["result"]
+                return result
         for i, param in enumerate(df.drop(df.filter(regex='result.').columns, axis=1)):
             mask *= df[param].values == row_dict[param]
         idx = np.where(mask)
@@ -134,7 +144,6 @@ class _TabularBenchmarkBase:
         result = result.filter(regex='result.')
         #convert the result to dict
         resultdict = result.to_dict()
-        print(f'resultdict: {resultdict}')
         result={}
         for key, value in resultdict.items():
             keys = key.split('.')
@@ -144,7 +153,6 @@ class _TabularBenchmarkBase:
                     d[k] = {}
                 d = d[k]
             d[keys[-1]] = value
-        print(f'result: {result}')
         
         return result['result']
 
@@ -187,7 +195,6 @@ class _TabularBenchmarkBase:
                 costs[metric_key] = costs[metric_key] + res["info"][cost_key][metric_key]
                 info[seed] = res["info"]
                 key_path.pop("seed")
-        
 
         result_dict = {
             'function_value':  {
@@ -234,7 +241,6 @@ class TabularBenchmarkMO(_TabularBenchmarkBase, AbstractMultiObjectiveBenchmark)
             'cost': cost,
             'info': result_dict['info']
         }
-        
         return result
 
     @AbstractMultiObjectiveBenchmark.check_parameters

@@ -1172,7 +1172,7 @@ class AdultDataManager(HoldoutDataManager):
 
 
 class TabularDataManager(DataManager):
-    def __init__(self, model: str, task_id: [int, str], data_dir: [str, Path, None] = None):
+    def __init__(self, model: str, task_id: Union[int, str], data_dir: Union[str, Path, None] = None):
         super(TabularDataManager, self).__init__()
 
         url_dict = dict(

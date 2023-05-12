@@ -18,8 +18,14 @@ class RandomForestBenchmark(AbstractBenchmarkClient):
 class RandomForestBenchmarkMO(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'RandomForestBenchmarkMO')
-        kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.2')
+        kwargs['container_name'] = kwargs.get('container_name', 'mo_ml_mmfb')
+        
+        #Need to be changed to the production registry
+        kwargs['container_source'] = 'oras://gitlab.tf.uni-freiburg.de:5050/sharmaa/hpobench-registry'
+        kwargs['container_tag'] = '0.0.6'
+        kwargs['latest'] = '0.0.6' 
+        # kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
+        # kwargs['latest'] = kwargs.get('container_tag', '0.0.2')
         super(RandomForestBenchmarkMO, self).__init__(**kwargs)
 
 
