@@ -102,7 +102,29 @@ class DataManager(abc.ABC, metaclass=abc.ABCMeta):
         with tarfile.open(compressed_file, 'r') as fh:
             if save_dir is None:
                 save_dir = compressed_file.parent
-            fh.extractall(save_dir)
+            
+            import os
+            
+            def is_within_directory(directory, target):
+                
+                abs_directory = os.path.abspath(directory)
+                abs_target = os.path.abspath(target)
+            
+                prefix = os.path.commonprefix([abs_directory, abs_target])
+                
+                return prefix == abs_directory
+            
+            def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+            
+                for member in tar.getmembers():
+                    member_path = os.path.join(path, member.name)
+                    if not is_within_directory(path, member_path):
+                        raise Exception("Attempted Path Traversal in Tar File")
+            
+                tar.extractall(path, members, numeric_owner=numeric_owner) 
+                
+            
+            safe_extract(fh, save_dir)
         self.logger.debug(f'Successfully extracted the data to {save_dir}')
 
     @lockutils.synchronized('not_thread_process_safe', external=True,
@@ -652,7 +674,26 @@ class SurrogateDataManger(DataManager):
     def _unzip_data(self):
         self.logger.debug('Extract the compressed data')
         with tarfile.open(self.compressed_data, 'r') as fh:
-            fh.extractall(self.save_dir)
+            def is_within_directory(directory, target):
+                
+                abs_directory = os.path.abspath(directory)
+                abs_target = os.path.abspath(target)
+            
+                prefix = os.path.commonprefix([abs_directory, abs_target])
+                
+                return prefix == abs_directory
+            
+            def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+            
+                for member in tar.getmembers():
+                    member_path = os.path.join(path, member.name)
+                    if not is_within_directory(path, member_path):
+                        raise Exception("Attempted Path Traversal in Tar File")
+            
+                tar.extractall(path, members, numeric_owner=numeric_owner) 
+                
+            
+            safe_extract(fh, self.save_dir)
         self.logger.debug(f'Successfully extracted the data to {self.save_dir}')
 
     def load(self):
