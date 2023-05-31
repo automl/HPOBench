@@ -14,18 +14,28 @@ import numpy as np
 from ConfigSpace.hyperparameters import Hyperparameter
 from sklearn.neural_network import MLPClassifier
 
-from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark, MO_MLBenchmark
 
-__version__ = '0.0.1'
+'''
+Changelog:
+==========
+0.0.2:
+* Add the multiobjective version of this benchmark by returning val loss, precision, f1 and balanced accuracy
+
+0.0.1:
+* First implementation
+'''
+
+__version__ = '0.0.2'
 
 
-class NNBenchmark(MLBenchmark):
+class _NNBenchmarkBase:
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
-        super(NNBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        super(_NNBenchmarkBase, self).__init__(task_id, rng, valid_size, data_path)
 
     @staticmethod
     def get_configuration_space(seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -109,6 +119,13 @@ class NNBenchmark(MLBenchmark):
         )
         return model
 
+class NNBenchmark(_NNBenchmarkBase, MLBenchmark):
+    def __init__(self,
+                 task_id: int,
+                 rng: Union[np.random.RandomState, int, None] = None,
+                 valid_size: float = 0.33,
+                 data_path: Union[str, None] = None):
+        super(NNBenchmark, self).__init__(task_id, rng, valid_size, data_path)
 
 class NNBenchmarkBB(NNBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -129,5 +146,12 @@ class NNBenchmarkMF(NNBenchmark):
         )
         return fidelity_space
 
+class NNBenchmarkMO(_NNBenchmarkBase, MO_MLBenchmark):
+    def __init__(self,
+                 task_id: int,
+                 rng: Union[np.random.RandomState, int, None] = None,
+                 valid_size: float = 0.33,
+                 data_path: Union[str, None] = None):
+        super(NNBenchmarkMO, self).__init__(task_id, rng, valid_size, data_path)
 
-__all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF']
+__all__ = ['NNBenchmark', 'NNBenchmarkBB', 'NNBenchmarkMF', 'NNBenchmarkMO']

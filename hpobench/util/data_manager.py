@@ -1175,7 +1175,7 @@ class AdultDataManager(HoldoutDataManager):
 
 
 class TabularDataManager(DataManager):
-    def __init__(self, model: str, task_id: [int, str], data_dir: [str, Path, None] = None):
+    def __init__(self, model: str, task_id: Union[int, str], data_dir: Union[str, Path, None] = None):
         super(TabularDataManager, self).__init__()
 
         url_dict = dict(
@@ -1185,7 +1185,7 @@ class TabularDataManager(DataManager):
             rf="https://ndownloader.figshare.com/files/30469089",
             nn="https://ndownloader.figshare.com/files/30379005"
         )
-
+        print("url dict", url_dict)
         assert model in url_dict.keys(), \
             f'Model has to be one of {list(url_dict.keys())} but was {model}'
 
@@ -1193,6 +1193,7 @@ class TabularDataManager(DataManager):
         self.task_id = str(task_id)
 
         self.url_to_use = url_dict.get(model)
+        print("url_to_use",self.url_to_use)
 
         if data_dir is None:
             data_dir = hpobench.config_file.data_dir / "TabularData"
@@ -1212,9 +1213,11 @@ class TabularDataManager(DataManager):
             return table, metadata
 
         # We have to download the entire zip file and etract then extract the parquet file.
+        print("save dir", self.save_dir)
         self._download_file_with_progressbar(self.url_to_use, self._save_dir / f'{self.model}.zip')
         self._unzip_data(self._save_dir / f'{self.model}.zip', self._save_dir)
         table = self._load_parquet(self.parquet_file)
+        print("table", table)
         metadata = self._load_json(self.metadata_file)
         return table, metadata
 

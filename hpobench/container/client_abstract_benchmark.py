@@ -165,7 +165,10 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
             fidelity = fidelity
         else:
             raise ValueError(f'Type of fidelity not understood: {type(fidelity)}')
+        print("fidelity",type(fidelity))
+        #print("fidelity type", type(fidelity['nepochs']))
         f_str = json.dumps(fidelity, indent=None, cls=BenchmarkEncoder)
+        print("fstr",f_str)
         return f_str
 
     def load_benchmark(self, benchmark_name: str, container_name: str, container_source: Optional[str] = None,
@@ -222,7 +225,8 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                     # Currently, we can't see the available container tags on gitlab. Therefore, we create for each
                     # "tag" a new entry in the registry. This might change in the future. But as long as we don't have
                     # a fix for this, we need to map the container tag differently.
-                    if container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry'):
+                    if (container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry')) or \
+                    (container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/sharmaa/hpobench-registry')):
                         cmd += f'{container_source}/{container_name.lower()}/{container_tag}:latest'
                     else:
                         cmd += f'{container_source}/{container_name.lower()}:{container_tag}'
@@ -389,9 +393,16 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         -------
         Dict
         """
+        logger.info(f"fidelity:{fidelity}")
+        
+        #logger.info(f"type fidelity:{type(fidelity['nepochs'])}")
+        logger.info(f"config:{configuration}")
+        #fidelity = fidelity['nepochs']
         c_str = self._parse_configuration(configuration)
         f_str = self._parse_fidelities(fidelity)
         kwargs_str = self._parse_kwargs(rng, **kwargs)
+        print("c_str",c_str)
+        print("fidelity f_str",f_str)
 
         json_str = self.benchmark.objective_function(c_str, f_str, kwargs_str)
         return json.loads(json_str, cls=BenchmarkDecoder)

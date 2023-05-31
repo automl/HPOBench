@@ -1,11 +1,3 @@
-"""
-Changelog:
-==========
-
-0.0.1:
-* First implementation of the new SVM Benchmarks.
-"""
-
 from typing import Union, Dict
 
 import ConfigSpace as CS
@@ -13,18 +5,27 @@ import numpy as np
 from ConfigSpace.hyperparameters import Hyperparameter
 from sklearn.svm import SVC
 
-from hpobench.dependencies.ml.ml_benchmark_template import MLBenchmark
+from hpobench.dependencies.ml.ml_benchmark_template import  MLBenchmark, MO_MLBenchmark
+'''
+Changelog:
+==========
+0.0.2:
+* Add the multiobjective version of this benchmark by returning val loss, precision, f1 and balanced accuracy
 
-__version__ = '0.0.1'
+0.0.1:
+* First implementation
+'''
+
+__version__ = '0.0.2'
 
 
-class SVMBenchmark(MLBenchmark):
+class _SVMBenchmarkBase:
     def __init__(self,
                  task_id: int,
                  rng: Union[np.random.RandomState, int, None] = None,
                  valid_size: float = 0.33,
                  data_path: Union[str, None] = None):
-        super(SVMBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+        super(_SVMBenchmarkBase, self).__init__(task_id, rng, valid_size, data_path)
 
         self.cache_size = 200
 
@@ -81,6 +82,14 @@ class SVMBenchmark(MLBenchmark):
         )
         return model
 
+class SVMBenchmark(_SVMBenchmarkBase, MLBenchmark):
+    def __init__(self,
+                 task_id: int,
+                 rng: Union[np.random.RandomState, int, None] = None,
+                 valid_size: float = 0.33,
+                 data_path: Union[str, None] = None):
+        super(SVMBenchmark, self).__init__(task_id, rng, valid_size, data_path)
+
 
 class SVMBenchmarkBB(SVMBenchmark):
     def get_fidelity_space(self, seed: Union[int, None] = None) -> CS.ConfigurationSpace:
@@ -90,9 +99,19 @@ class SVMBenchmarkBB(SVMBenchmark):
             SVMBenchmark._get_fidelity_choices(subsample_choice='fixed')
         )
         return fidelity_space
+    
+class SVMBenchmarkMO(_SVMBenchmarkBase, MO_MLBenchmark):
+    def __init__(self,
+                 task_id: int,
+                 rng: Union[np.random.RandomState, int, None] = None,
+                 valid_size: float = 0.33,
+                 data_path: Union[str, None] = None):
+        super(SVMBenchmarkMO, self).__init__(task_id, rng, valid_size, data_path)
+
+
 
 
 # To keep the parity of the the overall design
 SVMBenchmarkMF = SVMBenchmark
 
-__all__ = ['SVMBenchmark', 'SVMBenchmarkMF', 'SVMBenchmarkBB']
+__all__ = ['SVMBenchmark', 'SVMBenchmarkMF', 'SVMBenchmarkBB', 'SVMBenchmarkMO']
