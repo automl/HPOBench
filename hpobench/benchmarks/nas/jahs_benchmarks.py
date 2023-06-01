@@ -78,15 +78,6 @@ class JAHSDataManager:
         with tarfile.open(save_tar_file, 'r') as f:
             f.extractall(path=save_dir)
 
-        if save_tar_file.name == 'assembled_surrogates.tar':
-            from shutil import move
-            _dir = save_dir / 'assembled_surrogates'
-            _dir.mkdir(exist_ok=True, parents=True)
-            for dir_name in ['cifar10', 'colorectal_histology', 'fashion_mnist']:
-                _old_dir = save_dir / dir_name
-                _new_dir = _dir / dir_name
-                move(_old_dir, _new_dir)
-
         logger.info("Done extracting")
 
         finish_flag.touch()
