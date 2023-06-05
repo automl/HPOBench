@@ -1,5 +1,4 @@
 numpy>=1.18.1
-pandas==1.2.4
 ConfigSpace>=0.4.12
 Pyro4==4.80
 oslo.concurrency>=4.2.0
