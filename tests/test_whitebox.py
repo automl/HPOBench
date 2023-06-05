@@ -15,7 +15,7 @@ except ImportError:
 
 def test_whitebox_without_container_xgb():
     from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
-    b = Benchmark(task_id=167199, rng=0)
+    b = Benchmark(task_id=146818, rng=0)
     cs = b.get_configuration_space(seed=0)
 
     configuration = cs.get_default_configuration()
@@ -35,15 +35,15 @@ def test_whitebox_without_container_xgb():
     )
     test_loss = result_dict['function_value']
 
-    assert np.isclose(train_loss, 1.0, atol=0.001)
-    assert np.isclose(valid_loss, 0.45, atol=0.001)
-    assert np.isclose(test_loss, 0.376, atol=0.001)
+    assert train_loss == pytest.approx(1.0, abs=0.001)
+    assert valid_loss == pytest.approx(0.166, abs=0.001)
+    assert test_loss == pytest.approx(0.087, abs=0.001)
 
 
 @pytest.mark.skipif(skip_container_test, reason="Requires singularity and flask")
 def test_whitebox_with_container():
     from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
-    b = Benchmark(task_id=167199, rng=0)  #, container_name='ml_mmfb',)
+    b = Benchmark(task_id=146818, rng=0)  #, container_name='ml_mmfb',)
 
     cs = b.get_configuration_space()
     configuration = cs.get_default_configuration()
@@ -59,11 +59,10 @@ def test_whitebox_with_container():
     train_loss = result_dict['info']['train_loss']
     result_dict = b.objective_function_test(configuration, fidelity=dict(n_estimators=n_estimator))
     test_loss = result_dict['function_value']
-
-    assert np.isclose(train_loss, 1.0, atol=0.001)
-    assert np.isclose(valid_loss, 0.441, atol=0.001)
-    assert np.isclose(test_loss, 0.406, atol=0.001)
-
+    
+    assert train_loss == pytest.approx(1.0, abs=0.001)
+    assert valid_loss == pytest.approx(0.1512, abs=0.001)
+    assert test_loss == pytest.approx(0.1014, abs=0.001)
 
 
 @pytest.mark.skipif(skip_container_test, reason="Requires singularity and flask")
