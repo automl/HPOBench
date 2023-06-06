@@ -15,7 +15,10 @@ from hpobench.util.openml_data_manager import get_openmlcc18_taskids
 
 
 def run_experiment(on_travis: bool = False):
-    task_ids = get_openmlcc18_taskids()
+    task_ids = [
+        10101,53,146818,146821,9952,146822,31,3917,168912,3,167119,12,146212,168911,
+        9981,168329,167120,14965,146606,168330
+    ]
     for task_no, task_id in enumerate(task_ids):
 
         if on_travis and task_no == 5:
@@ -32,8 +35,8 @@ def run_experiment(on_travis: bool = False):
         for i in range(num_configs):
             configuration = cs.sample_configuration()
             print(configuration)
-            for n_estimator in [8, 64]:
-                for subsample in [0.4, 1]:
+            for n_estimator in [50, 75]:
+                for subsample in [0.5, 0.75]:
                     fidelity = {'n_estimators': n_estimator, 'subsample': subsample}
                     result_dict = b.objective_function(configuration.get_dictionary(),
                                                        fidelity=fidelity)
