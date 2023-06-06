@@ -134,7 +134,7 @@ class TestTabularBenchmark(unittest.TestCase):
             benchmark.objective_function_test(default_config, fidelity=dict(budget=1, ))
 
         result = benchmark.objective_function_test(configuration=default_config, fidelity=dict(budget=100))
-        assert pytest.approx(0.15010187, result['function_value'], abs=0.001)
+        assert result['function_value'] == pytest.approx(0.15010187, abs=0.001)
 
         runtime = 62.7268
         assert result['cost'] == pytest.approx(runtime, abs=0.0001)
