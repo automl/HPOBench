@@ -4,14 +4,13 @@ Example with XGBoost (local)
 This example executes the xgboost benchmark locally with random configurations on the CC18 openml tasks.
 
 To run this example please install the necessary dependencies via:
-``pip3 install .[xgboost_example]``
+``pip install .[xgboost_example]``
 """
 
 import argparse
 from time import time
 
 from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
-from hpobench.util.openml_data_manager import get_openmlcc18_taskids
 
 
 def run_experiment(on_travis: bool = False):
