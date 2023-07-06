@@ -45,6 +45,22 @@ fs = b.get_fidelity_space(seed=1)
 meta = b.get_meta_information()
 ```
 
+Multi-Objective benchmarks can be queried in a similar manner
+
+```python
+from hpobench.container.benchmarks.mo.adult_benchmark import AdultBenchmark
+b = AdultBenchmark(rng=1)
+config = b.get_configuration_space(seed=1).sample_configuration()
+result_dict = b.objective_function(configuration=config, fidelity={"budget": 66}, rng=1)
+result_dict = b.objective_function(configuration=config, rng=1)
+
+>>> print(result_dict['function_values'])
+{'misclassification_rate': 0.16572832429112494,
+ 'DSO': 0.197765453723867,
+ 'DEO': 0.1595593763542093,
+ 'DFP': 0.10465117283454546}
+```
+
 ## Installation
 
 We recommend using a virtual environment. To install HPOBench, please run the following:
