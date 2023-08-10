@@ -259,8 +259,8 @@ class NasBench201BaseBenchmark(AbstractBenchmark):
                               for e in range(1, epoch + 1)) for seed in data_seed]
 
         # There is a single value for the eval data per seed. (only epoch 200)
-        test_accuracies = [self.data[seed][structure_str]['eval_acc1es'][f'{valid_key}@{199}'] for seed in data_seed]
-        test_losses = [self.data[seed][structure_str]['eval_losses'][f'{valid_key}@{199}'] for seed in data_seed]
+        test_accuracies = [self.data[seed][structure_str]['eval_acc1es'][f'{test_key}@{199}'] for seed in data_seed]
+        test_losses = [self.data[seed][structure_str]['eval_losses'][f'{test_key}@{199}'] for seed in data_seed]
         test_times = [np.sum((self.data[seed][structure_str]['eval_times'][f'{test_key}@{199}'])
                              for e in range(1, epoch + 1)) for seed in data_seed]
 
