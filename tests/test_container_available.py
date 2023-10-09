@@ -1,3 +1,4 @@
+import re
 import subprocess
 import logging
 from hpobench import config_file
@@ -13,7 +14,9 @@ def search_container(container_name):
     logging.debug(out)
 
     out = out.split('\n\n')
-    container_available = any((f'{library}/{container_name}' in line for line in out))
+    pattern = f"library:.*/{container_name}:latest.*"
+    container_available = any((re.match(pattern, line.strip()) is not None for line in out))
+
     return container_available
 
 
@@ -27,7 +30,7 @@ def test_availability():
                        'nasbench_1shot1',
                        'tabular_benchmarks',
                        'cartpole',
-                       'learna_benchmark'
+                       'learna_benchmark',
                        ]
 
     all_available = True

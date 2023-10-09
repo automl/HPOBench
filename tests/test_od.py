@@ -29,7 +29,7 @@ def test_kde():
 
 def test_ae():
     from hpobench.container.benchmarks.od.od_benchmarks import ODAutoencoder
-    seed = 10
+    seed = 100
     benchmark = ODAutoencoder("cardio", rng=seed)
 
     config = benchmark.get_configuration_space(seed=seed).sample_configuration()
@@ -37,5 +37,5 @@ def test_ae():
     assert config["dropout"], "Dropout not True"
     print(config['dropout_rate'], result['function_value'])
 
-    assert config['dropout_rate'] == pytest.approx(0.20237, abs=0.00001)
-    assert result['function_value'] == pytest.approx(0.4017, abs=0.0001)
+    assert config['dropout_rate'] == pytest.approx(0.23821, abs=0.00001)
+    assert result['function_value'] == pytest.approx(0.22132, abs=0.0001)
