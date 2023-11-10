@@ -2,7 +2,7 @@
 
 name: Test Pull Requests
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   Tests:
@@ -11,34 +11,46 @@ jobs:
     strategy:
       matrix:
         include:
-          - python-version: 3.6
-            DISPLAY_NAME: "Singularity Tests"
-            RUN_TESTS: true
-            USE_SINGULARITY: true
-          - python-version: 3.7
+          - python-version: "3.7"
             DISPLAY_NAME: "Singularity Tests + CODECOV"
             RUN_TESTS: true
             USE_SINGULARITY: true
+            SINGULARITY_VERSION: "3.8"
             RUN_CODECOV: true
-          - python-version: 3.7
+
+          - python-version: "3.7"
             DISPLAY_NAME: "Codestyle"
             RUN_CODESTYLE: true
-          - python-version: 3.7
+            USE_SINGULARITY: false
+
+          - python-version: "3.7"
             DISPLAY_NAME: "Singularity Container Examples"
             RUN_CONTAINER_EXAMPLES: true
             USE_SINGULARITY: true
-          - python-version: 3.7
+            SINGULARITY_VERSION: "3.8"
+
+          - python-version: "3.7"
             DISPLAY_NAME: "Local Examples"
             RUN_LOCAL_EXAMPLES: true
             USE_SINGULARITY: false
-          - python-version: 3.8
+
+          - python-version: "3.8"
             DISPLAY_NAME: "Singularity Tests"
             RUN_TESTS: true
             USE_SINGULARITY: true
-          - python-version: 3.9
+            SINGULARITY_VERSION: "3.8"
+
+          - python-version: "3.9"
             DISPLAY_NAME: "Singularity Tests"
             RUN_TESTS: true
             USE_SINGULARITY: true
+            SINGULARITY_VERSION: "3.8"
+
+          - python-version: "3.10"
+            DISPLAY_NAME: "Singularity Tests"
+            RUN_TESTS: true
+            USE_SINGULARITY: true
+            SINGULARITY_VERSION: "3.8"
       fail-fast: false
 
     name: Tests ${{ matrix.python-version }} ${{ matrix.DISPLAY_NAME }}
@@ -46,6 +58,7 @@ jobs:
     env:
       RUN_TESTS: ${{ matrix.RUN_TESTS }}
       USE_SINGULARITY: ${{ matrix.USE_SINGULARITY }}
+      SINGULARITY_VERSION: ${{ matrix.SINGULARITY_VERSION }}
       RUN_CODECOV: ${{ matrix.RUN_CODECOV }}
       RUN_CODESTYLE: ${{ matrix.RUN_CODESTYLE }}
       RUN_CONTAINER_EXAMPLES: ${{ matrix.RUN_CONTAINER_EXAMPLES }}
@@ -56,12 +69,16 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "${{ matrix.python-version }}"
     - name: Set up Go for Singularity
       if: matrix.USE_SINGULARITY == true
       uses: actions/setup-go@v2
       with:
         go-version: '1.14.15' # The Go version to download (if necessary) and use.
+    - name: Set up Singularity
+      if: matrix.USE_SINGULARITY == true
+      run: |
+        chmod +x ci_scripts/install_singularity.sh && source ./ci_scripts/install_singularity.sh
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip

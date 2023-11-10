@@ -19,6 +19,7 @@ import argparse
 import logging
 from time import time
 
+from hpobench import config_file
 from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
 from hpobench.util.openml_data_manager import get_openmlcc18_taskids
 
@@ -38,7 +39,7 @@ def run_experiment(on_travis: bool = False):
 
         b = Benchmark(task_id=task_id,
                       container_name='xgboost_benchmark',
-                      container_source='library://phmueller/automl')
+                      container_source=config_file.container_source)
 
         cs = b.get_configuration_space()
         start = time()
@@ -48,7 +49,7 @@ def run_experiment(on_travis: bool = False):
             print(configuration)
             for n_estimator in [8, 64]:
                 for subsample in [0.4, 1]:
-                    fidelity = {'n_estimators': n_estimator, 'dataset_fraction': subsample}
+                    fidelity = {'n_estimators': n_estimator, 'subsample': subsample}
                     result_dict = b.objective_function(configuration.get_dictionary(),
                                                        fidelity=fidelity)
                     valid_loss = result_dict['function_value']

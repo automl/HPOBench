@@ -4,14 +4,24 @@ install_packages=""
 
 if [[ "$RUN_TESTS" == "true" ]]; then
     echo "Install tools for testing"
-    install_packages="${install_packages}xgboost,pytest,test_paramnet,test_tabular_datamanager,"
+    install_packages="${install_packages}pytest,test_tabular_datamanager,"
     pip install codecov
 
-    # The param net benchmark does not work with a scikit-learn version != 0.23.2. (See notes in the benchmark)
-    # To make sure that no newer version is installed, we install it before the other requirements.
-    # Since we are not using a "--upgrade" option later on, pip skips to install another scikit-learn version.
-    echo "Install the right scikit-learn function for the param net tests."
-    pip install --upgrade scikit-learn==0.23.2
+    PYVERSION=$(python -V 2>&1 | sed 's/.* \([0-9]\).\([0-9]*\).*/\1\2/')
+    if [[ "${PYVERSION}" != "310" ]]; then
+      # The param net benchmark does not work with a scikit-learn version != 0.23.2. (See notes in the benchmark)
+      # To make sure that no newer version is installed, we install it before the other requirements.
+      # Since we are not using a "--upgrade" option later on, pip skips to install another scikit-learn version.
+      echo "Install the right scikit-learn function for the param net tests."
+      pip install --upgrade scikit-learn==0.23.2
+      install_packages="${install_packages}xgboost,test_paramnet,"
+    else
+      echo "Skip installing the extra paramnet tests."
+      # For 3.10, we need a different pandas version - this comes as a requirement for the old xgboost benchmark.
+      # building pandas<=1.5.0 does not work with 3.10 anymore. -> install a different version.
+      install_packages="${install_packages}xgboost_310,"
+    fi
+
 else
     echo "Skip installing tools for testing"
 fi
@@ -35,40 +45,23 @@ if [[ "$RUN_LOCAL_EXAMPLES" == "true" ]]; then
     echo "Install packages for local examples"
     echo "Install swig"
     sudo apt-get update && sudo apt-get install -y build-essential swig
-    install_packages="${install_packages}xgboost,"
+
+    PYVERSION=$(python -V 2>&1 | sed 's/.* \([0-9]\).\([0-9]*\).*/\1\2/')
+    if [[ "${PYVERSION}" != "310" ]]; then
+      # For 3.10, we need a different pandas version - this comes as a requirement for the old xgboost benchmark.
+      # building pandas<=1.5.0 does not work with 3.10 anymore. -> install a different version.
+      install_packages="${install_packages}xgboost,"
+    else
+      install_packages="${install_packages}xgboost_310,"
+    fi
+
 else
     echo "Skip installing packages for local examples"
 fi
 
-if [[ "$USE_SINGULARITY" == "true" ]]; then
-    echo "Install Singularity"
-
-    sudo apt-get update && sudo apt-get install -y \
-      build-essential \
-      libssl-dev \
-      uuid-dev \
-      libgpgme11-dev \
-      squashfs-tools \
-      libseccomp-dev \
-      wget \
-      pkg-config \
-      git \
-      cryptsetup
-
-    export VERSION=3.5.3 && # adjust this as necessary \
-      wget https://github.com/sylabs/singularity/archive/refs/tags/v${VERSION}.tar.gz && \
-      tar -xzf v${VERSION}.tar.gz && \
-      cd singularity-${VERSION}
-
-    ./mconfig && \
-      make -C builddir && \
-      sudo make -C builddir install
-
-    cd ..
-    install_packages="${install_packages}placeholder,"
-else
-    echo "Skip installing Singularity"
-fi
+# We add a placeholder / No-OP operator. When running the container examples, we don't install any
+# additional packages. That causes an error, since `pip install .[]` does not work.
+install_packages="${install_packages}NOP,"
 
 # remove the trailing comma
 install_packages="$(echo ${install_packages} | sed 's/,*\r*$//')"

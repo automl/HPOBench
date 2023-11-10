@@ -1,5 +1,5 @@
 {
-    "xgboost_example": ["xgboost==0.90","json_tricks==3.14.0","openml==0.10.2"],
+    "xgboost_example": ["pyarrow==5.0.0", "fastparquet==0.8.1", "xgboost==0.90","json_tricks==3.14.0","openml==0.10.2"],
     "cartpole_example": ["tensorflow==1.13.2","gym==0.10.9","tensorforce==0.4.3","scikit-learn==0.22.0",
                          "smac==0.12.2","hpbandster==0.7.4"],
     "nasbench_101_example": ["torch>=1.2.0,<=1.5.1","torchvision>=0.4.0",

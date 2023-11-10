@@ -20,6 +20,7 @@ https://sylabs.io/guides/3.5/user-guide/quick_start.html#quick-installation-step
 
 import argparse
 
+from hpobench import config_file
 from hpobench.container.benchmarks.nas.tabular_benchmarks import SliceLocalizationBenchmark as TabBenchmarkContainer
 
 
@@ -27,7 +28,7 @@ def run_experiment(on_travis=False):
 
     # First, we start the benchmark. This generates the unix-socket (address) where the benchmark is reachable.
     benchmark = TabBenchmarkContainer(container_name='tabular_benchmarks',
-                                      container_source='library://phmueller/automl',
+                                      container_source=config_file.container_source,
                                       rng=1)
 
     print(benchmark.socket_id)

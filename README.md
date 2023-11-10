@@ -56,12 +56,12 @@ cd HPOBench
 pip install .
 ```
 
-**Note:** This does not install *singularity (version 3.6)*. Please follow the steps described here: [user-guide](https://sylabs.io/guides/3.6/user-guide/quick_start.html#quick-installation-steps).   
+**Note:** This does not install *singularity (version 3.8)*. Please follow the steps described here: [user-guide](https://sylabs.io/guides/3.8/user-guide/quick_start.html#quick-installation-steps).   
 If you run into problems, using the most recent singularity version might help: [here](https://singularity.hpcng.org/admin-docs/master/installation.html)
 
 ## Containerized Benchmarks
 
-We provide all benchmarks as containerized versions to (i) isolate their dependencies and (ii) keep them reproducible. Our containerized benchmarks do not rely on external dependencies and thus do not change over time. For this, we rely on [Singularity (version 3.6)](https://sylabs.io/guides/3.6/user-guide/) and for now upload all containers to a [gitlab registry](https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry)
+We provide all benchmarks as containerized versions to (i) isolate their dependencies and (ii) keep them reproducible. Our containerized benchmarks do not rely on external dependencies and thus do not change over time. For this, we rely on [Singularity (version 3.6)](https://sylabs.io/guides/3.6/user-guide/) and for now upload all containers to a [gitlab registry](https://gitlab.tf.uni-freiburg.de:5050/mallik/hpo-bench-singularity-gitlab-ci/container_registry)
 
 The only other requirements are: [ConfigSpace](https://github.com/automl/ConfigSpace), *scipy* and *numpy* 
 
@@ -72,7 +72,7 @@ Each benchmark can also be run locally, but the dependencies must be installed m
 A simple example is the XGBoost benchmark which can be installed with `pip install .[xgboost]`
 
 ```python
-from hpobench.benchmarks.ml.xgboost_benchmark_old import XGBoostBenchmark
+from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 
 b = XGBoostBenchmark(task_id=167149)
 config = b.get_configuration_space(seed=1).sample_configuration()
@@ -83,7 +83,7 @@ result_dict = b.objective_function(configuration=config,
 
 ### How to Build a Container Locally
 
-With singularity installed run the following to built the, e.g. xgboost container
+With singularity installed run the following to build (for example,) the xgboost container
 
 ```bash
 cd hpobench/container/recipes/ml
@@ -97,7 +97,7 @@ from hpobench.container.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 b = XGBoostBenchmark(task_id=167149, container_name="xgboost_benchmark", 
                      container_source='./') # path to hpobench/container/recipes/ml
 config = b.get_configuration_space(seed=1).sample_configuration()
-result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "dataset_fraction": 0.5})
+result_dict = b.objective_function(config, fidelity={"n_estimators": 128, "subsample": 0.5})
 ```
 
 ## Configure HPOBench

@@ -1,14 +1,13 @@
 import shutil
-from multiprocessing import Pool
-
 import pytest
+from multiprocessing import Pool
 
 import hpobench
 from hpobench.util.data_manager import NASBench_201Data, YearPredictionMSDData, ProteinStructureData, BostonHousingData
-skip_message = 'We currently skip this test because it takes too much time.'
+from hpobench.util.test_utils import DEFAULT_SKIP_MSG, check_run_all_tests
 
 
-@pytest.mark.skip(reason=skip_message)
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_nasbench_201_load_thread_safe():
     shutil.rmtree(hpobench.config_file.data_dir / "nasbench_201", ignore_errors=True)
     function = lambda: NASBench_201Data(dataset='cifar100').load()
@@ -16,7 +15,7 @@ def test_nasbench_201_load_thread_safe():
         pool.map(function, [])
 
 
-@pytest.mark.skip(reason=skip_message)
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_nasbench_201_init():
 
     data_manager = NASBench_201Data(dataset='cifar100')
@@ -30,7 +29,7 @@ def test_nasbench_201_init():
     assert data_manager._save_dir.exists()
 
 
-@pytest.mark.skip(reason=skip_message)
+@pytest.mark.skipif(not check_run_all_tests(), reason=DEFAULT_SKIP_MSG)
 def test_nasbench_201_load():
 
     shutil.rmtree(hpobench.config_file.data_dir / "nasbench_201", ignore_errors=True)

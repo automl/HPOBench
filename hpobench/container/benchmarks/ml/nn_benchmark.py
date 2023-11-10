@@ -4,29 +4,34 @@
 """ Benchmark for the Neural Network Benchmarks from hpobench/benchmarks/ml_mmfb/nn_benchmark.py """
 
 from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
+from hpobench.util.container_utils import get_container_version
+
+
+container_name = "ml_mmfb"
+container_version = get_container_version(container_name)
 
 
 class NNBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NNBenchmark')
-        kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
         super(NNBenchmark, self).__init__(**kwargs)
 
 
 class NNBenchmarkBB(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NNBenchmarkBB')
-        kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
         super(NNBenchmarkBB, self).__init__(**kwargs)
 
 
 class NNBenchmarkMF(AbstractBenchmarkClient):
     def __init__(self, **kwargs):
         kwargs['benchmark_name'] = kwargs.get('benchmark_name', 'NNBenchmarkMF')
-        kwargs['container_name'] = kwargs.get('container_name', 'ml_mmfb')
-        kwargs['latest'] = kwargs.get('container_tag', '0.0.1')
+        kwargs['container_name'] = kwargs.get('container_name', container_name)
+        kwargs['latest'] = kwargs.get('container_tag', container_version)
         super(NNBenchmarkMF, self).__init__(**kwargs)
 
 

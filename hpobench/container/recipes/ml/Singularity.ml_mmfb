@@ -2,7 +2,7 @@ Bootstrap: docker
 From: python:3.8-slim
 
 %labels
-MAINTAINER muelleph@cs.uni-freiburg.de
+MAINTAINER mallik@cs.uni-freiburg.de
 VERSION v0.0.1
 
 %post
@@ -12,7 +12,7 @@ VERSION v0.0.1
     cd /home \
     && git clone https://github.com/automl/HPOBench.git \
     && cd HPOBench \
-    && git checkout development \
+    && git checkout develop \
     && pip install ".[ml_mfbb]" \
     && cd / \
     && mkdir /var/lib/hpobench/ \

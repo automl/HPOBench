@@ -1,3 +1,7 @@
+# 0.0.11
+  * Drop Support for 3.6:
+    Although most of the functionality should still work, we drop the official support for 3.6.
+
 # 0.0.10
   * Cartpole Benchmark Version 0.0.4:
     Fix: Pass the hp `entropy_regularization` to the PPO Agent. 

@@ -35,6 +35,7 @@ from ConfigSpace.read_and_write import json as csjson
 from oslo_concurrency import lockutils
 
 import hpobench.config
+from hpobench.config import config_file, CONTAINER_SOURCE
 from hpobench import __version__
 from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
 
@@ -181,8 +182,9 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
         self.container_source = container_source or self.config.container_source
         self.container_dir = Path(self.config.container_dir)
 
-        if (self.container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry')
-                and container_tag == 'latest'):
+        if (
+            self.container_source.startswith(CONTAINER_SOURCE) and container_tag == 'latest'
+        ):
             assert 'latest' in kwargs, 'If the container is hosted on the gitlab registry, make sure that in the ' \
                                        'container init, the field \'latest\' is set.'
 
@@ -223,7 +225,7 @@ class AbstractBenchmarkClient(metaclass=abc.ABCMeta):
                     # Currently, we can't see the available container tags on gitlab. Therefore, we create for each
                     # "tag" a new entry in the registry. This might change in the future. But as long as we don't have
                     # a fix for this, we need to map the container tag differently.
-                    if container_source.startswith('oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry'):
+                    if container_source.startswith(CONTAINER_SOURCE):
                         cmd += f'{container_source}/{container_name.lower()}/{container_tag}:latest'
                     else:
                         cmd += f'{container_source}/{container_name.lower()}:{container_tag}'

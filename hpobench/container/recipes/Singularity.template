@@ -22,7 +22,7 @@ VERSION v0.0.1
     && git clone https://github.com/automl/HPOBench.git \
     && cd HPOBench \
     && echo "Please never push a recipe that checks out any other branch than development or master" \
-    && git checkout development \
+    && git checkout develop \
     && echo "Here you can install extra requirements additional to singularity" \
     && pip install .[<new_benchmark>] \
     && echo "Please don't touch the following lines"

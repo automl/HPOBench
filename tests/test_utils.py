@@ -64,7 +64,7 @@ def test_rng_serialization():
 def test_rng_serialization_xgb():
     import json
     from hpobench.util.container_utils import BenchmarkEncoder, BenchmarkDecoder
-    from hpobench.benchmarks.ml.xgboost_benchmark_old import XGBoostBenchmark
+    from hpobench.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark
 
     b = XGBoostBenchmark(task_id=167149, rng=0)
     meta = b.get_meta_information()
@@ -105,3 +105,15 @@ def test_debug_level():
 
     disable_container_debug()
     assert os.environ['HPOBENCH_DEBUG'] == 'false'
+
+
+def test_test_utils():
+    from hpobench.util.test_utils import DEFAULT_SKIP_MSG, enable_all_tests, disable_all_tests, check_run_all_tests
+
+    assert isinstance(DEFAULT_SKIP_MSG, str)
+
+    enable_all_tests()
+    assert check_run_all_tests()
+
+    disable_all_tests()
+    assert not check_run_all_tests()
