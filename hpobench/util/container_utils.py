@@ -1,12 +1,25 @@
-import os
+import enum
 import importlib
 import json
 import numpy as np
-import enum
+from pathlib import Path
+import os
+import yaml
 
 from typing import Any, Union
 
 from hpobench.util.rng_helper import serialize_random_state, deserialize_random_state
+
+
+CONTAINER_MAP_PATH = Path(__file__).parent / "container_map.yaml"
+
+
+def get_container_version(bench_name: str) -> str:
+    with open(CONTAINER_MAP_PATH, "r") as f:
+        container_map = yaml.safe_load(f)
+    assert bench_name in container_map.keys()
+    version = container_map.get(bench_name)
+    return version
 
 
 class BenchmarkEncoder(json.JSONEncoder):

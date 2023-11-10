@@ -4,11 +4,11 @@
 """ Benchmark for the SVM Benchmarks from hpobench/benchmarks/ml_mmfb/svm_benchmark.py """
 
 from hpobench.container.client_abstract_benchmark import AbstractBenchmarkClient
+from hpobench.util.container_utils import get_container_version
 
 
 container_name = "ml_mmfb"
-container_version = "0.0.4"
-
+container_version = get_container_version(container_name)
 
 class SVMBenchmark(AbstractBenchmarkClient):
     def __init__(self, **kwargs):

@@ -1,0 +1,45 @@
+# ML Benchmarks
+ml_tabular_benchmarks: 
+  recipe: Singularity.ml_tabular_benchmark
+  version: 0.0.4
+pybnn:
+  recipe: Singularity.PyBNN
+  version: 0.0.4
+ml_mmfb:
+  recipe: Singularity.ml_mmfb
+  version: 0.0.4
+
+# RL Benchmarks
+cartpole: 
+  recipe: Singularity.Cartpole
+  version: 0.0.4
+learna_benchmark:
+  recipe: Singularity.learnaBenchmark
+  version: 0.0.4
+
+# OD Benchmark
+outlier_detection: 
+  recipe: Singular.ODBenchmarks
+  version: 0.0.1
+
+# NAS Benchmarks
+nasbench_101:
+  recipe: Singularity.nasbench_101
+  version: 0.0.4
+nasbench_201:
+  recipe: Singularity.nasbench_201
+  version: 0.0.5
+nasbench_1shot1:
+  recipe: Singularity.nasbench_1shot1
+  version: 0.0.4
+tabular_benchmarks:
+  recipe: Singularity.TabularBenchmarks
+  version: 0.0.5
+
+# Surrogate Benchmarks
+paramnet: 
+  recipe: Singularity.ParamnetBenchmark
+  version: 0.0.4
+surrogate_svm: 
+  recipe: Singularity.SupportVectorMachine
+  version: 0.0.2

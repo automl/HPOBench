@@ -75,7 +75,7 @@ class HPOBenchConfig:
 
         self.container_dir = self.cache_dir / f'hpobench-{user_name}'
         self.container_dir = self.cache_dir / f'hpobench-{os.getuid()}'
-        self.container_source = 'oras://gitlab.tf.uni-freiburg.de:5050/muelleph/hpobench-registry'
+        self.container_source = 'oras://gitlab.tf.uni-freiburg.de:5050/mallik/hpo-bench-singularity-gitlab-ci'
         self.pyro_connect_max_wait = 400
 
         # Read in the hpobenchrc file and set the default values if not specified
