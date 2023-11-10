@@ -17,8 +17,8 @@ CONTAINER_MAP_PATH = Path(__file__).parent / "container_map.yaml"
 def get_container_version(bench_name: str) -> str:
     with open(CONTAINER_MAP_PATH, "r") as f:
         container_map = yaml.safe_load(f)
-    assert bench_name in container_map.keys()
-    version = container_map.get(bench_name)
+    assert bench_name in container_map.keys(), f"{bench_name} not in version map!"
+    version = container_map.get(bench_name).get("version")
     return version
 
 

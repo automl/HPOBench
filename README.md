@@ -61,7 +61,7 @@ If you run into problems, using the most recent singularity version might help: 
 
 ## Containerized Benchmarks
 
-We provide all benchmarks as containerized versions to (i) isolate their dependencies and (ii) keep them reproducible. Our containerized benchmarks do not rely on external dependencies and thus do not change over time. For this, we rely on [Singularity (version 3.6)](https://sylabs.io/guides/3.6/user-guide/) and for now upload all containers to a [gitlab registry](https://gitlab.tf.uni-freiburg.de/muelleph/hpobench-registry/container_registry)
+We provide all benchmarks as containerized versions to (i) isolate their dependencies and (ii) keep them reproducible. Our containerized benchmarks do not rely on external dependencies and thus do not change over time. For this, we rely on [Singularity (version 3.6)](https://sylabs.io/guides/3.6/user-guide/) and for now upload all containers to a [gitlab registry](https://gitlab.tf.uni-freiburg.de:5050/mallik/hpo-bench-singularity-gitlab-ci/container_registry)
 
 The only other requirements are: [ConfigSpace](https://github.com/automl/ConfigSpace), *scipy* and *numpy* 
 
