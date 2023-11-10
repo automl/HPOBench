@@ -12,7 +12,7 @@ VERSION v0.0.1
     cd /home \
     && git clone https://github.com/automl/HPOBench.git \
     && cd HPOBench \
-    && git checkout development \
+    && git checkout develop \
     && pip install ".[ml_mfbb]" \
     && cd / \
     && mkdir /var/lib/hpobench/ \
