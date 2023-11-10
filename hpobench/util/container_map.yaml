@@ -19,7 +19,7 @@ learna_benchmark:
 
 # OD Benchmark
 outlier_detection: 
-  recipe: Singular.ODBenchmarks
+  recipe: Singularity.ODBenchmarks
   version: 0.0.1
 
 # NAS Benchmarks
