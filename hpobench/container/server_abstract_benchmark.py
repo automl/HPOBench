@@ -52,6 +52,10 @@ class BenchmarkServer:
         # start the event loop of the server to wait for calls
         self.daemon.requestLoop(loopCondition=lambda: self.pyro_running)
 
+    def print_hello_world(self):
+        logger.debug('Server: Hello World!')
+        return 'Hello World!'
+
     def init_benchmark(self, kwargs_str):
         try:
             kwargs = json.loads(kwargs_str, cls=BenchmarkDecoder)
@@ -128,5 +132,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # pylint: disable=logging-fstring-interpolation
+    logger.debug(f'args: {args}')
+    logger.debug(f'args.importBase: {args.importBase}')
+    logger.debug(f'args.benchmark: {args.benchmark}')
+    logger.debug(f'args.socket_id: {args.socket_id}')
     exec(f"from hpobench.benchmarks.{args.importBase} import {args.benchmark} as Benchmark")
+    logger.debug(f'import worked')
     bp = BenchmarkServer(args.socket_id)
+    logger.debug(f'BenchmarkServer started')
+    logger.debug(f'BenchmarkServer: {bp}')

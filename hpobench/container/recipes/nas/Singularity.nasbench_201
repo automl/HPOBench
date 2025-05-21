@@ -16,6 +16,9 @@ VERSION v0.0.1
     && pip install . \
     && cd / \
     && mkdir /var/lib/hpobench/ \
+    && mkdir /var/lib/hpobench/cache \
+    && mkdir /var/lib/hpobench/data \
+    && mkdir /var/lib/hpobench/socket \
     && chmod -R 777 /var/lib/hpobench/ \
     && rm -rf /var/lib/apt/lists/* \
     && pip cache purge
